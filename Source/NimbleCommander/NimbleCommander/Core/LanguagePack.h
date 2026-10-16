@@ -38,6 +38,13 @@ const std::filesystem::path &PacksDirectory();
 std::string ActivePackIdentifier();
 void SetActivePackIdentifier( const std::string &_identifier );
 
+/** What the user picked in the language popup:
+ *  ""               - follow the system language
+ *  "builtin:<code>" - one of the languages the app ships
+ *  "pack:<id>"      - an imported language pack                                          */
+std::string ActiveLanguageSelection();
+void SetActiveLanguageSelection( const std::string &_selection );
+
 /** Number of entries the currently applied pack provides (0 when there's none). */
 std::size_t ActivePackEntryCount();
 /** Number of entries that were actually translated when the pack was imported, or
@@ -55,6 +62,13 @@ std::size_t CurrentLanguageEntryCount();
 /** Language code the app currently renders in. */
 std::string CurrentLanguage();
 std::string DisplayNameForLanguage( const std::string &_language_code );
+
+/** Languages the app itself ships, e.g. {\"en\", \"ru\", \"zh-Hans\"}. */
+std::vector<std::string> BuiltInLanguages();
+
+/** Language forced through the app's own AppleLanguages default. Empty = follow the system. */
+std::string PreferredBuiltInLanguage();
+void SetPreferredBuiltInLanguage( const std::string &_language_code );
 
 /** Writes every localizable string of the current UI language into a JSON pack, ready to
  *  be translated. */

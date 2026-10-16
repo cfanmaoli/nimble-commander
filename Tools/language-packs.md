@@ -6,6 +6,12 @@
 ## 用法
 
 1. 打开 **偏好设置（⌘,）→ 语言**。
+   - 顶部的 **「界面语言」** 下拉框可以直接切换：**跟随系统 / English / Русский / 简体中文**，
+     以及所有已导入的语言包。选完会提示重启，点「立即重启」即可。
+     - 选内置语言时，app 会同时做两件事：写入语言覆盖层（保证所有界面文字都换掉）+
+       写入本应用的 `AppleLanguages`（让日期、数字和侧边栏名称也跟着换）。
+     - 选语言包时只启用语言包；未翻译的条目回退到系统语言。
+     - 选「跟随系统」会清掉上面两项。
 2. 点 **导出当前语言…**，保存出一个 JSON（默认文件名是当前语言代码，例如 `zh-Hans.json`）。
    - 每个条目长这样：
      ```json
@@ -77,7 +83,7 @@ python3 Tools/nc_localization_manifest.py \
 | `Source/NimbleCommander/NimbleCommander/Core/LanguagePack.{h,mm}` | 新增：swizzle、语言包读写、导出/导入 |
 | `Source/NimbleCommander/NimbleCommander/Preferences/PreferencesWindowLanguageTab.{h,mm}` | 新增：偏好设置里的「语言」标签页（纯代码构建视图） |
 | `Source/NimbleCommander/NimbleCommander/Preferences/Preferences.mm` | 注册新标签页 |
-| `Source/NimbleCommander/NimbleCommander/Preferences/Preferences.xcstrings` | 新增 26 条界面文案（en + zh-Hans） |
+| `Source/NimbleCommander/NimbleCommander/Preferences/Preferences.xcstrings` | 新增 33 条界面文案（en + zh-Hans） |
 | `Tools/nc_localization_manifest.py` | 新增：生成英文原文清单 |
 | `NimbleCommander.xcodeproj/project.pbxproj` | 把新文件加进 NimbleCommanderCommon target |
 

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <fstream>
 #include <limits>
+#include <unistd.h>
 #include <set>
 #include <string>
 
@@ -316,11 +317,108 @@ std::string LanguageNameForCode( NSString *_code )
     return result.UTF8String;
 }
 
+void AddOverlayEntry( NSMutableDictionary *_overlay,
+                       NSString *_bundle,
+                       NSString *_table,
+                       NSString *_key,
+                       NSString *_value )
+{
+    NSMutableDictionary *by_table = _overlay[_bundle];
+    if( by_table == nil ) {
+        by_table = [NSMutableDictionary dictionary];
+        _overlay[_bundle] = by_table;
+    }
+    NSMutableDictionary *by_key = by_table[_table];
+    if( by_key == nil ) {
+        by_key = [NSMutableDictionary dictionary];
+        by_table[_table] = by_key;
+    }
+    by_key[_key] = _value;
+}
+
+// One of the languages the app itself ships: take everything from its .lproj folders and fill
+// the gaps with the English source, so a partially localised language doesn't fall back to
+// whatever the system language happens to be.
+NSDictionary *BuildOverlayFromBuiltInLanguage( const std::string &_code, std::size_t &_count )
+{
+    NSMutableDictionary *const overlay = [NSMutableDictionary dictionary];
+    _count = 0;
+    NSString *const language = [NSString stringWithUTF8String:_code.c_str()];
+
+    for( NSBundle *bundle in RelevantBundles() ) {
+        NSString *const bundle_key = BundleKeyForBundle( bundle );
+        NSString *const lproj = [bundle.resourcePath
+            stringByAppendingPathComponent:[language stringByAppendingPathExtension:@"lproj"]];
+        if( ![[NSFileManager defaultManager] fileExistsAtPath:lproj] )
+            continue;
+        NSArray<NSString *> *const files =
+            [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
+        for( NSString *file in files ) {
+            if( ![file.pathExtension isEqualToString:@"strings"] )
+                continue;
+            NSString *const table = file.stringByDeletingPathExtension;
+            if( [table isEqualToString:kInfoPlistTable] )
+                continue;
+            NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
+                                              [lproj stringByAppendingPathComponent:file]];
+            if( ![strings isKindOfClass:NSDictionary.class] )
+                continue;
+            for( NSString *key in strings ) {
+                NSString *const value = strings[key];
+                if( ![value isKindOfClass:NSString.class] || value.length == 0 )
+                    continue;
+                AddOverlayEntry( overlay, bundle_key, table, key, value );
+                ++_count;
+            }
+        }
+    }
+
+    if( NSArray<NSDictionary *> *const manifest = ManifestEntries() )
+        for( NSDictionary *entry in manifest ) {
+            if( ![entry isKindOfClass:NSDictionary.class] )
+                continue;
+            NSString *const bundle_key = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+            NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
+            NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
+            NSString *const source = [entry[@"source"] isKindOfClass:NSString.class] ? entry[@"source"] : @"";
+            if( key.length == 0 || source.length == 0 || [table isEqualToString:kInfoPlistTable] )
+                continue;
+            if( overlay[bundle_key][table][key] != nil )
+                continue;
+            AddOverlayEntry( overlay, bundle_key, table, key, source );
+            ++_count;
+        }
+    return [overlay copy];
+}
+
 void LoadActiveOverlay()
 {
-    const std::string identifier = nc::lang::ActivePackIdentifier();
+    const std::string selection = nc::lang::ActiveLanguageSelection();
+    if( selection.empty() )
+        return;
+
+    bool built_in = false;
+    std::string identifier = selection;
+    if( selection.rfind( "builtin:", 0 ) == 0 ) {
+        built_in = true;
+        identifier = selection.substr( 8 );
+    }
+    else if( selection.rfind( "pack:", 0 ) == 0 ) {
+        identifier = selection.substr( 5 );
+    }
     if( identifier.empty() )
         return;
+
+    std::size_t count = 0;
+    if( built_in ) {
+        g_overlay = BuildOverlayFromBuiltInLanguage( identifier, count );
+        g_active_entries = count;
+        g_active_translated = std::numeric_limits<std::size_t>::max();
+        g_active_language = identifier;
+        g_active_display_name = LanguageNameForCode( [NSString stringWithUTF8String:identifier.c_str()] );
+        return;
+    }
+
     NSData *const data = [NSData dataWithContentsOfFile:FromPath( PackFileFor( identifier ) )];
     if( data.length == 0 )
         return;
@@ -332,7 +430,6 @@ void LoadActiveOverlay()
         return;
 
     NSMutableDictionary *overlay = [NSMutableDictionary dictionary];
-    std::size_t count = 0;
     for( NSDictionary *entry in entries ) {
         if( ![entry isKindOfClass:NSDictionary.class] )
             continue;
@@ -340,19 +437,11 @@ void LoadActiveOverlay()
         NSString *const translation = [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
         if( key.length == 0 || translation.length == 0 )
             continue;
-        NSString *const bundle = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
-        NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
-        NSMutableDictionary *by_table = overlay[bundle];
-        if( by_table == nil ) {
-            by_table = [NSMutableDictionary dictionary];
-            overlay[bundle] = by_table;
-        }
-        NSMutableDictionary *by_key = by_table[table];
-        if( by_key == nil ) {
-            by_key = [NSMutableDictionary dictionary];
-            by_table[table] = by_key;
-        }
-        by_key[key] = translation;
+        AddOverlayEntry( overlay,
+                         [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"",
+                         [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable,
+                         key,
+                         translation );
         ++count;
     }
     g_overlay = [overlay copy];
@@ -447,24 +536,100 @@ const std::filesystem::path &PacksDirectory()
     return directory;
 }
 
-std::string ActivePackIdentifier()
+std::vector<std::string> BuiltInLanguages()
 {
-    std::ifstream in( PacksDirectory() / kActiveFileName.UTF8String );
-    std::string identifier;
-    std::getline( in, identifier );
-    return Trim( identifier );
+    @autoreleasepool {
+        std::vector<std::string> result;
+        for( NSString *language in (g_main_bundle ?: NSBundle.mainBundle).localizations )
+            if( [language isKindOfClass:NSString.class] && ![language isEqualToString:@"Base"] )
+                result.emplace_back( language.UTF8String );
+        std::sort( result.begin(), result.end() );
+        result.erase( std::unique( result.begin(), result.end() ), result.end() );
+        return result;
+    }
 }
 
-void SetActivePackIdentifier( const std::string &_identifier )
+namespace {
+
+NSString *AppBundleIdentifier()
+{
+    NSString *const identifier = (g_main_bundle ?: NSBundle.mainBundle).bundleIdentifier;
+    return identifier.length ? identifier : nil;
+}
+
+} // namespace
+
+std::string PreferredBuiltInLanguage()
+{
+    NSString *const identifier = AppBundleIdentifier();
+    if( identifier == nil )
+        return {};
+    NSArray *const languages = CFBridgingRelease( CFPreferencesCopyValue( CFSTR("AppleLanguages"),
+                                                                          (__bridge CFStringRef)identifier,
+                                                                          kCFPreferencesCurrentUser,
+                                                                          kCFPreferencesAnyHost ) );
+    if( ![languages isKindOfClass:NSArray.class] || languages.count == 0 )
+        return {};
+    NSString *const first = languages.firstObject;
+    return [first isKindOfClass:NSString.class] ? first.UTF8String : std::string{};
+}
+
+void SetPreferredBuiltInLanguage( const std::string &_language_code )
+{
+    NSString *const identifier = AppBundleIdentifier();
+    if( identifier == nil )
+        return;
+    if( _language_code.empty() ) {
+        CFPreferencesSetValue( CFSTR("AppleLanguages"),
+                               nullptr,
+                               (__bridge CFStringRef)identifier,
+                               kCFPreferencesCurrentUser,
+                               kCFPreferencesAnyHost );
+    }
+    else {
+        NSArray *const languages = @[[NSString stringWithUTF8String:_language_code.c_str()]];
+        CFPreferencesSetValue( CFSTR("AppleLanguages"),
+                               (__bridge CFPropertyListRef)languages,
+                               (__bridge CFStringRef)identifier,
+                               kCFPreferencesCurrentUser,
+                               kCFPreferencesAnyHost );
+    }
+    CFPreferencesAppSynchronize( (__bridge CFStringRef)identifier );
+}
+
+std::string ActiveLanguageSelection()
+{
+    std::ifstream in( PacksDirectory() / kActiveFileName.UTF8String );
+    std::string selection;
+    std::getline( in, selection );
+    return Trim( selection );
+}
+
+void SetActiveLanguageSelection( const std::string &_selection )
 {
     const std::filesystem::path file = PacksDirectory() / kActiveFileName.UTF8String;
     std::error_code ec;
-    if( _identifier.empty() ) {
+    if( _selection.empty() ) {
         std::filesystem::remove( file, ec );
         return;
     }
     std::ofstream out( file, std::ios::trunc );
-    out << _identifier << "\n";
+    out << _selection << "\n";
+}
+
+std::string ActivePackIdentifier()
+{
+    const std::string selection = ActiveLanguageSelection();
+    if( selection.rfind( "builtin:", 0 ) == 0 )
+        return {};
+    if( selection.rfind( "pack:", 0 ) == 0 )
+        return selection.substr( 5 );
+    return selection; // packs imported before the popup existed
+}
+
+void SetActivePackIdentifier( const std::string &_identifier )
+{
+    SetActiveLanguageSelection( _identifier.empty() ? std::string{} : "pack:" + _identifier );
 }
 
 std::size_t ActivePackEntryCount()
@@ -753,9 +918,16 @@ void RelaunchApplication()
 {
     @autoreleasepool {
         NSString *const bundle_path = (g_main_bundle ?: NSBundle.mainBundle).bundlePath;
+        // Wait for this very process to disappear before starting the new copy: launching it
+        // while we are still alive makes the preferences written a moment ago get lost.
+        NSString *const script = [NSString
+            stringWithFormat:@"while /bin/kill -0 %d 2>/dev/null; do sleep 0.2; done; sleep 0.5; "
+                             @"/usr/bin/open -n \"%@\"",
+                             static_cast<int>( getpid() ),
+                             bundle_path];
         NSTask *const task = [[NSTask alloc] init];
         task.launchPath = @"/bin/sh";
-        task.arguments = @[ @"-c", [NSString stringWithFormat:@"sleep 1; /usr/bin/open -n \"%@\"", bundle_path] ];
+        task.arguments = @[ @"-c", script ];
         [task launchAndReturnError:nil];
         [NSApp terminate:nil];
     }

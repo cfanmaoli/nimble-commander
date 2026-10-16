@@ -501,6 +501,17 @@
         }
       }
     },
+    "Follow System" : {
+      "comment" : "Language preferences tab popup",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Follow System"
+          }
+        }
+      }
+    },
     "Footer" : {
       "comment" : "Theme settings group title",
       "localizations" : {
@@ -712,6 +723,17 @@
         }
       }
     },
+    "Language pack:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language pack:"
+          }
+        }
+      }
+    },
     "Language Packs" : {
       "comment" : "Language preferences tab title",
       "localizations" : {
@@ -752,6 +774,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "List mode"
+          }
+        }
+      }
+    },
+    "None" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None"
           }
         }
       }
@@ -874,6 +907,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Restart Now"
+          }
+        }
+      }
+    },
+    "Restart Required" : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Required"
           }
         }
       }
@@ -1150,6 +1194,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Text font"
+          }
+        }
+      }
+    },
+    "The interface language will change the next time Nimble Commander starts." : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The interface language will change the next time Nimble Commander starts."
           }
         }
       }
