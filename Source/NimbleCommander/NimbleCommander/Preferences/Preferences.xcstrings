@@ -1454,6 +1454,23 @@
         }
       }
     },
+    "Restart to Apply" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart to Apply"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重启以生效"
+          }
+        }
+      }
+    },
     "Row vertical padding" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
