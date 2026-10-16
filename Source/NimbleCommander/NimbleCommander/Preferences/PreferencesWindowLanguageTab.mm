@@ -206,8 +206,9 @@ struct Entry {
 
 - (NSImage *)toolbarItemImage
 {
-    NSImage *const symbol = [NSImage imageWithSystemSymbolName:@"character.bubble" accessibilityDescription:nil];
-    return symbol ?: [NSImage imageNamed:NSImageNameAdvanced];
+    // deliberately an asset, not an SF Symbol: rasterising a vector glyph while the window is
+    // being laid out during termination trips an assertion inside CoreUI
+    return [NSImage imageNamed:@"preferences.toolbar.language"];
 }
 
 - (NSString *)toolbarItemLabel
@@ -224,22 +225,20 @@ struct Entry {
     switch( entry.kind ) {
         case EntryKind::FollowSystem:
             nc::lang::SetActiveLanguageSelection( {} );
-            // best effort: let the system-provided names, dates and numbers follow as well
-            nc::lang::SetPreferredBuiltInLanguage( {} );
             break;
         case EntryKind::BuiltIn:
             nc::lang::SetActiveLanguageSelection( "builtin:" + entry.value );
-            // the overlay only swaps the app's own strings - asking the system for this language
-            // as well makes dates, numbers and the sidebar names follow
-            nc::lang::SetPreferredBuiltInLanguage( entry.value );
             break;
         case EntryKind::Pack:
             nc::lang::SetActiveLanguageSelection( "pack:" + entry.value );
-            nc::lang::SetPreferredBuiltInLanguage( {} );
             break;
     }
-    [self refresh];
-    [self offerRestart];
+    // Rebuilding the popup and opening a modal while its own action is still being dispatched
+    // leaves AppKit looking at a menu that is being torn down - do it on the next runloop turn.
+    dispatch_async( dispatch_get_main_queue(), ^{
+        [self refresh];
+        [self offerRestart];
+    });
 }
 
 - (void)onExport:(id) [[maybe_unused]] _sender

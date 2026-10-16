@@ -8,10 +8,11 @@
 1. 打开 **偏好设置（⌘,）→ 语言**。
    - 顶部的 **「界面语言」** 下拉框可以直接切换：**跟随系统 / English / Русский / 简体中文**，
      以及所有已导入的语言包。选完会提示重启，点「立即重启」即可。
-     - 选内置语言时，app 会同时做两件事：写入语言覆盖层（保证所有界面文字都换掉）+
-       写入本应用的 `AppleLanguages`（让日期、数字和侧边栏名称也跟着换）。
-     - 选语言包时只启用语言包；未翻译的条目回退到系统语言。
-     - 选「跟随系统」会清掉上面两项。
+     - 内置语言和语言包用的是**同一套覆盖层机制**：启动时读目标语言的 `.lproj`，
+       缺口用 manifest 里的英文原文补。选择状态存在 `LanguagePacks/active.txt`
+       （`builtin:ru` / `pack:ja` / 空 = 跟随系统）。
+     - **故意不写 `AppleLanguages`**：见下面「已知限制」。所以侧边栏那些由系统提供的名称
+       （文稿 / 下载 / 桌面）和日期、数字格式仍然跟随系统语言，只有 app 自己画的文字会换。
 2. 点 **导出当前语言…**，保存出一个 JSON（默认文件名是当前语言代码，例如 `zh-Hans.json`）。
    - 每个条目长这样：
      ```json
@@ -94,6 +95,14 @@ python3 Tools/nc_localization_manifest.py \
   回退英文会把整个界面变成英文。想改成回退英文的话，`LanguagePack.mm` 里已经有
   `NativeStringsIndex()` 能取到内置文本，再叠一个由 manifest 生成的英文覆盖层即可。
 - `InfoPlist.strings`（6 条权限提示）覆盖不了。
+- **不要用 `AppleLanguages` 切换语言**（我们试过，已移除）：
+  只要 app 带着自己的 `AppleLanguages` 覆盖值运行（`defaults write info.filesmanager.Files
+  AppleLanguages -array ru`，或系统设置里的「应用程序语言」），**弹出任何 NSAlert 时都会崩溃** ——
+  `AppKit +[NSApplication _crashOnException:]` ← `-[NSAlert runModal]` 的 display cycle 里
+  `NSInternalInconsistencyException`，断言在 `CUINamedVectorGlyph.m:2599`，即 CoreUI 在光栅化
+  SF Symbol 时挂掉（`PanelViewHeader.mm` 里的 `xmark.circle.fill` / `magnifyingglass`）。
+  这是上游 app 自身的隐患（任何俄语用户只要通过系统设置给 app 指定语言就会遇到），
+  本功能不趟这个坑。
 - 导出的 JSON 是**当前语言**的全量快照；app 升级后旧语言包里失效的 key 会被忽略（自动回退原文），
   新增的 key 需要重新导出补齐。
 - 如果某条目在 app 里是用 `stringWithFormat:` 之外的方式使用（例如做字符串比较），

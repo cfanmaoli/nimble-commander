@@ -66,10 +66,6 @@ std::string DisplayNameForLanguage( const std::string &_language_code );
 /** Languages the app itself ships, e.g. {\"en\", \"ru\", \"zh-Hans\"}. */
 std::vector<std::string> BuiltInLanguages();
 
-/** Language forced through the app's own AppleLanguages default. Empty = follow the system. */
-std::string PreferredBuiltInLanguage();
-void SetPreferredBuiltInLanguage( const std::string &_language_code );
-
 /** Writes every localizable string of the current UI language into a JSON pack, ready to
  *  be translated. */
 bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::string &_error );

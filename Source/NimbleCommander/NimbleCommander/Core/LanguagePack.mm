@@ -549,54 +549,6 @@ std::vector<std::string> BuiltInLanguages()
     }
 }
 
-namespace {
-
-NSString *AppBundleIdentifier()
-{
-    NSString *const identifier = (g_main_bundle ?: NSBundle.mainBundle).bundleIdentifier;
-    return identifier.length ? identifier : nil;
-}
-
-} // namespace
-
-std::string PreferredBuiltInLanguage()
-{
-    NSString *const identifier = AppBundleIdentifier();
-    if( identifier == nil )
-        return {};
-    NSArray *const languages = CFBridgingRelease( CFPreferencesCopyValue( CFSTR("AppleLanguages"),
-                                                                          (__bridge CFStringRef)identifier,
-                                                                          kCFPreferencesCurrentUser,
-                                                                          kCFPreferencesAnyHost ) );
-    if( ![languages isKindOfClass:NSArray.class] || languages.count == 0 )
-        return {};
-    NSString *const first = languages.firstObject;
-    return [first isKindOfClass:NSString.class] ? first.UTF8String : std::string{};
-}
-
-void SetPreferredBuiltInLanguage( const std::string &_language_code )
-{
-    NSString *const identifier = AppBundleIdentifier();
-    if( identifier == nil )
-        return;
-    if( _language_code.empty() ) {
-        CFPreferencesSetValue( CFSTR("AppleLanguages"),
-                               nullptr,
-                               (__bridge CFStringRef)identifier,
-                               kCFPreferencesCurrentUser,
-                               kCFPreferencesAnyHost );
-    }
-    else {
-        NSArray *const languages = @[[NSString stringWithUTF8String:_language_code.c_str()]];
-        CFPreferencesSetValue( CFSTR("AppleLanguages"),
-                               (__bridge CFPropertyListRef)languages,
-                               (__bridge CFStringRef)identifier,
-                               kCFPreferencesCurrentUser,
-                               kCFPreferencesAnyHost );
-    }
-    CFPreferencesAppSynchronize( (__bridge CFStringRef)identifier );
-}
-
 std::string ActiveLanguageSelection()
 {
     std::ifstream in( PacksDirectory() / kActiveFileName.UTF8String );
@@ -918,6 +870,14 @@ void RelaunchApplication()
 {
     @autoreleasepool {
         NSString *const bundle_path = (g_main_bundle ?: NSBundle.mainBundle).bundlePath;
+
+        // Deliberately no AppleLanguages write here. Running the app under a per-app language
+        // override makes AppKit assert inside CoreUI while rasterising an SF Symbol (the file
+        // panel's search icons in PanelViewHeader) as soon as a modal alert runs its display
+        // cycle - reproducible with "defaults write <id> AppleLanguages -array ru" alone, i.e.
+        // it is an upstream problem, not something this feature should step into. The overlay
+        // below switches every string the app itself draws, which is what this feature is for.
+        //
         // Wait for this very process to disappear before starting the new copy: launching it
         // while we are still alive makes the preferences written a moment ago get lost.
         NSString *const script = [NSString
