@@ -8,6 +8,7 @@
 #include <cctype>
 #include <cstring>
 #include <fstream>
+#include <limits>
 #include <set>
 #include <string>
 
@@ -33,6 +34,7 @@ NSBundle *g_main_bundle = nil;
 std::size_t g_active_entries = 0;
 [[clang::no_destroy]] std::string g_active_language;
 [[clang::no_destroy]] std::string g_active_display_name;
+std::size_t g_active_translated = std::numeric_limits<std::size_t>::max();
 
 NSString *ISODateString()
 {
@@ -355,6 +357,9 @@ void LoadActiveOverlay()
     }
     g_overlay = [overlay copy];
     g_active_entries = count;
+    g_active_translated = [pack[@"translatedEntries"] isKindOfClass:NSNumber.class]
+                              ? static_cast<std::size_t>( [pack[@"translatedEntries"] unsignedLongLongValue] )
+                              : std::numeric_limits<std::size_t>::max();
     NSString *const language = [pack[@"language"] isKindOfClass:NSString.class] ? pack[@"language"] : @"";
     NSString *const language_name = [pack[@"languageName"] isKindOfClass:NSString.class] ? pack[@"languageName"] : @"";
     g_active_language = language.UTF8String ?: "";
@@ -383,6 +388,39 @@ std::size_t CountCurrentLanguageEntries()
         }
     }
     return result;
+}
+
+// What the app would show without any pack - used to tell "translated" from "still the text
+// that was exported".
+NSDictionary<NSString *, NSString *> *NativeStringsIndex()
+{
+    static NSDictionary<NSString *, NSString *> *const index = [] {
+        NSMutableDictionary *result = [NSMutableDictionary dictionary];
+        for( NSBundle *bundle in RelevantBundles() ) {
+            NSString *const lproj = CurrentLprojPath( bundle );
+            if( lproj == nil )
+                continue;
+            NSString *const bundle_key = BundleKeyForBundle( bundle );
+            NSArray<NSString *> *const files =
+                [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
+            for( NSString *file in files ) {
+                if( ![file.pathExtension isEqualToString:@"strings"] )
+                    continue;
+                NSString *const table = file.stringByDeletingPathExtension;
+                if( [table isEqualToString:kInfoPlistTable] )
+                    continue;
+                NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
+                                                  [lproj stringByAppendingPathComponent:file]];
+                if( ![strings isKindOfClass:NSDictionary.class] )
+                    continue;
+                for( NSString *key in strings )
+                    if( [strings[key] isKindOfClass:NSString.class] )
+                        result[EntryKey( bundle_key, table, key )] = strings[key];
+            }
+        }
+        return [result copy];
+    }();
+    return index;
 }
 
 } // namespace
@@ -432,6 +470,11 @@ void SetActivePackIdentifier( const std::string &_identifier )
 std::size_t ActivePackEntryCount()
 {
     return g_active_entries;
+}
+
+std::size_t ActivePackTranslatedCount()
+{
+    return g_active_translated;
 }
 
 std::string ActivePackLanguage()
@@ -625,6 +668,14 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
         const std::string identifier = SanitizePackIdentifier( language );
         NSString *const language_name = [pack[@"languageName"] isKindOfClass:NSString.class] ? pack[@"languageName"] : nil;
 
+        // A pack that was exported from the built-in language keeps that language's text for the
+        // entries the author hasn't translated yet - point that out instead of silently mixing.
+        NSString *const built_in_language = (g_main_bundle ?: NSBundle.mainBundle).preferredLocalizations.firstObject;
+        const bool measure_untranslated =
+            built_in_language.length && ![built_in_language isEqualToString:[NSString stringWithUTF8String:identifier.c_str()]];
+        NSDictionary<NSString *, NSString *> *const native = measure_untranslated ? NativeStringsIndex() : nil;
+        _stats.measured_untranslated = measure_untranslated;
+
         NSMutableArray *const normalized = [NSMutableArray array];
         for( id item in entries ) {
             ++_stats.total;
@@ -652,11 +703,14 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
                 ++_stats.skipped_placeholders;
                 continue;
             }
-            [normalized addObject:MakeEntry( [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"",
-                                             table,
-                                             key,
-                                             translation,
-                                             entry )];
+            NSString *const bundle_key =
+                [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+            if( native ) {
+                NSString *const built_in = native[EntryKey( bundle_key, table, key )];
+                if( built_in && [built_in isEqualToString:translation] )
+                    ++_stats.identical_to_current;
+            }
+            [normalized addObject:MakeEntry( bundle_key, table, key, translation, entry )];
             ++_stats.imported;
         }
 
@@ -669,6 +723,8 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
                                    ? language_name
                                    : [NSString stringWithUTF8String:DisplayNameForLanguage( identifier ).c_str()];
         out[@"entryCount"] = @(normalized.count);
+        if( _stats.measured_untranslated )
+            out[@"translatedEntries"] = @(_stats.imported - _stats.identical_to_current);
         out[@"entries"] = normalized;
 
         NSError *json_error = nil;

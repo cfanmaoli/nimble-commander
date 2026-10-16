@@ -23,6 +23,28 @@
         }
       }
     },
+    "%@ (%@) · language pack · %@ entries · %@ translated" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries · %@ translated"
+          }
+        }
+      }
+    },
+    "%@ of them are identical to the text of the current language and probably aren’t translated yet." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ of them are identical to the text of the current language and probably aren’t translated yet."
+          }
+        }
+      }
+    },
     "A restart is required for a language change to take effect." : {
       "comment" : "Language preferences tab hint",
       "localizations" : {
