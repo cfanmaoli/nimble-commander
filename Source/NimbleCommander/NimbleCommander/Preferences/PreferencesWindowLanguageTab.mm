@@ -2,6 +2,7 @@
 #include "PreferencesWindowLanguageTab.h"
 #include "../Core/LanguagePack.h"
 
+#include <limits>
 #include <string>
 
 using namespace std::literals;
@@ -95,11 +96,18 @@ static NSString *FromStd( const std::string &_string )
                                            FromStd( nc::lang::DisplayNameForLanguage( language ) ),
                                            FromStd( language )];
     }
-    else {
+    else if( nc::lang::ActivePackTranslatedCount() == std::numeric_limits<std::size_t>::max() ) {
         value = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries", @"Preferences", "Language preferences tab status"),
                                            FromStd( nc::lang::ActivePackDisplayName() ),
                                            FromStd( nc::lang::ActivePackLanguage() ),
                                            @(nc::lang::ActivePackEntryCount())];
+    }
+    else {
+        value = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries · %@ translated", @"Preferences", "Language preferences tab status"),
+                                           FromStd( nc::lang::ActivePackDisplayName() ),
+                                           FromStd( nc::lang::ActivePackLanguage() ),
+                                           @(nc::lang::ActivePackEntryCount()),
+                                           @(nc::lang::ActivePackTranslatedCount())];
     }
     m_InterfaceLanguageValue.stringValue = value;
     m_RemoveButton.enabled = !identifier.empty();
@@ -186,6 +194,10 @@ static NSString *FromStd( const std::string &_string )
         [message appendFormat:@"\n\n%@", [NSString stringWithFormat:
             NSLocalizedStringFromTable(@"Skipped %@ malformed entries.", @"Preferences", "Language preferences tab import result"),
             @(stats.skipped_malformed)]];
+    if( stats.measured_untranslated && stats.identical_to_current )
+        [message appendFormat:@"\n\n%@", [NSString stringWithFormat:
+            NSLocalizedStringFromTable(@"%@ of them are identical to the text of the current language and probably aren’t translated yet.", @"Preferences", "Language preferences tab import result"),
+            @(stats.identical_to_current)]];
 
     NSAlert *const alert = [[NSAlert alloc] init];
     alert.messageText = NSLocalizedStringFromTable(@"Import Complete", @"Preferences", "Language preferences tab import result");

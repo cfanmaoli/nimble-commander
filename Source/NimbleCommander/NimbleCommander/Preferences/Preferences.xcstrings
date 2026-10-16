@@ -35,6 +35,40 @@
         }
       }
     },
+    "%@ (%@) · language pack · %@ entries · %@ translated" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries · %@ translated"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 语言包 · %@ 条 · 已翻译 %@ 条"
+          }
+        }
+      }
+    },
+    "%@ of them are identical to the text of the current language and probably aren’t translated yet." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ of them are identical to the text of the current language and probably aren’t translated yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其中 %@ 条与当前语言的文本相同，看起来还没有翻译。"
+          }
+        }
+      }
+    },
     "A restart is required for a language change to take effect." : {
       "comment" : "Language preferences tab hint",
       "localizations" : {
