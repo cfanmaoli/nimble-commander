@@ -771,6 +771,23 @@
         }
       }
     },
+    "Follow System" : {
+      "comment" : "Language preferences tab popup",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Follow System"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随系统"
+          }
+        }
+      }
+    },
     "Footer" : {
       "comment" : "Theme settings group title",
       "localizations" : {
@@ -1096,6 +1113,23 @@
         }
       }
     },
+    "Language pack:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language pack:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包："
+          }
+        }
+      }
+    },
     "Language Packs" : {
       "comment" : "Language preferences tab title",
       "localizations" : {
@@ -1160,6 +1194,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "列表模式"
+          }
+        }
+      }
+    },
+    "None" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
           }
         }
       }
@@ -1348,6 +1399,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即重启"
+          }
+        }
+      }
+    },
+    "Restart Required" : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Required"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要重启"
           }
         }
       }
@@ -1774,6 +1842,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "文字字体"
+          }
+        }
+      }
+    },
+    "The interface language will change the next time Nimble Commander starts." : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The interface language will change the next time Nimble Commander starts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重启 Nimble Commander 后界面语言才会改变。"
           }
         }
       }
