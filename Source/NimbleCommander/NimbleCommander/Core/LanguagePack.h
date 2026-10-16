@@ -24,6 +24,10 @@ struct ImportStats {
     std::size_t skipped_empty = 0;
     std::size_t skipped_malformed = 0;
     std::size_t skipped_placeholders = 0;
+    /** entries whose text is byte-identical to the built-in language, i.e. most likely not
+     *  translated yet. Only measured when the pack targets a different language. */
+    std::size_t identical_to_current = 0;
+    bool measured_untranslated = false;
 };
 
 /** Folder holding translated language packs:
@@ -36,6 +40,9 @@ void SetActivePackIdentifier( const std::string &_identifier );
 
 /** Number of entries the currently applied pack provides (0 when there's none). */
 std::size_t ActivePackEntryCount();
+/** Number of entries that were actually translated when the pack was imported, or
+ *  std::numeric_limits<std::size_t>::max() when that couldn't be determined. */
+std::size_t ActivePackTranslatedCount();
 /** Language code of the currently applied pack, empty when there's none. */
 std::string ActivePackLanguage();
 std::string ActivePackDisplayName();
