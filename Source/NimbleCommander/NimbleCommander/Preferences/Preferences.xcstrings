@@ -1,6 +1,57 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%@) · built-in" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · built-in"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 内置"
+          }
+        }
+      }
+    },
+    "%@ (%@) · language pack · %@ entries" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 语言包 · %@ 条"
+          }
+        }
+      }
+    },
+    "A restart is required for a language change to take effect." : {
+      "comment" : "Language preferences tab hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A restart is required for a language change to take effect."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改语言后需要重启应用才会生效。"
+          }
+        }
+      }
+    },
     "Active background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -325,6 +376,23 @@
         }
       }
     },
+    "Are you sure you want to remove the language pack “%@”?" : {
+      "comment" : "Language preferences tab confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to remove the language pack “%@”?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要移除语言包“%@”吗？"
+          }
+        }
+      }
+    },
     "Are you sure you want to reset granted filesystem access?" : {
       "comment" : "Message text asking if user really wants to reset current file system access",
       "extractionState" : "manual",
@@ -408,6 +476,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "简要模式"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -512,6 +597,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "偶数行背景"
+          }
+        }
+      }
+    },
+    "Export Complete" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出完成"
+          }
+        }
+      }
+    },
+    "Export Current Language" : {
+      "comment" : "Language preferences tab save panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出当前语言"
+          }
+        }
+      }
+    },
+    "Export Current Language…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出当前语言…"
+          }
+        }
+      }
+    },
+    "Exported %@ entries to:\n%@" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exported %@ entries to:\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导出 %@ 条到：\n%@"
           }
         }
       }
@@ -790,6 +943,74 @@
         }
       }
     },
+    "Import Complete" : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入完成"
+          }
+        }
+      }
+    },
+    "Import Language File" : {
+      "comment" : "Language preferences tab open panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入语言文件"
+          }
+        }
+      }
+    },
+    "Import Language File…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入语言文件…"
+          }
+        }
+      }
+    },
+    "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导入 %@ 条（%@）。\n\n重启 Nimble Commander 后即可看到新语言。"
+          }
+        }
+      }
+    },
     "Inactive background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -803,6 +1024,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "非活动背景"
+          }
+        }
+      }
+    },
+    "Interface language:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Interface language:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面语言："
+          }
+        }
+      }
+    },
+    "Language" : {
+      "comment" : "Language preferences tab toolbar label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        }
+      }
+    },
+    "Language Packs" : {
+      "comment" : "Language preferences tab title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language Packs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Later"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
           }
         }
       }
@@ -854,6 +1143,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "奇数行背景"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
           }
         }
       }
@@ -974,6 +1280,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "常规文字颜色"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        }
+      }
+    },
+    "Restart Now" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Now"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即重启"
           }
         }
       }
@@ -1127,6 +1467,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分隔线"
+          }
+        }
+      }
+    },
+    "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条格式占位符（%%、%%@、%%d 等）与原文不一致的条目。"
+          }
+        }
+      }
+    },
+    "Skipped %@ entries without a translation." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries without a translation."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条没有译文的条目。"
+          }
+        }
+      }
+    },
+    "Skipped %@ malformed entries." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ malformed entries."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条格式错误的条目。"
           }
         }
       }
@@ -1388,6 +1779,23 @@
         }
       }
     },
+    "This can’t be undone." : {
+      "comment" : "Language preferences tab confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This can’t be undone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作无法撤销。"
+          }
+        }
+      }
+    },
     "This will cause Nimble Commander to ask you for access when necessary." : {
       "comment" : "Informative text saying that Nimble Commander will ask for filesystem access when need it",
       "extractionState" : "manual",
@@ -1494,6 +1902,23 @@
         }
       }
     },
+    "Unable to use this file" : {
+      "comment" : "Language preferences tab error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to use this file"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法使用此文件"
+          }
+        }
+      }
+    },
     "Viewer" : {
       "comment" : "General preferences tab title\nTheme settings group title",
       "extractionState" : "manual",
@@ -1508,6 +1933,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看器"
+          }
+        }
+      }
+    },
+    "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app." : {
+      "comment" : "Language preferences tab description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把 Nimble Commander 的界面翻译成其它语言，也可以使用别人做好的翻译。先导出当前语言，把内容替换成你的译文，再导入回来并重启应用。"
           }
         }
       }
