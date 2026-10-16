@@ -690,6 +690,17 @@
         }
       }
     },
+    "in use" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "in use"
+          }
+        }
+      }
+    },
     "Inactive background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -896,6 +907,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Remove"
+          }
+        }
+      }
+    },
+    "Removed the language pack “%@”." : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removed the language pack “%@”."
           }
         }
       }
