@@ -922,6 +922,17 @@
         }
       }
     },
+    "Restart Nimble Commander to apply the new language?" : {
+      "comment" : "Language preferences tab restart confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Nimble Commander to apply the new language?"
+          }
+        }
+      }
+    },
     "Restart Now" : {
       "comment" : "Language preferences tab button",
       "localizations" : {

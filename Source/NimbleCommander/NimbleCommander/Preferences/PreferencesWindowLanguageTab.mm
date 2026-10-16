@@ -285,7 +285,7 @@ struct Entry {
     }
     // Rebuilding the popup while its own action is still being dispatched leaves AppKit looking
     // at a menu that is being torn down - do it on the next runloop turn. No modal here: the
-    // "Restart to Apply" button right next to the popup does the job with a single click.
+    // "Restart to Apply" button next to the popup is the deliberate way to apply the change.
     dispatch_async( dispatch_get_main_queue(), ^{
         [self refresh];
         [self setStatus:NSLocalizedStringFromTable(@"A restart is required for a language change to take effect.", @"Preferences", "Language preferences tab hint")];
@@ -294,7 +294,15 @@ struct Entry {
 
 - (void)onRestart:(id) [[maybe_unused]] _sender
 {
-    nc::lang::RelaunchApplication();
+    // the button is the deliberate way to apply a change, so ask once before dropping whatever
+    // the user is doing in the other windows
+    NSAlert *const alert = [[NSAlert alloc] init];
+    alert.messageText = NSLocalizedStringFromTable(@"Restart Nimble Commander to apply the new language?", @"Preferences", "Language preferences tab restart confirmation");
+    alert.informativeText = NSLocalizedStringFromTable(@"The interface language will change the next time Nimble Commander starts.", @"Preferences", "Language preferences tab restart prompt");
+    [alert addButtonWithTitle:NSLocalizedStringFromTable(@"Restart Now", @"Preferences", "Language preferences tab button")];
+    [alert addButtonWithTitle:NSLocalizedStringFromTable(@"Cancel", @"Preferences", "Language preferences tab button")];
+    if( [alert runModal] == NSAlertFirstButtonReturn )
+        nc::lang::RelaunchApplication();
 }
 
 - (void)onExport:(id) [[maybe_unused]] _sender
