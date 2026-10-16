@@ -13,7 +13,7 @@
 #include <set>
 #include <string>
 
-@interface NSBundle ( NCLanguagePack )
+@interface NSBundle (NCLanguagePack)
 - (NSString *)nc_langpack_localizedStringForKey:(NSString *)_key value:(NSString *)_value table:(NSString *)_table;
 @end
 
@@ -43,78 +43,80 @@ NSString *ISODateString()
     return [formatter stringFromDate:NSDate.date];
 }
 
-std::string ErrorText( NSError *_error, const char *_fallback )
+std::string ErrorText(NSError *_error, const char *_fallback)
 {
     NSString *const description = _error.localizedDescription;
     return description.length ? description.UTF8String : std::string{_fallback};
 }
 
-std::string Trim( std::string _s )
+std::string Trim(std::string _s)
 {
-    const auto not_space = []( unsigned char _c ) { return !std::isspace( _c ); };
-    _s.erase( _s.begin(), std::find_if( _s.begin(), _s.end(), not_space ) );
-    _s.erase( std::find_if( _s.rbegin(), _s.rend(), not_space ).base(), _s.end() );
+    const auto not_space = [](unsigned char _c) { return !std::isspace(_c); };
+    _s.erase(_s.begin(), std::find_if(_s.begin(), _s.end(), not_space));
+    _s.erase(std::find_if(_s.rbegin(), _s.rend(), not_space).base(), _s.end());
     return _s;
 }
 
-bool IsValidPackIdentifier( const std::string &_s )
+bool IsValidPackIdentifier(const std::string &_s)
 {
     if( _s.empty() || _s.size() > 64 || _s == "." || _s == ".." )
         return false;
-    return std::all_of( _s.begin(), _s.end(), []( unsigned char _c ) {
-        return std::isalnum( _c ) || _c == '-' || _c == '_' || _c == '.';
-    } );
+    return std::all_of(
+        _s.begin(), _s.end(), [](unsigned char _c) { return std::isalnum(_c) || _c == '-' || _c == '_' || _c == '.'; });
 }
 
-std::string SanitizePackIdentifier( const std::string &_s )
+std::string SanitizePackIdentifier(const std::string &_s)
 {
     std::string result;
     for( char c : _s ) {
         const auto u = static_cast<unsigned char>(c);
-        result += ( std::isalnum( u ) || c == '-' || c == '_' || c == '.' ) ? c : '-';
+        result += (std::isalnum(u) || c == '-' || c == '_' || c == '.') ? c : '-';
     }
     if( result.size() > 64 )
-        result.resize( 64 );
-    return IsValidPackIdentifier( result ) ? result : "imported";
+        result.resize(64);
+    return IsValidPackIdentifier(result) ? result : "imported";
 }
 
-NSString *FromPath( const std::filesystem::path &_path )
+NSString *FromPath(const std::filesystem::path &_path)
 {
     return [NSString stringWithUTF8String:_path.c_str()];
 }
 
-NSString *BundleKeyForBundle( NSBundle *_bundle )
+NSString *BundleKeyForBundle(NSBundle *_bundle)
 {
     if( _bundle == nil || _bundle == g_main_bundle )
         return @"";
     return _bundle.bundlePath.lastPathComponent ?: @"";
 }
 
-std::filesystem::path PackFileFor( const std::string &_identifier )
+std::filesystem::path PackFileFor(const std::string &_identifier)
 {
     return nc::lang::PacksDirectory() / (_identifier + ".json");
 }
 
-NSString *EntryKey( NSString *_bundle, NSString *_table, NSString *_key )
+NSString *EntryKey(NSString *_bundle, NSString *_table, NSString *_key)
 {
-    return [NSString stringWithFormat:@"%@%@%@%@%@", _bundle ?: @"", kSeparator, _table ?: @"", kSeparator, _key ?: @""];
+    return
+        [NSString stringWithFormat:@"%@%@%@%@%@", _bundle ?: @"", kSeparator, _table ?: @"", kSeparator, _key ?: @""];
 }
 
-BOOL LooksLikeObjectIdentifier( NSString *_key )
+BOOL LooksLikeObjectIdentifier(NSString *_key)
 {
     if( _key.length == 0 )
         return NO;
     static NSRegularExpression *const dot_number = [NSRegularExpression regularExpressionWithPattern:@"^[0-9]+\\."
                                                                                              options:0
                                                                                                error:nil];
-    static NSRegularExpression *const ib_identifier = [NSRegularExpression regularExpressionWithPattern:
-        @"^[0-9A-Za-z]{3}-[0-9A-Za-z]{3}-[0-9A-Za-z]{3}\\." options:0 error:nil];
-    const NSRange range = NSMakeRange( 0, _key.length );
+    static NSRegularExpression *const ib_identifier =
+        [NSRegularExpression regularExpressionWithPattern:@"^[0-9A-Za-z]{3}-[0-9A-Za-z]{3}-[0-9A-Za-z]{3}\\."
+                                                  options:0
+                                                    error:nil];
+    const NSRange range = NSMakeRange(0, _key.length);
     return [dot_number firstMatchInString:_key options:0 range:range] != nil ||
            [ib_identifier firstMatchInString:_key options:0 range:range] != nil;
 }
 
-std::multiset<char> Placeholders( NSString *_string )
+std::multiset<char> Placeholders(NSString *_string)
 {
     // Only the *kind* of every conversion is compared: a translation is free to switch to
     // positional arguments ("%@ ... %@" -> "%1$@ ... %2$@") or to tweak flags and precision,
@@ -133,32 +135,57 @@ std::multiset<char> Placeholders( NSString *_string )
             i = j + 1;
             continue;
         }
-        std::size_t const position_start = j;
-        while( j < s.size() && std::isdigit( static_cast<unsigned char>(s[j]) ) )
+        const std::size_t position_start = j;
+        while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
             ++j;
         if( j > position_start && j < s.size() && s[j] == '$' )
             ++j; // positional argument
-        while( j < s.size() && std::strchr( "-+ #0", s[j] ) )
+        while( j < s.size() && std::strchr("-+ #0", s[j]) )
             ++j; // flags
-        while( j < s.size() && std::isdigit( static_cast<unsigned char>(s[j]) ) )
+        while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
             ++j; // field width
         if( j < s.size() && s[j] == '.' ) {
             ++j;
-            while( j < s.size() && std::isdigit( static_cast<unsigned char>(s[j]) ) )
+            while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
                 ++j;
         }
-        while( j < s.size() && std::strchr( "hlqLjzt", s[j] ) )
+        while( j < s.size() && std::strchr("hlqLjzt", s[j]) )
             ++j; // length modifier
         if( j >= s.size() )
             break;
         const char conversion = s[j++];
         char kind = '?';
         switch( conversion ) {
-            case '@': kind = 'O'; break;
-            case 'd': case 'i': case 'u': case 'x': case 'X': case 'o': case 'c': case 'C': kind = 'I'; break;
-            case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A': kind = 'F'; break;
-            case 's': case 'S': kind = 'S'; break;
-            case 'p': kind = 'P'; break;
+            case '@':
+                kind = 'O';
+                break;
+            case 'd':
+            case 'i':
+            case 'u':
+            case 'x':
+            case 'X':
+            case 'o':
+            case 'c':
+            case 'C':
+                kind = 'I';
+                break;
+            case 'f':
+            case 'F':
+            case 'e':
+            case 'E':
+            case 'g':
+            case 'G':
+            case 'a':
+            case 'A':
+                kind = 'F';
+                break;
+            case 's':
+            case 'S':
+                kind = 'S';
+                break;
+            case 'p':
+                kind = 'P';
+                break;
             case '#': // the "%#@name@" plural form stands for the number of items
                 if( j < s.size() && s[j] == '@' ) {
                     ++j;
@@ -169,28 +196,30 @@ std::multiset<char> Placeholders( NSString *_string )
                 }
                 kind = 'O';
                 break;
-            default: kind = '?'; break;
+            default:
+                kind = '?';
+                break;
         }
-        result.insert( kind );
+        result.insert(kind);
         i = j;
     }
     return result;
 }
 
-bool PlaceholdersCompatible( NSString *_source, NSString *_key, NSString *_translation )
+bool PlaceholdersCompatible(NSString *_source, NSString *_key, NSString *_translation)
 {
-    const std::multiset<char> source = Placeholders( _source );
-    const std::multiset<char> translation = Placeholders( _translation );
+    const std::multiset<char> source = Placeholders(_source);
+    const std::multiset<char> translation = Placeholders(_translation);
     if( source == translation )
         return true;
     // Strings with a stray '%' ("%% Insert the % character") can't be parsed unambiguously -
     // rather than rejecting a perfectly good translation, let those through unchecked.
-    if( source.count( '?' ) || translation.count( '?' ) )
+    if( source.count('?') || translation.count('?') )
         return true;
     // A plural source ("Compressing %#@items@") may legitimately be spelled out with a plain
     // numeric placeholder - compare against the key, which holds the non-plural form.
-    if( [_source rangeOfString:@"%#@"].location != NSNotFound && !LooksLikeObjectIdentifier( _key ) )
-        return Placeholders( _key ) == Placeholders( _translation );
+    if( [_source rangeOfString:@"%#@"].location != NSNotFound && !LooksLikeObjectIdentifier(_key) )
+        return Placeholders(_key) == Placeholders(_translation);
     return false;
 }
 
@@ -212,14 +241,14 @@ NSArray<NSBundle *> *RelevantBundles()
     return result;
 }
 
-NSString *CurrentLprojPath( NSBundle *_bundle )
+NSString *CurrentLprojPath(NSBundle *_bundle)
 {
     NSString *const localizable = [_bundle pathForResource:@"Localizable" ofType:@"strings"];
     if( localizable.length )
         return localizable.stringByDeletingLastPathComponent;
     for( NSString *language in _bundle.preferredLocalizations ) {
-        NSString *const candidate = [_bundle.resourcePath
-            stringByAppendingPathComponent:[language stringByAppendingPathExtension:@"lproj"]];
+        NSString *const candidate =
+            [_bundle.resourcePath stringByAppendingPathComponent:[language stringByAppendingPathExtension:@"lproj"]];
         if( [[NSFileManager defaultManager] fileExistsAtPath:candidate] )
             return candidate;
     }
@@ -233,7 +262,7 @@ NSString *ManifestPath()
         if( [[NSFileManager defaultManager] fileExistsAtPath:path] )
             return path;
     }
-    NSString *const path = FromPath( nc::lang::PacksDirectory() / kManifestFileName.UTF8String );
+    NSString *const path = FromPath(nc::lang::PacksDirectory() / kManifestFileName.UTF8String);
     return [[NSFileManager defaultManager] fileExistsAtPath:path] ? path : nil;
 }
 
@@ -247,7 +276,7 @@ NSArray<NSDictionary *> *ManifestEntries()
     NSData *const data = [NSData dataWithContentsOfFile:path];
     if( data.length == 0 )
         return nil;
-    id const root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+    const id root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
     if( ![root isKindOfClass:NSDictionary.class] )
         return nil;
     NSArray *const entries = (static_cast<NSDictionary *>(root))[@"entries"];
@@ -259,8 +288,7 @@ NSArray<NSDictionary *> *ManifestEntries()
 
 NSDictionary<NSString *, NSDictionary *> *ManifestIndex()
 {
-    static NSDictionary<NSString *, NSDictionary *> *const index =
-        []() -> NSDictionary<NSString *, NSDictionary *> * {
+    static NSDictionary<NSString *, NSDictionary *> *const index = []() -> NSDictionary<NSString *, NSDictionary *> * {
         NSArray<NSDictionary *> *const entries = ManifestEntries();
         if( entries == nil )
             return nil;
@@ -278,22 +306,19 @@ NSDictionary<NSString *, NSDictionary *> *ManifestIndex()
                 value[@"en"] = entry[@"source"];
             if( [entry[@"comment"] isKindOfClass:NSString.class] )
                 value[@"comment"] = entry[@"comment"];
-            result[EntryKey( bundle, table, key )] = value;
+            result[EntryKey(bundle, table, key)] = value;
         }
         return [result copy];
     }();
     return index;
 }
 
-NSMutableDictionary *MakeEntry( NSString *_bundle,
-                                NSString *_table,
-                                NSString *_key,
-                                NSString *_translation,
-                                NSDictionary *_manifest_entry )
+NSMutableDictionary *
+MakeEntry(NSString *_bundle, NSString *_table, NSString *_key, NSString *_translation, NSDictionary *_manifest_entry)
 {
-    NSString *source = [ _manifest_entry[@"en"] isKindOfClass:NSString.class] ? _manifest_entry[@"en"] : nil;
+    NSString *source = [_manifest_entry[@"en"] isKindOfClass:NSString.class] ? _manifest_entry[@"en"] : nil;
     if( source.length == 0 )
-        source = LooksLikeObjectIdentifier( _key ) ? @"" : _key;
+        source = LooksLikeObjectIdentifier(_key) ? @"" : _key;
     NSMutableDictionary *const entry = [NSMutableDictionary dictionary];
     entry[@"bundle"] = _bundle ?: @"";
     entry[@"table"] = _table;
@@ -308,7 +333,7 @@ NSMutableDictionary *MakeEntry( NSString *_bundle,
     return entry;
 }
 
-std::string LanguageNameForCode( NSString *_code )
+std::string LanguageNameForCode(NSString *_code)
 {
     if( _code.length == 0 )
         return {};
@@ -317,11 +342,11 @@ std::string LanguageNameForCode( NSString *_code )
     return result.UTF8String;
 }
 
-void AddOverlayEntry( NSMutableDictionary *_overlay,
-                       NSString *_bundle,
-                       NSString *_table,
-                       NSString *_key,
-                       NSString *_value )
+void AddOverlayEntry(NSMutableDictionary *_overlay,
+                     NSString *_bundle,
+                     NSString *_table,
+                     NSString *_key,
+                     NSString *_value)
 {
     NSMutableDictionary *by_table = _overlay[_bundle];
     if( by_table == nil ) {
@@ -339,35 +364,34 @@ void AddOverlayEntry( NSMutableDictionary *_overlay,
 // One of the languages the app itself ships: take everything from its .lproj folders and fill
 // the gaps with the English source, so a partially localised language doesn't fall back to
 // whatever the system language happens to be.
-NSDictionary *BuildOverlayFromBuiltInLanguage( const std::string &_code, std::size_t &_count )
+NSDictionary *BuildOverlayFromBuiltInLanguage(const std::string &_code, std::size_t &_count)
 {
     NSMutableDictionary *const overlay = [NSMutableDictionary dictionary];
     _count = 0;
     NSString *const language = [NSString stringWithUTF8String:_code.c_str()];
 
     for( NSBundle *bundle in RelevantBundles() ) {
-        NSString *const bundle_key = BundleKeyForBundle( bundle );
-        NSString *const lproj = [bundle.resourcePath
-            stringByAppendingPathComponent:[language stringByAppendingPathExtension:@"lproj"]];
+        NSString *const bundle_key = BundleKeyForBundle(bundle);
+        NSString *const lproj =
+            [bundle.resourcePath stringByAppendingPathComponent:[language stringByAppendingPathExtension:@"lproj"]];
         if( ![[NSFileManager defaultManager] fileExistsAtPath:lproj] )
             continue;
-        NSArray<NSString *> *const files =
-            [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
+        NSArray<NSString *> *const files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
         for( NSString *file in files ) {
             if( ![file.pathExtension isEqualToString:@"strings"] )
                 continue;
             NSString *const table = file.stringByDeletingPathExtension;
             if( [table isEqualToString:kInfoPlistTable] )
                 continue;
-            NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
-                                              [lproj stringByAppendingPathComponent:file]];
+            NSDictionary *const strings =
+                [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
             if( ![strings isKindOfClass:NSDictionary.class] )
                 continue;
             for( NSString *key in strings ) {
                 NSString *const value = strings[key];
                 if( ![value isKindOfClass:NSString.class] || value.length == 0 )
                     continue;
-                AddOverlayEntry( overlay, bundle_key, table, key, value );
+                AddOverlayEntry(overlay, bundle_key, table, key, value);
                 ++_count;
             }
         }
@@ -385,7 +409,7 @@ NSDictionary *BuildOverlayFromBuiltInLanguage( const std::string &_code, std::si
                 continue;
             if( overlay[bundle_key][table][key] != nil )
                 continue;
-            AddOverlayEntry( overlay, bundle_key, table, key, source );
+            AddOverlayEntry(overlay, bundle_key, table, key, source);
             ++_count;
         }
     return [overlay copy];
@@ -399,27 +423,27 @@ void LoadActiveOverlay()
 
     bool built_in = false;
     std::string identifier = selection;
-    if( selection.rfind( "builtin:", 0 ) == 0 ) {
+    if( selection.rfind("builtin:", 0) == 0 ) {
         built_in = true;
-        identifier = selection.substr( 8 );
+        identifier = selection.substr(8);
     }
-    else if( selection.rfind( "pack:", 0 ) == 0 ) {
-        identifier = selection.substr( 5 );
+    else if( selection.rfind("pack:", 0) == 0 ) {
+        identifier = selection.substr(5);
     }
     if( identifier.empty() )
         return;
 
     std::size_t count = 0;
     if( built_in ) {
-        g_overlay = BuildOverlayFromBuiltInLanguage( identifier, count );
+        g_overlay = BuildOverlayFromBuiltInLanguage(identifier, count);
         g_active_entries = count;
         g_active_translated = std::numeric_limits<std::size_t>::max();
         g_active_language = identifier;
-        g_active_display_name = LanguageNameForCode( [NSString stringWithUTF8String:identifier.c_str()] );
+        g_active_display_name = LanguageNameForCode([NSString stringWithUTF8String:identifier.c_str()]);
         return;
     }
 
-    NSData *const data = [NSData dataWithContentsOfFile:FromPath( PackFileFor( identifier ) )];
+    NSData *const data = [NSData dataWithContentsOfFile:FromPath(PackFileFor(identifier))];
     if( data.length == 0 )
         return;
     NSDictionary *const pack = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
@@ -434,34 +458,35 @@ void LoadActiveOverlay()
         if( ![entry isKindOfClass:NSDictionary.class] )
             continue;
         NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
-        NSString *const translation = [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
+        NSString *const translation =
+            [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
         if( key.length == 0 || translation.length == 0 )
             continue;
-        AddOverlayEntry( overlay,
-                         [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"",
-                         [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable,
-                         key,
-                         translation );
+        AddOverlayEntry(overlay,
+                        [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"",
+                        [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable,
+                        key,
+                        translation);
         ++count;
     }
     g_overlay = [overlay copy];
     g_active_entries = count;
     g_active_translated = [pack[@"translatedEntries"] isKindOfClass:NSNumber.class]
-                              ? static_cast<std::size_t>( [pack[@"translatedEntries"] unsignedLongLongValue] )
+                              ? static_cast<std::size_t>([pack[@"translatedEntries"] unsignedLongLongValue])
                               : std::numeric_limits<std::size_t>::max();
     NSString *const language = [pack[@"language"] isKindOfClass:NSString.class] ? pack[@"language"] : @"";
     NSString *const language_name = [pack[@"languageName"] isKindOfClass:NSString.class] ? pack[@"languageName"] : @"";
     g_active_language = language.UTF8String ?: "";
     g_active_display_name = language_name.UTF8String ?: "";
     if( g_active_display_name.empty() )
-        g_active_display_name = LanguageNameForCode( [NSString stringWithUTF8String:g_active_language.c_str()] );
+        g_active_display_name = LanguageNameForCode([NSString stringWithUTF8String:g_active_language.c_str()]);
 }
 
 std::size_t CountCurrentLanguageEntries()
 {
     std::size_t result = 0;
     for( NSBundle *bundle in RelevantBundles() ) {
-        NSString *const lproj = CurrentLprojPath( bundle );
+        NSString *const lproj = CurrentLprojPath(bundle);
         if( lproj == nil )
             continue;
         NSArray<NSString *> *const files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
@@ -470,8 +495,8 @@ std::size_t CountCurrentLanguageEntries()
                 continue;
             if( [[file stringByDeletingPathExtension] isEqualToString:kInfoPlistTable] )
                 continue;
-            NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
-                                              [lproj stringByAppendingPathComponent:file]];
+            NSDictionary *const strings =
+                [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
             if( [strings isKindOfClass:NSDictionary.class] )
                 result += strings.count;
         }
@@ -486,25 +511,25 @@ NSDictionary<NSString *, NSString *> *NativeStringsIndex()
     static NSDictionary<NSString *, NSString *> *const index = [] {
         NSMutableDictionary *result = [NSMutableDictionary dictionary];
         for( NSBundle *bundle in RelevantBundles() ) {
-            NSString *const lproj = CurrentLprojPath( bundle );
+            NSString *const lproj = CurrentLprojPath(bundle);
             if( lproj == nil )
                 continue;
-            NSString *const bundle_key = BundleKeyForBundle( bundle );
-            NSArray<NSString *> *const files =
-                [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil];
+            NSString *const bundle_key = BundleKeyForBundle(bundle);
+            NSArray<NSString *> *const files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj
+                                                                                                   error:nil];
             for( NSString *file in files ) {
                 if( ![file.pathExtension isEqualToString:@"strings"] )
                     continue;
                 NSString *const table = file.stringByDeletingPathExtension;
                 if( [table isEqualToString:kInfoPlistTable] )
                     continue;
-                NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
-                                                  [lproj stringByAppendingPathComponent:file]];
+                NSDictionary *const strings =
+                    [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
                 if( ![strings isKindOfClass:NSDictionary.class] )
                     continue;
                 for( NSString *key in strings )
                     if( [strings[key] isKindOfClass:NSString.class] )
-                        result[EntryKey( bundle_key, table, key )] = strings[key];
+                        result[EntryKey(bundle_key, table, key)] = strings[key];
             }
         }
         return [result copy];
@@ -520,17 +545,17 @@ const std::filesystem::path &PacksDirectory()
 {
     [[clang::no_destroy]] static const std::filesystem::path directory = [] {
         std::filesystem::path path;
-        NSArray *const paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, true );
+        NSArray *const paths =
+            NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, true);
         if( paths.count )
-            path = std::filesystem::path( static_cast<NSString *>(paths[0]).fileSystemRepresentation );
+            path = std::filesystem::path(static_cast<NSString *>(paths[0]).fileSystemRepresentation);
         else
             path = std::filesystem::temp_directory_path();
-        if( NSString *const executable = NSBundle.mainBundle.infoDictionary[@"CFBundleExecutable"];
-            executable.length )
+        if( NSString *const executable = NSBundle.mainBundle.infoDictionary[@"CFBundleExecutable"]; executable.length )
             path /= executable.fileSystemRepresentation;
         path /= "LanguagePacks";
         std::error_code ec;
-        std::filesystem::create_directories( path, ec );
+        std::filesystem::create_directories(path, ec);
         return path;
     }();
     return directory;
@@ -540,48 +565,48 @@ std::vector<std::string> BuiltInLanguages()
 {
     @autoreleasepool {
         std::vector<std::string> result;
-        for( NSString *language in (g_main_bundle ?: NSBundle.mainBundle).localizations )
+        for( NSString *language in(g_main_bundle ?: NSBundle.mainBundle).localizations )
             if( [language isKindOfClass:NSString.class] && ![language isEqualToString:@"Base"] )
-                result.emplace_back( language.UTF8String );
-        std::sort( result.begin(), result.end() );
-        result.erase( std::unique( result.begin(), result.end() ), result.end() );
+                result.emplace_back(language.UTF8String);
+        std::sort(result.begin(), result.end());
+        result.erase(std::unique(result.begin(), result.end()), result.end());
         return result;
     }
 }
 
 std::string ActiveLanguageSelection()
 {
-    std::ifstream in( PacksDirectory() / kActiveFileName.UTF8String );
+    std::ifstream in(PacksDirectory() / kActiveFileName.UTF8String);
     std::string selection;
-    std::getline( in, selection );
-    return Trim( selection );
+    std::getline(in, selection);
+    return Trim(selection);
 }
 
-void SetActiveLanguageSelection( const std::string &_selection )
+void SetActiveLanguageSelection(const std::string &_selection)
 {
     const std::filesystem::path file = PacksDirectory() / kActiveFileName.UTF8String;
     std::error_code ec;
     if( _selection.empty() ) {
-        std::filesystem::remove( file, ec );
+        std::filesystem::remove(file, ec);
         return;
     }
-    std::ofstream out( file, std::ios::trunc );
+    std::ofstream out(file, std::ios::trunc);
     out << _selection << "\n";
 }
 
 std::string ActivePackIdentifier()
 {
     const std::string selection = ActiveLanguageSelection();
-    if( selection.rfind( "builtin:", 0 ) == 0 )
+    if( selection.rfind("builtin:", 0) == 0 )
         return {};
-    if( selection.rfind( "pack:", 0 ) == 0 )
-        return selection.substr( 5 );
+    if( selection.rfind("pack:", 0) == 0 )
+        return selection.substr(5);
     return selection; // packs imported before the popup existed
 }
 
-void SetActivePackIdentifier( const std::string &_identifier )
+void SetActivePackIdentifier(const std::string &_identifier)
 {
-    SetActiveLanguageSelection( _identifier.empty() ? std::string{} : "pack:" + _identifier );
+    SetActiveLanguageSelection(_identifier.empty() ? std::string{} : "pack:" + _identifier);
 }
 
 std::size_t ActivePackEntryCount()
@@ -612,9 +637,9 @@ std::string CurrentLanguage()
     return language.length ? language.UTF8String : "en";
 }
 
-std::string DisplayNameForLanguage( const std::string &_language_code )
+std::string DisplayNameForLanguage(const std::string &_language_code)
 {
-    return LanguageNameForCode( [NSString stringWithUTF8String:_language_code.c_str()] );
+    return LanguageNameForCode([NSString stringWithUTF8String:_language_code.c_str()]);
 }
 
 std::size_t CurrentLanguageEntryCount()
@@ -629,52 +654,53 @@ std::vector<PackInfo> ListPacks()
     @autoreleasepool {
         std::vector<PackInfo> result;
         NSArray<NSString *> *const files =
-            [[NSFileManager defaultManager] contentsOfDirectoryAtPath:FromPath( PacksDirectory() ) error:nil];
+            [[NSFileManager defaultManager] contentsOfDirectoryAtPath:FromPath(PacksDirectory()) error:nil];
         for( NSString *file in [files sortedArrayUsingSelector:@selector(localizedStandardCompare:)] ) {
             if( ![file.pathExtension isEqualToString:@"json"] )
                 continue;
-            NSData *const data = [NSData dataWithContentsOfFile:
-                                     [FromPath( PacksDirectory() ) stringByAppendingPathComponent:file]];
-            NSDictionary *const pack = data.length ?
-                [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            NSData *const data =
+                [NSData dataWithContentsOfFile:[FromPath(PacksDirectory()) stringByAppendingPathComponent:file]];
+            NSDictionary *const pack =
+                data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
             if( ![pack isKindOfClass:NSDictionary.class] )
                 continue;
             PackInfo info;
             info.identifier = file.stringByDeletingPathExtension.UTF8String;
             info.path = PacksDirectory() / file.UTF8String;
-            info.language = [pack[@"language"] isKindOfClass:NSString.class] ? static_cast<NSString *>(pack[@"language"]).UTF8String
-                                                                             : info.identifier;
+            info.language = [pack[@"language"] isKindOfClass:NSString.class]
+                                ? static_cast<NSString *>(pack[@"language"]).UTF8String
+                                : info.identifier;
             info.display_name = [pack[@"languageName"] isKindOfClass:NSString.class]
                                     ? static_cast<NSString *>(pack[@"languageName"]).UTF8String
-                                    : DisplayNameForLanguage( info.language );
+                                    : DisplayNameForLanguage(info.language);
             NSArray *const entries = pack[@"entries"];
             info.entries = [entries isKindOfClass:NSArray.class] ? entries.count : 0;
             if( [pack[@"translatedEntries"] isKindOfClass:NSNumber.class] )
-                info.translated = static_cast<std::size_t>( [pack[@"translatedEntries"] unsignedLongLongValue] );
-            result.push_back( std::move( info ) );
+                info.translated = static_cast<std::size_t>([pack[@"translatedEntries"] unsignedLongLongValue]);
+            result.push_back(std::move(info));
         }
         return result;
     }
 }
 
-bool RemovePack( const std::string &_identifier, std::string &_error )
+bool RemovePack(const std::string &_identifier, std::string &_error)
 {
-    if( !IsValidPackIdentifier( _identifier ) ) {
+    if( !IsValidPackIdentifier(_identifier) ) {
         _error = "invalid identifier";
         return false;
     }
     std::error_code ec;
-    const bool removed = std::filesystem::remove( PackFileFor( _identifier ), ec );
+    const bool removed = std::filesystem::remove(PackFileFor(_identifier), ec);
     if( !removed && ec ) {
         _error = ec.message();
         return false;
     }
     if( ActivePackIdentifier() == _identifier )
-        SetActivePackIdentifier( {} );
+        SetActivePackIdentifier({});
     return true;
 }
 
-bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::string &_error )
+bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error)
 {
     @autoreleasepool {
         NSDictionary<NSString *, NSDictionary *> *const manifest = ManifestIndex();
@@ -682,29 +708,31 @@ bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::stri
         NSMutableSet<NSString *> *const seen = [NSMutableSet set];
 
         for( NSBundle *bundle in RelevantBundles() ) {
-            NSString *const bundle_key = BundleKeyForBundle( bundle );
-            NSString *const lproj = CurrentLprojPath( bundle );
+            NSString *const bundle_key = BundleKeyForBundle(bundle);
+            NSString *const lproj = CurrentLprojPath(bundle);
             if( lproj == nil )
                 continue;
-            NSArray<NSString *> *const files =
-                [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj error:nil]
-                    sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
+            NSArray<NSString *> *const files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj
+                                                                                                    error:nil]
+                sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
             for( NSString *file in files ) {
                 if( ![file.pathExtension isEqualToString:@"strings"] )
                     continue;
                 NSString *const table = file.stringByDeletingPathExtension;
                 if( [table isEqualToString:kInfoPlistTable] )
                     continue; // the OS reads these on its own, we can't override them anyway
-                NSDictionary *const strings = [NSDictionary dictionaryWithContentsOfFile:
-                                                  [lproj stringByAppendingPathComponent:file]];
+                NSDictionary *const strings =
+                    [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
                 if( ![strings isKindOfClass:NSDictionary.class] )
                     continue;
-                for( NSString *key in [strings.allKeys sortedArrayUsingSelector:@selector(localizedStandardCompare:)] ) {
+                for( NSString *key in
+                     [strings.allKeys sortedArrayUsingSelector:@selector(localizedStandardCompare:)] ) {
                     NSString *const value = strings[key];
                     if( ![value isKindOfClass:NSString.class] )
                         continue;
-                    [entries addObject:MakeEntry( bundle_key, table, key, value, manifest[EntryKey( bundle_key, table, key )] )];
-                    [seen addObject:EntryKey( bundle_key, table, key )];
+                    [entries
+                        addObject:MakeEntry(bundle_key, table, key, value, manifest[EntryKey(bundle_key, table, key)])];
+                    [seen addObject:EntryKey(bundle_key, table, key)];
                 }
             }
         }
@@ -715,15 +743,16 @@ bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::stri
                 if( ![entry isKindOfClass:NSDictionary.class] )
                     continue;
                 NSString *const bundle_key = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
-                NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
+                NSString *const table =
+                    [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
                 NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
                 if( key.length == 0 || [table isEqualToString:kInfoPlistTable] )
                     continue;
-                NSString *const combined = EntryKey( bundle_key, table, key );
+                NSString *const combined = EntryKey(bundle_key, table, key);
                 if( [seen containsObject:combined] )
                     continue;
                 [seen addObject:combined];
-                [entries addObject:MakeEntry( bundle_key, table, key, @"", entry )];
+                [entries addObject:MakeEntry(bundle_key, table, key, @"", entry)];
             }
 
         const std::string current_language = CurrentLanguage();
@@ -731,11 +760,12 @@ bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::stri
         NSMutableDictionary *const root = [NSMutableDictionary dictionary];
         root[@"format"] = kPackFormat;
         root[@"formatVersion"] = @(kPackFormatVersion);
-        root[@"application"] = (g_main_bundle ?: NSBundle.mainBundle).infoDictionary[@"CFBundleShortVersionString"] ?: @"";
+        root[@"application"] =
+            (g_main_bundle ?: NSBundle.mainBundle).infoDictionary[@"CFBundleShortVersionString"] ?: @"";
         root[@"exportedAt"] = ISODateString();
         root[@"baseLanguage"] = language;
         root[@"language"] = language;
-        root[@"languageName"] = [NSString stringWithUTF8String:DisplayNameForLanguage( current_language ).c_str()];
+        root[@"languageName"] = [NSString stringWithUTF8String:DisplayNameForLanguage(current_language).c_str()];
         root[@"entryCount"] = @(entries.count);
         root[@"notes"] = @"Translate the 'translation' fields (or leave them empty to fall back to the "
                           "original string), set 'language' to your language code, then import this file "
@@ -743,32 +773,34 @@ bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::stri
         root[@"entries"] = entries;
 
         NSError *json_error = nil;
-        NSData *const data = [NSJSONSerialization dataWithJSONObject:root
-        options:static_cast<NSJSONWritingOptions>( NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys )
-                                                               error:&json_error];
+        NSData *const data = [NSJSONSerialization
+            dataWithJSONObject:root
+                       options:static_cast<NSJSONWritingOptions>(NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys)
+                         error:&json_error];
         if( data == nil ) {
-            _error = ErrorText( json_error, "unable to serialize the pack" );
+            _error = ErrorText(json_error, "unable to serialize the pack");
             return false;
         }
         NSError *write_error = nil;
-        if( ![data writeToURL:[NSURL fileURLWithPath:FromPath( _destination )] options:NSDataWritingAtomic
+        if( ![data writeToURL:[NSURL fileURLWithPath:FromPath(_destination)]
+                      options:NSDataWritingAtomic
                         error:&write_error] ) {
-            _error = ErrorText( write_error, "unable to write the file" );
+            _error = ErrorText(write_error, "unable to write the file");
             return false;
         }
         return true;
     }
 }
 
-bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std::string &_error )
+bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::string &_error)
 {
     @autoreleasepool {
-        NSData *const data = [NSData dataWithContentsOfFile:FromPath( _source )];
+        NSData *const data = [NSData dataWithContentsOfFile:FromPath(_source)];
         if( data.length == 0 ) {
             _error = "unable to read the file";
             return false;
         }
-        id const root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        const id root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
         if( ![root isKindOfClass:NSDictionary.class] ) {
             _error = "the file doesn't contain a JSON object";
             return false;
@@ -780,18 +812,21 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
             return false;
         }
 
-        std::string language = [pack[@"language"] isKindOfClass:NSString.class] ? static_cast<NSString *>(pack[@"language"]).UTF8String
-                                                                                : std::string{};
+        std::string language = [pack[@"language"] isKindOfClass:NSString.class]
+                                   ? static_cast<NSString *>(pack[@"language"]).UTF8String
+                                   : std::string{};
         if( language.empty() )
             language = _source.stem().string();
-        const std::string identifier = SanitizePackIdentifier( language );
-        NSString *const language_name = [pack[@"languageName"] isKindOfClass:NSString.class] ? pack[@"languageName"] : nil;
+        const std::string identifier = SanitizePackIdentifier(language);
+        NSString *const language_name =
+            [pack[@"languageName"] isKindOfClass:NSString.class] ? pack[@"languageName"] : nil;
 
         // A pack that was exported from the built-in language keeps that language's text for the
         // entries the author hasn't translated yet - point that out instead of silently mixing.
         NSString *const built_in_language = (g_main_bundle ?: NSBundle.mainBundle).preferredLocalizations.firstObject;
         const bool measure_untranslated =
-            built_in_language.length && ![built_in_language isEqualToString:[NSString stringWithUTF8String:identifier.c_str()]];
+            built_in_language.length &&
+            ![built_in_language isEqualToString:[NSString stringWithUTF8String:identifier.c_str()]];
         NSDictionary<NSString *, NSString *> *const native = measure_untranslated ? NativeStringsIndex() : nil;
         _stats.measured_untranslated = measure_untranslated;
 
@@ -805,7 +840,8 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
             NSDictionary *const entry = item;
             NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
             NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
-            NSString *const translation = [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
+            NSString *const translation =
+                [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
             if( key.length == 0 || table.length == 0 ) {
                 ++_stats.skipped_malformed;
                 continue;
@@ -815,21 +851,20 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
                 continue;
             }
             NSString *reference = [entry[@"source"] isKindOfClass:NSString.class] ? entry[@"source"] : nil;
-            if( reference.length == 0 && !LooksLikeObjectIdentifier( key ) )
+            if( reference.length == 0 && !LooksLikeObjectIdentifier(key) )
                 reference = key;
-            if( reference.length && !PlaceholdersCompatible( reference, key, translation ) ) {
+            if( reference.length && !PlaceholdersCompatible(reference, key, translation) ) {
                 // a missing or duplicated %@ would make the app crash or print garbage - refuse it
                 ++_stats.skipped_placeholders;
                 continue;
             }
-            NSString *const bundle_key =
-                [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+            NSString *const bundle_key = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
             if( native ) {
-                NSString *const built_in = native[EntryKey( bundle_key, table, key )];
+                NSString *const built_in = native[EntryKey(bundle_key, table, key)];
                 if( built_in && [built_in isEqualToString:translation] )
                     ++_stats.identical_to_current;
             }
-            [normalized addObject:MakeEntry( bundle_key, table, key, translation, entry )];
+            [normalized addObject:MakeEntry(bundle_key, table, key, translation, entry)];
             ++_stats.imported;
         }
 
@@ -840,30 +875,33 @@ bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std:
         out[@"language"] = [NSString stringWithUTF8String:identifier.c_str()];
         out[@"languageName"] = language_name.length
                                    ? language_name
-                                   : [NSString stringWithUTF8String:DisplayNameForLanguage( identifier ).c_str()];
+                                   : [NSString stringWithUTF8String:DisplayNameForLanguage(identifier).c_str()];
         out[@"entryCount"] = @(normalized.count);
         if( _stats.measured_untranslated )
             out[@"translatedEntries"] = @(_stats.imported - _stats.identical_to_current);
         out[@"entries"] = normalized;
 
         NSError *json_error = nil;
-        NSData *const normalized_data = [NSJSONSerialization dataWithJSONObject:out
-        options:static_cast<NSJSONWritingOptions>( NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys )
-                                                                          error:&json_error];
+        NSData *const normalized_data = [NSJSONSerialization
+            dataWithJSONObject:out
+                       options:static_cast<NSJSONWritingOptions>(NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys)
+                         error:&json_error];
         if( normalized_data == nil ) {
-            _error = ErrorText( json_error, "unable to serialize the pack" );
+            _error = ErrorText(json_error, "unable to serialize the pack");
             return false;
         }
         NSError *write_error = nil;
-        if( ![normalized_data writeToFile:FromPath( PackFileFor( identifier ) ) options:NSDataWritingAtomic
+        if( ![normalized_data writeToFile:FromPath(PackFileFor(identifier))
+                                  options:NSDataWritingAtomic
                                     error:&write_error] ) {
-            _error = ErrorText( write_error, "unable to write the pack" );
+            _error = ErrorText(write_error, "unable to write the pack");
             return false;
         }
 
-        SetActivePackIdentifier( identifier );
+        SetActivePackIdentifier(identifier);
         _stats.language = identifier;
-        _stats.display_name = out[@"languageName"] ? static_cast<NSString *>(out[@"languageName"]).UTF8String : identifier;
+        _stats.display_name =
+            out[@"languageName"] ? static_cast<NSString *>(out[@"languageName"]).UTF8String : identifier;
         return true;
     }
 }
@@ -882,14 +920,14 @@ void RelaunchApplication()
         //
         // Wait for this very process to disappear before starting the new copy: launching it
         // while we are still alive makes the preferences written a moment ago get lost.
-        NSString *const script = [NSString
-            stringWithFormat:@"while /bin/kill -0 %d 2>/dev/null; do sleep 0.2; done; sleep 0.5; "
-                             @"/usr/bin/open -n \"%@\"",
-                             static_cast<int>( getpid() ),
-                             bundle_path];
+        NSString *const script =
+            [NSString stringWithFormat:@"while /bin/kill -0 %d 2>/dev/null; do sleep 0.2; done; sleep 0.5; "
+                                       @"/usr/bin/open -n \"%@\"",
+                                       static_cast<int>(getpid()),
+                                       bundle_path];
         NSTask *const task = [[NSTask alloc] init];
         task.launchPath = @"/bin/sh";
-        task.arguments = @[ @"-c", script ];
+        task.arguments = @[@"-c", script];
         [task launchAndReturnError:nil];
         [NSApp terminate:nil];
     }
@@ -900,11 +938,11 @@ void InstallLocalizationOverride()
     g_main_bundle = NSBundle.mainBundle;
     LoadActiveOverlay();
 
-    Method const original = class_getInstanceMethod( NSBundle.class, @selector(localizedStringForKey:value:table:) );
-    Method const replacement = class_getInstanceMethod( NSBundle.class,
-                                                        @selector(nc_langpack_localizedStringForKey:value:table:) );
+    const Method original = class_getInstanceMethod(NSBundle.class, @selector(localizedStringForKey:value:table:));
+    const Method replacement =
+        class_getInstanceMethod(NSBundle.class, @selector(nc_langpack_localizedStringForKey:value:table:));
     if( original && replacement && original != replacement )
-        method_exchangeImplementations( original, replacement );
+        method_exchangeImplementations(original, replacement);
 }
 
 } // namespace nc::lang
@@ -920,7 +958,7 @@ void InstallLocalizationOverride()
 {
     NSString *const original = [self nc_langpack_localizedStringForKey:_key value:_value table:_table];
     if( g_overlay && _key.length ) {
-        NSDictionary *const by_table = g_overlay[BundleKeyForBundle( self )];
+        NSDictionary *const by_table = g_overlay[BundleKeyForBundle(self)];
         if( by_table ) {
             NSDictionary *const by_key = by_table[_table.length ? _table : kDefaultTable];
             if( by_key ) {
