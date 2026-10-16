@@ -40,14 +40,14 @@ const std::filesystem::path &PacksDirectory();
 
 /** Identifier of the pack applied on the next launch. Empty means "none". */
 std::string ActivePackIdentifier();
-void SetActivePackIdentifier( const std::string &_identifier );
+void SetActivePackIdentifier(const std::string &_identifier);
 
 /** What the user picked in the language popup:
  *  ""               - follow the system language
  *  "builtin:<code>" - one of the languages the app ships
  *  "pack:<id>"      - an imported language pack                                          */
 std::string ActiveLanguageSelection();
-void SetActiveLanguageSelection( const std::string &_selection );
+void SetActiveLanguageSelection(const std::string &_selection);
 
 /** Number of entries the currently applied pack provides (0 when there's none). */
 std::size_t ActivePackEntryCount();
@@ -59,23 +59,23 @@ std::string ActivePackLanguage();
 std::string ActivePackDisplayName();
 
 std::vector<PackInfo> ListPacks();
-bool RemovePack( const std::string &_identifier, std::string &_error );
+bool RemovePack(const std::string &_identifier, std::string &_error);
 
 /** Number of entries the built-in UI language provides. */
 std::size_t CurrentLanguageEntryCount();
 /** Language code the app currently renders in. */
 std::string CurrentLanguage();
-std::string DisplayNameForLanguage( const std::string &_language_code );
+std::string DisplayNameForLanguage(const std::string &_language_code);
 
 /** Languages the app itself ships, e.g. {\"en\", \"ru\", \"zh-Hans\"}. */
 std::vector<std::string> BuiltInLanguages();
 
 /** Writes every localizable string of the current UI language into a JSON pack, ready to
  *  be translated. */
-bool ExportCurrentLanguage( const std::filesystem::path &_destination, std::string &_error );
+bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error);
 
 /** Validates and installs a JSON pack, and makes it the active one. */
-bool ImportPack( const std::filesystem::path &_source, ImportStats &_stats, std::string &_error );
+bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::string &_error);
 
 /** Quits the app and launches a fresh copy of it. */
 void RelaunchApplication();
