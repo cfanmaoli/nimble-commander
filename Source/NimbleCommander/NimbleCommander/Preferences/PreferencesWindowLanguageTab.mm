@@ -30,81 +30,90 @@ struct Entry {
 
 @implementation PreferencesWindowLanguageTab {
     NSPopUpButton *m_LanguagePopup;
+    NSPopUpButton *m_PackPopup;
     NSTextField *m_PackValue;
     NSTextField *m_Status;
     NSButton *m_RemoveButton;
     std::vector<Entry> m_Entries;
+    std::vector<nc::lang::PackInfo> m_Packs;
 }
 
 - (void)loadView
 {
-    NSView *const root = [[NSView alloc] initWithFrame:NSMakeRect( 0, 0, 580, 330 )];
+    NSView *const root = [[NSView alloc] initWithFrame:NSMakeRect( 0, 0, 580, 350 )];
 
     NSTextField *const title = [NSTextField labelWithString:NSLocalizedStringFromTable(@"Language Packs", @"Preferences", "Language preferences tab title")];
     title.font = [NSFont boldSystemFontOfSize:13];
-    title.frame = NSMakeRect( 20, 294, 540, 18 );
+    title.frame = NSMakeRect( 20, 314, 540, 18 );
     title.autoresizingMask = NSViewMaxYMargin;
     [root addSubview:title];
 
     NSTextField *const description = [NSTextField wrappingLabelWithString:NSLocalizedStringFromTable(@"You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app.", @"Preferences", "Language preferences tab description")];
     description.font = [NSFont systemFontOfSize:11];
     description.textColor = NSColor.secondaryLabelColor;
-    description.frame = NSMakeRect( 20, 214, 540, 72 );
+    description.frame = NSMakeRect( 20, 234, 540, 72 );
     description.autoresizingMask = NSViewMaxYMargin;
     [root addSubview:description];
 
-    NSBox *const separator = [[NSBox alloc] initWithFrame:NSMakeRect( 20, 200, 540, 1 )];
+    NSBox *const separator = [[NSBox alloc] initWithFrame:NSMakeRect( 20, 220, 540, 1 )];
     separator.boxType = NSBoxSeparator;
     separator.autoresizingMask = NSViewMaxYMargin;
     [root addSubview:separator];
 
     NSTextField *const language_label = [NSTextField labelWithString:NSLocalizedStringFromTable(@"Interface language:", @"Preferences", "Language preferences tab label")];
-    language_label.frame = NSMakeRect( 20, 166, 110, 17 );
+    language_label.frame = NSMakeRect( 20, 186, 110, 17 );
     [root addSubview:language_label];
 
-    m_LanguagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect( 132, 160, 320, 26 )];
+    m_LanguagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect( 132, 180, 320, 26 )];
     m_LanguagePopup.target = self;
     m_LanguagePopup.action = @selector( onLanguageChanged: );
     [root addSubview:m_LanguagePopup];
 
     NSTextField *const pack_label = [NSTextField labelWithString:NSLocalizedStringFromTable(@"Language pack:", @"Preferences", "Language preferences tab label")];
-    pack_label.frame = NSMakeRect( 20, 124, 110, 17 );
+    pack_label.frame = NSMakeRect( 20, 148, 110, 17 );
     [root addSubview:pack_label];
 
+    m_PackPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect( 132, 142, 320, 26 )];
+    m_PackPopup.target = self;
+    m_PackPopup.action = @selector( onPackSelectionChanged: );
+    [root addSubview:m_PackPopup];
+
     m_PackValue = [NSTextField labelWithString:@""];
-    m_PackValue.frame = NSMakeRect( 132, 124, 340, 17 );
+    m_PackValue.font = [NSFont systemFontOfSize:11];
+    m_PackValue.textColor = NSColor.secondaryLabelColor;
+    m_PackValue.frame = NSMakeRect( 134, 120, 420, 16 );
     m_PackValue.lineBreakMode = NSLineBreakByTruncatingMiddle;
     [root addSubview:m_PackValue];
 
     m_RemoveButton = [NSButton buttonWithTitle:NSLocalizedStringFromTable(@"Remove", @"Preferences", "Language preferences tab button")
                                         target:self
                                         action:@selector( onRemove: )];
-    m_RemoveButton.frame = NSMakeRect( 480, 118, 80, 30 );
+    m_RemoveButton.frame = NSMakeRect( 480, 138, 80, 30 );
     m_RemoveButton.autoresizingMask = NSViewMinXMargin;
     [root addSubview:m_RemoveButton];
 
     NSButton *const export_button = [NSButton buttonWithTitle:NSLocalizedStringFromTable(@"Export Current Language…", @"Preferences", "Language preferences tab button")
                                                        target:self
                                                        action:@selector( onExport: )];
-    export_button.frame = NSMakeRect( 18, 74, 190, 32 );
+    export_button.frame = NSMakeRect( 18, 78, 190, 32 );
     [root addSubview:export_button];
 
     NSButton *const import_button = [NSButton buttonWithTitle:NSLocalizedStringFromTable(@"Import Language File…", @"Preferences", "Language preferences tab button")
                                                        target:self
                                                        action:@selector( onImport: )];
-    import_button.frame = NSMakeRect( 216, 74, 190, 32 );
+    import_button.frame = NSMakeRect( 216, 78, 190, 32 );
     [root addSubview:import_button];
 
     NSTextField *const hint = [NSTextField wrappingLabelWithString:NSLocalizedStringFromTable(@"A restart is required for a language change to take effect.", @"Preferences", "Language preferences tab hint")];
     hint.font = [NSFont systemFontOfSize:11];
     hint.textColor = NSColor.secondaryLabelColor;
-    hint.frame = NSMakeRect( 20, 46, 540, 17 );
+    hint.frame = NSMakeRect( 20, 50, 540, 17 );
     [root addSubview:hint];
 
     m_Status = [NSTextField wrappingLabelWithString:@""];
     m_Status.font = [NSFont systemFontOfSize:11];
     m_Status.textColor = NSColor.secondaryLabelColor;
-    m_Status.frame = NSMakeRect( 20, 6, 540, 36 );
+    m_Status.frame = NSMakeRect( 20, 8, 540, 38 );
     [root addSubview:m_Status];
 
     self.view = root;
@@ -162,25 +171,57 @@ struct Entry {
     }
     [m_LanguagePopup selectItemAtIndex:selected_index < 0 ? 0 : selected_index];
 
-    if( active_pack.empty() ) {
-        m_PackValue.stringValue = NSLocalizedStringFromTable(@"None", @"Preferences", "Language preferences tab status");
-        m_RemoveButton.enabled = NO;
+    // The second popup picks *which* installed pack the Remove button applies to, so that a
+    // pack can be deleted without activating it first.
+    m_Packs = nc::lang::ListPacks();
+    [m_PackPopup removeAllItems];
+    NSInteger pack_selection = -1;
+    for( std::size_t i = 0; i != m_Packs.size(); ++i ) {
+        [m_PackPopup addItemWithTitle:[self titleForLanguage:m_Packs[i].identifier]];
+        if( m_Packs[i].identifier == active_pack )
+            pack_selection = static_cast<NSInteger>( i );
     }
-    else if( nc::lang::ActivePackTranslatedCount() == std::numeric_limits<std::size_t>::max() ) {
-        m_PackValue.stringValue = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries", @"Preferences", "Language preferences tab status"),
-                                                             FromStd( nc::lang::ActivePackDisplayName() ),
-                                                             FromStd( nc::lang::ActivePackLanguage() ),
-                                                             @(nc::lang::ActivePackEntryCount())];
-        m_RemoveButton.enabled = YES;
+    if( m_Packs.empty() ) {
+        [m_PackPopup addItemWithTitle:NSLocalizedStringFromTable(@"None", @"Preferences", "Language preferences tab status")];
+        [m_PackPopup selectItemAtIndex:0];
+        m_PackPopup.enabled = NO;
+        m_RemoveButton.enabled = NO;
+        m_PackValue.stringValue = @"";
     }
     else {
-        m_PackValue.stringValue = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries · %@ translated", @"Preferences", "Language preferences tab status"),
-                                                             FromStd( nc::lang::ActivePackDisplayName() ),
-                                                             FromStd( nc::lang::ActivePackLanguage() ),
-                                                             @(nc::lang::ActivePackEntryCount()),
-                                                             @(nc::lang::ActivePackTranslatedCount())];
+        m_PackPopup.enabled = YES;
         m_RemoveButton.enabled = YES;
+        [m_PackPopup selectItemAtIndex:pack_selection < 0 ? 0 : pack_selection];
+        [self updatePackInfo];
     }
+}
+
+- (void)updatePackInfo
+{
+    const NSInteger index = m_PackPopup.indexOfSelectedItem;
+    if( index < 0 || index >= static_cast<NSInteger>( m_Packs.size() ) ) {
+        m_PackValue.stringValue = @"";
+        return;
+    }
+    const nc::lang::PackInfo &pack = m_Packs[static_cast<std::size_t>( index )];
+    const bool active = pack.identifier == nc::lang::ActivePackIdentifier();
+    NSString *info = nil;
+    if( pack.translated == std::numeric_limits<std::size_t>::max() ) {
+        info = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries", @"Preferences", "Language preferences tab status"),
+                                          FromStd( pack.display_name ),
+                                          FromStd( pack.language ),
+                                          @(pack.entries)];
+    }
+    else {
+        info = [NSString stringWithFormat:NSLocalizedStringFromTable(@"%@ (%@) · language pack · %@ entries · %@ translated", @"Preferences", "Language preferences tab status"),
+                                          FromStd( pack.display_name ),
+                                          FromStd( pack.language ),
+                                          @(pack.entries),
+                                          @(pack.translated)];
+    }
+    if( active )
+        info = [info stringByAppendingFormat:@" · %@", NSLocalizedStringFromTable(@"in use", @"Preferences", "Language preferences tab status")];
+    m_PackValue.stringValue = info;
 }
 
 - (void)setStatus:(NSString *)_status
@@ -318,15 +359,25 @@ struct Entry {
         nc::lang::RelaunchApplication();
 }
 
+- (void)onPackSelectionChanged:(id) [[maybe_unused]] _sender
+{
+    [self updatePackInfo];
+}
+
 - (void)onRemove:(id) [[maybe_unused]] _sender
 {
-    const std::string identifier = nc::lang::ActivePackIdentifier();
+    const NSInteger index = m_PackPopup.indexOfSelectedItem;
+    if( index < 0 || index >= static_cast<NSInteger>( m_Packs.size() ) )
+        return;
+    const nc::lang::PackInfo pack = m_Packs[static_cast<std::size_t>( index )];
+    const std::string identifier = pack.identifier;
     if( identifier.empty() )
         return;
+    const bool was_active = identifier == nc::lang::ActivePackIdentifier();
 
     NSAlert *const alert = [[NSAlert alloc] init];
     alert.messageText = [NSString stringWithFormat:NSLocalizedStringFromTable(@"Are you sure you want to remove the language pack “%@”?", @"Preferences", "Language preferences tab confirmation"),
-                                                   FromStd( nc::lang::ActivePackDisplayName() )];
+                                                   FromStd( pack.display_name )];
     alert.informativeText = NSLocalizedStringFromTable(@"This can’t be undone.", @"Preferences", "Language preferences tab confirmation");
     [alert addButtonWithTitle:NSLocalizedStringFromTable(@"Remove", @"Preferences", "Language preferences tab button")];
     [alert addButtonWithTitle:NSLocalizedStringFromTable(@"Cancel", @"Preferences", "Language preferences tab button")];
@@ -339,7 +390,11 @@ struct Entry {
         return;
     }
     [self refresh];
-    [self setStatus:NSLocalizedStringFromTable(@"A restart is required for a language change to take effect.", @"Preferences", "Language preferences tab hint")];
+    // only the pack that was actually in use needs a restart to disappear from the UI
+    [self setStatus:was_active
+        ? NSLocalizedStringFromTable(@"A restart is required for a language change to take effect.", @"Preferences", "Language preferences tab hint")
+        : [NSString stringWithFormat:NSLocalizedStringFromTable(@"Removed the language pack “%@”.", @"Preferences", "Language preferences tab status"),
+                                      FromStd( pack.display_name )]];
 }
 
 - (void)reportError:(NSString *)_detail
