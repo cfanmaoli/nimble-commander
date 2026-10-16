@@ -649,6 +649,8 @@ std::vector<PackInfo> ListPacks()
                                     : DisplayNameForLanguage( info.language );
             NSArray *const entries = pack[@"entries"];
             info.entries = [entries isKindOfClass:NSArray.class] ? entries.count : 0;
+            if( [pack[@"translatedEntries"] isKindOfClass:NSNumber.class] )
+                info.translated = static_cast<std::size_t>( [pack[@"translatedEntries"] unsignedLongLongValue] );
             result.push_back( std::move( info ) );
         }
         return result;

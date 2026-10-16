@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,9 @@ struct PackInfo {
     std::string language;
     std::string display_name;
     std::size_t entries = 0;
+    /** entries that differed from the built-in text when the pack was imported, or
+     *  std::numeric_limits<std::size_t>::max() when that was never measured */
+    std::size_t translated = std::numeric_limits<std::size_t>::max();
     std::filesystem::path path;
 };
 

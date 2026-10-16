@@ -1062,6 +1062,23 @@
         }
       }
     },
+    "in use" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "in use"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用中"
+          }
+        }
+      }
+    },
     "Inactive background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -1382,6 +1399,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除"
+          }
+        }
+      }
+    },
+    "Removed the language pack “%@”." : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removed the language pack “%@”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包“%@”已删除。"
           }
         }
       }
