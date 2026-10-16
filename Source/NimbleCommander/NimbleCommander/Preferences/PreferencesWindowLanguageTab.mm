@@ -30,6 +30,7 @@ struct Entry {
 
 @implementation PreferencesWindowLanguageTab {
     NSPopUpButton *m_LanguagePopup;
+    NSButton *m_RestartButton;
     NSPopUpButton *m_PackPopup;
     NSTextField *m_PackValue;
     NSTextField *m_Status;
@@ -64,10 +65,18 @@ struct Entry {
     language_label.frame = NSMakeRect( 20, 186, 110, 17 );
     [root addSubview:language_label];
 
-    m_LanguagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect( 132, 180, 320, 26 )];
+    m_LanguagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect( 132, 180, 300, 26 )];
     m_LanguagePopup.target = self;
     m_LanguagePopup.action = @selector( onLanguageChanged: );
     [root addSubview:m_LanguagePopup];
+
+    // One click to apply a language change - no "are you sure?" in between.
+    m_RestartButton = [NSButton buttonWithTitle:NSLocalizedStringFromTable(@"Restart to Apply", @"Preferences", "Language preferences tab button")
+                                         target:self
+                                         action:@selector( onRestart: )];
+    m_RestartButton.frame = NSMakeRect( 440, 179, 120, 28 );
+    m_RestartButton.autoresizingMask = NSViewMinXMargin;
+    [root addSubview:m_RestartButton];
 
     NSTextField *const pack_label = [NSTextField labelWithString:NSLocalizedStringFromTable(@"Language pack:", @"Preferences", "Language preferences tab label")];
     pack_label.frame = NSMakeRect( 20, 148, 110, 17 );
@@ -274,12 +283,18 @@ struct Entry {
             nc::lang::SetActiveLanguageSelection( "pack:" + entry.value );
             break;
     }
-    // Rebuilding the popup and opening a modal while its own action is still being dispatched
-    // leaves AppKit looking at a menu that is being torn down - do it on the next runloop turn.
+    // Rebuilding the popup while its own action is still being dispatched leaves AppKit looking
+    // at a menu that is being torn down - do it on the next runloop turn. No modal here: the
+    // "Restart to Apply" button right next to the popup does the job with a single click.
     dispatch_async( dispatch_get_main_queue(), ^{
         [self refresh];
-        [self offerRestart];
+        [self setStatus:NSLocalizedStringFromTable(@"A restart is required for a language change to take effect.", @"Preferences", "Language preferences tab hint")];
     });
+}
+
+- (void)onRestart:(id) [[maybe_unused]] _sender
+{
+    nc::lang::RelaunchApplication();
 }
 
 - (void)onExport:(id) [[maybe_unused]] _sender
