@@ -2362,6 +2362,7 @@
 				CF6D997A196675290077B146 /* Frameworks */,
 				CF6D997B196675290077B146 /* Resources */,
 				CFEB6F7C19694639000FD09D /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2383,6 +2384,7 @@
 				CFA53A181D433E2A00C562A7 /* Frameworks */,
 				CFA53A331D433E2A00C562A7 /* Resources */,
 				CFA53A651D433E2A00C562A7 /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2408,6 +2410,7 @@
 				CFC5120F16C4BD3D00D247EE /* Resources */,
 				CF52C3CC22BE9DA90043E825 /* Run Script */,
 				CF9EEB3E17256372001443FA /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2931,6 +2934,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+	A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */ = {
+		isa = PBXShellScriptBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		inputPaths = (
+		);
+		name = "Generate LocalizationManifest.json";
+		outputPaths = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+		shellPath = /bin/sh;
+		shellScript = "# Collects the English strings of every String Catalog into a manifest the app ships,\n# so that exporting a language can show the original text next to each entry.\npython3 \"${SRCROOT}/../../Tools/nc_localization_manifest.py\" \\\n    \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/LocalizationManifest.json\" \\\n    \"${SRCROOT}/../..\"\n";
+		};
 		CF52C3CC22BE9DA90043E825 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
