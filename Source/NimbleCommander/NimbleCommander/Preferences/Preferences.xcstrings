@@ -1420,6 +1420,23 @@
         }
       }
     },
+    "Restart Nimble Commander to apply the new language?" : {
+      "comment" : "Language preferences tab restart confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Nimble Commander to apply the new language?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要重启 Nimble Commander 以应用新的语言吗？"
+          }
+        }
+      }
+    },
     "Restart Now" : {
       "comment" : "Language preferences tab button",
       "localizations" : {
