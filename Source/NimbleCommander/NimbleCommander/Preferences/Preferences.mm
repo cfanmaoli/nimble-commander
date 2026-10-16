@@ -8,6 +8,7 @@
 #include "PreferencesWindowHotkeysTab.h"
 #include "PreferencesWindowToolsTab.h"
 #include "PreferencesWindowThemesTab.h"
+#include "PreferencesWindowLanguageTab.h"
 #include "Preferences.h"
 
 static PreferencesWindowController *CreatePrefWindow()
@@ -23,7 +24,8 @@ static PreferencesWindowController *CreatePrefWindow()
         [PreferencesWindowTerminalTab new],
         [[PreferencesWindowHotkeysTab alloc] initWithToolsStorage:tools_storage
                                           actionsShortcutsManager:app_del.actionsShortcutsManager],
-        [[PreferencesWindowToolsTab alloc] initWithToolsStorage:tools_storage]
+        [[PreferencesWindowToolsTab alloc] initWithToolsStorage:tools_storage],
+        [PreferencesWindowLanguageTab new]
     ];
     return [[PreferencesWindowController alloc] initWithControllers:tabs title:@"Preferences"];
 }

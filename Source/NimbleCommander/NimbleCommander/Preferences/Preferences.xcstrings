@@ -1,6 +1,39 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%@) · built-in" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · built-in"
+          }
+        }
+      }
+    },
+    "%@ (%@) · language pack · %@ entries" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries"
+          }
+        }
+      }
+    },
+    "A restart is required for a language change to take effect." : {
+      "comment" : "Language preferences tab hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A restart is required for a language change to take effect."
+          }
+        }
+      }
+    },
     "Active background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -211,6 +244,17 @@
         }
       }
     },
+    "Are you sure you want to remove the language pack “%@”?" : {
+      "comment" : "Language preferences tab confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to remove the language pack “%@”?"
+          }
+        }
+      }
+    },
     "Are you sure you want to reset granted filesystem access?" : {
       "comment" : "Message text asking if user really wants to reset current file system access",
       "extractionState" : "manual",
@@ -264,6 +308,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Brief mode"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel"
           }
         }
       }
@@ -332,6 +387,50 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Even row background"
+          }
+        }
+      }
+    },
+    "Export Complete" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Complete"
+          }
+        }
+      }
+    },
+    "Export Current Language" : {
+      "comment" : "Language preferences tab save panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language"
+          }
+        }
+      }
+    },
+    "Export Current Language…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language…"
+          }
+        }
+      }
+    },
+    "Exported %@ entries to:\n%@" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exported %@ entries to:\n%@"
           }
         }
       }
@@ -514,6 +613,50 @@
         }
       }
     },
+    "Import Complete" : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Complete"
+          }
+        }
+      }
+    },
+    "Import Language File" : {
+      "comment" : "Language preferences tab open panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File"
+          }
+        }
+      }
+    },
+    "Import Language File…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File…"
+          }
+        }
+      }
+    },
+    "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language."
+          }
+        }
+      }
+    },
     "Inactive background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -521,6 +664,50 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Inactive background"
+          }
+        }
+      }
+    },
+    "Interface language:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Interface language:"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "comment" : "Language preferences tab toolbar label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language"
+          }
+        }
+      }
+    },
+    "Language Packs" : {
+      "comment" : "Language preferences tab title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language Packs"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Later"
           }
         }
       }
@@ -554,6 +741,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Odd row background"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "OK"
           }
         }
       }
@@ -632,6 +830,28 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Regular text color"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "Restart Now" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Now"
           }
         }
       }
@@ -731,6 +951,39 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Separator"
+          }
+        }
+      }
+    },
+    "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text."
+          }
+        }
+      }
+    },
+    "Skipped %@ entries without a translation." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries without a translation."
+          }
+        }
+      }
+    },
+    "Skipped %@ malformed entries." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ malformed entries."
           }
         }
       }
@@ -902,6 +1155,17 @@
         }
       }
     },
+    "This can’t be undone." : {
+      "comment" : "Language preferences tab confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This can’t be undone."
+          }
+        }
+      }
+    },
     "This will cause Nimble Commander to ask you for access when necessary." : {
       "comment" : "Informative text saying that Nimble Commander will ask for filesystem access when need it",
       "extractionState" : "manual",
@@ -972,6 +1236,17 @@
         }
       }
     },
+    "Unable to use this file" : {
+      "comment" : "Language preferences tab error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to use this file"
+          }
+        }
+      }
+    },
     "Viewer" : {
       "comment" : "General preferences tab title\nTheme settings group title",
       "extractionState" : "manual",
@@ -980,6 +1255,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Просмотрщик"
+          }
+        }
+      }
+    },
+    "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app." : {
+      "comment" : "Language preferences tab description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app."
           }
         }
       }

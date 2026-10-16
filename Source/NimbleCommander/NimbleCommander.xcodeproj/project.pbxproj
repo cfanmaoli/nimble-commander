@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D40000000000000005 /* LanguagePack.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* LanguagePack.mm */; };
+		A1B2C3D40000000000000006 /* PreferencesWindowLanguageTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */; };
 		CF0A46FA2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A46FB2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A46FC2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
@@ -852,6 +854,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1B2C3D40000000000000001 /* LanguagePack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LanguagePack.h; path = NimbleCommander/Core/LanguagePack.h; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000002 /* LanguagePack.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LanguagePack.mm; path = NimbleCommander/Core/LanguagePack.mm; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000003 /* PreferencesWindowLanguageTab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PreferencesWindowLanguageTab.h; path = NimbleCommander/Preferences/PreferencesWindowLanguageTab.h; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowLanguageTab.mm; path = NimbleCommander/Preferences/PreferencesWindowLanguageTab.mm; sourceTree = SOURCE_ROOT; };
 		CF0139AD1E99DAC100E44F2D /* ToggleSort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ToggleSort.h; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.h; sourceTree = SOURCE_ROOT; };
 		CF0139AE1E99DAC100E44F2D /* ToggleSort.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ToggleSort.mm; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.mm; sourceTree = SOURCE_ROOT; };
 		CF0139B01E99EC4A00E44F2D /* DefaultAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DefaultAction.h; path = NimbleCommander/States/FilePanels/Actions/DefaultAction.h; sourceTree = SOURCE_ROOT; };
@@ -1467,6 +1473,8 @@
 		B52EB78B172277C5004ABC2E /* Preferences */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D40000000000000003 /* PreferencesWindowLanguageTab.h */,
+				A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */,
 				CFCF43F22BA2418100B513C7 /* ConfigBinder.h */,
 				CFA3D7C519625F71006A30A1 /* GTMHotKeyTextField.h */,
 				CFA3D7C619625F71006A30A1 /* GTMHotKeyTextField.mm */,
@@ -1994,6 +2002,8 @@
 		CFAC50D5171557E100A3E5C5 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D40000000000000001 /* LanguagePack.h */,
+				A1B2C3D40000000000000002 /* LanguagePack.mm */,
 				CF46C23420317FD700A91E2F /* ServicesHandler.h */,
 				CF46C23520317FD700A91E2F /* ServicesHandler.mm */,
 				CFDAC23F1DFBE18C0039A104 /* ActionsShortcutsManager.h */,
@@ -2990,6 +3000,8 @@
 				CF0A47032BDD864D00833160 /* Dock.mm in Sources */,
 				CF0A487A2BDDA51600833160 /* GoToFolderSheetController.mm in Sources */,
 				CF0A480F2BDD9F9900833160 /* PreferencesWindowToolsTab.mm in Sources */,
+				A1B2C3D40000000000000005 /* LanguagePack.mm in Sources */,
+				A1B2C3D40000000000000006 /* PreferencesWindowLanguageTab.mm in Sources */,
 				CF0A48502BDDA2B100833160 /* SpotlightSearch.mm in Sources */,
 				CF0A480E2BDD9F9300833160 /* PreferencesWindowThemesTabModel.mm in Sources */,
 				CF0A48232BDDA04C00833160 /* PanelDataPersistency.cpp in Sources */,
