@@ -337,7 +337,13 @@ std::string LanguageNameForCode(NSString *_code)
 {
     if( _code.length == 0 )
         return {};
-    NSString *const name = [[NSLocale currentLocale] localizedStringForLanguageCode:_code];
+    // Say the name in the language the interface is running in, not in the one the system is
+    // set to - otherwise an English interface lists the languages as "英语" and "日本語".
+    NSString *const ui_language = g_active_language.empty()
+                                      ? (g_main_bundle ?: NSBundle.mainBundle).preferredLocalizations.firstObject
+                                      : @(g_active_language.c_str());
+    NSLocale *const locale = ui_language.length ? [NSLocale localeWithLocaleIdentifier:ui_language] : nil;
+    NSString *const name = [(locale ?: NSLocale.currentLocale) localizedStringForLanguageCode:_code];
     NSString *const result = name.length ? name : _code;
     return result.UTF8String;
 }
