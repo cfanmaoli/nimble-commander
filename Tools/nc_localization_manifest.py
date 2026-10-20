@@ -11,6 +11,7 @@ language" feature can produce a file a human can actually translate.
 import datetime
 import json
 import os
+import re
 import sys
 
 # which resource bundle a catalog ends up in, keyed by the sub-project folder
@@ -21,10 +22,51 @@ BUNDLE_BY_SUBPROJECT = {
     "Viewer": "ViewerResources.bundle",
     "CUI": "CUIResources.bundle",
     "RoutedIO": "RoutedIOResources.bundle",
+    "Utility": "UtilityResources.bundle",
 }
 
 # read by the system, not by the app - can't be overridden anyway
 SKIPPED_TABLES = {"InfoPlist"}
+
+
+# keys of interface-file strings look like "ftk-l8-B5i.title" - the object id plus the property
+XIB_KEY = re.compile(r"^(?P<object>[A-Za-z0-9]{3}-[A-Za-z0-9]{2}-[A-Za-z0-9]{3})\\.(?P<prop>[A-Za-z]+)$")
+
+
+def xib_literal(xib_path, object_id, prop):
+    """The English text of an interface element, read straight out of the .xib.
+
+    Xcode only writes an "en" entry into a catalog when the value differs from the key, and a
+    key such as "ftk-l8-B5i.title" says nothing about the text - without this, English mode has
+    no way to show the original for those entries and falls back to the system language.
+    """
+    try:
+        with open(xib_path, encoding="utf-8") as handle:
+            text = handle.read()
+    except OSError:
+        return None
+    element = re.search(r'<[^>]*\\bid="%s"[^>]*>' % re.escape(object_id), text)
+    if element is None:
+        return None
+    tag = element.group(0)
+    attribute = re.search(r'\\b%s="([^"]*)"' % re.escape(prop), tag)
+    if attribute is not None:
+        return attribute.group(1)
+    child = re.search(r'<string key="%s">(.*?)</string>' % re.escape(prop), text, re.S)
+    if child is not None:
+        return child.group(1)
+    return None
+
+
+def interface_file_for(catalog_path):
+    """mul.lproj/Name.xcstrings -> Base.lproj/Name.xib (and the other way round)."""
+    directory, name = os.path.split(catalog_path)
+    stem, _extension = os.path.splitext(name)
+    for lproj in ("Base.lproj", "Mul.lproj"):
+        candidate = os.path.join(os.path.dirname(directory), lproj, stem + ".xib")
+        if os.path.exists(candidate):
+            return candidate
+    return None
 
 
 def unit_value(localization):
@@ -87,6 +129,15 @@ def main():
         for key, entry in (catalog.get("strings") or {}).items():
             localization = (entry.get("localizations") or {}).get(catalog.get("sourceLanguage", "en"))
             value = unit_value(localization)
+            if value is None:
+                # no "en" entry: for a code string the key IS the English text, for an
+                # interface string the original has to come from the .xib
+                match = XIB_KEY.match(key)
+                if match is None:
+                    value = key
+                else:
+                    xib = interface_file_for(path)
+                    value = xib_literal(xib, match.group("object"), match.group("prop")) if xib else None
             item = {
                 "bundle": bundle,
                 "table": table,
