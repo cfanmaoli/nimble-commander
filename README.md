@@ -2,6 +2,16 @@
 [![Nightly Build](https://github.com/mikekazakov/nimble-commander/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/mikekazakov/nimble-commander/actions/workflows/nightly.yml)
 
 # Nimble Commander
+
+> **This fork adds language packs.** A *Preferences → Language* tab exports the interface strings of
+> the current language as JSON, imports a translation back, and switches between the built-in
+> languages and any imported pack — so a language the app does not ship can be translated with an AI
+> in a few minutes, without Xcode, a rebuild or a re-sign. See
+> **[Tools/language-packs.md](Tools/language-packs.md)** for how it works and what it deliberately
+> does not touch. The feature was offered upstream in
+> [#746](https://github.com/mikekazakov/nimble-commander/issues/746) and not merged there, so it is
+> not a pull-request candidate; everything else in this fork tracks upstream `main`.
+
 ![](Docs/nc.png)
 Nimble Commander is a free dual-pane file manager for macOS, designed with a focus on speed, keyboard-based navigation, and flexibility.  
 The project's aim is to blend the user experience of classic file managers from the '80s-'90s with the modern look and feel of Mac computers.  
