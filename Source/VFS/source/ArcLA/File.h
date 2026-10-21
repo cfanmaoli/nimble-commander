@@ -9,6 +9,8 @@ struct AppleDoubleEA;
 
 namespace nc::vfs::arc {
 
+class UnrarStream;
+
 class File final : public VFSFile
 {
 public:
@@ -29,6 +31,7 @@ public:
 
 private:
     std::unique_ptr<State> m_State;
+    std::unique_ptr<UnrarStream> m_Unrar;
     std::vector<AppleDoubleEA> m_EA;
     ssize_t m_Position;
     ssize_t m_Size;

@@ -84,6 +84,13 @@ public:
 
     std::shared_ptr<const ArchiveHost> SharedPtr() const;
 
+    // True when the entry payloads can be read through the UnRAR library: the archive is a RAR,
+    // it lives on a native filesystem and it isn't password protected.
+    bool CanStreamDataWithUnrar() const noexcept;
+
+    // Path of the archive itself, valid only when CanStreamDataWithUnrar() returns true.
+    std::string_view SourceFilePath() const noexcept;
+
     std::shared_ptr<ArchiveHost> SharedPtr();
 
     /** return VFSError, not uids returned */
@@ -131,7 +138,7 @@ private:
     arc::Dir *FindOrBuildDir(std::string_view _path_with_tr_sl);
 
     void InsertDummyDirInto(arc::Dir *_parent, std::string_view _dir_name);
-    struct ::archive *SpawnLibarchive();
+    struct ::archive *SpawnLibarchive(bool _skip_solid_data_for_listing);
 
     std::expected<void, Error> ResolvePath(std::string_view _path, std::pmr::string &_resolved_path);
 

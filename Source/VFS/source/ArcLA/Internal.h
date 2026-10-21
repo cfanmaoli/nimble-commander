@@ -10,6 +10,29 @@ namespace nc::vfs::arc {
 
 constexpr inline uint32_t SyntheticArUID = std::numeric_limits<uint32_t>::max();
 
+// Streams the content of a single entry out of a local RAR archive with the help of the UnRAR
+// library. UnRAR delivers the data through a callback while it processes an entry, so the
+// decompression runs on a worker thread and the bytes are handed over through a bounded buffer.
+class UnrarStream
+{
+public:
+    // Returns nullptr if the archive can't be opened.
+    static std::unique_ptr<UnrarStream>
+    Open(const std::string &_archive_path, const std::string &_entry_path, const VFSCancelChecker &_cancel_checker);
+    UnrarStream(const UnrarStream &) = delete;
+    UnrarStream &operator=(const UnrarStream &) = delete;
+    ~UnrarStream();
+
+    // Reads at most _size bytes. Returns the number of bytes read, 0 at the end of the entry and
+    // -1 if the decompression has failed or has been cancelled.
+    long Read(void *_buffer, size_t _size);
+
+private:
+    class Impl;
+    UnrarStream(std::string _archive_path, std::string _entry_path, const VFSCancelChecker &_cancel_checker);
+    std::unique_ptr<Impl> I;
+};
+
 struct Mediator {
     std::shared_ptr<VFSFile> file;
 

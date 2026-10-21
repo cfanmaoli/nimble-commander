@@ -43,6 +43,9 @@ struct ArchiveHost::Impl {
     uint32_t m_LastItemUID = 0;
     uint64_t m_ArchivedFilesTotalSize = 0;
 
+    // true if the entry payloads should be read via the UnRAR library instead of libarchive
+    bool m_StreamDataViaUnrar = false;
+
     bool m_NeedsPathResolving = false; // true if there are any symlinks present in archive
     SymlinksT m_Symlinks;
     std::recursive_mutex m_SymlinksResolveLock;
@@ -218,13 +221,9 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
     I->m_Mediator->file = I->m_ArFile;
     I->m_Mediator->cancel_checker = _cancel_checker;
 
-    I->m_Arc = SpawnLibarchive();
-
-    // This handle is only used to walk the list of entries, it never reads any payload. Let libarchive
-    // skip the data of solid RARs instead of decompressing it just to reach the next header - otherwise
-    // enumerating a solid archive costs as much as unpacking the whole thing (~5s for a 530MB archive
-    // versus a couple of milliseconds). The flag is per-handle, the extraction handles don't set it.
-    archive_read_set_options(I->m_Arc, "rar5:skip_solid_data=1");
+    // This handle is only used to walk the list of entries, it never reads any payload, so it can
+    // skip the data of solid RARs instead of decompressing it just to reach the next header.
+    I->m_Arc = SpawnLibarchive(true);
 
     archive_read_set_callback_data(I->m_Arc, I->m_Mediator.get());
     archive_read_set_read_callback(I->m_Arc, Mediator::myread);
@@ -249,6 +248,12 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
 
     if( !list_rc )
         return std::unexpected(list_rc.error());
+
+    // NB: the format is only known after the listing pass, libarchive does the format bidding
+    // lazily, on the first header read.
+    const int format = archive_format(I->m_Arc);
+    I->m_StreamDataViaUnrar = (format == ARCHIVE_FORMAT_RAR || format == ARCHIVE_FORMAT_RAR_V5) &&
+                              Parent()->IsNativeFS() && !Config().password;
 
     return {};
 }
@@ -888,7 +893,7 @@ std::expected<std::unique_ptr<arc::State>, Error> ArchiveHost::ArchiveStateForIt
                 return std::unexpected(rc.error());
         }
 
-        auto new_state = std::make_unique<arc::State>(file, SpawnLibarchive());
+        auto new_state = std::make_unique<arc::State>(file, SpawnLibarchive(I->m_StreamDataViaUnrar));
 
         const int res = new_state->Open();
         if( res < 0 ) {
@@ -922,7 +927,17 @@ std::expected<std::unique_ptr<arc::State>, Error> ArchiveHost::ArchiveStateForIt
     return std::move(state);
 }
 
-struct ::archive *ArchiveHost::SpawnLibarchive()
+bool ArchiveHost::CanStreamDataWithUnrar() const noexcept
+{
+    return I->m_StreamDataViaUnrar;
+}
+
+std::string_view ArchiveHost::SourceFilePath() const noexcept
+{
+    return JunctionPath();
+}
+
+struct ::archive *ArchiveHost::SpawnLibarchive(bool _skip_solid_data_for_listing)
 {
     archive *arc = archive_read_new();
     const auto require = [](int rc) {
@@ -954,6 +969,11 @@ struct ::archive *ArchiveHost::SpawnLibarchive()
     require(archive_read_support_format_zip(arc));
     require(archive_read_support_format_rar(arc));
     require(archive_read_support_format_rar5(arc));
+
+    // A listing pass walks the headers only and never reads any payload, so libarchive can skip
+    // the payload of solid RARs instead of decompressing it just to reach the next header.
+    if( _skip_solid_data_for_listing )
+        archive_read_set_options(arc, "rar5:skip_solid_data=1");
 
     if( Config().password )
         archive_read_add_passphrase(arc, Config().password->c_str());

@@ -53,6 +53,14 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     m_Size = archive_entry_size(state->Entry());
     m_State = std::move(state);
 
+    // Libarchive walks a solid RAR by decompressing it end-to-end. UnRAR does the same but with a
+    // much faster (and multithreaded) unpacker, so RAR payloads are read through it instead.
+    if( host->CanStreamDataWithUnrar() ) {
+        m_Unrar = UnrarStream::Open(std::string{host->SourceFilePath()}, std::string{file_path}, _cancel_checker);
+        if( !m_Unrar )
+            return std::unexpected(Error{Error::POSIX, EIO});
+    }
+
     return {};
 }
 
@@ -63,6 +71,7 @@ bool File::IsOpened() const
 
 std::expected<void, Error> File::Close()
 {
+    m_Unrar.reset();
     std::dynamic_pointer_cast<ArchiveHost>(Host())->CommitState(std::move(m_State));
     m_State.reset();
     return {};
@@ -102,6 +111,14 @@ std::expected<size_t, Error> File::Read(void *_buf, size_t _size)
         return 0;
 
     assert(_buf != nullptr);
+
+    if( m_Unrar ) {
+        const long size = m_Unrar->Read(_buf, _size);
+        if( size < 0 )
+            return std::unexpected(Error{Error::POSIX, EIO});
+        m_Position += size;
+        return static_cast<size_t>(size);
+    }
 
     m_State->ConsumeEntry();
     const ssize_t size = archive_read_data(m_State->Archive(), _buf, _size);

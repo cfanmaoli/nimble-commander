@@ -27,6 +27,7 @@ set -e
 ./re2/bootstrap.sh
 ./libcxxbackport/bootstrap.sh
 ./lexilla/bootstrap.sh
+./unrar/bootstrap.sh
 ./nlohmann/bootstrap.sh
 ./unordered_dense/bootstrap.sh
 ./Catch2/bootstrap.sh
