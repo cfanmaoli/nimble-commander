@@ -16,9 +16,12 @@ constexpr inline uint32_t SyntheticArUID = std::numeric_limits<uint32_t>::max();
 class UnrarStream
 {
 public:
-    // Returns nullptr if the archive can't be opened.
-    static std::unique_ptr<UnrarStream>
-    Open(const std::string &_archive_path, const std::string &_entry_path, const VFSCancelChecker &_cancel_checker);
+    // Returns nullptr if the archive can't be opened, including the cases where the password is
+    // missing or wrong.
+    static std::unique_ptr<UnrarStream> Open(const std::string &_archive_path,
+                                             const std::string &_entry_path,
+                                             std::string_view _password,
+                                             const VFSCancelChecker &_cancel_checker);
     UnrarStream(const UnrarStream &) = delete;
     UnrarStream &operator=(const UnrarStream &) = delete;
     ~UnrarStream();
@@ -29,7 +32,10 @@ public:
 
 private:
     class Impl;
-    UnrarStream(std::string _archive_path, std::string _entry_path, const VFSCancelChecker &_cancel_checker);
+    UnrarStream(std::string _archive_path,
+                std::string _entry_path,
+                std::string _password,
+                const VFSCancelChecker &_cancel_checker);
     std::unique_ptr<Impl> I;
 };
 

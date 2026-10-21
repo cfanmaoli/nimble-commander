@@ -38,6 +38,18 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     if( host->IsDirectory(file_path, _open_flags, _cancel_checker) && !(_open_flags & VFSFlags::OF_Directory) )
         return std::unexpected(Error{Error::POSIX, EISDIR});
 
+    // Libarchive walks a solid RAR by decompressing it end-to-end. UnRAR does the same but with a
+    // much faster (and multithreaded) unpacker, so RAR payloads are read through it instead. The
+    // stream is opened before the state is requested: the states built for this path skip the
+    // payloads and can't be used for reading, so if UnRAR can't handle the archive the host is
+    // told about that first and the state is then created for libarchive.
+    if( host->CanStreamDataWithUnrar() ) {
+        m_Unrar = UnrarStream::Open(
+            std::string{host->SourceFilePath()}, std::string{file_path}, host->Password(), _cancel_checker);
+        if( !m_Unrar )
+            host->DisableUnrarStreaming();
+    }
+
     std::expected<std::unique_ptr<arc::State>, Error> exp_state = host->ArchiveStateForItem(file_path.c_str());
     if( !exp_state )
         return std::unexpected(exp_state.error());
@@ -52,14 +64,6 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     m_Position = 0;
     m_Size = archive_entry_size(state->Entry());
     m_State = std::move(state);
-
-    // Libarchive walks a solid RAR by decompressing it end-to-end. UnRAR does the same but with a
-    // much faster (and multithreaded) unpacker, so RAR payloads are read through it instead.
-    if( host->CanStreamDataWithUnrar() ) {
-        m_Unrar = UnrarStream::Open(std::string{host->SourceFilePath()}, std::string{file_path}, _cancel_checker);
-        if( !m_Unrar )
-            return std::unexpected(Error{Error::POSIX, EIO});
-    }
 
     return {};
 }

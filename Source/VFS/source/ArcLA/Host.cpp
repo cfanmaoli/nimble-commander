@@ -252,8 +252,8 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
     // NB: the format is only known after the listing pass, libarchive does the format bidding
     // lazily, on the first header read.
     const int format = archive_format(I->m_Arc);
-    I->m_StreamDataViaUnrar = (format == ARCHIVE_FORMAT_RAR || format == ARCHIVE_FORMAT_RAR_V5) &&
-                              Parent()->IsNativeFS() && !Config().password;
+    I->m_StreamDataViaUnrar =
+        (format == ARCHIVE_FORMAT_RAR || format == ARCHIVE_FORMAT_RAR_V5) && Parent()->IsNativeFS();
 
     return {};
 }
@@ -930,6 +930,18 @@ std::expected<std::unique_ptr<arc::State>, Error> ArchiveHost::ArchiveStateForIt
 bool ArchiveHost::CanStreamDataWithUnrar() const noexcept
 {
     return I->m_StreamDataViaUnrar;
+}
+
+std::string_view ArchiveHost::Password() const noexcept
+{
+    return Config().password ? std::string_view{*Config().password} : std::string_view{};
+}
+
+void ArchiveHost::DisableUnrarStreaming()
+{
+    const std::lock_guard<std::mutex> lock(I->m_StatesLock);
+    I->m_StreamDataViaUnrar = false;
+    I->m_States.clear();
 }
 
 std::string_view ArchiveHost::SourceFilePath() const noexcept

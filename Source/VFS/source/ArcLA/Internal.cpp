@@ -174,8 +174,8 @@ std::string WideToUTF8(const wchar_t *_str)
 class UnrarStream::Impl
 {
 public:
-    Impl(std::string _archive_path, std::string _entry_path, VFSCancelChecker _cancel_checker)
-        : archive_path(std::move(_archive_path)), entry_path(std::move(_entry_path)),
+    Impl(std::string _archive_path, std::string _entry_path, std::string _password, VFSCancelChecker _cancel_checker)
+        : archive_path(std::move(_archive_path)), entry_path(std::move(_entry_path)), password(std::move(_password)),
           cancel_checker(std::move(_cancel_checker))
     {
     }
@@ -201,6 +201,7 @@ public:
 
     std::string archive_path;
     std::string entry_path;
+    std::string password;
     VFSCancelChecker cancel_checker;
 
     std::thread worker;
@@ -224,6 +225,8 @@ void UnrarStream::Impl::Produce()
         Finish(true);
         return;
     }
+    if( !password.empty() )
+        RARSetPassword(arc, password.data());
     RARSetCallback(arc, &Impl::RawCallback, reinterpret_cast<LPARAM>(this));
 
     bool extracted = false;
@@ -308,8 +311,11 @@ int UnrarStream::Impl::RawCallback(unsigned int _msg, LPARAM _user_data, LPARAM 
     return self->Push(reinterpret_cast<const void *>(_p1), static_cast<size_t>(_p2)) ? 1 : 0;
 }
 
-UnrarStream::UnrarStream(std::string _archive_path, std::string _entry_path, const VFSCancelChecker &_cancel_checker)
-    : I(std::make_unique<Impl>(std::move(_archive_path), std::move(_entry_path), _cancel_checker))
+UnrarStream::UnrarStream(std::string _archive_path,
+                         std::string _entry_path,
+                         std::string _password,
+                         const VFSCancelChecker &_cancel_checker)
+    : I(std::make_unique<Impl>(std::move(_archive_path), std::move(_entry_path), std::move(_password), _cancel_checker))
 {
     // UnRAR reports the entry names without the leading slash that the archive VFS uses.
     if( !I->entry_path.empty() && I->entry_path.front() == '/' )
@@ -320,8 +326,11 @@ UnrarStream::~UnrarStream() = default;
 
 std::unique_ptr<UnrarStream> UnrarStream::Open(const std::string &_archive_path,
                                                const std::string &_entry_path,
+                                               std::string_view _password,
                                                const VFSCancelChecker &_cancel_checker)
 {
+    std::string password{_password};
+
     // Cheap sanity check that this is really a RAR archive that UnRAR can open, so that the
     // caller gets a chance to fall back before any decompression has been started.
     {
@@ -331,10 +340,21 @@ std::unique_ptr<UnrarStream> UnrarStream::Open(const std::string &_archive_path,
         HANDLE arc = RAROpenArchiveEx(&probe);
         if( arc == nullptr )
             return nullptr;
+
+        if( !password.empty() )
+            RARSetPassword(arc, password.data());
+
+        // Reading the first header validates the password for archives with encrypted headers,
+        // let the caller fall back when UnRAR can't get past it.
+        RARHeaderDataEx header{};
+        const int header_rc = RARReadHeaderEx(arc, &header);
         RARCloseArchive(arc);
+
+        if( header_rc == ERAR_BAD_PASSWORD || header_rc == ERAR_MISSING_PASSWORD )
+            return nullptr;
     }
 
-    std::unique_ptr<UnrarStream> stream{new UnrarStream(_archive_path, _entry_path, _cancel_checker)};
+    std::unique_ptr<UnrarStream> stream{new UnrarStream(_archive_path, _entry_path, password, _cancel_checker)};
     stream->I->worker = std::thread([impl = stream->I.get()] { impl->Produce(); });
     return stream;
 }

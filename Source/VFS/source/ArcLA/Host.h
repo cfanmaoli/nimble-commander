@@ -84,9 +84,17 @@ public:
 
     std::shared_ptr<const ArchiveHost> SharedPtr() const;
 
-    // True when the entry payloads can be read through the UnRAR library: the archive is a RAR,
-    // it lives on a native filesystem and it isn't password protected.
+    // True when the entry payloads can be read through the UnRAR library: the archive is a RAR and
+    // it lives on a native filesystem.
     bool CanStreamDataWithUnrar() const noexcept;
+
+    // Password of the archive, empty when it isn't set.
+    std::string_view Password() const noexcept;
+
+    // Called when the UnRAR library turns out to be unable to handle this archive. The host then
+    // permanently reverts to libarchive for the payloads, dropping the states that were built for
+    // the UnRAR path.
+    void DisableUnrarStreaming();
 
     // Path of the archive itself, valid only when CanStreamDataWithUnrar() returns true.
     std::string_view SourceFilePath() const noexcept;
