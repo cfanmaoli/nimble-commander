@@ -8,6 +8,7 @@
 
 #include <compare>
 #include <optional>
+#include <string>
 
 namespace nc::panel::data {
 
@@ -54,5 +55,20 @@ struct HardFilter {
 };
 
 std::optional<QuickSearchHighlight> FuzzySearch(NSString *_filename, NSString *_text) noexcept;
+
+/**
+ * Matches a latin-only criterion against the initials of the transliterated syllables of a name,
+ * so that a Chinese "下载" can be found by typing "xz". Returns the range of the *name* that the
+ * matching initials came from, or nullopt when the criterion is not latin-only or the name has
+ * nothing to transliterate.
+ */
+std::optional<QuickSearchHighlight>
+PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _type) noexcept;
+
+/**
+ * The latin initials of a name: "下载" -> "xz", "文档 abc" -> "wdabc". Empty when the name has no
+ * ideographs. Exposed for the unit tests.
+ */
+std::string PinyinInitialsForName(NSString *_name) noexcept;
 
 } // namespace nc::panel::data

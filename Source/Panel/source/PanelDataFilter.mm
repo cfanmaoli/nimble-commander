@@ -3,7 +3,12 @@
 #include <VFS/VFS.h>
 #include <Base/CFPtr.h>
 #include <Base/CFStackAllocator.h>
+#include <algorithm>
+#include <cctype>
 #include <memory_resource>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace nc::panel::data {
 
@@ -133,6 +138,172 @@ std::optional<QuickSearchHighlight> FuzzySearch(NSString *_filename, NSString *_
     return QuickSearchHighlight({found.data(), found.size()}); // might discard some results here
 }
 
+namespace {
+
+// The characters CFStringTransform knows how to transliterate for us.
+constexpr bool IsIdeograph(unichar _c) noexcept
+{
+    return (_c >= 0x3040 && _c <= 0x30FF) || // hiragana, katakana
+           (_c >= 0x3400 && _c <= 0x4DBF) || // CJK unified ideographs extension A
+           (_c >= 0x4E00 && _c <= 0x9FFF) || // CJK unified ideographs
+           (_c >= 0xF900 && _c <= 0xFAFF) || // CJK compatibility ideographs
+           (_c >= 0xFF66 && _c <= 0xFF9F);   // halfwidth katakana
+}
+
+struct Initials {
+    std::string text;
+    // for every character of 'text' - the index of the name character it was made from
+    std::vector<unsigned> sources;
+};
+
+// What can a latin-only criterion possibly match? Only names carrying ideographs have initials.
+bool BuildInitials(NSString *_name, Initials &_out) noexcept
+{
+    _out.text.clear();
+    _out.sources.clear();
+    bool any_ideograph = false;
+
+    const NSUInteger len = _name.length;
+    NSUInteger idx = 0;
+    while( idx < len ) {
+        const unichar c = [_name characterAtIndex:idx];
+        if( !IsIdeograph(c) ) {
+            if( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ) {
+                _out.text += static_cast<char>(std::tolower(static_cast<int>(c)));
+                _out.sources.push_back(static_cast<unsigned>(idx));
+            }
+            ++idx;
+            continue;
+        }
+
+        NSUInteger end = idx;
+        while( end < len && IsIdeograph([_name characterAtIndex:end]) )
+            ++end;
+        const NSUInteger run_len = end - idx;
+
+        NSString *const run = [_name substringWithRange:NSMakeRange(idx, run_len)];
+        NSMutableString *const latin = [run mutableCopy];
+        const bool transliterated =
+            CFStringTransform((__bridge CFMutableStringRef)latin, nullptr, kCFStringTransformToLatin, false) &&
+            CFStringTransform(
+                (__bridge CFMutableStringRef)latin, nullptr, kCFStringTransformStripCombiningMarks, false);
+        if( transliterated ) {
+            any_ideograph = true;
+            // the transliteration separates the syllables of a run with spaces
+            NSArray<NSString *> *const syllables = [[latin lowercaseString] componentsSeparatedByString:@" "];
+            for( NSUInteger i = 0; i < syllables.count; ++i ) {
+                NSString *const syllable = syllables[i];
+                if( syllable.length == 0 )
+                    continue;
+                const unichar first = [syllable characterAtIndex:0];
+                if( first >= 'a' && first <= 'z' ) {
+                    _out.text += static_cast<char>(first);
+                    _out.sources.push_back(static_cast<unsigned>(idx + std::min(i, run_len - 1)));
+                }
+            }
+        }
+        idx = end;
+    }
+    return any_ideograph;
+}
+
+// Transliteration is not free, while the quick search runs over the whole listing on every
+// keystroke - remember what has already been computed for this thread.
+const Initials &CachedInitials(NSString *_name) noexcept
+{
+    [[clang::no_destroy]] static thread_local std::unordered_map<std::string, Initials> cache;
+    const char *const utf8 = _name.UTF8String;
+    std::string key = utf8 != nullptr ? utf8 : "";
+    if( const auto it = cache.find(key); it != cache.end() )
+        return it->second;
+    if( cache.size() >= 8192 )
+        cache.clear();
+    Initials value;
+    if( !BuildInitials(_name, value) )
+        value = Initials{};
+    return cache.emplace(std::move(key), std::move(value)).first->second;
+}
+
+bool IsLatinOnly(NSString *_text) noexcept
+{
+    if( _text.length == 0 )
+        return false;
+    for( NSUInteger i = 0; i < _text.length; ++i ) {
+        const unichar c = [_text characterAtIndex:i];
+        if( !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) )
+            return false;
+    }
+    return true;
+}
+
+} // namespace
+
+std::string PinyinInitialsForName(NSString *_name) noexcept
+{
+    return CachedInitials(_name).text;
+}
+
+std::optional<QuickSearchHighlight>
+PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _type) noexcept
+{
+    if( !IsLatinOnly(_text) )
+        return std::nullopt;
+
+    const Initials &initials = CachedInitials(_name);
+    if( initials.text.empty() )
+        return std::nullopt;
+
+    const char *const needle_utf8 = _text.UTF8String;
+    if( needle_utf8 == nullptr )
+        return std::nullopt;
+    std::string needle{needle_utf8};
+    std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char _c) {
+        return static_cast<char>(std::tolower(_c));
+    });
+
+    // where in the initials does the criterion sit?
+    size_t begin = std::string::npos;
+    if( _type == TextualFilter::Where::Fuzzy ) {
+        size_t pos = 0;
+        for( const char c : needle ) {
+            const size_t found = initials.text.find(c, pos);
+            if( found == std::string::npos )
+                return std::nullopt;
+            if( begin == std::string::npos )
+                begin = found;
+            pos = found + 1;
+        }
+        if( begin == std::string::npos )
+            return std::nullopt;
+        // the fuzzy case matches a sparse sequence - cover the whole span with one range
+        const size_t last = pos - 1;
+        QuickSearchHighlight::Range range{.offset = initials.sources[begin],
+                                          .length = initials.sources[last] + 1 - initials.sources[begin]};
+        return QuickSearchHighlight({&range, 1});
+    }
+
+    if( _type == TextualFilter::Where::Beginning || _type == TextualFilter::Where::BeginningOrEnding ) {
+        if( initials.text.compare(0, needle.size(), needle) == 0 )
+            begin = 0;
+    }
+    if( begin == std::string::npos &&
+        (_type == TextualFilter::Where::Ending || _type == TextualFilter::Where::BeginningOrEnding) ) {
+        if( initials.text.size() >= needle.size() &&
+            initials.text.compare(initials.text.size() - needle.size(), needle.size(), needle) == 0 )
+            begin = initials.text.size() - needle.size();
+    }
+    if( begin == std::string::npos && _type == TextualFilter::Where::Anywhere )
+        begin = initials.text.find(needle);
+
+    if( begin == std::string::npos )
+        return std::nullopt;
+
+    QuickSearchHighlight::Range range{.offset = initials.sources[begin],
+                                      .length =
+                                          initials.sources[begin + needle.size() - 1] + 1 - initials.sources[begin]};
+    return QuickSearchHighlight({&range, 1});
+}
+
 bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighlight &_found_range) const
 {
     _found_range = {};
@@ -148,6 +319,14 @@ bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighligh
         return true; // will return true on any item with @"" filter
 
     NSString *const name = _item.DisplayNameNS();
+
+    // A name carrying ideographs can also be reached through the initials of its transliteration,
+    // so that "下载" answers to "xz" - the literal comparison below knows nothing about that.
+    if( auto pinyin = PinyinInitialsSearch(name, text, type) ) {
+        _found_range = *pinyin;
+        return true;
+    }
+
     const auto namelen = name.length;
     if( textlen > namelen )
         return false; // unsatisfiable by definition
