@@ -1981,6 +1981,30 @@
         }
       }
     },
+    "Rgx-Mo-dE1.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Regex\"; ObjectID = \"Rgx-Mo-dE1\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Regex"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярное выражение"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正则表达式"
+          }
+        }
+      }
+    },
     "RxC-5n-qUi.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"3\"; ObjectID = \"RxC-5n-qUi\";",
       "extractionState" : "extracted_with_value",

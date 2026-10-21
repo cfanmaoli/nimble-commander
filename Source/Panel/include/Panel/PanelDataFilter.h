@@ -19,7 +19,8 @@ struct TextualFilter {
         Beginning = 1,
         Ending = 2, // handling extensions somehow
         BeginningOrEnding = 3,
-        Fuzzy = 4
+        Fuzzy = 4,
+        Regex = 5
     };
 
     NSString *text;
@@ -70,5 +71,13 @@ PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _typ
  * ideographs. Exposed for the unit tests.
  */
 std::string PinyinInitialsForName(NSString *_name) noexcept;
+
+/**
+ * Matches a name against an ICU regular expression, case-insensitively unless the pattern overrides
+ * it with an inline flag such as (?-i). Returns the matched ranges, or nullopt when the pattern is
+ * not a valid expression yet - which happens on every other keystroke while the user is still
+ * typing it.
+ */
+std::optional<QuickSearchHighlight> RegexSearch(NSString *_name, NSString *_text) noexcept;
 
 } // namespace nc::panel::data
