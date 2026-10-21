@@ -66,6 +66,39 @@ TEST_CASE(PREFIX "Fuzzy search")
     }
 }
 
+TEST_CASE(PREFIX "Regex search")
+{
+    using RIL = std::initializer_list<QuickSearchHighlight::Range>;
+    struct TC {
+        NSString *name;
+        NSString *text;
+        std::optional<QuickSearchHighlight> expected;
+    } test_cases[] = {
+        {.name = @"报告 2024.pdf", .text = @"^报告", .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        {.name = @"报告 2024.pdf",
+         .text = @"[0-9]{4}",
+         .expected = QuickSearchHighlight{RIL{{.offset = 3, .length = 4}}}},
+        // case-insensitive unless the pattern asks otherwise
+        {.name = @"ABC.txt", .text = @"^abc", .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 3}}}},
+        {.name = @"ABC.txt", .text = @"(?-i)^abc", .expected = std::nullopt},
+        {.name = @"abc.txt", .text = @"^abc$", .expected = std::nullopt},
+        {.name = @"abc.txt", .text = @"^abc\\.txt$", .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 7}}}},
+        // every hit is highlighted, up to the storage limit
+        {.name = @"a1b2",
+         .text = @"[0-9]",
+         .expected = QuickSearchHighlight{RIL{{.offset = 1, .length = 1}, {.offset = 3, .length = 1}}}},
+        {.name = @"abc", .text = @"", .expected = QuickSearchHighlight{}},
+        // an expression that doesn't compile yet is simply not a match
+        {.name = @"abc", .text = @"[", .expected = std::nullopt},
+        {.name = @"abc", .text = @"x", .expected = std::nullopt},
+    };
+
+    for( const auto &tc : test_cases ) {
+        INFO("name: " << tc.name.UTF8String << ", text: " << tc.text.UTF8String);
+        CHECK(RegexSearch(tc.name, tc.text) == tc.expected);
+    }
+}
+
 TEST_CASE(PREFIX "Pinyin initials of a name")
 {
     CHECK(PinyinInitialsForName(@"下载") == "xz");

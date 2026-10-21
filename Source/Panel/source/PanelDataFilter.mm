@@ -39,7 +39,7 @@ bool TextualFilter::operator!=(const TextualFilter &_r) const noexcept
 
 TextualFilter::Where TextualFilter::WhereFromInt(int _v) noexcept
 {
-    if( _v >= 0 && _v <= Fuzzy )
+    if( _v >= 0 && _v <= Regex )
         return Where(_v);
     return Anywhere;
 }
@@ -304,6 +304,61 @@ PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _typ
     return QuickSearchHighlight({&range, 1});
 }
 
+namespace {
+
+struct CompiledRegex {
+    NSRegularExpression *expression = nil; // nil when the pattern doesn't compile (yet)
+};
+
+// Patterns would be recompiled on every keystroke otherwise - and the filter walks the whole listing.
+CompiledRegex &CachedRegex(NSString *_pattern) noexcept
+{
+    [[clang::no_destroy]] static thread_local std::unordered_map<std::string, CompiledRegex> cache;
+    const char *const utf8 = _pattern.UTF8String;
+    std::string key = utf8 != nullptr ? utf8 : "";
+    if( const auto it = cache.find(key); it != cache.end() )
+        return it->second;
+    if( cache.size() >= 2048 )
+        cache.clear();
+    CompiledRegex value;
+    NSError *error = nil;
+    value.expression = [NSRegularExpression regularExpressionWithPattern:_pattern
+                                                                 options:NSRegularExpressionCaseInsensitive
+                                                                   error:&error];
+    return cache.emplace(std::move(key), value).first->second;
+}
+
+} // namespace
+
+std::optional<QuickSearchHighlight> RegexSearch(NSString *_name, NSString *_text) noexcept
+{
+    if( _text.length == 0 )
+        return QuickSearchHighlight{}; // an empty expression matches everything
+
+    NSRegularExpression *const expression = CachedRegex(_text).expression;
+    if( expression == nil )
+        return std::nullopt; // not a valid expression (yet)
+
+    NSArray<NSTextCheckingResult *> *const matches = [expression matchesInString:_name
+                                                                         options:0
+                                                                           range:NSMakeRange(0, _name.length)];
+    if( matches.count == 0 )
+        return std::nullopt;
+
+    std::array<QuickSearchHighlight::Range, QuickSearchHighlight::max_len> ranges;
+    size_t count = 0;
+    for( NSTextCheckingResult *const match in matches ) {
+        if( count >= ranges.size() )
+            break;
+        if( match.range.length == 0 )
+            continue; // zero-width match - nothing to highlight
+        ranges[count++] = {.offset = match.range.location, .length = match.range.length};
+    }
+    if( count == 0 )
+        return std::nullopt;
+    return QuickSearchHighlight({ranges.data(), count});
+}
+
 bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighlight &_found_range) const
 {
     _found_range = {};
@@ -330,6 +385,14 @@ bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighligh
     const auto namelen = name.length;
     if( textlen > namelen )
         return false; // unsatisfiable by definition
+
+    if( type == Regex ) {
+        if( auto res = RegexSearch(name, text) ) {
+            _found_range = *res;
+            return true;
+        }
+        return false;
+    }
 
     if( type == Anywhere ) {
         const NSRange result = [name rangeOfString:text options:NSCaseInsensitiveSearch];
