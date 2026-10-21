@@ -9,7 +9,7 @@ TMP_DIR=${CUR_DIR}/curl.tmp
 mkdir ${TMP_DIR}
 cd ${TMP_DIR} 
 
-git clone -b curl-8_20_0 --single-branch --depth=1 https://github.com/curl/curl.git
+git clone -b curl-8_23_0 --single-branch --depth=1 https://github.com/curl/curl.git
 
 cd curl
 

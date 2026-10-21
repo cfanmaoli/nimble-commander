@@ -9,7 +9,7 @@ TMP_DIR=${CUR_DIR}/openssl.tmp
 mkdir ${TMP_DIR}
 cd ${TMP_DIR}
 
-git clone -b openssl-3.5.5 --single-branch --depth 1 https://github.com/openssl/openssl.git openssl.x64
+git clone -b openssl-3.5.9 --single-branch --depth 1 https://github.com/openssl/openssl.git openssl.x64
 cp -r openssl.x64 openssl.arm64
 
 # NB! No -fvisibility=hidden neither -flto passed, since OpenSSL3 is quite a snowflake...
