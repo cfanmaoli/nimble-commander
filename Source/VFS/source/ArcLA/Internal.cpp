@@ -9,6 +9,11 @@ ssize_t Mediator::myread([[maybe_unused]] struct archive *a, void *client_data, 
     Mediator *_this = static_cast<Mediator *>(client_data);
     *buff = &_this->buf[0];
 
+    if( _this->cancel_checker && _this->cancel_checker() ) {
+        _this->cancelled = true;
+        return ARCHIVE_FATAL;
+    }
+
     const std::expected<size_t, Error> result = _this->file->Read(&_this->buf[0], bufsz);
     if( !result )
         return ARCHIVE_FATAL; // handle somehow

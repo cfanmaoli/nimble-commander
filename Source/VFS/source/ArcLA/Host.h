@@ -126,7 +126,7 @@ private:
     std::expected<void, Error> DoInit(const VFSCancelChecker &_cancel_checker);
     const class VFSArchiveHostConfiguration &Config() const;
 
-    std::expected<void, Error> ReadArchiveListing();
+    std::expected<void, Error> ReadArchiveListing(const VFSCancelChecker &_cancel_checker);
     uint64_t UpdateDirectorySize(arc::Dir &_directory, const std::string &_path);
     arc::Dir *FindOrBuildDir(std::string_view _path_with_tr_sl);
 

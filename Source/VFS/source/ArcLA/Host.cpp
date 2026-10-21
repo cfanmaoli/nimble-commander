@@ -216,6 +216,7 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
 
     I->m_Mediator = std::make_shared<Mediator>();
     I->m_Mediator->file = I->m_ArFile;
+    I->m_Mediator->cancel_checker = _cancel_checker;
 
     I->m_Arc = SpawnLibarchive();
 
@@ -224,7 +225,7 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
     archive_read_set_seek_callback(I->m_Arc, Mediator::myseek);
     res = archive_read_open1(I->m_Arc);
     if( res < 0 ) {
-        const int err = archive_errno(I->m_Arc);
+        const int err = I->m_Mediator->cancelled ? ECANCELED : archive_errno(I->m_Arc);
         archive_read_free(I->m_Arc);
         I->m_Arc = nullptr;
         I->m_Mediator.reset();
@@ -236,7 +237,7 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
     if( archive_read_has_encrypted_entries(I->m_Arc) > 0 && !Config().password )
         return std::unexpected(Error{Error::POSIX, ENEEDAUTH});
 
-    const std::expected<void, Error> list_rc = ReadArchiveListing();
+    const std::expected<void, Error> list_rc = ReadArchiveListing(_cancel_checker);
     if( archive_read_has_encrypted_entries(I->m_Arc) > 0 && !Config().password )
         return std::unexpected(Error{Error::POSIX, ENEEDAUTH});
 
@@ -246,7 +247,7 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
     return {};
 }
 
-std::expected<void, Error> ArchiveHost::ReadArchiveListing()
+std::expected<void, Error> ArchiveHost::ReadArchiveListing(const VFSCancelChecker &_cancel_checker)
 {
     using namespace arc;
     assert(I->m_Arc != nullptr);
@@ -272,6 +273,9 @@ std::expected<void, Error> ArchiveHost::ReadArchiveListing()
     struct archive_entry *aentry;
     int ret = 0;
     while( (ret = archive_read_next_header(I->m_Arc, &aentry)) == ARCHIVE_OK ) {
+        if( _cancel_checker && _cancel_checker() )
+            return std::unexpected(Error{Error::POSIX, ECANCELED});
+
         aruid++;
         const struct stat *stat = archive_entry_stat(aentry);
         if( stat == nullptr )
@@ -422,6 +426,11 @@ std::expected<void, Error> ArchiveHost::ReadArchiveListing()
             I->m_TotalRegs++;
         I->m_TotalFiles++;
     }
+
+    // A cancellation is reported by the read callback as a fatal libarchive error, so check for it
+    // explicitly instead of trusting the archive_errno below.
+    if( I->m_Mediator->cancelled )
+        return std::unexpected(Error{Error::POSIX, ECANCELED});
 
     I->m_LastItemUID = aruid - 1;
 

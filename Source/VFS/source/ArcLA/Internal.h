@@ -12,6 +12,13 @@ constexpr inline uint32_t SyntheticArUID = std::numeric_limits<uint32_t>::max();
 
 struct Mediator {
     std::shared_ptr<VFSFile> file;
+
+    // Optional cancellation token. It is polled from the read callback, since some archives (e.g. solid RARs)
+    // have to be decompressed end-to-end just to enumerate their entries - without it a scan of a big archive
+    // cannot be aborted at all.
+    VFSCancelChecker cancel_checker;
+    bool cancelled = false;
+
     enum {
         bufsz = 65536 * 4
     };
