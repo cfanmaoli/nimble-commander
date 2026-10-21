@@ -1085,6 +1085,25 @@ struct StateStorage {
     return title ? title : @"";
 }
 
+- (void)otherMouseDown:(NSEvent *)_event
+{
+    // A mouse with side buttons reports them as "other" mouse events: button 4 is the back one and
+    // button 5 the forward one, i.e. buttonNumber 3 and 4. Drive the very same actions the Go Back
+    // and Go Forward commands use, so the panel history behaves identically no matter how the user
+    // asked for it. Consuming the event also keeps it away from whatever else might claim it.
+    switch( _event.buttonNumber ) {
+        case 3:
+            [self.actionsDispatcher OnGoBack:self];
+            return;
+        case 4:
+            [self.actionsDispatcher OnGoForward:self];
+            return;
+        default:
+            break;
+    }
+    [super otherMouseDown:_event];
+}
+
 - (void)panelItem:(int)_sorted_index mouseDown:(NSEvent *)_event
 {
     nc::panel::Log::Trace("[PanelController panelItem:mouseDown:] called for sorted index '{}'", _sorted_index);
