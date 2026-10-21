@@ -66,6 +66,86 @@ TEST_CASE(PREFIX "Fuzzy search")
     }
 }
 
+TEST_CASE(PREFIX "Pinyin initials of a name")
+{
+    CHECK(PinyinInitialsForName(@"下载") == "xz");
+    CHECK(PinyinInitialsForName(@"中文文档") == "zwwd");
+    CHECK(PinyinInitialsForName(@"文档 abc") == "wdabc");
+    CHECK(PinyinInitialsForName(@"下载.txt") == "xztxt");
+    CHECK(PinyinInitialsForName(@"plain name.txt").empty());
+    CHECK(PinyinInitialsForName(@"").empty());
+    // the pinyin of a mixed name still comes out letter by letter
+    CHECK(PinyinInitialsForName(@"日本語") == "rby");
+}
+
+TEST_CASE(PREFIX "Pinyin initials search")
+{
+    using RIL = std::initializer_list<QuickSearchHighlight::Range>;
+    const auto anywhere = TextualFilter::Where::Anywhere;
+    const auto beginning = TextualFilter::Where::Beginning;
+    const auto ending = TextualFilter::Where::Ending;
+    const auto fuzzy = TextualFilter::Where::Fuzzy;
+    const auto both = TextualFilter::Where::BeginningOrEnding;
+
+    struct TC {
+        NSString *name;
+        NSString *text;
+        TextualFilter::Where type;
+        std::optional<QuickSearchHighlight> expected;
+    } test_cases[] = {
+        // the whole point of it all
+        {.name = @"下载",
+         .text = @"xz",
+         .type = anywhere,
+         .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        {.name = @"下载",
+         .text = @"XZ",
+         .type = anywhere,
+         .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        // a single initial highlights its own character
+        {.name = @"下载",
+         .text = @"z",
+         .type = anywhere,
+         .expected = QuickSearchHighlight{RIL{{.offset = 1, .length = 1}}}},
+        // latin parts of a name stay reachable
+        {.name = @"下载.txt",
+         .text = @"txt",
+         .type = anywhere,
+         .expected = QuickSearchHighlight{RIL{{.offset = 3, .length = 3}}}},
+        // anchors
+        {.name = @"下载.txt",
+         .text = @"xz",
+         .type = beginning,
+         .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        {.name = @"下载.txt", .text = @"txt", .type = beginning, .expected = std::nullopt},
+        {.name = @"下载.txt",
+         .text = @"txt",
+         .type = ending,
+         .expected = QuickSearchHighlight{RIL{{.offset = 3, .length = 3}}}},
+        {.name = @"下载.txt", .text = @"xz", .type = ending, .expected = std::nullopt},
+        {.name = @"下载.txt",
+         .text = @"xz",
+         .type = both,
+         .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        // fuzzy over the initials
+        {.name = @"中文文档",
+         .text = @"zw",
+         .type = fuzzy,
+         .expected = QuickSearchHighlight{RIL{{.offset = 0, .length = 2}}}},
+        {.name = @"中文文档", .text = @"zq", .type = fuzzy, .expected = std::nullopt},
+        // nothing to do for names without ideographs or for non-latin criteria
+        {.name = @"plain.txt", .text = @"pl", .type = anywhere, .expected = std::nullopt},
+        {.name = @"下载", .text = @"下载", .type = anywhere, .expected = std::nullopt},
+        {.name = @"下载", .text = @"abc", .type = anywhere, .expected = std::nullopt},
+    };
+
+    for( const auto &tc : test_cases ) {
+        INFO("name: " << tc.name.UTF8String << ", text: " << tc.text.UTF8String
+                      << ", type: " << static_cast<int>(tc.type));
+        CHECK(PinyinInitialsSearch(tc.name, tc.text, tc.type) == tc.expected);
+    }
+}
+
 } // namespace
 
 #undef PREFIX
