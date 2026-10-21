@@ -220,6 +220,12 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
 
     I->m_Arc = SpawnLibarchive();
 
+    // This handle is only used to walk the list of entries, it never reads any payload. Let libarchive
+    // skip the data of solid RARs instead of decompressing it just to reach the next header - otherwise
+    // enumerating a solid archive costs as much as unpacking the whole thing (~5s for a 530MB archive
+    // versus a couple of milliseconds). The flag is per-handle, the extraction handles don't set it.
+    archive_read_set_options(I->m_Arc, "rar5:skip_solid_data=1");
+
     archive_read_set_callback_data(I->m_Arc, I->m_Mediator.get());
     archive_read_set_read_callback(I->m_Arc, Mediator::myread);
     archive_read_set_seek_callback(I->m_Arc, Mediator::myseek);
