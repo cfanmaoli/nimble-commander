@@ -38,16 +38,28 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     if( host->IsDirectory(file_path, _open_flags, _cancel_checker) && !(_open_flags & VFSFlags::OF_Directory) )
         return std::unexpected(Error{Error::POSIX, EISDIR});
 
-    // Libarchive walks a solid RAR by decompressing it end-to-end. UnRAR does the same but with a
-    // much faster (and multithreaded) unpacker, so RAR payloads are read through it instead. The
-    // stream is opened before the state is requested: the states built for this path skip the
-    // payloads and can't be used for reading, so if UnRAR can't handle the archive the host is
-    // told about that first and the state is then created for libarchive.
+    // UnRAR-backed hosts have the whole index in memory and no libarchive handle at all, so the
+    // entry's metadata comes from the index and its payload from the UnRAR library.
     if( host->CanStreamDataWithUnrar() ) {
-        m_Unrar = UnrarStream::Open(
-            std::string{host->SourceFilePath()}, std::string{file_path}, host->Password(), _cancel_checker);
-        if( !m_Unrar )
-            host->DisableUnrarStreaming();
+        const arc::DirEntry *entry = host->FindEntry(file_path);
+        if( entry == nullptr )
+            return std::unexpected(Error{Error::POSIX, ENOENT});
+
+        m_Size = entry->st.st_size;
+        m_Position = 0;
+        m_Opened = true;
+
+        // Empty entries don't need any decompression - and opening a stream for them would walk
+        // the archive for nothing.
+        if( m_Size > 0 ) {
+            m_Unrar = UnrarStream::Open(
+                std::string{host->SourceFilePath()}, std::string{file_path}, host->Password(), _cancel_checker);
+            if( !m_Unrar ) {
+                m_Opened = false;
+                return std::unexpected(Error{Error::POSIX, EIO});
+            }
+        }
+        return {};
     }
 
     std::expected<std::unique_ptr<arc::State>, Error> exp_state = host->ArchiveStateForItem(file_path.c_str());
@@ -64,17 +76,19 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     m_Position = 0;
     m_Size = archive_entry_size(state->Entry());
     m_State = std::move(state);
+    m_Opened = true;
 
     return {};
 }
 
 bool File::IsOpened() const
 {
-    return m_State != nullptr;
+    return m_Opened;
 }
 
 std::expected<void, Error> File::Close()
 {
+    m_Opened = false;
     m_Unrar.reset();
     std::dynamic_pointer_cast<ArchiveHost>(Host())->CommitState(std::move(m_State));
     m_State.reset();

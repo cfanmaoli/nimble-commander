@@ -33,8 +33,9 @@ private:
     std::unique_ptr<State> m_State;
     std::unique_ptr<UnrarStream> m_Unrar;
     std::vector<AppleDoubleEA> m_EA;
-    ssize_t m_Position;
-    ssize_t m_Size;
+    ssize_t m_Position = 0;
+    ssize_t m_Size = 0;
+    bool m_Opened = false;
 };
 
 } // namespace nc::vfs::arc

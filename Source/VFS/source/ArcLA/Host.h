@@ -91,11 +91,6 @@ public:
     // Password of the archive, empty when it isn't set.
     std::string_view Password() const noexcept;
 
-    // Called when the UnRAR library turns out to be unable to handle this archive. The host then
-    // permanently reverts to libarchive for the payloads, dropping the states that were built for
-    // the UnRAR path.
-    void DisableUnrarStreaming();
-
     // Path of the archive itself, valid only when CanStreamDataWithUnrar() returns true.
     std::string_view SourceFilePath() const noexcept;
 
@@ -142,15 +137,19 @@ private:
     const class VFSArchiveHostConfiguration &Config() const;
 
     std::expected<void, Error> ReadArchiveListing(const VFSCancelChecker &_cancel_checker);
+    std::expected<void, Error> ReadUnrarListing(const VFSCancelChecker &_cancel_checker);
     uint64_t UpdateDirectorySize(arc::Dir &_directory, const std::string &_path);
     arc::Dir *FindOrBuildDir(std::string_view _path_with_tr_sl);
 
     void InsertDummyDirInto(arc::Dir *_parent, std::string_view _dir_name);
-    struct ::archive *SpawnLibarchive(bool _skip_solid_data_for_listing);
+    struct ::archive *SpawnLibarchive();
 
     std::expected<void, Error> ResolvePath(std::string_view _path, std::pmr::string &_resolved_path);
 
     void ResolveSymlink(uint32_t _uid);
+
+    // Reads the target of a symlink out of a RAR archive, which stores it as the entry's payload.
+    bool ReadSymlinkTarget(uint32_t _uid, std::string &_target);
 
     static void
     AppendDecodedStringToUTF8(std::span<const std::byte> _bytes, CFStringEncoding _encoding, std::pmr::string &_to);

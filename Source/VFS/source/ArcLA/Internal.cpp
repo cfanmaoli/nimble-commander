@@ -3,6 +3,8 @@
 #include <cassert>
 #include <CoreFoundation/CoreFoundation.h>
 #include <chrono>
+#include <ctime>
+#include <filesystem>
 #include <condition_variable>
 #include <cstring>
 #include <mutex>
@@ -16,6 +18,11 @@
 #undef _UNIX
 
 namespace nc::vfs::arc {
+
+namespace {
+// Defined further down, forward declared here as UnrarStream's worker needs it.
+int CALLBACK NextVolume(char *_arc_name, int _mode);
+} // namespace
 
 ssize_t Mediator::myread([[maybe_unused]] struct archive *a, void *client_data, const void **buff)
 {
@@ -171,6 +178,40 @@ std::string WideToUTF8(const wchar_t *_str)
 
 } // namespace
 
+std::string NormalizeUTF8ToNFD(std::string_view _str)
+{
+    const CFStringRef str = CFStringCreateWithBytes(kCFAllocatorDefault,
+                                                    reinterpret_cast<const UInt8 *>(_str.data()),
+                                                    static_cast<CFIndex>(_str.size()),
+                                                    kCFStringEncodingUTF8,
+                                                    false);
+    if( str == nullptr )
+        return std::string{_str};
+
+    const CFMutableStringRef mutable_str = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, str);
+    CFRelease(str);
+    if( mutable_str == nullptr )
+        return std::string{_str};
+
+    CFStringNormalize(mutable_str, kCFStringNormalizationFormD);
+
+    const CFIndex length = CFStringGetLength(mutable_str);
+    const CFIndex capacity = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8) + 1;
+    std::string out(static_cast<size_t>(capacity), '\0');
+    CFIndex used = 0;
+    CFStringGetBytes(mutable_str,
+                     CFRangeMake(0, length),
+                     kCFStringEncodingUTF8,
+                     0,
+                     false,
+                     reinterpret_cast<UInt8 *>(out.data()),
+                     capacity,
+                     &used);
+    CFRelease(mutable_str);
+    out.resize(static_cast<size_t>(used));
+    return out;
+}
+
 class UnrarStream::Impl
 {
 public:
@@ -227,6 +268,7 @@ void UnrarStream::Impl::Produce()
     }
     if( !password.empty() )
         RARSetPassword(arc, password.data());
+    RARSetChangeVolProc(arc, &NextVolume);
     RARSetCallback(arc, &Impl::RawCallback, reinterpret_cast<LPARAM>(this));
 
     bool extracted = false;
@@ -362,6 +404,165 @@ std::unique_ptr<UnrarStream> UnrarStream::Open(const std::string &_archive_path,
 long UnrarStream::Read(void *_buffer, size_t _size)
 {
     return I->Read(_buffer, _size);
+}
+
+namespace {
+
+constexpr unsigned int kFileAttributeDirectory = 0x10;
+constexpr unsigned int kFileAttributeUnixExtension = 0x8000;
+constexpr unsigned int kHeaderFlagEncrypted = 0x04;
+
+time_t DosTimeToUnix(uint32_t _dos_time)
+{
+    struct tm tm{};
+    tm.tm_sec = static_cast<int>(_dos_time & 0x1F) * 2;
+    tm.tm_min = static_cast<int>((_dos_time >> 5) & 0x3F);
+    tm.tm_hour = static_cast<int>((_dos_time >> 11) & 0x1F);
+    tm.tm_mday = static_cast<int>((_dos_time >> 16) & 0x1F);
+    tm.tm_mon = static_cast<int>((_dos_time >> 21) & 0x0F) - 1;
+    tm.tm_year = static_cast<int>((_dos_time >> 25) & 0x7F) + 80;
+    tm.tm_isdst = -1;
+    return mktime(&tm);
+}
+
+// UnRAR asks for the next volume of a multi-volume archive through this callback. All the volumes
+// are expected to sit next to the first one, which is where UnRAR computes their names anyway.
+int CALLBACK NextVolume(char *_arc_name, int _mode)
+{
+    if( _mode == RAR_VOL_NOTIFY )
+        return 1;
+
+    std::error_code ec;
+    return std::filesystem::exists(std::filesystem::path{_arc_name}, ec) ? 1 : 0;
+}
+
+int PosixCodeForUnrarError(int _error)
+{
+    switch( _error ) {
+        case ERAR_MISSING_PASSWORD:
+        case ERAR_BAD_PASSWORD:
+            return ENEEDAUTH;
+        case ERAR_BAD_ARCHIVE:
+        case ERAR_UNKNOWN_FORMAT:
+            return EFTYPE;
+        default:
+            return EIO;
+    }
+}
+
+} // namespace
+
+class UnrarArchive::Impl
+{
+public:
+    ~Impl()
+    {
+        if( arc != nullptr )
+            RARCloseArchive(arc);
+    }
+
+    HANDLE arc = nullptr;
+    int error = 0;
+    uint32_t uid = 0;
+};
+
+UnrarArchive::UnrarArchive() : I(std::make_unique<Impl>())
+{
+}
+
+UnrarArchive::~UnrarArchive() = default;
+
+std::unique_ptr<UnrarArchive>
+UnrarArchive::Open(std::string_view _archive_path, std::string_view _password, int &_error)
+{
+    _error = 0;
+
+    auto archive = std::unique_ptr<UnrarArchive>{new UnrarArchive};
+
+    std::string arc_name{_archive_path};
+    RAROpenArchiveDataEx data{};
+    data.ArcName = arc_name.data(); // UnRAR's API isn't const-correct
+    data.OpenMode = RAR_OM_LIST;
+
+    archive->I->arc = RAROpenArchiveEx(&data);
+    if( archive->I->arc == nullptr ) {
+        _error = PosixCodeForUnrarError(data.OpenResult);
+        return nullptr;
+    }
+
+    if( !_password.empty() ) {
+        std::string password{_password};
+        RARSetPassword(archive->I->arc, password.data());
+    }
+
+    RARSetChangeVolProc(archive->I->arc, &NextVolume);
+    return archive;
+}
+
+bool UnrarArchive::Next(Entry &_entry)
+{
+    if( I->arc == nullptr || I->error != 0 )
+        return false;
+
+    RARHeaderDataEx header{};
+    const int rc = RARReadHeaderEx(I->arc, &header);
+    if( rc != ERAR_SUCCESS ) {
+        if( rc != ERAR_END_ARCHIVE )
+            I->error = PosixCodeForUnrarError(rc);
+        return false;
+    }
+
+    _entry = Entry{};
+    _entry.uid = ++I->uid;
+    _entry.name = WideToUTF8(header.FileNameW);
+    // Directory entries may come with a trailing slash, the host expects them without one.
+    while( !_entry.name.empty() && _entry.name.back() == '/' )
+        _entry.name.pop_back();
+    _entry.is_encrypted = (header.Flags & kHeaderFlagEncrypted) != 0;
+
+    mode_t mode = 0;
+    if( (header.FileAttr & kFileAttributeUnixExtension) != 0 )
+        mode = static_cast<mode_t>(header.FileAttr >> 16);
+
+    const bool is_dir = (mode & S_IFMT) == S_IFDIR || (header.FileAttr & kFileAttributeDirectory) != 0 ||
+                        (!_entry.name.empty() && _entry.name.back() == '/');
+
+    if( mode == 0 )
+        mode = is_dir ? (S_IFDIR | 0755) : (S_IFREG | 0644);
+    else if( is_dir )
+        mode = static_cast<mode_t>((mode & ~S_IFMT) | S_IFDIR);
+
+    _entry.is_dir = is_dir;
+    _entry.is_symlink = (mode & S_IFMT) == S_IFLNK;
+
+    struct stat st{};
+    st.st_mode = mode;
+    st.st_size =
+        static_cast<off_t>(static_cast<uint64_t>(header.UnpSize) | (static_cast<uint64_t>(header.UnpSizeHigh) << 32));
+
+    const auto mtime = static_cast<int64_t>((static_cast<uint64_t>(header.MtimeHigh) << 32) | header.MtimeLow);
+    const auto ctime = static_cast<int64_t>((static_cast<uint64_t>(header.CtimeHigh) << 32) | header.CtimeLow);
+    const auto atime = static_cast<int64_t>((static_cast<uint64_t>(header.AtimeHigh) << 32) | header.AtimeLow);
+    const time_t fallback_time = header.FileTime != 0 ? DosTimeToUnix(header.FileTime) : 0;
+
+    st.st_mtimespec.tv_sec = mtime > 0 ? static_cast<time_t>(mtime) : fallback_time;
+    st.st_ctimespec.tv_sec = ctime > 0 ? static_cast<time_t>(ctime) : st.st_mtimespec.tv_sec;
+    st.st_atimespec.tv_sec = atime > 0 ? static_cast<time_t>(atime) : st.st_mtimespec.tv_sec;
+    st.st_birthtimespec.tv_sec = st.st_ctimespec.tv_sec;
+
+    _entry.st = st;
+
+    // Advance past the payload. In the RAR_OM_LIST mode UnRAR just seeks over the data blocks
+    // instead of decompressing them, which is what makes the listing of solid archives cheap.
+    if( const int skip_rc = RARProcessFileW(I->arc, RAR_SKIP, nullptr, nullptr); skip_rc != ERAR_SUCCESS )
+        I->error = PosixCodeForUnrarError(skip_rc);
+
+    return true;
+}
+
+int UnrarArchive::Error() const
+{
+    return I->error;
 }
 
 } // namespace nc::vfs::arc

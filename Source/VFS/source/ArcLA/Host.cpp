@@ -16,12 +16,36 @@
 #include <Utility/PathManip.h>
 #include <VFS/AppleDoubleEA.h>
 #include <VFS/Log.h>
+#include <algorithm>
 #include <fmt/format.h>
 #include <mutex>
 #include <sys/dirent.h>
 #include <sys/param.h>
 
 namespace nc::vfs {
+
+namespace {
+
+// Cheap check of the RAR signature so that the UnRAR library can be used before libarchive gets
+// a chance to sniff the format. RAR4 is "Rar!\x1a\x07\x00", RAR5 continues with "\x01\x00".
+bool IsRarArchive(VFSFile &_file)
+{
+    unsigned char magic[8] = {};
+    const std::expected<size_t, Error> read = _file.Read(magic, sizeof(magic));
+    std::ignore = _file.Seek(0, SEEK_SET);
+    if( !read || *read < 7 )
+        return false;
+
+    static constexpr unsigned char signature[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07}; // "Rar!\x1a\x07"
+    if( std::memcmp(magic, signature, sizeof(signature)) != 0 )
+        return false;
+
+    if( magic[6] == 0x00 ) // RAR4
+        return true;
+    return magic[6] == 0x01 && *read >= 8 && magic[7] == 0x00; // RAR5
+}
+
+} // namespace
 
 const char *const ArchiveHost::UniqueTag = "arc_libarchive";
 
@@ -43,8 +67,8 @@ struct ArchiveHost::Impl {
     uint32_t m_LastItemUID = 0;
     uint64_t m_ArchivedFilesTotalSize = 0;
 
-    // true if the entry payloads should be read via the UnRAR library instead of libarchive
-    bool m_StreamDataViaUnrar = false;
+    // true when this RAR archive is served by the UnRAR library instead of libarchive
+    bool m_UseUnrar = false;
 
     bool m_NeedsPathResolving = false; // true if there are any symlinks present in archive
     SymlinksT m_Symlinks;
@@ -217,13 +241,19 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
         return std::unexpected(Error{Error::POSIX, EINVAL});
     }
 
+    // RAR archives on a local filesystem are handled by the UnRAR library: libarchive has to
+    // decompress the payload of a solid archive just to walk its headers, and it has no support
+    // for multi-volume archives at all.
+    if( Parent()->IsNativeFS() && IsRarArchive(*I->m_ArFile) ) {
+        I->m_UseUnrar = true;
+        return ReadUnrarListing(_cancel_checker);
+    }
+
     I->m_Mediator = std::make_shared<Mediator>();
     I->m_Mediator->file = I->m_ArFile;
     I->m_Mediator->cancel_checker = _cancel_checker;
 
-    // This handle is only used to walk the list of entries, it never reads any payload, so it can
-    // skip the data of solid RARs instead of decompressing it just to reach the next header.
-    I->m_Arc = SpawnLibarchive(true);
+    I->m_Arc = SpawnLibarchive();
 
     archive_read_set_callback_data(I->m_Arc, I->m_Mediator.get());
     archive_read_set_read_callback(I->m_Arc, Mediator::myread);
@@ -248,12 +278,6 @@ std::expected<void, Error> ArchiveHost::DoInit(const VFSCancelChecker &_cancel_c
 
     if( !list_rc )
         return std::unexpected(list_rc.error());
-
-    // NB: the format is only known after the listing pass, libarchive does the format bidding
-    // lazily, on the first header read.
-    const int format = archive_format(I->m_Arc);
-    I->m_StreamDataViaUnrar =
-        (format == ARCHIVE_FORMAT_RAR || format == ARCHIVE_FORMAT_RAR_V5) && Parent()->IsNativeFS();
 
     return {};
 }
@@ -456,6 +480,141 @@ std::expected<void, Error> ArchiveHost::ReadArchiveListing(const VFSCancelChecke
         return {};
 
     return std::unexpected(Error{Error::POSIX, archive_errno(I->m_Arc)});
+}
+
+std::expected<void, Error> ArchiveHost::ReadUnrarListing(const VFSCancelChecker &_cancel_checker)
+{
+    using namespace arc;
+
+    const std::string password{Config().password ? *Config().password : std::string{}};
+    int open_error = 0;
+    const std::unique_ptr<UnrarArchive> archive = UnrarArchive::Open(JunctionPath(), password, open_error);
+    if( !archive )
+        return std::unexpected(Error{Error::POSIX, open_error});
+
+    Dir *parent_dir = nullptr;
+    {
+        // Manually "invent" the root directory
+        assert(I->m_PathToDir.empty());
+        Dir root_dir;
+        root_dir.full_path = "/";
+        root_dir.name_in_parent = "";
+        const auto ret = I->m_PathToDir.emplace("/", std::move(root_dir));
+        parent_dir = &ret.first->second;
+    }
+
+    bool has_encrypted_entries = false;
+    uint32_t aruid = 0;
+    UnrarArchive::Entry archive_entry;
+    while( archive->Next(archive_entry) ) {
+        if( _cancel_checker && _cancel_checker() )
+            return std::unexpected(Error{Error::POSIX, ECANCELED});
+
+        aruid = archive_entry.uid;
+        has_encrypted_entries = has_encrypted_entries || archive_entry.is_encrypted;
+
+        if( archive_entry.name.empty() )
+            continue;
+
+        // UnRAR reports the names in the composed form, the rest of the code base expects the
+        // decomposed one (that's what libarchive and macOS produce). Some archives also carry
+        // Windows-style path separators, normalize them as well.
+        std::string path{"/"};
+        path += NormalizeUTF8ToNFD(archive_entry.name);
+        std::replace(path.begin(), path.end(), '\\', '/');
+
+        if( path == "/" || path == "/." )
+            continue; // skip root and "." entries - the root is handled manually
+
+        const std::string_view parent_path = utility::PathManip::Parent(path);
+        const std::string_view filename = utility::PathManip::Filename(path);
+
+        if( parent_dir->full_path != parent_path ) {
+            Dir *const new_parent = FindOrBuildDir(parent_path);
+            if( new_parent == nullptr )
+                continue; // skip entries with bogus paths
+            parent_dir = new_parent;
+        }
+
+        DirEntry *entry = nullptr;
+        unsigned entry_index_in_dir = 0;
+        if( archive_entry.is_dir ) // check if it wasn't added before via FindOrBuildDir
+            for( size_t i = 0, e = parent_dir->entries.size(); i < e; ++i ) {
+                auto &it = parent_dir->entries[i];
+                if( (it.st.st_mode & S_IFMT) == S_IFDIR && it.name == filename ) {
+                    assert(it.aruid == SyntheticArUID);
+                    entry = &it;
+                    entry_index_in_dir = static_cast<unsigned>(i);
+                    break;
+                }
+            }
+
+        if( entry == nullptr ) {
+            parent_dir->entries.emplace_back();
+            entry_index_in_dir = static_cast<unsigned>(parent_dir->entries.size() - 1);
+            entry = &parent_dir->entries.back();
+            entry->name = filename;
+        }
+
+        entry->aruid = aruid;
+        entry->st = archive_entry.st;
+        I->m_ArchivedFilesTotalSize += entry->st.st_size;
+
+        // UnRAR might not know every timestamp, in which case the same fallbacks as in the
+        // libarchive path are applied.
+        if( entry->st.st_mtimespec.tv_sec == 0 )
+            entry->st.st_mtimespec = I->m_SrcFileStat.st_mtimespec;
+        if( entry->st.st_ctimespec.tv_sec == 0 )
+            entry->st.st_ctimespec = entry->st.st_mtimespec;
+        if( entry->st.st_atimespec.tv_sec == 0 )
+            entry->st.st_atimespec = entry->st.st_mtimespec;
+        if( entry->st.st_birthtimespec.tv_sec == 0 )
+            entry->st.st_birthtimespec = entry->st.st_ctimespec;
+
+        if( I->m_EntryByUID.size() <= entry->aruid )
+            I->m_EntryByUID.resize(entry->aruid + 1, std::make_pair(nullptr, 0));
+        I->m_EntryByUID[entry->aruid] = std::make_pair(parent_dir, entry_index_in_dir);
+
+        if( archive_entry.is_symlink ) {
+            // RAR keeps the target of a symlink in its payload, fetch it lazily - reading it here
+            // would mean decompressing the whole archive up to this point.
+            Symlink symlink;
+            symlink.uid = entry->aruid;
+            symlink.state = SymlinkState::Unresolved;
+            I->m_Symlinks.emplace(entry->aruid, std::move(symlink));
+            I->m_NeedsPathResolving = true;
+        }
+
+        if( archive_entry.is_dir ) {
+            if( !path.ends_with('/') )
+                path += '/';
+
+            if( !I->m_PathToDir.contains(path) ) {
+                Dir dir;
+                dir.full_path = path;
+                dir.name_in_parent = utility::PathManip::Filename(path);
+                I->m_PathToDir.emplace(path, std::move(dir));
+            }
+            I->m_TotalDirs++;
+        }
+        else if( (entry->st.st_mode & S_IFMT) == S_IFREG ) {
+            I->m_TotalRegs++;
+        }
+        I->m_TotalFiles++;
+    }
+
+    if( const int error = archive->Error(); error != 0 )
+        return std::unexpected(Error{Error::POSIX, error});
+
+    // Match the behaviour of the libarchive path: an encrypted archive without a password is
+    // reported as "needs authentication" so that the caller can ask for it.
+    if( has_encrypted_entries && !Config().password )
+        return std::unexpected(Error{Error::POSIX, ENEEDAUTH});
+
+    I->m_LastItemUID = aruid;
+    UpdateDirectorySize(I->m_PathToDir["/"], "/");
+
+    return {};
 }
 
 uint64_t ArchiveHost::UpdateDirectorySize(arc::Dir &_directory, const std::string &_path)
@@ -893,7 +1052,7 @@ std::expected<std::unique_ptr<arc::State>, Error> ArchiveHost::ArchiveStateForIt
                 return std::unexpected(rc.error());
         }
 
-        auto new_state = std::make_unique<arc::State>(file, SpawnLibarchive(I->m_StreamDataViaUnrar));
+        auto new_state = std::make_unique<arc::State>(file, SpawnLibarchive());
 
         const int res = new_state->Open();
         if( res < 0 ) {
@@ -929,7 +1088,7 @@ std::expected<std::unique_ptr<arc::State>, Error> ArchiveHost::ArchiveStateForIt
 
 bool ArchiveHost::CanStreamDataWithUnrar() const noexcept
 {
-    return I->m_StreamDataViaUnrar;
+    return I->m_UseUnrar;
 }
 
 std::string_view ArchiveHost::Password() const noexcept
@@ -937,19 +1096,12 @@ std::string_view ArchiveHost::Password() const noexcept
     return Config().password ? std::string_view{*Config().password} : std::string_view{};
 }
 
-void ArchiveHost::DisableUnrarStreaming()
-{
-    const std::lock_guard<std::mutex> lock(I->m_StatesLock);
-    I->m_StreamDataViaUnrar = false;
-    I->m_States.clear();
-}
-
 std::string_view ArchiveHost::SourceFilePath() const noexcept
 {
     return JunctionPath();
 }
 
-struct ::archive *ArchiveHost::SpawnLibarchive(bool _skip_solid_data_for_listing)
+struct ::archive *ArchiveHost::SpawnLibarchive()
 {
     archive *arc = archive_read_new();
     const auto require = [](int rc) {
@@ -982,11 +1134,6 @@ struct ::archive *ArchiveHost::SpawnLibarchive(bool _skip_solid_data_for_listing
     require(archive_read_support_format_rar(arc));
     require(archive_read_support_format_rar5(arc));
 
-    // A listing pass walks the headers only and never reads any payload, so libarchive can skip
-    // the payload of solid RARs instead of decompressing it just to reach the next header.
-    if( _skip_solid_data_for_listing )
-        archive_read_set_options(arc, "rar5:skip_solid_data=1");
-
     if( Config().password )
         archive_read_add_passphrase(arc, Config().password->c_str());
     return arc;
@@ -1005,6 +1152,16 @@ void ArchiveHost::ResolveSymlink(uint32_t _uid)
     auto &symlink = iter->second;
     if( symlink.state != SymlinkState::Unresolved )
         return; // was resolved in race condition
+
+    if( symlink.value.empty() && I->m_UseUnrar ) {
+        // RAR keeps the target of a symlink in its payload, fetch it on demand.
+        std::string target;
+        if( !ReadSymlinkTarget(_uid, target) ) {
+            symlink.state = SymlinkState::Invalid;
+            return;
+        }
+        symlink.value = std::move(target);
+    }
 
     if( symlink.value == "." || symlink.value == "./" ) {
         symlink.state = SymlinkState::Loop; // special upfront treating for some weird cases
@@ -1078,6 +1235,34 @@ void ArchiveHost::ResolveSymlink(uint32_t _uid)
     symlink.target_path = std::move(result_path);
     symlink.target_uid = result_uid;
     symlink.state = SymlinkState::Resolved;
+}
+
+bool ArchiveHost::ReadSymlinkTarget(uint32_t _uid, std::string &_target)
+{
+    if( _uid >= I->m_EntryByUID.size() )
+        return false;
+
+    const auto [dir, index] = I->m_EntryByUID[_uid];
+    if( dir == nullptr || index >= dir->entries.size() )
+        return false;
+
+    std::string path = dir->full_path;
+    if( path.empty() || path.back() != '/' )
+        path += '/';
+    path += dir->entries[index].name;
+
+    const std::unique_ptr<arc::UnrarStream> stream =
+        arc::UnrarStream::Open(std::string{JunctionPath()}, path, Password(), nullptr);
+    if( !stream )
+        return false;
+
+    char buffer[4096];
+    const long read = stream->Read(buffer, sizeof(buffer) - 1);
+    if( read <= 0 )
+        return false;
+
+    _target.assign(buffer, static_cast<size_t>(read));
+    return true;
 }
 
 const ArchiveHost::Symlink *ArchiveHost::ResolvedSymlink(uint32_t _uid)

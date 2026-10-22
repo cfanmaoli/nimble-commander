@@ -5,10 +5,15 @@
 #include <libarchive/archive_entry.h>
 #include <VFS/VFSFile.h>
 #include <deque>
+#include <sys/stat.h>
 
 namespace nc::vfs::arc {
 
 constexpr inline uint32_t SyntheticArUID = std::numeric_limits<uint32_t>::max();
+
+// Converts a UTF-8 string to the decomposed form (NFD), which is what the rest of the code base
+// sees from libarchive and what macOS file systems use for their names.
+std::string NormalizeUTF8ToNFD(std::string_view _str);
 
 // Streams the content of a single entry out of a local RAR archive with the help of the UnRAR
 // library. UnRAR delivers the data through a callback while it processes an entry, so the
@@ -36,6 +41,41 @@ private:
                 std::string _entry_path,
                 std::string _password,
                 const VFSCancelChecker &_cancel_checker);
+    std::unique_ptr<Impl> I;
+};
+
+// Walks the entry headers of a local RAR archive with the UnRAR library. Unlike libarchive's
+// reader, which has to decompress the payload of a solid archive to reach the next header, this
+// jumps over the data blocks - the same thing unrar's own 'l' command does.
+class UnrarArchive
+{
+public:
+    struct Entry {
+        std::string name; // UTF-8, without the leading slash
+        struct stat st{};
+        bool is_dir = false;
+        bool is_symlink = false;
+        bool is_encrypted = false;
+        uint32_t uid = 0; // 1-based ordinal of the header
+    };
+
+    // Returns nullptr when the archive can't be opened. _error is set to the POSIX code describing
+    // the failure: ENEEDAUTH for a missing or wrong password, ECANCELED for a cancellation, EIO
+    // otherwise.
+    static std::unique_ptr<UnrarArchive> Open(std::string_view _archive_path, std::string_view _password, int &_error);
+    UnrarArchive(const UnrarArchive &) = delete;
+    UnrarArchive &operator=(const UnrarArchive &) = delete;
+    ~UnrarArchive();
+
+    // Returns false at the end of the archive or on an error, check Error() to tell them apart.
+    bool Next(Entry &_entry);
+
+    // 0 after a clean EOF, a POSIX code otherwise.
+    int Error() const;
+
+private:
+    UnrarArchive();
+    class Impl;
     std::unique_ptr<Impl> I;
 };
 
