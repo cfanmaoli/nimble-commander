@@ -86,7 +86,7 @@ All rights reserved.</string>
 	<key>SMPrivilegedExecutables</key>
 	<dict>
 		<key>info.filesmanager.Files.PrivilegedIOHelperV2</key>
-		<string>identifier info.filesmanager.Files.PrivilegedIOHelperV2 and certificate leaf[subject.CN] = &quot;Developer ID Application: Mikhail Kazakov (AC5SJT236H)&quot;</string>
+		<string>identifier info.filesmanager.Files.PrivilegedIOHelperV2 and anchor apple generic and certificate leaf[subject.OU] = &quot;359W39ZS37&quot;</string>
 	</dict>
 	<key>SUFeedURL</key>
 	<string>https://magnumbytes.com/downloads/releases/sparkle-nimble-commander.xml</string>

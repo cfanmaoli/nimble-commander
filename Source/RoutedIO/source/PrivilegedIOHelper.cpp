@@ -12,10 +12,14 @@
 #include <xpc/xpc.h>
 #include <Base/CFPtr.h>
 
-// requires that identifier is right and binary is signed by me
+// requires that the identifier is right and that the binary is signed by this development team.
+// NB: the certificate is identified by its Team ID (the OU field) rather than by its common
+// name - the CN of an Apple Development certificate contains the developer's Apple ID, which
+// should not end up in the sources.
 static const char *g_SignatureRequirement =
     "identifier info.filesmanager.Files and "
-    "certificate leaf[subject.CN] = \"Developer ID Application: Mikhail Kazakov (AC5SJT236H)\"";
+    "anchor apple generic and "
+    "certificate leaf[subject.OU] = \"359W39ZS37\"";
 
 static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV2";
 
