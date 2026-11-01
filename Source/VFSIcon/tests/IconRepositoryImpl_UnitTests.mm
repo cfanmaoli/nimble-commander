@@ -221,8 +221,8 @@ TEST_CASE("IconRepositoryImpl uses updated results from IconBuilder")
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
     EXPECT_CALL(*icon_builder, LookupExistingIcon);
 
     SECTION("Thumbnail passage")
@@ -260,8 +260,8 @@ TEST_CASE("IconRepositoryImpl doesn't call IconBuilder concurrently for a single
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &) { /* no-op */ }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &) { /* no-op */ });
     EXPECT_CALL(*icon_builder, LookupExistingIcon);
 
     const auto br = CookSomeBuildResult();
@@ -279,8 +279,8 @@ TEST_CASE("IconRepositoryImpl doesn't call IconBuilder again if entry didn't cha
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
     EXPECT_CALL(*icon_builder, LookupExistingIcon);
 
     const auto br = CookSomeBuildResult();
@@ -298,8 +298,8 @@ TEST_CASE("IconRepositoryImpl call IconBuilder again if entry did change")
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
     EXPECT_CALL(*icon_builder, LookupExistingIcon);
 
     const auto br = CookSomeBuildResult();
@@ -331,8 +331,8 @@ TEST_CASE("IconRepositoryImpl calls a callback when icon changes")
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
     EXPECT_CALL(*icon_builder, LookupExistingIcon);
 
     const auto br = CookSomeBuildResult();
@@ -357,8 +357,8 @@ TEST_CASE("IconRepositoryImpl doesn't call a callback when icon is the same")
     const auto icon_builder = std::make_shared<IconBuilderMock>();
     const auto executor = std::make_shared<ExecutorMock>();
     auto queue = std::make_unique<NiceMock<LimitedConcurrentQueueMock>>();
-    EXPECT_CALL(*queue, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
-    EXPECT_CALL(*executor, Execute).WillRepeatedly(Invoke([](const std::function<void()> &f) { f(); }));
+    EXPECT_CALL(*queue, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([](const std::function<void()> &f) { f(); });
     const auto img = [[NSImage alloc] init];
     IconBuilder::LookupResult lr;
     lr.thumbnail = img;
