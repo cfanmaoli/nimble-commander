@@ -9,8 +9,8 @@ TMP_DIR=${CUR_DIR}/unrar.tmp
 mkdir ${TMP_DIR}
 cd ${TMP_DIR}
 
-wget https://www.rarlab.com/rar/unrarsrc-7.3.1.tar.gz
-tar -xf unrarsrc-7.3.1.tar.gz
+wget https://www.rarlab.com/rar/unrarsrc-7.3.2.tar.gz
+tar -xf unrarsrc-7.3.2.tar.gz
 cd unrar
 
 # The objects that the upstream 'make lib' target builds: the UnRAR DLL API plus everything it
@@ -22,7 +22,8 @@ extract volume list find unpack headers threadpool rs16 cmddata ui largepage
 filestr scantree dll qopen"
 
 CFLAGS="-std=c++11 -fvisibility=hidden -flto -Os -mmacosx-version-min=11.0 -DNDEBUG
-  -DRAR_SMP -DRARDLL -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -pthread"
+  -DRAR_SMP -DRARDLL -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -pthread
+  -ffile-prefix-map=${TMP_DIR}=/nc-build"
 
 for arch in arm64 x86_64; do
   for obj in ${OBJECTS}; do
