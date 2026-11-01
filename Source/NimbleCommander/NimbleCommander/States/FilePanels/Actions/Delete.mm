@@ -230,10 +230,10 @@ void ShowTrashAccessDeniedAlert(PanelController *_target)
                   }];
 }
 
-bool EnsureTrashIsAccessible(PanelController *_target)
+bool EnsureTrashIsAccessible(PanelController *_target, const std::string &_directory)
 {
     int error = 0;
-    nc::routedio::ListTrash(error);
+    nc::routedio::ListTrashDirectory(_directory, error);
     if( error == 0 )
         return true;
     if( error == EPERM || error == EACCES )
@@ -254,11 +254,17 @@ std::string WithoutTrailingSlash(std::string _path)
 
 void GoToTrash::Perform(PanelController *_target, id /*_sender*/) const
 {
-    if( !EnsureTrashIsAccessible(_target) )
+    // Prefer the trash of the volume that the panel is currently on, so that items deleted from
+    // an external drive can be reached from there. Fall back to the boot volume's trash.
+    std::string trash = nc::routedio::TrashForVolumeOf(WithoutTrailingSlash(_target.currentDirectoryPath));
+    if( trash.empty() )
+        trash = nc::routedio::TrashDirectory();
+
+    if( !EnsureTrashIsAccessible(_target, trash) )
         return;
 
     const auto request = std::make_shared<DirectoryChangeRequest>();
-    request->RequestedDirectory = nc::routedio::TrashDirectory();
+    request->RequestedDirectory = trash;
     request->VFS = nc::bootstrap::NativeVFSHostInstance().SharedPtr();
     request->PerformAsynchronous = true;
     request->InitiatedByUser = true;
@@ -272,13 +278,24 @@ bool EmptyTrash::Predicate(PanelController * /*_target*/) const
 
 void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
 {
-    if( !EnsureTrashIsAccessible(_target) )
-        return;
-
-    int error = 0;
-    std::vector<std::string> items = nc::routedio::ListTrash(error);
-    if( error != 0 ) {
-        ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
+    // Like the Finder, empty the trashes of all mounted volumes, not just the boot one.
+    std::vector<std::string> items;
+    int first_error = 0;
+    for( const std::string &location : nc::routedio::TrashLocations() ) {
+        int error = 0;
+        std::vector<std::string> children = nc::routedio::ListTrashDirectory(location, error);
+        if( error != 0 ) {
+            if( first_error == 0 )
+                first_error = error;
+            continue;
+        }
+        items.insert(items.end(), children.begin(), children.end());
+    }
+    if( first_error != 0 && items.empty() ) {
+        if( first_error == EPERM || first_error == EACCES )
+            ShowTrashAccessDeniedAlert(_target);
+        else
+            ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
         return;
     }
     if( items.empty() ) {

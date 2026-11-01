@@ -10,7 +10,10 @@
 #include <dirent.h>
 #include <filesystem>
 #include <string_view>
+#include <sys/mount.h>
+#include <sys/stat.h>
 #include <sys/xattr.h>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace nc::routedio {
@@ -240,6 +243,12 @@ std::string JoinPath(const std::string &_parent, const std::string &_name)
     return _parent + "/" + _name;
 }
 
+bool IsDirectory(const std::string &_path)
+{
+    struct stat st;
+    return stat(_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+}
+
 bool ReadAttribute(const std::string &_path, const char *_name, std::string &_value)
 {
     const ssize_t size = getxattr(_path.c_str(), _name, nullptr, 0, 0, 0);
@@ -278,23 +287,80 @@ std::string TrashDirectory()
     return home == nil ? std::string{} : std::string{home.UTF8String} + "/.Trash";
 }
 
+std::vector<std::string> TrashLocations()
+{
+    std::vector<std::string> locations;
+    const std::string home_trash = TrashDirectory();
+    if( IsDirectory(home_trash) )
+        locations.push_back(home_trash);
+
+    // Every mounted local volume has its own per-user trash folder.
+    const std::string uid = std::to_string(getuid());
+    struct statfs *mounts = nullptr;
+    const int count = getmntinfo(&mounts, MNT_NOWAIT);
+    for( int i = 0; i < count; ++i ) {
+        const std::string mount = mounts[i].f_mntonname;
+        if( mount == "/" || !(mounts[i].f_flags & MNT_LOCAL) )
+            continue;
+        const std::string trash = mount + "/.Trashes/" + uid;
+        if( IsDirectory(trash) )
+            locations.push_back(trash);
+    }
+    return locations;
+}
+
+std::string TrashContaining(const std::string &_path)
+{
+    std::string result;
+    for( const std::string &location : TrashLocations() ) {
+        if( _path == location || _path.starts_with(location + "/") ) {
+            if( location.size() > result.size() )
+                result = location;
+        }
+    }
+    return result;
+}
+
+std::string TrashForVolumeOf(const std::string &_path)
+{
+    if( _path.empty() || _path.front() != '/' )
+        return TrashDirectory();
+
+    struct statfs *mounts = nullptr;
+    const int count = getmntinfo(&mounts, MNT_NOWAIT);
+    std::string best_mount;
+    for( int i = 0; i < count; ++i ) {
+        const std::string mount = mounts[i].f_mntonname;
+        if( _path == mount || _path.starts_with(mount == "/" ? mount : mount + "/") ) {
+            if( mount.size() > best_mount.size() )
+                best_mount = mount;
+        }
+    }
+    if( best_mount.empty() || best_mount == "/" )
+        return TrashDirectory();
+
+    const std::string trash = best_mount + "/.Trashes/" + std::to_string(getuid());
+    return IsDirectory(trash) ? trash : std::string{};
+}
+
 bool IsTrashDirectory(const std::string &_path)
 {
-    return _path == TrashDirectory();
+    for( const std::string &location : TrashLocations() )
+        if( _path == location )
+            return true;
+    return false;
 }
 
 bool IsInsideTrash(const std::string &_path)
 {
-    const std::string trash = TrashDirectory() + "/";
-    return _path.starts_with(trash) && _path.size() > trash.size();
+    return !TrashContaining(_path).empty();
 }
 
-std::vector<std::string> ListTrash(int &_error)
+std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &_error)
 {
     _error = 0;
     std::vector<std::string> result;
-    const std::string trash = TrashDirectory();
-    DIR *const dir = opendir(trash.c_str());
+    DIR *const dir = opendir(_directory.c_str());
     if( dir == nullptr ) {
         _error = errno;
         return result;
@@ -303,7 +369,7 @@ std::vector<std::string> ListTrash(int &_error)
         const std::string name = entry->d_name;
         if( name == "." || name == ".." || name == ".DS_Store" )
             continue;
-        result.push_back(trash + "/" + name);
+        result.push_back(_directory + "/" + name);
     }
     closedir(dir);
     return result;
@@ -329,7 +395,8 @@ std::optional<std::string> OriginalLocationOfTrashedItem(const std::string &_tra
     const std::string filename = item.filename().string();
     if( filename.empty() )
         return std::nullopt;
-    return OriginalLocationFromDsStore(TrashDirectory() + "/.DS_Store", filename);
+    const std::string trash = TrashContaining(_trash_item_path);
+    return OriginalLocationFromDsStore((trash.empty() ? TrashDirectory() : trash) + "/.DS_Store", filename);
 }
 
 void RememberOriginalLocation(const std::string &_path)
