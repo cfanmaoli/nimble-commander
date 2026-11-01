@@ -301,7 +301,7 @@ std::vector<std::string> ListTrash(int &_error)
     }
     while( const dirent *const entry = readdir(dir) ) {
         const std::string name = entry->d_name;
-        if( name == "." || name == ".." )
+        if( name == "." || name == ".." || name == ".DS_Store" )
             continue;
         result.push_back(trash + "/" + name);
     }
