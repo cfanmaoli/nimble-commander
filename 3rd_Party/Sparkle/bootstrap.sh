@@ -16,7 +16,9 @@ cd Sparkle
 XC="xcodebuild \
   -project Sparkle.xcodeproj \
   -scheme Sparkle \
-  -configuration Release"
+  -configuration Release \
+  ARCHS=arm64 \
+  ONLY_ACTIVE_ARCH=NO"
 BINARY_DIR=$($XC -showBuildSettings | grep " BUILT_PRODUCTS_DIR =" | sed -e 's/.*= *//')
 BINARY_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= *//')
 BINARY_PATH=$BINARY_DIR/$BINARY_NAME
