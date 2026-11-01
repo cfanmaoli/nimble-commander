@@ -48,7 +48,7 @@
 		CF69CFB41DA209F000992B84 /* info.filesmanager.Files.PrivilegedIOHelperV2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = info.filesmanager.Files.PrivilegedIOHelperV2; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF69CFBD1DA20B4F00992B84 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		CF69CFBF1DA20B5500992B84 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		CF8E4CC625F43A3800F0881B /* Trash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trash.h; path = source/Trash.h; sourceTree = "<group>"; };
+		CF8E4CC625F43A3800F0881B /* Trash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trash.h; path = include/RoutedIO/Trash.h; sourceTree = "<group>"; };
 		CF8E4CC725F43A3800F0881B /* Trash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Trash.mm; path = source/Trash.mm; sourceTree = "<group>"; };
 		CF9B080126FF57A000D2842B /* Log.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Log.h; path = include/RoutedIO/Log.h; sourceTree = "<group>"; };
 		CF9B080226FF57F900D2842B /* Log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Log.cpp; path = source/Log.cpp; sourceTree = "<group>"; };

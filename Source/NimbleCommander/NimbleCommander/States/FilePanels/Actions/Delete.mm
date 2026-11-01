@@ -11,8 +11,12 @@
 #include "../../MainWindowController.h"
 #include <ankerl/unordered_dense.h>
 #include <Base/dispatch_cpp.h>
+#include <RoutedIO/Trash.h>
+#include <NimbleCommander/Bootstrap/NativeVFSHostInstance.h>
 
+#include <AppKit/AppKit.h>
 #include <algorithm>
+#include <filesystem>
 
 namespace nc::panel::actions {
 
@@ -185,6 +189,164 @@ static void AddPanelRefreshEpilog(PanelController *_target, nc::ops::Operation &
                 [strong_pc hintAboutFilesystemChange];
         });
     });
+}
+
+namespace {
+
+NSString *TrashLocalizedText(NSString *_key)
+{
+    return NSLocalizedString(_key, nil);
+}
+
+void OpenFullDiskAccessSettings()
+{
+    NSURL *const url =
+        [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"];
+    [NSWorkspace.sharedWorkspace openURL:url];
+}
+
+void ShowTrashErrorAlert(PanelController *_target, NSString *_message, NSString *_informative)
+{
+    NSAlert *const alert = [NSAlert new];
+    alert.messageText = _message;
+    if( _informative != nil )
+        alert.informativeText = _informative;
+    [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+    [alert beginSheetModalForWindow:_target.window completionHandler:nil];
+}
+
+void ShowTrashAccessDeniedAlert(PanelController *_target)
+{
+    NSAlert *const alert = [NSAlert new];
+    alert.messageText = TrashLocalizedText(@"Nimble Commander needs Full Disk Access to work with the Trash.");
+    alert.informativeText =
+        TrashLocalizedText(@"Grant access in System Settings → Privacy & Security → Full Disk Access and try again.");
+    [alert addButtonWithTitle:TrashLocalizedText(@"Open System Settings")];
+    [alert addButtonWithTitle:TrashLocalizedText(@"Cancel")];
+    [alert beginSheetModalForWindow:_target.window
+                  completionHandler:^(NSModalResponse _response) {
+                    if( _response == NSAlertFirstButtonReturn )
+                        OpenFullDiskAccessSettings();
+                  }];
+}
+
+bool EnsureTrashIsAccessible(PanelController *_target)
+{
+    int error = 0;
+    nc::routedio::ListTrash(error);
+    if( error == 0 )
+        return true;
+    if( error == EPERM || error == EACCES )
+        ShowTrashAccessDeniedAlert(_target);
+    else
+        ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
+    return false;
+}
+
+std::string WithoutTrailingSlash(std::string _path)
+{
+    while( _path.size() > 1 && _path.back() == '/' )
+        _path.pop_back();
+    return _path;
+}
+
+} // namespace
+
+void GoToTrash::Perform(PanelController *_target, id /*_sender*/) const
+{
+    if( !EnsureTrashIsAccessible(_target) )
+        return;
+
+    const auto request = std::make_shared<DirectoryChangeRequest>();
+    request->RequestedDirectory = nc::routedio::TrashDirectory();
+    request->VFS = nc::bootstrap::NativeVFSHostInstance().SharedPtr();
+    request->PerformAsynchronous = true;
+    request->InitiatedByUser = true;
+    [_target GoToDirWithContext:request];
+}
+
+bool EmptyTrash::Predicate(PanelController * /*_target*/) const
+{
+    return true;
+}
+
+void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
+{
+    if( !EnsureTrashIsAccessible(_target) )
+        return;
+
+    int error = 0;
+    std::vector<std::string> items = nc::routedio::ListTrash(error);
+    if( error != 0 ) {
+        ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
+        return;
+    }
+    if( items.empty() ) {
+        ShowTrashErrorAlert(_target, TrashLocalizedText(@"The Trash is empty."), nil);
+        return;
+    }
+
+    NSAlert *const alert = [NSAlert new];
+    alert.alertStyle = NSAlertStyleCritical;
+    alert.messageText = TrashLocalizedText(@"Are you sure you want to permanently delete all items in the Trash?");
+    [alert addButtonWithTitle:TrashLocalizedText(@"Empty Trash")];
+    [alert addButtonWithTitle:TrashLocalizedText(@"Cancel")];
+    __weak PanelController *weak_target = _target;
+    [alert beginSheetModalForWindow:_target.window
+                  completionHandler:^(NSModalResponse _response) {
+                    if( _response != NSAlertFirstButtonReturn )
+                        return;
+                    dispatch_to_default([items = std::move(items), weak_target] {
+                        int failures = 0;
+                        for( const std::string &path : items ) {
+                            std::error_code ec;
+                            std::filesystem::remove_all(path, ec);
+                            if( ec )
+                                ++failures;
+                        }
+                        dispatch_to_main_queue([failures, weak_target] {
+                            PanelController *const target = weak_target;
+                            if( target == nil )
+                                return;
+                            [target hintAboutFilesystemChange];
+                            if( failures > 0 )
+                                ShowTrashErrorAlert(target, TrashLocalizedText(@"Failed to empty the Trash."), nil);
+                        });
+                    });
+                  }];
+}
+
+bool PutBack::Predicate(PanelController *_target) const
+{
+    if( _target.vfs == nullptr || !_target.vfs->IsNativeFS() )
+        return false;
+    const std::string directory = WithoutTrailingSlash(_target.currentDirectoryPath);
+    if( !nc::routedio::IsTrashDirectory(directory) && !nc::routedio::IsInsideTrash(directory) )
+        return false;
+    return !_target.selectedEntriesOrFocusedEntry.empty();
+}
+
+void PutBack::Perform(PanelController *_target, id /*_sender*/) const
+{
+    const std::vector<VFSListingItem> items = _target.selectedEntriesOrFocusedEntry;
+    int failures = 0;
+    for( const VFSListingItem &item : items ) {
+        if( !item.Host()->IsNativeFS() )
+            continue;
+        std::string resulting_path;
+        if( nc::routedio::PutBackTrashedItem(item.Path(), resulting_path) != 0 )
+            ++failures;
+    }
+
+    [_target hintAboutFilesystemChange];
+
+    if( failures > 0 ) {
+        NSAlert *const alert = [NSAlert new];
+        alert.messageText = failures == 1 ? TrashLocalizedText(@"Failed to put back an item.")
+                                          : TrashLocalizedText(@"Failed to put back some of the items.");
+        [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+        [alert beginSheetModalForWindow:_target.window completionHandler:nil];
+    }
 }
 
 } // namespace nc::panel::actions

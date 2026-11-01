@@ -1,5 +1,5 @@
 // Copyright (C) 2014-2026 Michael Kazakov. Subject to GNU General Public License version 3.
-#include "Trash.h"
+#include <RoutedIO/Trash.h>
 #include <Security/Security.h>
 #include <cerrno>
 #include <cstdio>
@@ -16,10 +16,9 @@
 // NB: the certificate is identified by its Team ID (the OU field) rather than by its common
 // name - the CN of an Apple Development certificate contains the developer's Apple ID, which
 // should not end up in the sources.
-static const char *g_SignatureRequirement =
-    "identifier info.filesmanager.Files and "
-    "anchor apple generic and "
-    "certificate leaf[subject.OU] = \"359W39ZS37\"";
+static const char *g_SignatureRequirement = "identifier info.filesmanager.Files and "
+                                            "anchor apple generic and "
+                                            "certificate leaf[subject.OU] = \"359W39ZS37\"";
 
 static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV2";
 
