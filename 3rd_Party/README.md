@@ -15,8 +15,7 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | Flag                       | Comments
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
-| -arch x86_64               | Build for Intel architecture 
-| -arch arm64                | Build for Apple Silicon architecture
+| -arch arm64                | Build for Apple Silicon (the only supported architecture)
 | -mmacosx-version-min=10.15 | Minimum supported target version of macOS is 11.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden

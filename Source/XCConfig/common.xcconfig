@@ -2,9 +2,9 @@
 // Build target
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Architecture
-VALID_ARCHS = $(ARCHS_STANDARD_64_BIT)
-ARCHS = $(ARCHS_STANDARD_64_BIT)
+// Architecture - Apple Silicon only, Intel builds are not supported anymore
+VALID_ARCHS = arm64
+ARCHS = arm64
 ONLY_ACTIVE_ARCH = NO
 
 // SDK
@@ -19,7 +19,6 @@ CLANG_CXX_LANGUAGE_STANDARD = c++23
 CLANG_CXX_STANDARD_LIBRARY_HARDENING[config=Debug]   = debug
 CLANG_CXX_STANDARD_LIBRARY_HARDENING[config=Release] = fast
 
-RAPIDJSON_PP_FLAGS_x86_64 = RAPIDJSON_HAS_STDSTRING=1 RAPIDJSON_HAS_CXX11_NOEXCEPT=1 RAPIDJSON_HAS_CXX11_RVALUE_REFS=1 RAPIDJSON_48BITPOINTER_OPTIMIZATION=1 RAPIDJSON_SSE2=1 RAPIDJSON_SSE42=1
 RAPIDJSON_PP_FLAGS_arm64  = RAPIDJSON_HAS_STDSTRING=1 RAPIDJSON_HAS_CXX11_NOEXCEPT=1 RAPIDJSON_HAS_CXX11_RVALUE_REFS=1
 
 COMMON_PREPROCESSOR_FLAGS = SPDLOG_COMPILED_LIB SPDLOG_FMT_EXTERNAL GTEST_DONT_DEFINE_FAIL=1 GTEST_DONT_DEFINE_SUCCEED=1
@@ -39,7 +38,6 @@ SWIFT_OPTIMIZATION_LEVEL[config=Release] = -O
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Code generation
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-CLANG_X86_VECTOR_INSTRUCTIONS[arch=x86_64] = sse4.2
 GCC_NO_COMMON_BLOCKS = YES
 ENABLE_STRICT_OBJC_MSGSEND = YES
 CLANG_ENABLE_OBJC_ARC = YES

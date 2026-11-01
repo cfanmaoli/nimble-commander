@@ -25,15 +25,11 @@ CFLAGS="-std=c++11 -fvisibility=hidden -flto -Os -mmacosx-version-min=11.0 -DNDE
   -DRAR_SMP -DRARDLL -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -pthread
   -ffile-prefix-map=${TMP_DIR}=/nc-build"
 
-for arch in arm64 x86_64; do
-  for obj in ${OBJECTS}; do
-    clang++ -c ${CFLAGS} -arch ${arch} ${obj}.cpp -o ${obj}.${arch}.o &
-  done
-  wait
-  libtool -static -o libunrar.${arch}.a ./*.${arch}.o
+for obj in ${OBJECTS}; do
+  clang++ -c ${CFLAGS} -arch arm64 ${obj}.cpp -o ${obj}.o &
 done
-
-lipo -create libunrar.arm64.a libunrar.x86_64.a -output libunrar.a
+wait
+libtool -static -o libunrar.a ./*.o
 
 cd ./../..
 

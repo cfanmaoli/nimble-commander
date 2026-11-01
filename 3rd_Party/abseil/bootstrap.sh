@@ -15,7 +15,7 @@ mkdir build_cmake
 cd build_cmake
 cmake \
   -D CMAKE_BUILD_TYPE=Release\
-  -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+  -D CMAKE_OSX_ARCHITECTURES="arm64" \
   -D CMAKE_OSX_DEPLOYMENT_TARGET="11.0" \
   -D CMAKE_CXX_FLAGS="-fvisibility=hidden -flto -Os" \
   -D CMAKE_CXX_STANDARD="23" \

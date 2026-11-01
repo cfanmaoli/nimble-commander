@@ -21,7 +21,7 @@ The current version of Nimble Commander supports any Mac running one of the foll
 While not a strict policy, a maintenance goal is to support the last six major releases of macOS.
 This typically covers Mac hardware with a time span of approximately 12 years.
 
-Nimble Commander runs natively on both Intel and Apple Silicon (ARM) architectures.
+Nimble Commander runs natively on Apple Silicon (ARM) Macs.
 
 Below is the compatibility table for the older releases:
 
