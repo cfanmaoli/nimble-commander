@@ -21,14 +21,14 @@ on moveFocusToDesktop()
 end moveFocusToDesktop
 
 tell application "System Events"
-    tell application "Nimble Commander" to close every window
-    tell application "Nimble Commander" to activate
+    tell application "Nimble Commander-Fork" to close every window
+    tell application "Nimble Commander-Fork" to activate
 
     keystroke "n" using {command down} --> ⌘N - make new window
     delay 0.2
 
-    set position of first window of application process "Nimble Commander" to {100, 100}
-    set size of first window of application process "Nimble Commander" to {1220, 740}
+    set position of first window of application process "Nimble Commander-Fork" to {100, 100}
+    set size of first window of application process "Nimble Commander-Fork" to {1220, 740}
 
     keystroke "h" using {option down, command down} --> ⌥⌘H - hide other windows
     delay 0.2    
@@ -87,7 +87,7 @@ end if
 set ScreenshotWithoutShadows to ScreenshotName & "_without_shadows.png"
 set ScreenshotWithShadows to ScreenshotName & "_with_shadows.png"
 set ScreenshotFinal to ScreenshotName & ".png"
-tell application "Nimble Commander" to set windowID to id of window 1
+tell application "Nimble Commander-Fork" to set windowID to id of window 1
 do shell script "screencapture -x -o -tpng -l " & windowID & " " & ScreenshotWithoutShadows
 moveFocusToDesktop()
 do shell script "screencapture -x -R70,70,1280,800 -tpng " & ScreenshotWithShadows

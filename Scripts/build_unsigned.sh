@@ -59,7 +59,7 @@ VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Inf
 BUILD=$( $PBUDDY -c "Print CFBundleVersion" "$APP_PATH/Contents/Info.plist" )
 
 create-dmg \
- --volname "Nimble Commander Unsigned" \
+ --volname "Nimble Commander-Fork Unsigned" \
  --window-pos 200 200 \
  --window-size 610 386 \
  --background "dmg/background.png" \
@@ -67,5 +67,5 @@ create-dmg \
  --icon-size 128 \
  --icon "${APP_NAME}" 176 192 \
  --app-drop-link 432 192 \
- "nimble-commander-unsigned-${VERSION}(${BUILD}).dmg" \
+ "nimble-commander-fork-unsigned-${VERSION}(${BUILD}).dmg" \
  "${APP_NAME}"

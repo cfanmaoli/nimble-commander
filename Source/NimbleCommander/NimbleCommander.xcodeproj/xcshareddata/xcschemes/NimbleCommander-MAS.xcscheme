@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CF6D997C196675290077B146"
-               BuildableName = "Nimble Commander.app"
+               BuildableName = "Nimble Commander-Fork.app"
                BlueprintName = "NimbleCommander-MAS"
                ReferencedContainer = "container:NimbleCommander.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CF6D997C196675290077B146"
-            BuildableName = "Nimble Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-MAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>
@@ -54,7 +54,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CF6D997C196675290077B146"
-            BuildableName = "Nimble Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-MAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>
@@ -71,7 +71,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CF6D997C196675290077B146"
-            BuildableName = "Nimble Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-MAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>

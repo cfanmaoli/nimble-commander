@@ -562,7 +562,7 @@ static bool AllowConnectionFrom(const char *_bin_path)
     if( !last_sl )
         return false;
 
-    return strcmp(last_sl, "/Nimble Commander") == 0;
+    return strcmp(last_sl, "/Nimble Commander-Fork") == 0;
 }
 
 static bool CheckSignature(const char *_bin_path)

@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 // and it redirects the callback calls to the original delegate, while adding some of its own.
 // The idea behind this design follows the MMTabBarView library, but this implementation
 // doesn't provide this much flexibility, instead its tailored specifically for representing
-// tabs of file panels in Nimble Commander.
+// tabs of file panels in Nimble Commander-Fork.
 [[clang::objc_runtime_name("_TtC5Panel17NCPanelTabBarView")]]
 @interface NCPanelTabBarView : NSView<NSTabViewDelegate>
 

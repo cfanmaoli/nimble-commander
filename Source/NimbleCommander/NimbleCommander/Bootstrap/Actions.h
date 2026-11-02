@@ -169,7 +169,7 @@ static constexpr std::pair<const char*,int> g_ActionsTags[] = {
     
     /**
     17'xxx block is used for Menu->Help tags, but is not wired into Shortcuts now
-    17'000 - Nimble Commander Help
+    17'000 - Nimble Commander-Fork Help
     17'010 - Visit Forum
     17'020 - Debug submenu
     **/

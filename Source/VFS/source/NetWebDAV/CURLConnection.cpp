@@ -58,7 +58,7 @@ CURLConnection::CURLConnection(const HostConfiguration &_config)
     : m_EasyHandle(SpawnOrThrow()), m_RequestHeader(nullptr, &curl_slist_free_all)
 {
     const auto auth_methods = CURLAUTH_BASIC | CURLAUTH_DIGEST;
-    const auto ua = "Nimble Commander";
+    const auto ua = "Nimble Commander-Fork";
     const auto curl = m_EasyHandle;
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, auth_methods);
     curl_easy_setopt(curl, CURLOPT_USERNAME, _config.user.c_str());

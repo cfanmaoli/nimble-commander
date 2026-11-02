@@ -650,73 +650,73 @@
       }
     },
     "56.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander\"; ObjectID = \"56\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander-Fork\"; ObjectID = \"56\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         }
       }
     },
     "57.title" : {
-      "comment" : "Class = \"NSMenu\"; title = \"Nimble Commander\"; ObjectID = \"57\";",
+      "comment" : "Class = \"NSMenu\"; title = \"Nimble Commander-Fork\"; ObjectID = \"57\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Nimble Commander-Fork"
           }
         }
       }
     },
     "58.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"About Nimble Commander\"; ObjectID = \"58\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"About Nimble Commander-Fork\"; ObjectID = \"58\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "About Nimble Commander"
+            "value" : "About Nimble Commander-Fork"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "О Nimble Commander"
+            "value" : "О Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 Nimble Commander"
+            "value" : "关于 Nimble Commander-Fork"
           }
         }
       }
@@ -914,49 +914,49 @@
       }
     },
     "134.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Hide Nimble Commander\"; ObjectID = \"134\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Hide Nimble Commander-Fork\"; ObjectID = \"134\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hide Nimble Commander"
+            "value" : "Hide Nimble Commander-Fork"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Скрыть Nimble Commander"
+            "value" : "Скрыть Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隐藏 Nimble Commander"
+            "value" : "隐藏 Nimble Commander-Fork"
           }
         }
       }
     },
     "136.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Quit Nimble Commander\"; ObjectID = \"136\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Quit Nimble Commander-Fork\"; ObjectID = \"136\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Quit Nimble Commander"
+            "value" : "Quit Nimble Commander-Fork"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Завершить Nimble Commander"
+            "value" : "Завершить Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退出 Nimble Commander"
+            "value" : "退出 Nimble Commander-Fork"
           }
         }
       }
@@ -2930,25 +2930,25 @@
       }
     },
     "iBP-LD-aNS.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander Help\"; ObjectID = \"iBP-LD-aNS\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander-Fork Help\"; ObjectID = \"iBP-LD-aNS\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander Help"
+            "value" : "Nimble Commander-Fork Help"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Справка Nimble Commander"
+            "value" : "Справка Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander 帮助"
+            "value" : "Nimble Commander-Fork 帮助"
           }
         }
       }

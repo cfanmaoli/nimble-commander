@@ -14,10 +14,10 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <menu title="AMainMenu" systemMenu="main" id="29">
             <items>
-                <menuItem title="Nimble Commander" id="56">
-                    <menu key="submenu" title="Nimble Commander" systemMenu="apple" id="57">
+                <menuItem title="Nimble Commander-Fork" id="56">
+                    <menu key="submenu" title="Nimble Commander-Fork" systemMenu="apple" id="57">
                         <items>
-                            <menuItem title="About Nimble Commander" tag="10000" id="58">
+                            <menuItem title="About Nimble Commander-Fork" tag="10000" id="58">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="orderFrontStandardAboutPanel:" target="-2" id="142"/>
@@ -46,7 +46,7 @@
                             <menuItem isSeparatorItem="YES" id="144">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Hide Nimble Commander" tag="10020" keyEquivalent="h" id="134">
+                            <menuItem title="Hide Nimble Commander-Fork" tag="10020" keyEquivalent="h" id="134">
                                 <connections>
                                     <action selector="hide:" target="-1" id="367"/>
                                 </connections>
@@ -65,7 +65,7 @@
                             <menuItem isSeparatorItem="YES" id="149">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Quit Nimble Commander" tag="10050" keyEquivalent="q" id="136">
+                            <menuItem title="Quit Nimble Commander-Fork" tag="10050" keyEquivalent="q" id="136">
                                 <connections>
                                     <action selector="terminate:" target="-3" id="449"/>
                                 </connections>
@@ -1043,7 +1043,7 @@ CQ
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="491">
                         <items>
-                            <menuItem title="Nimble Commander Help" tag="17000" keyEquivalent="?" id="iBP-LD-aNS">
+                            <menuItem title="Nimble Commander-Fork Help" tag="17000" keyEquivalent="?" id="iBP-LD-aNS">
                                 <connections>
                                     <action selector="OnShowHelp:" target="-1" id="mbF-jF-ZMK"/>
                                 </connections>

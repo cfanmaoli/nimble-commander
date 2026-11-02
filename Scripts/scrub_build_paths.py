@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2026 The Nimble Commander Authors. Subject to GNU General Public License version 3.
+# Copyright (C) 2026 The Nimble Commander-Fork Authors. Subject to GNU General Public License version 3.
 """Strip the local checkout path from the precompiled static libraries.
 
 Third-party libraries are bootstrapped from a scratch directory inside the

@@ -1045,19 +1045,19 @@
         }
       }
     },
-    "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language." : {
+    "Imported %@ entries for “%@”.\n\nRestart Nimble Commander-Fork to see the new language." : {
       "comment" : "Language preferences tab import result",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Imported %@ entries for “%@”.\n\nRestart Nimble Commander to see the new language."
+            "value" : "Imported %@ entries for “%@”.\n\nRestart Nimble Commander-Fork to see the new language."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已导入 %@ 条（%@）。\n\n重启 Nimble Commander 后即可看到新语言。"
+            "value" : "已导入 %@ 条（%@）。\n\n重启 Nimble Commander-Fork 后即可看到新语言。"
           }
         }
       }
@@ -1420,19 +1420,19 @@
         }
       }
     },
-    "Restart Nimble Commander to apply the new language?" : {
+    "Restart Nimble Commander-Fork to apply the new language?" : {
       "comment" : "Language preferences tab restart confirmation",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Restart Nimble Commander to apply the new language?"
+            "value" : "Restart Nimble Commander-Fork to apply the new language?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要重启 Nimble Commander 以应用新的语言吗？"
+            "value" : "要重启 Nimble Commander-Fork 以应用新的语言吗？"
           }
         }
       }
@@ -1914,19 +1914,19 @@
         }
       }
     },
-    "The interface language will change the next time Nimble Commander starts." : {
+    "The interface language will change the next time Nimble Commander-Fork starts." : {
       "comment" : "Language preferences tab restart prompt",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The interface language will change the next time Nimble Commander starts."
+            "value" : "The interface language will change the next time Nimble Commander-Fork starts."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重启 Nimble Commander 后界面语言才会改变。"
+            "value" : "重启 Nimble Commander-Fork 后界面语言才会改变。"
           }
         }
       }
@@ -1983,20 +1983,20 @@
         }
       }
     },
-    "This will cause Nimble Commander to ask you for access when necessary." : {
-      "comment" : "Informative text saying that Nimble Commander will ask for filesystem access when need it",
+    "This will cause Nimble Commander-Fork to ask you for access when necessary." : {
+      "comment" : "Informative text saying that Nimble Commander-Fork will ask for filesystem access when need it",
       "extractionState" : "manual",
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander будет спрашивать вас о предоставлении доступа при необходимости."
+            "value" : "Nimble Commander-Fork будет спрашивать вас о предоставлении доступа при необходимости."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这会使 Nimble Commander 在需要时向你请求访问权限。"
+            "value" : "这会使 Nimble Commander-Fork 在需要时向你请求访问权限。"
           }
         }
       }
@@ -2124,19 +2124,19 @@
         }
       }
     },
-    "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app." : {
+    "You can translate the interface of Nimble Commander-Fork into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app." : {
       "comment" : "Language preferences tab description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can translate the interface of Nimble Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app."
+            "value" : "You can translate the interface of Nimble Commander-Fork into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "把 Nimble Commander 的界面翻译成其它语言，也可以使用别人做好的翻译。先导出当前语言，把内容替换成你的译文，再导入回来并重启应用。"
+            "value" : "把 Nimble Commander-Fork 的界面翻译成其它语言，也可以使用别人做好的翻译。先导出当前语言，把内容替换成你的译文，再导入回来并重启应用。"
           }
         }
       }

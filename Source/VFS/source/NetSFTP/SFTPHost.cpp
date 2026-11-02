@@ -30,7 +30,7 @@ SFTPHost::Connection::~Connection()
     }
 
     if( ssh ) {
-        libssh2_session_disconnect_ex(ssh, SSH_DISCONNECT_BY_APPLICATION, "Farewell from Nimble Commander!", "");
+        libssh2_session_disconnect_ex(ssh, SSH_DISCONNECT_BY_APPLICATION, "Farewell from Nimble Commander-Fork!", "");
         libssh2_session_free(ssh);
         ssh = nullptr;
     }

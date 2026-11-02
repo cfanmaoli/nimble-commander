@@ -53,11 +53,11 @@ APP_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= 
 APP_PATH="${BUILT_PATH}/${APP_NAME}"
 VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "${APP_PATH}/Contents/Info.plist" )
 BUILD=$( $PBUDDY -c "Print CFBundleVersion" "${APP_PATH}/Contents/Info.plist" )
-DMG_NAME="nimble-commander-${VERSION}(${BUILD}).dmg"
+DMG_NAME="nimble-commander-fork-${VERSION}(${BUILD}).dmg"
 
 # Wrap the built application into a .dmg disk image
 create-dmg \
- --volname "Nimble Commander" \
+ --volname "Nimble Commander-Fork" \
  --window-pos 200 200 \
  --window-size 610 386 \
  --background "dmg/background.png" \
