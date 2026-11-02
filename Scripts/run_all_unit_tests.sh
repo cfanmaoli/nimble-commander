@@ -57,21 +57,40 @@ if [ "$CONFIGURATION" == "UBSAN" ]; then
     ubsan_flags="-enableUndefinedBehaviorSanitizer YES"
 fi
 
+# Optionally build the whole project instead of just the tests, and emit a compilation database, so
+# that clang-tidy can reuse it instead of rebuilding everything itself.
+BUILD_TARGET="${TARGET}"
+if [ -n "${EMIT_COMPILE_DB:-}" ]; then
+    BUILD_TARGET="All"
+fi
+
 # Build the xcodebuild execution command
 XC="xcodebuild \
+    -project ${XCODEPROJ} \
+    -scheme ${BUILD_TARGET} \
+    -configuration ${CONFIGURATION} \
+    -destination "platform=macOS,arch=${HOST_ARCH}" \
+    SYMROOT=${BUILD_DIR} \
+    OBJROOT=${BUILD_DIR} \
+    -parallelizeTargets \
+    COMPILER_INDEX_STORE_ENABLE=NO \
+    ${asan_flags} \
+    ${ubsan_flags}"
+
+# Same invocation, but always for the test umbrella - used to look up the produced binaries
+XC_SETTINGS="xcodebuild \
     -project ${XCODEPROJ} \
     -scheme ${TARGET} \
     -configuration ${CONFIGURATION} \
     -destination "platform=macOS,arch=${HOST_ARCH}" \
     SYMROOT=${BUILD_DIR} \
     OBJROOT=${BUILD_DIR} \
-    -parallelizeTargets \
     ${asan_flags} \
     ${ubsan_flags}"
 
 # Extract the directories and the names of the built unit test binaries
-DIRS="$($XC -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR =' | sed -e 's/.*= *//')"
-NAMES="$($XC -showBuildSettings 2>/dev/null | grep ' FULL_PRODUCT_NAME =' | sed -e 's/.*= *//')"
+DIRS="$($XC_SETTINGS -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR =' | sed -e 's/.*= *//')"
+NAMES="$($XC_SETTINGS -showBuildSettings 2>/dev/null | grep ' FULL_PRODUCT_NAME =' | sed -e 's/.*= *//')"
 
 # Fill dirs[]
 dirs=()
@@ -98,7 +117,11 @@ for ((i=0; i<${#names[@]}; i++)); do
 done
 
 # Now actually build the unit tests
-${XC} build | tee -a ${LOG_FILE} | xcpretty
+if [ -n "${EMIT_COMPILE_DB:-}" ]; then
+    ${XC} build | tee -a ${LOG_FILE} | xcpretty -r json-compilation-database --output "${BUILD_DIR}/compile_commands.json"
+else
+    ${XC} build | tee -a ${LOG_FILE} | xcpretty
+fi
 
 # Run the produced binaries
 for path in "${binary_paths[@]}"; do
@@ -106,5 +129,9 @@ for path in "${binary_paths[@]}"; do
     ${path}
 done
 
-# Cleanup
-rm -rf ${BUILD_DIR}
+# Cleanup - keep the build directory when a compilation database was requested
+if [ -z "${EMIT_COMPILE_DB:-}" ]; then
+    rm -rf ${BUILD_DIR}
+else
+    echo "Compilation database: ${BUILD_DIR}/compile_commands.json"
+fi
