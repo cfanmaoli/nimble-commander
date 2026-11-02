@@ -420,8 +420,8 @@ bool FileOpener::AskUserForPermissionToOpenLargeVFSFile(std::string_view _file_a
         localizedStringWithFormat:NSLocalizedString(@"“%@” is %@ in size.\nAre you sure you want to open it?", ""),
                                   filename,
                                   size_str];
-    NSString *const inform_str =
-        NSLocalizedString(@"Nimble Commander-Fork will create a copy in a temporary location before it can be opened.", "");
+    NSString *const inform_str = NSLocalizedString(
+        @"Nimble Commander-Fork will create a copy in a temporary location before it can be opened.", "");
     return AskUserForPermissionToOpen(message_str, inform_str, _panel);
 }
 
@@ -441,8 +441,8 @@ bool FileOpener::AskUserForPermissionToOpenLargeVFSFiles(uint64_t _size, PanelCo
         localizedStringWithFormat:NSLocalizedString(
                                       @"The selected items are %@ in size.\nAre you sure you want to open them?", ""),
                                   size_str];
-    NSString *const inform_str =
-        NSLocalizedString(@"Nimble Commander-Fork will copy them to a temporary location before they can be opened.", "");
+    NSString *const inform_str = NSLocalizedString(
+        @"Nimble Commander-Fork will copy them to a temporary location before they can be opened.", "");
     return AskUserForPermissionToOpen(message_str, inform_str, _panel);
 }
 

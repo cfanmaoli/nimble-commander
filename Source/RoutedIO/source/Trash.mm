@@ -20,7 +20,7 @@ namespace nc::routedio {
 
 namespace {
 
-constexpr std::string_view g_OriginalPathAttr = "info.filesmanager.trash.originalPath";
+constexpr const char *g_OriginalPathAttr = "info.filesmanager.trash.originalPath";
 
 std::string Utf16BeToUtf8(const uint8_t *_data, size_t _chars)
 {
@@ -35,7 +35,7 @@ std::string Utf16BeToUtf8(const uint8_t *_data, size_t _chars)
     std::string result(static_cast<size_t>(max_size), '\0');
     if( !CFStringGetCString(str.get(), result.data(), max_size, kCFStringEncodingUTF8) )
         return {};
-    result.resize(std::strlen(result.c_str()));
+    result.resize(std::char_traits<char>::length(result.data()));
     return result;
 }
 
@@ -52,22 +52,25 @@ class DsStoreParser
 public:
     DsStoreParser(const std::string &_path) { Load(_path); }
 
-    std::unordered_map<std::string, PutBackLocation> PutBackLocations() const;
+    [[nodiscard]] std::unordered_map<std::string, PutBackLocation> PutBackLocations() const;
 
 private:
     bool Load(const std::string &_path);
     bool ParseBlock(uint32_t _block);
     bool ReadRecord(size_t &_pos, std::string &_name, std::string &_code, std::string &_ustr) const;
 
-    bool Bounds(size_t _pos, size_t _len) const { return _pos <= m_Data.size() && _len <= m_Data.size() - _pos; }
-    uint32_t U32(size_t _pos) const;
+    [[nodiscard]] bool Bounds(size_t _pos, size_t _len) const
+    {
+        return _pos <= m_Data.size() && _len <= m_Data.size() - _pos;
+    }
+    [[nodiscard]] uint32_t U32(size_t _pos) const;
 
     std::vector<uint8_t> m_Data;
     std::vector<uint32_t> m_BlockAddresses;
     std::unordered_map<std::string, PutBackLocation> m_Locations;
 };
 
-static constexpr uint32_t Align256(uint32_t _value)
+constexpr uint32_t Align256(uint32_t _value)
 {
     return (_value + 255) & ~255u;
 }
@@ -88,7 +91,7 @@ bool DsStoreParser::Load(const std::string &_path)
     std::fseek(file, 0, SEEK_END);
     const long size = std::ftell(file);
     std::fseek(file, 0, SEEK_SET);
-    if( size <= 0 || size > 64 * 1024 * 1024 ) {
+    if( size <= 0 || size > 64L * 1024 * 1024 ) {
         std::fclose(file);
         return false;
     }
@@ -119,7 +122,7 @@ bool DsStoreParser::Load(const std::string &_path)
         return false;
     m_BlockAddresses.resize(block_count);
     for( uint32_t i = 0; i < block_count; ++i )
-        m_BlockAddresses[i] = U32(addresses_pos + static_cast<size_t>(i) * 4);
+        m_BlockAddresses[i] = U32(addresses_pos + (static_cast<size_t>(i) * 4));
 
     // Every block is inspected on its own: leaf blocks parse as a plain list of records, while
     // internal ones simply fail to parse and get skipped. This keeps the code independent of
@@ -174,7 +177,7 @@ bool DsStoreParser::ReadRecord(size_t &_pos, std::string &_name, std::string &_c
         return false;
     const uint32_t name_len = U32(_pos);
     _pos += 4;
-    if( name_len > 1'000'000 || !Bounds(_pos, static_cast<size_t>(name_len) * 2 + 8) )
+    if( name_len > 1'000'000 || !Bounds(_pos, (static_cast<size_t>(name_len) * 2) + 8) )
         return false;
     _name = Utf16BeToUtf8(m_Data.data() + _pos, name_len);
     _pos += static_cast<size_t>(name_len) * 2;
@@ -208,12 +211,7 @@ bool DsStoreParser::ReadRecord(size_t &_pos, std::string &_name, std::string &_c
             return false;
         _pos += 1;
     }
-    else if( type == "long" || type == "shor" ) {
-        if( !Bounds(_pos, 4) )
-            return false;
-        _pos += 4;
-    }
-    else if( type == "type" ) {
+    else if( type == "long" || type == "shor" || type == "type" ) {
         if( !Bounds(_pos, 4) )
             return false;
         _pos += 4;
@@ -252,7 +250,7 @@ bool IsDirectory(const std::string &_path)
 bool ReadAttribute(const std::string &_path, const char *_name, std::string &_value)
 {
     const ssize_t size = getxattr(_path.c_str(), _name, nullptr, 0, 0, 0);
-    if( size <= 0 || size > 1024 * 1024 )
+    if( size <= 0 || size > 1024L * 1024 )
         return false;
     _value.assign(static_cast<size_t>(size), '\0');
     const ssize_t result = getxattr(_path.c_str(), _name, _value.data(), _value.size(), 0, 0);
@@ -272,7 +270,11 @@ std::string UniqueTarget(const std::string &_target)
     const std::string stem = path.stem().string();
     const std::string extension = path.extension().string();
     for( int i = 2; i < 10'000; ++i ) {
-        const std::string candidate = (path.parent_path() / (stem + " " + std::to_string(i) + extension)).string();
+        std::string filename = stem;
+        filename += ' ';
+        filename += std::to_string(i);
+        filename += extension;
+        const std::string candidate = (path.parent_path() / filename).string();
         if( !std::filesystem::exists(candidate, ec) )
             return candidate;
     }
@@ -302,7 +304,9 @@ std::vector<std::string> TrashLocations()
         const std::string mount = mounts[i].f_mntonname;
         if( mount == "/" || !(mounts[i].f_flags & MNT_LOCAL) )
             continue;
-        const std::string trash = mount + "/.Trashes/" + uid;
+        std::string trash = mount;
+        trash += "/.Trashes/";
+        trash += uid;
         if( IsDirectory(trash) )
             locations.push_back(trash);
     }
@@ -339,7 +343,9 @@ std::string TrashForVolumeOf(const std::string &_path)
     if( best_mount.empty() || best_mount == "/" )
         return TrashDirectory();
 
-    const std::string trash = best_mount + "/.Trashes/" + std::to_string(getuid());
+    std::string trash = best_mount;
+    trash += "/.Trashes/";
+    trash += std::to_string(getuid());
     return IsDirectory(trash) ? trash : std::string{};
 }
 
@@ -369,7 +375,10 @@ std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &
         const std::string name = entry->d_name;
         if( name == "." || name == ".." || name == ".DS_Store" )
             continue;
-        result.push_back(_directory + "/" + name);
+        std::string path = _directory;
+        path += '/';
+        path += name;
+        result.push_back(std::move(path));
     }
     closedir(dir);
     return result;
@@ -388,7 +397,7 @@ std::optional<std::string> OriginalLocationFromDsStore(const std::string &_ds_st
 std::optional<std::string> OriginalLocationOfTrashedItem(const std::string &_trash_item_path)
 {
     std::string recorded;
-    if( ReadAttribute(_trash_item_path, g_OriginalPathAttr.data(), recorded) && !recorded.empty() )
+    if( ReadAttribute(_trash_item_path, g_OriginalPathAttr, recorded) && !recorded.empty() )
         return recorded;
 
     const std::filesystem::path item(_trash_item_path);
@@ -405,7 +414,7 @@ void RememberOriginalLocation(const std::string &_path)
         return;
     if( IsInsideTrash(_path) )
         return;
-    setxattr(_path.c_str(), g_OriginalPathAttr.data(), _path.data(), _path.size(), 0, 0);
+    setxattr(_path.c_str(), g_OriginalPathAttr, _path.data(), _path.size(), 0, 0);
 }
 
 int PutBackTrashedItem(const std::string &_trash_item_path, std::string &_resulting_path)
@@ -441,7 +450,7 @@ int PutBackTrashedItem(const std::string &_trash_item_path, std::string &_result
     if( ec )
         return ec.value();
 
-    removexattr(target.c_str(), g_OriginalPathAttr.data(), 0);
+    removexattr(target.c_str(), g_OriginalPathAttr, 0);
     _resulting_path = target;
     return 0;
 }

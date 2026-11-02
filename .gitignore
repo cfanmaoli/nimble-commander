@@ -215,3 +215,9 @@ xcuserdata/
 ####
 # UNKNOWN: recommended by others, but I can't discover what these files are
 #
+
+#
+# Artifacts of the helper scripts in Scripts/
+#
+compile_commands.json
+Scripts/*.tmp/

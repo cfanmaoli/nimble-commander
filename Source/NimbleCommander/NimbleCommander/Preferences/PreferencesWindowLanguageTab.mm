@@ -2,6 +2,7 @@
 #include "PreferencesWindowLanguageTab.h"
 #include "../Core/LanguagePack.h"
 
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -15,7 +16,7 @@ static NSString *FromStd(const std::string &_string)
 
 namespace {
 
-enum class EntryKind : int {
+enum class EntryKind : std::uint8_t {
     FollowSystem,
     BuiltIn,
     Pack,
@@ -51,13 +52,14 @@ struct Entry {
     title.autoresizingMask = NSViewMaxYMargin;
     [root addSubview:title];
 
-    NSTextField *const description = [NSTextField
-        wrappingLabelWithString:NSLocalizedStringFromTable(
-                                    @"You can translate the interface of Nimble Commander-Fork into another language, or "
-                                    @"use a translation made by someone else. Export the current language, replace the "
-                                    @"text with your own translation, then import the file back and restart the app.",
-                                    @"Preferences",
-                                    "Language preferences tab description")];
+    NSTextField *const description =
+        [NSTextField wrappingLabelWithString:
+                         NSLocalizedStringFromTable(
+                             @"You can translate the interface of Nimble Commander-Fork into another language, or "
+                             @"use a translation made by someone else. Export the current language, replace the "
+                             @"text with your own translation, then import the file back and restart the app.",
+                             @"Preferences",
+                             "Language preferences tab description")];
     description.font = [NSFont systemFontOfSize:11];
     description.textColor = NSColor.secondaryLabelColor;
     description.frame = NSMakeRect(20, 234, 540, 72);
@@ -164,17 +166,17 @@ struct Entry {
     [m_LanguagePopup removeAllItems];
 
     auto add_entry = [&](EntryKind _kind, const std::string &_value, NSString *_title) -> NSInteger {
-        const NSInteger menu_index = static_cast<NSInteger>(m_LanguagePopup.numberOfItems);
+        const NSInteger menu_index = m_LanguagePopup.numberOfItems;
         [m_LanguagePopup addItemWithTitle:_title];
         m_LanguagePopup.lastItem.tag = static_cast<NSInteger>(m_Entries.size());
-        m_Entries.push_back({_kind, _value});
+        m_Entries.push_back({.kind = _kind, .value = _value});
         return menu_index;
     };
 
     const std::string selection = nc::lang::ActiveLanguageSelection();
     const std::string active_pack = nc::lang::ActivePackIdentifier();
     std::string active_builtin;
-    if( selection.rfind("builtin:", 0) == 0 )
+    if( selection.starts_with("builtin:") )
         active_builtin = selection.substr(8);
 
     NSInteger selected_index =
@@ -398,12 +400,13 @@ struct Entry {
     }
 
     NSMutableString *const message = [NSMutableString string];
-    [message appendFormat:NSLocalizedStringFromTable(
-                              @"Imported %@ entries for “%@”.\n\nRestart Nimble Commander-Fork to see the new language.",
-                              @"Preferences",
-                              "Language preferences tab import result"),
-                          @(stats.imported),
-                          FromStd(stats.display_name)];
+    [message
+        appendFormat:NSLocalizedStringFromTable(
+                         @"Imported %@ entries for “%@”.\n\nRestart Nimble Commander-Fork to see the new language.",
+                         @"Preferences",
+                         "Language preferences tab import result"),
+                     @(stats.imported),
+                     FromStd(stats.display_name)];
     if( stats.skipped_empty )
         [message appendFormat:@"\n\n%@",
                               [NSString stringWithFormat:NSLocalizedStringFromTable(
