@@ -1,6 +1,78 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Tr5-Go-TR1.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Trash\"; ObjectID = \"Tr5-Go-TR1\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Trash"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Корзина"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "废纸篓"
+          }
+        }
+      }
+    },
+    "Tr5-Pb-PB1.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Put Back\"; ObjectID = \"Tr5-Pb-PB1\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Put Back"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуть"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放回原处"
+          }
+        }
+      }
+    },
+    "Tr5-Et-ET1.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Empty Trash…\"; ObjectID = \"Tr5-Et-ET1\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Empty Trash…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить корзину…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空废纸篓…"
+          }
+        }
+      }
+    },
     "0D4-mI-wvg.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"5\"; ObjectID = \"0D4-mI-wvg\";",
       "extractionState" : "extracted_with_value",
@@ -578,73 +650,73 @@
       }
     },
     "56.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander\"; ObjectID = \"56\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Keen Commander\"; ObjectID = \"56\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         }
       }
     },
     "57.title" : {
-      "comment" : "Class = \"NSMenu\"; title = \"Nimble Commander\"; ObjectID = \"57\";",
+      "comment" : "Class = \"NSMenu\"; title = \"Keen Commander\"; ObjectID = \"57\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander"
+            "value" : "Keen Commander"
           }
         }
       }
     },
     "58.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"About Nimble Commander\"; ObjectID = \"58\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"About Keen Commander\"; ObjectID = \"58\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "About Nimble Commander"
+            "value" : "About Keen Commander"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "О Nimble Commander"
+            "value" : "О Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 Nimble Commander"
+            "value" : "关于 Keen Commander"
           }
         }
       }
@@ -842,49 +914,49 @@
       }
     },
     "134.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Hide Nimble Commander\"; ObjectID = \"134\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Hide Keen Commander\"; ObjectID = \"134\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hide Nimble Commander"
+            "value" : "Hide Keen Commander"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Скрыть Nimble Commander"
+            "value" : "Скрыть Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隐藏 Nimble Commander"
+            "value" : "隐藏 Keen Commander"
           }
         }
       }
     },
     "136.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Quit Nimble Commander\"; ObjectID = \"136\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Quit Keen Commander\"; ObjectID = \"136\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Quit Nimble Commander"
+            "value" : "Quit Keen Commander"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Завершить Nimble Commander"
+            "value" : "Завершить Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退出 Nimble Commander"
+            "value" : "退出 Keen Commander"
           }
         }
       }
@@ -2858,25 +2930,25 @@
       }
     },
     "iBP-LD-aNS.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Nimble Commander Help\"; ObjectID = \"iBP-LD-aNS\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Keen Commander Help\"; ObjectID = \"iBP-LD-aNS\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander Help"
+            "value" : "Keen Commander Help"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Справка Nimble Commander"
+            "value" : "Справка Keen Commander"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimble Commander 帮助"
+            "value" : "Keen Commander 帮助"
           }
         }
       }

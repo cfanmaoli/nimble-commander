@@ -279,6 +279,18 @@ static void Perform(SEL _sel, const PanelActionsMap &_map, PanelController *_tar
 {
     PERFORM;
 }
+- (IBAction)OnGoToTrash:(id)sender
+{
+    PERFORM;
+}
+- (IBAction)OnEmptyTrash:(id)sender
+{
+    PERFORM;
+}
+- (IBAction)OnPutBack:(id)sender
+{
+    PERFORM;
+}
 - (IBAction)OnGoToSavedConnectionItem:(id)sender
 {
     PERFORM;

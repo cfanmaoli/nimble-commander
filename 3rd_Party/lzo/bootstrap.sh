@@ -19,7 +19,7 @@ patch -p1 < ../../CMakeLists.txt.patch
 mkdir build && cd build
 cmake \
   -D CMAKE_BUILD_TYPE=Release \
-  -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+  -D CMAKE_OSX_ARCHITECTURES="arm64" \
   -D CMAKE_OSX_DEPLOYMENT_TARGET="12.0" \
   -D CMAKE_C_FLAGS="-fvisibility=hidden -flto" \
   -D ENABLE_STATIC=ON \

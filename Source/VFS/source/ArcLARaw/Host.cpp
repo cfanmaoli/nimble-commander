@@ -29,9 +29,19 @@ static constexpr const char *g_ArcLARawLastResortFilename = "data";
 static constexpr std::string g_ArcLARawExtensionsList[] = {"bz2", "gz", "lz", "lz4", "lzma", "lzo", "xz", "z", "zst"};
 
 // O(1) unordered set of the extensions
-[[clang::no_destroy]] static const ankerl::unordered_dense::
-    set<std::string, UnorderedStringHashEqual, UnorderedStringHashEqual>
-        g_ArcLARawExtensionsSet(std::begin(g_ArcLARawExtensionsList), std::end(g_ArcLARawExtensionsList));
+static ankerl::unordered_dense::set<std::string, UnorderedStringHashEqual, UnorderedStringHashEqual>
+MakeArcLARawExtensionsSet()
+{
+    ankerl::unordered_dense::set<std::string, UnorderedStringHashEqual, UnorderedStringHashEqual> extensions;
+    extensions.reserve(std::size(g_ArcLARawExtensionsList));
+    // NB! unordered_dense 5.x requires the range-inserted elements to be convertible to the value type,
+    // while std::string_view -> std::string conversion is explicit.
+    for( auto extension : g_ArcLARawExtensionsList )
+        extensions.emplace(extension);
+    return extensions;
+}
+
+[[clang::no_destroy]] static const auto g_ArcLARawExtensionsSet = MakeArcLARawExtensionsSet();
 
 struct ArchiveRawHost::Extracted {
     Extracted() = default;

@@ -29,7 +29,7 @@ done
 echo $source_files
 
 clang++ -c \
-  -arch arm64 -arch x86_64 \
+  -arch arm64 \
   -std=c++2b \
   -fvisibility=hidden \
   -flto \

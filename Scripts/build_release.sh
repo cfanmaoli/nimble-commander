@@ -57,7 +57,7 @@ DMG_NAME="nimble-commander-${VERSION}(${BUILD}).dmg"
 
 # Wrap the built application into a .dmg disk image
 create-dmg \
- --volname "Nimble Commander" \
+ --volname "Keen Commander" \
  --window-pos 200 200 \
  --window-size 610 386 \
  --background "dmg/background.png" \

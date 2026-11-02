@@ -37,6 +37,7 @@ using namespace nc::panel;
     std::unique_ptr<actions::PanelAction> m_CopyAction;
     std::unique_ptr<actions::PanelAction> m_CopyPathnameAction;
     std::unique_ptr<actions::PanelAction> m_MoveToTrashAction;
+    std::unique_ptr<actions::PanelAction> m_PutBackAction;
     std::unique_ptr<actions::PanelAction> m_DeletePermanentlyAction;
     std::unique_ptr<actions::PanelAction> m_DuplicateAction;
     std::unique_ptr<actions::PanelAction> m_CompressHereAction;
@@ -63,6 +64,7 @@ using namespace nc::panel;
         m_CopyAction = std::make_unique<actions::context::CopyToPasteboard>(m_Items);
         m_CopyPathnameAction = std::make_unique<actions::context::CopyPathname>(m_Items);
         m_MoveToTrashAction = std::make_unique<actions::context::MoveToTrash>(m_Items);
+        m_PutBackAction = std::make_unique<actions::PutBack>();
         m_DeletePermanentlyAction = std::make_unique<actions::context::DeletePermanently>(m_Items);
         m_DuplicateAction = std::make_unique<actions::context::Duplicate>(global_config, m_Items);
         m_CompressHereAction = std::make_unique<actions::context::CompressHere>(global_config, m_Items);
@@ -130,7 +132,16 @@ using namespace nc::panel;
     }
 
     //////////////////////////////////////////////////////////////////////
-    // Move to Trash / Delete Permanently stuff
+    // Put Back / Move to Trash / Delete Permanently stuff
+    const auto put_back_item = [NSMenuItem new];
+    put_back_item.title = NSLocalizedStringFromTable(
+        @"Put Back", @"FilePanelsContextMenu", "Menu item title to restore an item from the trash");
+    put_back_item.target = self;
+    put_back_item.action = @selector(OnPutBack:);
+    put_back_item.hidden = !m_PutBackAction->Predicate(m_Panel);
+    put_back_item.keyEquivalent = @"";
+    [self addItem:put_back_item];
+
     const auto trash_item = [NSMenuItem new];
     trash_item.title = NSLocalizedStringFromTable(
         @"Move to Trash", @"FilePanelsContextMenu", "Menu item title to move to trash, for English is 'Move to Trash'");
@@ -281,6 +292,8 @@ using namespace nc::panel;
         return m_CopyPathnameAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnMoveToTrash:) )
         return m_MoveToTrashAction->ValidateMenuItem(m_Panel, item);
+    if( item.action == @selector(OnPutBack:) )
+        return m_PutBackAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnDeletePermanently:) )
         return m_DeletePermanentlyAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnDuplicateItem:) )
@@ -303,6 +316,11 @@ using namespace nc::panel;
 - (void)OnMoveToTrash:(id)sender
 {
     m_MoveToTrashAction->Perform(m_Panel, sender);
+}
+
+- (void)OnPutBack:(id)sender
+{
+    m_PutBackAction->Perform(m_Panel, sender);
 }
 
 - (void)OnDeletePermanently:(id)sender

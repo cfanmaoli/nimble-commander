@@ -86,19 +86,19 @@ class NativeHost;
 + (NCAppDelegate *)me;
 
 /**
- * Support dir, ~/Library/Application Support/Nimble Commander/.
+ * Support dir, ~/Library/Application Support/Keen Commander/.
  * Is in Containers for Sandboxes versions
  */
 @property(nonatomic, readonly) const std::filesystem::path &supportDirectory;
 
 /**
- * By default this dir is ~/Library/Application Support/Nimble Commander/Config/.
+ * By default this dir is ~/Library/Application Support/Keen Commander/Config/.
  * May change in the future.
  */
 @property(nonatomic, readonly) const std::filesystem::path &configDirectory;
 
 /**
- * This dir is ~/Library/Application Support/Nimble Commander/State/.
+ * This dir is ~/Library/Application Support/Keen Commander/State/.
  */
 @property(nonatomic, readonly) const std::filesystem::path &stateDirectory;
 

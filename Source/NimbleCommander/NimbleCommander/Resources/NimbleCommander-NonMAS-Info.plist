@@ -2,20 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSDocumentsFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander. This application will not use any of your personal data without your actions.</string>
-	<key>NSDownloadsFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander. This application will not use any of your personal data without your actions.</string>
-	<key>NSDesktopFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander. This application will not use any of your personal data without your actions.</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>An application in Nimble Commander wants to use AppleScript.</string>
-	<key>NSAppleScriptEnabled</key>
-	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Keen Commander</string>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
@@ -25,19 +15,31 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>${PRODUCT_NAME}</string>
+	<string>Keen Commander</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.9.0</string>
+	<string>1.9.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>An application in Keen Commander wants to use AppleScript.</string>
+	<key>NSAppleScriptEnabled</key>
+	<true/>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2013-2026 Michael Kazakov.
 All rights reserved.</string>
@@ -51,12 +53,12 @@ All rights reserved.</string>
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Reveal in Nimble Commander</string>
+				<string>Reveal in Keen Commander</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>revealItemService</string>
 			<key>NSPortName</key>
-			<string>Nimble Commander</string>
+			<string>Keen Commander</string>
 			<key>NSRequiredContext</key>
 			<dict/>
 			<key>NSSendTypes</key>
@@ -66,27 +68,27 @@ All rights reserved.</string>
 			</array>
 		</dict>
 		<dict>
-			<key>NSSendFileTypes</key>
-			<array>
-				<string>public.directory</string>
-			</array>
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Open Folder in Nimble Commander</string>
+				<string>Open Folder in Keen Commander</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>openFolderService</string>
 			<key>NSPortName</key>
-			<string>Nimble Commander</string>
+			<string>Keen Commander</string>
 			<key>NSRequiredContext</key>
 			<dict/>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>public.directory</string>
+			</array>
 		</dict>
 	</array>
 	<key>SMPrivilegedExecutables</key>
 	<dict>
 		<key>info.filesmanager.Files.PrivilegedIOHelperV2</key>
-		<string>identifier info.filesmanager.Files.PrivilegedIOHelperV2 and certificate leaf[subject.CN] = &quot;Developer ID Application: Mikhail Kazakov (AC5SJT236H)&quot;</string>
+		<string>identifier info.filesmanager.Files.PrivilegedIOHelperV2 and anchor apple generic and certificate leaf[subject.OU] = "359W39ZS37"</string>
 	</dict>
 	<key>SUFeedURL</key>
 	<string>https://magnumbytes.com/downloads/releases/sparkle-nimble-commander.xml</string>

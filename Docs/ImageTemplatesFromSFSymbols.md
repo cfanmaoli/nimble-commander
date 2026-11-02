@@ -1,4 +1,4 @@
-Nimble Commander includes template images rendered from the SF Symbols font.  
+Keen Commander includes template images rendered from the SF Symbols font.  
 This ensures compatibility with older versions of macOS where SF Symbols are partially or completely unavailable.  
 The following instructions outline the process for adding a new image template.
 

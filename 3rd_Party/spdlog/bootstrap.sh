@@ -13,7 +13,7 @@ git clone -b v1.17.0 --single-branch --depth=1 https://github.com/gabime/spdlog.
 cd spdlog
 
 clang++ -c \
-  -arch arm64 -arch x86_64 \
+  -arch arm64 \
   -std=c++23 \
   -fvisibility=hidden \
   -flto \

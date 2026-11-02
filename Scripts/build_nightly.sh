@@ -71,7 +71,7 @@ done
 
 # Wrap the built application into a .dmg disk image
 create-dmg \
- --volname "Nimble Commander Nightly" \
+ --volname "Keen Commander Nightly" \
  --window-pos 200 200 \
  --window-size 610 386 \
  --background "dmg/background.png" \

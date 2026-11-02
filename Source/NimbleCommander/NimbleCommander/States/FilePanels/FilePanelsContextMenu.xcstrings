@@ -1,6 +1,30 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Put Back" : {
+      "comment" : "Menu item title to restore an item from the trash",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put Back"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуть"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放回原处"
+          }
+        }
+      }
+    },
     "<None>" : {
       "comment" : "Menu item for case when no handlers are available, for English is '<None>'",
       "extractionState" : "manual",

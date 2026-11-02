@@ -14,7 +14,7 @@ git clone -b release/21.x --single-branch --depth=1 https://github.com/llvm/llvm
 cd llvm-project
 
 clang++ -c \
-  -arch arm64 -arch x86_64 \
+  -arch arm64 \
   -std=c++2b \
   -fvisibility=hidden \
   -flto \

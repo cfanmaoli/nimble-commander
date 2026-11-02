@@ -1,5 +1,5 @@
 // Copyright (C) 2014-2026 Michael Kazakov. Subject to GNU General Public License version 3.
-#include "Trash.h"
+#include <RoutedIO/Trash.h>
 #include <Security/Security.h>
 #include <cerrno>
 #include <cstdio>
@@ -12,10 +12,13 @@
 #include <xpc/xpc.h>
 #include <Base/CFPtr.h>
 
-// requires that identifier is right and binary is signed by me
-static const char *g_SignatureRequirement =
-    "identifier info.filesmanager.Files and "
-    "certificate leaf[subject.CN] = \"Developer ID Application: Mikhail Kazakov (AC5SJT236H)\"";
+// requires that the identifier is right and that the binary is signed by this development team.
+// NB: the certificate is identified by its Team ID (the OU field) rather than by its common
+// name - the CN of an Apple Development certificate contains the developer's Apple ID, which
+// should not end up in the sources.
+static const char *g_SignatureRequirement = "identifier info.filesmanager.Files and "
+                                            "anchor apple generic and "
+                                            "certificate leaf[subject.OU] = \"359W39ZS37\"";
 
 static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV2";
 
@@ -559,7 +562,7 @@ static bool AllowConnectionFrom(const char *_bin_path)
     if( !last_sl )
         return false;
 
-    return strcmp(last_sl, "/Nimble Commander") == 0;
+    return strcmp(last_sl, "/Keen Commander") == 0;
 }
 
 static bool CheckSignature(const char *_bin_path)

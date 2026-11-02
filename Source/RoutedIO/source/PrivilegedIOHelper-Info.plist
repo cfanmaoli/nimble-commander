@@ -9,10 +9,10 @@
 	<key>CFBundleName</key>
 	<string>PrivilegedIOHelperV2</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>1.1</string>
 	<key>SMAuthorizedClients</key>
 	<array>
-		<string>identifier info.filesmanager.Files and certificate leaf[subject.CN] = "Developer ID Application: Mikhail Kazakov (AC5SJT236H)"</string>
+		<string>identifier info.filesmanager.Files and anchor apple generic and certificate leaf[subject.OU] = "359W39ZS37"</string>
 	</array>
 </dict>
 </plist>

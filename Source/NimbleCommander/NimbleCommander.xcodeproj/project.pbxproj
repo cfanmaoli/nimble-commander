@@ -10,6 +10,8 @@
 		A1B2C3D40000000000000051 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
 		A1B2C3D40000000000000052 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
 		A1B2C3D40000000000000053 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
+		A1B2C3D40000000000000005 /* LanguagePack.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* LanguagePack.mm */; };
+		A1B2C3D40000000000000006 /* PreferencesWindowLanguageTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */; };
 		CF0A46FA2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A46FB2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A46FC2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
@@ -869,6 +871,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1B2C3D40000000000000001 /* LanguagePack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LanguagePack.h; path = NimbleCommander/Core/LanguagePack.h; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000002 /* LanguagePack.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LanguagePack.mm; path = NimbleCommander/Core/LanguagePack.mm; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000003 /* PreferencesWindowLanguageTab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PreferencesWindowLanguageTab.h; path = NimbleCommander/Preferences/PreferencesWindowLanguageTab.h; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowLanguageTab.mm; path = NimbleCommander/Preferences/PreferencesWindowLanguageTab.mm; sourceTree = SOURCE_ROOT; };
 		CF0139AD1E99DAC100E44F2D /* ToggleSort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ToggleSort.h; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.h; sourceTree = SOURCE_ROOT; };
 		CF0139AE1E99DAC100E44F2D /* ToggleSort.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ToggleSort.mm; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.mm; sourceTree = SOURCE_ROOT; };
 		CF0139B01E99EC4A00E44F2D /* DefaultAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DefaultAction.h; path = NimbleCommander/States/FilePanels/Actions/DefaultAction.h; sourceTree = SOURCE_ROOT; };
@@ -1090,7 +1096,7 @@
 		CF6BF8522197F5C80017CECB /* PanelBriefViewFixedNumberLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PanelBriefViewFixedNumberLayout.h; path = NimbleCommander/States/FilePanels/Brief/PanelBriefViewFixedNumberLayout.h; sourceTree = "<group>"; };
 		CF6BF8532197F5C80017CECB /* PanelBriefViewFixedNumberLayout.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PanelBriefViewFixedNumberLayout.mm; path = NimbleCommander/States/FilePanels/Brief/PanelBriefViewFixedNumberLayout.mm; sourceTree = "<group>"; };
 		CF6BFAE42D2C645200257029 /* Actions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Actions.h; path = NimbleCommander/Bootstrap/Actions.h; sourceTree = "<group>"; };
-		CF6D997D196675290077B146 /* Nimble Commander.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nimble Commander.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF6D997D196675290077B146 /* Keen Commander.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Keen Commander.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF6D9D2B1966A56E0077B146 /* NimbleCommander-NonMAS-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "NimbleCommander-NonMAS-Info.plist"; path = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist"; sourceTree = SOURCE_ROOT; };
 		CF6D9D2D1966A57B0077B146 /* NimbleCommander-MAS-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "NimbleCommander-MAS-Info.plist"; path = "NimbleCommander/Resources/NimbleCommander-MAS-Info.plist"; sourceTree = SOURCE_ROOT; };
 		CF6D9D301966A5E10077B146 /* NimbleCommander-MAS.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; name = "NimbleCommander-MAS.entitlements"; path = "NimbleCommander/Resources/NimbleCommander-MAS.entitlements"; sourceTree = SOURCE_ROOT; };
@@ -1211,7 +1217,7 @@
 		CFB9F10E201AEE6200FC65D8 /* RecentlyClosedMenuDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RecentlyClosedMenuDelegate.mm; path = NimbleCommander/States/FilePanels/Helpers/RecentlyClosedMenuDelegate.mm; sourceTree = SOURCE_ROOT; };
 		CFC4F99D1F0F40430000B3EE /* Link.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Link.h; path = NimbleCommander/States/FilePanels/Actions/Link.h; sourceTree = SOURCE_ROOT; };
 		CFC4F99E1F0F40430000B3EE /* Link.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Link.mm; path = NimbleCommander/States/FilePanels/Actions/Link.mm; sourceTree = SOURCE_ROOT; };
-		CFC5121116C4BD3D00D247EE /* Nimble Commander.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nimble Commander.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFC5121116C4BD3D00D247EE /* Keen Commander.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Keen Commander.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC705FA2B497D600045D2C9 /* VFSIcon.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VFSIcon.xcodeproj; path = ../VFSIcon/VFSIcon.xcodeproj; sourceTree = "<group>"; };
 		CFC706462B497F5C0045D2C9 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = ../../../3rd_Party/Sparkle/Sparkle.framework; sourceTree = "<group>"; };
 		CFC706482B497F6A0045D2C9 /* LetsMove.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LetsMove.framework; path = ../../../3rd_Party/LetsMove/LetsMove.framework; sourceTree = "<group>"; };
@@ -1484,6 +1490,8 @@
 		B52EB78B172277C5004ABC2E /* Preferences */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D40000000000000003 /* PreferencesWindowLanguageTab.h */,
+				A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */,
 				CFCF43F22BA2418100B513C7 /* ConfigBinder.h */,
 				CFA3D7C519625F71006A30A1 /* GTMHotKeyTextField.h */,
 				CFA3D7C619625F71006A30A1 /* GTMHotKeyTextField.mm */,
@@ -2011,6 +2019,8 @@
 		CFAC50D5171557E100A3E5C5 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D40000000000000001 /* LanguagePack.h */,
+				A1B2C3D40000000000000002 /* LanguagePack.mm */,
 				CF46C23420317FD700A91E2F /* ServicesHandler.h */,
 				CF46C23520317FD700A91E2F /* ServicesHandler.mm */,
 				CFDAC23F1DFBE18C0039A104 /* ActionsShortcutsManager.h */,
@@ -2099,8 +2109,8 @@
 		CFC5121216C4BD3D00D247EE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CFC5121116C4BD3D00D247EE /* Nimble Commander.app */,
-				CF6D997D196675290077B146 /* Nimble Commander.app */,
+				CFC5121116C4BD3D00D247EE /* Keen Commander.app */,
+				CF6D997D196675290077B146 /* Keen Commander.app */,
 				CFA53A6D1D433E2A00C562A7 /* NimbleCommander-Unsigned.app */,
 				CF5DE07E2583E73300604DEE /* libNimbleCommanderCommon.a */,
 				CF5DE0B2258414CA00604DEE /* NimbleCommanderUT */,
@@ -2371,6 +2381,7 @@
 				CF6D997A196675290077B146 /* Frameworks */,
 				CF6D997B196675290077B146 /* Resources */,
 				CFEB6F7C19694639000FD09D /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2378,7 +2389,7 @@
 			);
 			name = "NimbleCommander-MAS";
 			productName = "Files Lite";
-			productReference = CF6D997D196675290077B146 /* Nimble Commander.app */;
+			productReference = CF6D997D196675290077B146 /* Keen Commander.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CFA539591D433E2A00C562A7 /* NimbleCommander-Unsigned */ = {
@@ -2392,6 +2403,7 @@
 				CFA53A181D433E2A00C562A7 /* Frameworks */,
 				CFA53A331D433E2A00C562A7 /* Resources */,
 				CFA53A651D433E2A00C562A7 /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2417,6 +2429,7 @@
 				CFC5120F16C4BD3D00D247EE /* Resources */,
 				CF52C3CC22BE9DA90043E825 /* Run Script */,
 				CF9EEB3E17256372001443FA /* ShellScript */,
+			A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */,
 			);
 			buildRules = (
 			);
@@ -2427,7 +2440,7 @@
 			);
 			name = "NimbleCommander-NonMAS";
 			productName = Directories;
-			productReference = CFC5121116C4BD3D00D247EE /* Nimble Commander.app */;
+			productReference = CFC5121116C4BD3D00D247EE /* Keen Commander.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -2951,6 +2964,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+	A1B2C3D40000000000000010 /* Generate LocalizationManifest.json */ = {
+		isa = PBXShellScriptBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		inputPaths = (
+		);
+		name = "Generate LocalizationManifest.json";
+		outputPaths = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+		shellPath = /bin/sh;
+		shellScript = "# Collects the English strings of every String Catalog into a manifest the app ships,\n# so that exporting a language can show the original text next to each entry.\npython3 \"${SRCROOT}/../../Tools/nc_localization_manifest.py\" \\\n    \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/LocalizationManifest.json\" \\\n    \"${SRCROOT}/../..\"\n";
+		};
 		CF52C3CC22BE9DA90043E825 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3020,6 +3047,8 @@
 				CF0A47032BDD864D00833160 /* Dock.mm in Sources */,
 				CF0A487A2BDDA51600833160 /* GoToFolderSheetController.mm in Sources */,
 				CF0A480F2BDD9F9900833160 /* PreferencesWindowToolsTab.mm in Sources */,
+				A1B2C3D40000000000000005 /* LanguagePack.mm in Sources */,
+				A1B2C3D40000000000000006 /* PreferencesWindowLanguageTab.mm in Sources */,
 				CF0A48502BDDA2B100833160 /* SpotlightSearch.mm in Sources */,
 				CF0A480E2BDD9F9300833160 /* PreferencesWindowThemesTabModel.mm in Sources */,
 				CF0A48232BDDA04C00833160 /* PanelDataPersistency.cpp in Sources */,
@@ -3731,7 +3760,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-MAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = "info.filesmanager.Files-Lite";
-				PRODUCT_NAME = "Nimble Commander";
+				PRODUCT_NAME = "Keen Commander";
 				PROVISIONING_PROFILE_SPECIFIER = "NC MAS Free Development";
 			};
 			name = Debug;
@@ -3750,7 +3779,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-MAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = "info.filesmanager.Files-Lite";
-				PRODUCT_NAME = "Nimble Commander";
+				PRODUCT_NAME = "Keen Commander";
 				PROVISIONING_PROFILE_SPECIFIER = "NC MAS Free Distribution";
 			};
 			name = Release;
@@ -3814,7 +3843,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
-				PRODUCT_NAME = "Nimble Commander";
+				PRODUCT_NAME = "Keen Commander";
 				PROVISIONING_PROFILE_SPECIFIER = "NC NonMAS Developer ID";
 			};
 			name = Debug;
@@ -3834,7 +3863,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
-				PRODUCT_NAME = "Nimble Commander";
+				PRODUCT_NAME = "Keen Commander";
 				PROVISIONING_PROFILE_SPECIFIER = "NC NonMAS Developer ID";
 			};
 			name = Release;

@@ -1,4 +1,4 @@
-# Releasing a new version of Nimble Commander
+# Releasing a new version of Keen Commander
 *This is a checklist of various steps to take to release a new version, after the actual work is done.*
 
 ## Step 1: Update dependencies

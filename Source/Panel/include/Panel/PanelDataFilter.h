@@ -8,6 +8,7 @@
 
 #include <compare>
 #include <optional>
+#include <string>
 
 namespace nc::panel::data {
 
@@ -18,7 +19,8 @@ struct TextualFilter {
         Beginning = 1,
         Ending = 2, // handling extensions somehow
         BeginningOrEnding = 3,
-        Fuzzy = 4
+        Fuzzy = 4,
+        Regex = 5
     };
 
     NSString *text;
@@ -54,5 +56,28 @@ struct HardFilter {
 };
 
 std::optional<QuickSearchHighlight> FuzzySearch(NSString *_filename, NSString *_text) noexcept;
+
+/**
+ * Matches a latin-only criterion against the initials of the transliterated syllables of a name,
+ * so that a Chinese "下载" can be found by typing "xz". Returns the range of the *name* that the
+ * matching initials came from, or nullopt when the criterion is not latin-only or the name has
+ * nothing to transliterate.
+ */
+std::optional<QuickSearchHighlight>
+PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _type) noexcept;
+
+/**
+ * The latin initials of a name: "下载" -> "xz", "文档 abc" -> "wdabc". Empty when the name has no
+ * ideographs. Exposed for the unit tests.
+ */
+std::string PinyinInitialsForName(NSString *_name) noexcept;
+
+/**
+ * Matches a name against an ICU regular expression, case-insensitively unless the pattern overrides
+ * it with an inline flag such as (?-i). Returns the matched ranges, or nullopt when the pattern is
+ * not a valid expression yet - which happens on every other keystroke while the user is still
+ * typing it.
+ */
+std::optional<QuickSearchHighlight> RegexSearch(NSString *_name, NSString *_text) noexcept;
 
 } // namespace nc::panel::data

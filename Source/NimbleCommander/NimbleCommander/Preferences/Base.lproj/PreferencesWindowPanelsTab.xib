@@ -1389,6 +1389,7 @@
                                             <menu key="menu" title="OtherViews" id="hwd-Vk-Rmi">
                                                 <items>
                                                     <menuItem title="Fuzzy" state="on" tag="4" id="uZL-kd-7db"/>
+                                                    <menuItem title="Regex" tag="5" id="Rgx-Mo-dE1"/>
                                                     <menuItem title="Anywhere" id="ZK4-um-VIS"/>
                                                     <menuItem title="Beginning" tag="1" id="wWO-qC-fR7"/>
                                                     <menuItem title="Ending" tag="2" id="GOP-4J-s2Y"/>

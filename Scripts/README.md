@@ -9,10 +9,10 @@ Builds tests and the main application without running so that CodeQL can interce
 Converts the markdown documention into a pdf placed in `build_help.tmp/Help.pdf`
 
 ## `build_mas_archive.sh`
-Builds and archive Nimble Commander for submission to MacAppStore.
+Builds and archive Keen Commander for submission to MacAppStore.
 
 ## `build_nightly.sh`
-Builds Nimble Commander with the `NimbleCommander-NonMAS` scheme / `Release` configuration, signs it, packages the runnable build into a `.dmg` image and notarizes the final image.  
+Builds Keen Commander with the `NimbleCommander-NonMAS` scheme / `Release` configuration, signs it, packages the runnable build into a `.dmg` image and notarizes the final image.  
 `xcodebuild`, `xcpretty` and `create-dmg` must be available in the environment in order for this script to run.  
 It also requires the codesigning certificate to be properly signed.  
 
@@ -20,11 +20,11 @@ It also requires the codesigning certificate to be properly signed.
 Same a `build_nightly.sh`, but creates a release build. 
 
 ## `build_unsigned.sh`
-Builds Nimble Commander with the `NimbleCommander-Unsigned` scheme / `Release` configuration and packages the runnable build into a `.dmg` image.  
+Builds Keen Commander with the `NimbleCommander-Unsigned` scheme / `Release` configuration and packages the runnable build into a `.dmg` image.  
 `xcodebuild`, `xcpretty` and `create-dmg` must be available in the environment in order for this script to run.  
 
 ## `build_unsigned_and_run.sh`
-Builds Nimble Commander with the `NimbleCommander-Unsigned` scheme / `Debug` configuration and runs it afterwards.  
+Builds Keen Commander with the `NimbleCommander-Unsigned` scheme / `Debug` configuration and runs it afterwards.  
 `xcodebuild` must be available in the environment in order for this script to run.
 
 ## `run_all_integration_tests.sh`

@@ -55,9 +55,9 @@ using namespace std::literals;
                                    @"Preferences",
                                    "Message text asking if user really wants to reset current file system access");
     alert.informativeText = NSLocalizedStringFromTable(
-        @"This will cause Nimble Commander to ask you for access when necessary.",
+        @"This will cause Keen Commander to ask you for access when necessary.",
         @"Preferences",
-        "Informative text saying that Nimble Commander will ask for filesystem access when need "
+        "Informative text saying that Keen Commander will ask for filesystem access when need "
         "it");
     [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
     [alert addButtonWithTitle:NSLocalizedString(@"Cancel", "")];

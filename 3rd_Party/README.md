@@ -15,19 +15,24 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | Flag                       | Comments
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
-| -arch x86_64               | Build for Intel architecture 
-| -arch arm64                | Build for Apple Silicon architecture
+| -arch arm64                | Build for Apple Silicon (the only supported architecture)
 | -mmacosx-version-min=12.0  | Minimum supported target version of macOS is 12.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden
 | -flto                      | Enable link-time optimization
 | -Os                        | Optimization level 2 plus reduced code size
+| -ffile-prefix-map=$PWD=/nc-build | Keep the local checkout path out of the precompiled artifacts
 
 ## Rebuilding
 
 `3rd_Party/bootstrap.sh` rebuilds all dependencies in topological order. Each dependency directory contains its own `bootstrap.sh` script, which downloads, builds, and installs the library. Only headers and compiled artifacts are retained afterwards.  
 NB! Ensure the correct Xcode version is selected before running the bootstrap script.  
 Verify the Xcode version with `xcode-select -p`.
+
+The precompiled libraries are committed to the repository, so the path of the machine that built
+them must not end up inside them. Apply the `-ffile-prefix-map` flag from the table above when
+building, or run `Scripts/scrub_build_paths.py` afterwards - it rewrites the paths embedded in the
+already built `.a` files.
 
 ## Libraries
 

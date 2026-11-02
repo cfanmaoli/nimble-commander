@@ -14,10 +14,10 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <menu title="AMainMenu" systemMenu="main" id="29">
             <items>
-                <menuItem title="Nimble Commander" id="56">
-                    <menu key="submenu" title="Nimble Commander" systemMenu="apple" id="57">
+                <menuItem title="Keen Commander" id="56">
+                    <menu key="submenu" title="Keen Commander" systemMenu="apple" id="57">
                         <items>
-                            <menuItem title="About Nimble Commander" tag="10000" id="58">
+                            <menuItem title="About Keen Commander" tag="10000" id="58">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="orderFrontStandardAboutPanel:" target="-2" id="142"/>
@@ -46,7 +46,7 @@
                             <menuItem isSeparatorItem="YES" id="144">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Hide Nimble Commander" tag="10020" keyEquivalent="h" id="134">
+                            <menuItem title="Hide Keen Commander" tag="10020" keyEquivalent="h" id="134">
                                 <connections>
                                     <action selector="hide:" target="-1" id="367"/>
                                 </connections>
@@ -65,7 +65,7 @@
                             <menuItem isSeparatorItem="YES" id="149">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Quit Nimble Commander" tag="10050" keyEquivalent="q" id="136">
+                            <menuItem title="Quit Keen Commander" tag="10050" keyEquivalent="q" id="136">
                                 <connections>
                                     <action selector="terminate:" target="-3" id="449"/>
                                 </connections>
@@ -598,6 +598,12 @@ DQ
                                     <action selector="OnGoToHome:" target="-1" id="4ze-4F-PpV"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Trash" tag="14255" id="Tr5-Go-TR1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="OnGoToTrash:" target="-1" id="Tr5-Ac-GT1"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Library" tag="14080" id="YvS-GY-g28">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -906,6 +912,22 @@ CA
                                     <action selector="OnMoveToTrash:" target="-1" id="6mM-F6-n4u"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Put Back" tag="15165" id="Tr5-Pb-PB1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="OnPutBack:" target="-1" id="Tr5-Ac-PB1"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Empty Trash…" tag="15166" id="Tr5-Et-ET1">
+                                <string key="keyEquivalent" base64-UTF8="YES">
+CA
+</string>
+                                <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
+                                <connections>
+                                    <action selector="OnEmptyTrash:" target="-1" id="Tr5-Ac-ET1"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="Tr5-Sp-SP1"/>
                             <menuItem title="Delete..." tag="15170" keyEquivalent="" id="832">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -1021,7 +1043,7 @@ CQ
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="491">
                         <items>
-                            <menuItem title="Nimble Commander Help" tag="17000" keyEquivalent="?" id="iBP-LD-aNS">
+                            <menuItem title="Keen Commander Help" tag="17000" keyEquivalent="?" id="iBP-LD-aNS">
                                 <connections>
                                     <action selector="OnShowHelp:" target="-1" id="mbF-jF-ZMK"/>
                                 </connections>

@@ -1,6 +1,91 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%@) · built-in" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · built-in"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 内置"
+          }
+        }
+      }
+    },
+    "%@ (%@) · language pack · %@ entries" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 语言包 · %@ 条"
+          }
+        }
+      }
+    },
+    "%@ (%@) · language pack · %@ entries · %@ translated" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (%@) · language pack · %@ entries · %@ translated"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（%@）· 语言包 · %@ 条 · 已翻译 %@ 条"
+          }
+        }
+      }
+    },
+    "%@ of them are identical to the text of the current language and probably aren’t translated yet." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ of them are identical to the text of the current language and probably aren’t translated yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其中 %@ 条与当前语言的文本相同，看起来还没有翻译。"
+          }
+        }
+      }
+    },
+    "A restart is required for a language change to take effect." : {
+      "comment" : "Language preferences tab hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A restart is required for a language change to take effect."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改语言后需要重启应用才会生效。"
+          }
+        }
+      }
+    },
     "Active background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -325,6 +410,23 @@
         }
       }
     },
+    "Are you sure you want to remove the language pack “%@”?" : {
+      "comment" : "Language preferences tab confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to remove the language pack “%@”?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要移除语言包“%@”吗？"
+          }
+        }
+      }
+    },
     "Are you sure you want to reset granted filesystem access?" : {
       "comment" : "Message text asking if user really wants to reset current file system access",
       "extractionState" : "manual",
@@ -408,6 +510,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "简要模式"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -516,6 +635,74 @@
         }
       }
     },
+    "Export Complete" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出完成"
+          }
+        }
+      }
+    },
+    "Export Current Language" : {
+      "comment" : "Language preferences tab save panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出当前语言"
+          }
+        }
+      }
+    },
+    "Export Current Language…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Export Current Language…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出当前语言…"
+          }
+        }
+      }
+    },
+    "Exported %@ entries to:\n%@" : {
+      "comment" : "Language preferences tab export result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exported %@ entries to:\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导出 %@ 条到：\n%@"
+          }
+        }
+      }
+    },
     "File panels" : {
       "comment" : "Theme settings group title",
       "localizations" : {
@@ -580,6 +767,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "聚焦项目背景（非活动）"
+          }
+        }
+      }
+    },
+    "Follow System" : {
+      "comment" : "Language preferences tab popup",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Follow System"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随系统"
           }
         }
       }
@@ -790,6 +994,91 @@
         }
       }
     },
+    "Import Complete" : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入完成"
+          }
+        }
+      }
+    },
+    "Import Language File" : {
+      "comment" : "Language preferences tab open panel title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入语言文件"
+          }
+        }
+      }
+    },
+    "Import Language File…" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Language File…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入语言文件…"
+          }
+        }
+      }
+    },
+    "Imported %@ entries for “%@”.\n\nRestart Keen Commander to see the new language." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Imported %@ entries for “%@”.\n\nRestart Keen Commander to see the new language."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导入 %@ 条（%@）。\n\n重启 Keen Commander 后即可看到新语言。"
+          }
+        }
+      }
+    },
+    "in use" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "in use"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用中"
+          }
+        }
+      }
+    },
     "Inactive background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -803,6 +1092,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "非活动背景"
+          }
+        }
+      }
+    },
+    "Interface language:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Interface language:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面语言："
+          }
+        }
+      }
+    },
+    "Language" : {
+      "comment" : "Language preferences tab toolbar label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        }
+      }
+    },
+    "Language pack:" : {
+      "comment" : "Language preferences tab label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language pack:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包："
+          }
+        }
+      }
+    },
+    "Language Packs" : {
+      "comment" : "Language preferences tab title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language Packs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Later"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
           }
         }
       }
@@ -841,6 +1215,23 @@
         }
       }
     },
+    "None" : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
+          }
+        }
+      }
+    },
     "Odd row background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -854,6 +1245,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "奇数行背景"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
           }
         }
       }
@@ -974,6 +1382,108 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "常规文字颜色"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        }
+      }
+    },
+    "Removed the language pack “%@”." : {
+      "comment" : "Language preferences tab status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removed the language pack “%@”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言包“%@”已删除。"
+          }
+        }
+      }
+    },
+    "Restart Keen Commander to apply the new language?" : {
+      "comment" : "Language preferences tab restart confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Keen Commander to apply the new language?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要重启 Keen Commander 以应用新的语言吗？"
+          }
+        }
+      }
+    },
+    "Restart Now" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Now"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即重启"
+          }
+        }
+      }
+    },
+    "Restart Required" : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Required"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要重启"
+          }
+        }
+      }
+    },
+    "Restart to Apply" : {
+      "comment" : "Language preferences tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart to Apply"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重启以生效"
           }
         }
       }
@@ -1127,6 +1637,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分隔线"
+          }
+        }
+      }
+    },
+    "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries whose format specifiers (%%, %%@, %%d …) don’t match the original text."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条格式占位符（%%、%%@、%%d 等）与原文不一致的条目。"
+          }
+        }
+      }
+    },
+    "Skipped %@ entries without a translation." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries without a translation."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条没有译文的条目。"
+          }
+        }
+      }
+    },
+    "Skipped %@ malformed entries." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ malformed entries."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条格式错误的条目。"
           }
         }
       }
@@ -1353,6 +1914,23 @@
         }
       }
     },
+    "The interface language will change the next time Keen Commander starts." : {
+      "comment" : "Language preferences tab restart prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The interface language will change the next time Keen Commander starts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重启 Keen Commander 后界面语言才会改变。"
+          }
+        }
+      }
+    },
     "Theme title" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -1388,20 +1966,37 @@
         }
       }
     },
-    "This will cause Nimble Commander to ask you for access when necessary." : {
-      "comment" : "Informative text saying that Nimble Commander will ask for filesystem access when need it",
-      "extractionState" : "manual",
+    "This can’t be undone." : {
+      "comment" : "Language preferences tab confirmation",
       "localizations" : {
-        "ru" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander будет спрашивать вас о предоставлении доступа при необходимости."
+            "state" : "new",
+            "value" : "This can’t be undone."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这会使 Nimble Commander 在需要时向你请求访问权限。"
+            "value" : "此操作无法撤销。"
+          }
+        }
+      }
+    },
+    "This will cause Keen Commander to ask you for access when necessary." : {
+      "comment" : "Informative text saying that Keen Commander will ask for filesystem access when need it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keen Commander будет спрашивать вас о предоставлении доступа при необходимости."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这会使 Keen Commander 在需要时向你请求访问权限。"
           }
         }
       }
@@ -1494,6 +2089,23 @@
         }
       }
     },
+    "Unable to use this file" : {
+      "comment" : "Language preferences tab error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to use this file"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法使用此文件"
+          }
+        }
+      }
+    },
     "Viewer" : {
       "comment" : "General preferences tab title\nTheme settings group title",
       "extractionState" : "manual",
@@ -1508,6 +2120,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看器"
+          }
+        }
+      }
+    },
+    "You can translate the interface of Keen Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app." : {
+      "comment" : "Language preferences tab description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can translate the interface of Keen Commander into another language, or use a translation made by someone else. Export the current language, replace the text with your own translation, then import the file back and restart the app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把 Keen Commander 的界面翻译成其它语言，也可以使用别人做好的翻译。先导出当前语言，把内容替换成你的译文，再导入回来并重启应用。"
           }
         }
       }

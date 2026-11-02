@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 #include "RoutedIOInterfaces.h"
-#include "Trash.h"
+#include <RoutedIO/Trash.h>
 
 // hack to access function from libc implementation directly.
 // this func does readdir but without mutex locking

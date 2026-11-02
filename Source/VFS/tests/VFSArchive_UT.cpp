@@ -2148,6 +2148,35 @@ TEST_CASE(PREFIX "time handling")
     CHECK(std::abs(listing->BTime(0) - expected_tv_sec) < _24h);
 }
 
+TEST_CASE(PREFIX "aborts the initial scan when it gets cancelled")
+{
+    // An empty zip - just enough for libarchive to detect the format.
+    static const unsigned char empty_zip[] = {0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    const TestDir dir;
+    const auto path = std::filesystem::path(dir.directory) / "empty.zip";
+    REQUIRE(nc::base::WriteAtomically(path, {reinterpret_cast<const std::byte *>(empty_zip), std::size(empty_zip)}));
+
+    // Not cancelled - the host is built as usual.
+    REQUIRE_NOTHROW(
+        std::make_shared<ArchiveHost>(path.c_str(), TestEnv().vfs_native, std::nullopt, [] { return false; }));
+
+    // Cancelled right away - the scan must give up with ECANCELED instead of running to completion.
+    int checks = 0;
+    const auto cancelled = [&checks] {
+        ++checks;
+        return true;
+    };
+    try {
+        [[maybe_unused]] const auto host =
+            std::make_shared<ArchiveHost>(path.c_str(), TestEnv().vfs_native, std::nullopt, cancelled);
+        FAIL("ArchiveHost must not be constructed when the scan gets cancelled");
+    } catch( nc::ErrorException &e ) {
+        CHECK(e.error() == nc::Error{nc::Error::POSIX, ECANCELED});
+    }
+    CHECK(checks > 0);
+}
+
 } // namespace VFSArchiveTest
 
 #undef PREFIX

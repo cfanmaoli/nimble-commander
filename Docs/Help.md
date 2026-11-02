@@ -2,14 +2,14 @@
 
 ## Introduction
 
-Nimble Commander is a free dual-pane file manager for macOS, designed with a focus on speed, keyboard-based navigation, and flexibility.
+Keen Commander is a free dual-pane file manager for macOS, designed with a focus on speed, keyboard-based navigation, and flexibility.
 The project aims to blend the user experience of classic file managers from the '80s and '90s with the modern look and feel of Mac computers.
-Nimble Commander follows the design principles of [orthodox file managers](https://en.wikipedia.org/wiki/File_manager#Orthodox_file_managers), specifically dual-pane file managers.
+Keen Commander follows the design principles of [orthodox file managers](https://en.wikipedia.org/wiki/File_manager#Orthodox_file_managers), specifically dual-pane file managers.
 This website contains an in-depth study of this kind of software: [Less is More: Orthodox File Managers as Sysadmin IDE](https://softpanorama.org/OFM/index.shtml).
 
 ## System Requirements
 
-The current version of Nimble Commander supports any Mac running one of the following versions of macOS:
+The current version of Keen Commander supports any Mac running one of the following versions of macOS:
 
 - macOS 26 Golden Gate
 - macOS 26 Tahoe
@@ -21,7 +21,7 @@ The current version of Nimble Commander supports any Mac running one of the foll
 While not a strict policy, a maintenance goal is to support the last six major releases of macOS.
 This typically covers Mac hardware with a time span of approximately 12 years.
 
-Nimble Commander runs natively on both Intel and Apple Silicon (ARM) architectures.
+Keen Commander runs natively on Apple Silicon (ARM) Macs.
 
 Below is the compatibility table for the older releases:
 
@@ -38,27 +38,27 @@ Below is the compatibility table for the older releases:
 
 ## Installation
 
-Nimble Commander is portable; it doesn't require the installation of additional components and can run from any folder.
-When downloaded from the Mac App Store, Nimble Commander is automatically placed in the `/Applications` folder.
+Keen Commander is portable; it doesn't require the installation of additional components and can run from any folder.
+When downloaded from the Mac App Store, Keen Commander is automatically placed in the `/Applications` folder.
 If it was downloaded from the website, it can be copied into the `/Applications` folder by dragging the icon there.
-You can also run Nimble Commander directly from a `.dmg` disk image; in this case, Nimble Commander will offer to move itself to the `/Applications` folder.
+You can also run Keen Commander directly from a `.dmg` disk image; in this case, Keen Commander will offer to move itself to the `/Applications` folder.
 
 ![Copying NC from a dmg](Help-install-dmg.png)
 
 ## Running the Application
 
-Simply double-click on the Nimble Commander icon to start it.
+Simply double-click on the Keen Commander icon to start it.
 
 ## Access Permissions
 
-If you downloaded Nimble Commander from the Mac App Store, the application will request permissions when navigating to a new location.
+If you downloaded Keen Commander from the Mac App Store, the application will request permissions when navigating to a new location.
 This requirement is imposed on all applications published in the Mac App Store as a safety measure to prevent unauthorized access outside of the sandbox container.
 You can revoke granted access permissions at any time by clicking `Settings > General > Granted filesystem access > Reset`.
 The permission request will appear as shown below:
 
 ![NC asking for an access permission](Help-sandbox-perm.png)
 
-Even if you downloaded Nimble Commander outside of the Mac App Store, accessing certain locations will require granting permissions.
+Even if you downloaded Keen Commander outside of the Mac App Store, accessing certain locations will require granting permissions.
 As of this writing, the list of such locations includes:
 
 - Desktop Folder
@@ -67,12 +67,12 @@ As of this writing, the list of such locations includes:
 - Network Volumes
 - iCloud Drive
 
-To use Nimble Commander in these locations, you need to grant the necessary permissions in System Settings under `Privacy & Security > Files and Folders` section.
-Alternatively, you can grant Nimble Commander Full Disk Access in System Settings under `Privacy & Security > Full Disk Access` section.
+To use Keen Commander in these locations, you need to grant the necessary permissions in System Settings under `Privacy & Security > Files and Folders` section.
+Alternatively, you can grant Keen Commander Full Disk Access in System Settings under `Privacy & Security > Full Disk Access` section.
 
 ## Version Differences
 
-There are two existing versions of Nimble Commander: the sandboxed version available in the Mac App Store, and the standalone version available for direct download from the website.
+There are two existing versions of Keen Commander: the sandboxed version available in the Mac App Store, and the standalone version available for direct download from the website.
 Both versions are mostly equal in terms of functionality.
 The sandboxed version consumes slightly more resources due to sandboxing, but it provides an additional layer of protection.
 The notable features missing from the sandboxed version are:
@@ -85,7 +85,7 @@ The notable features missing from the sandboxed version are:
 # File Panels
 
 ## Introduction
-Below is a screenshot of a typical interface of Nimble Commander:
+Below is a screenshot of a typical interface of Keen Commander:
 
 ![Example of the interface](Help-main-ui.png)
 
@@ -109,7 +109,7 @@ Each panel is vertically divided into three logical parts:
 - Footer: shows the filename of the focused item, its size and modification date, the total number of items in the panel, and the free space available on this storage.
 
 ## Navigation
-Nimble Commander supports both mouse-based and keyboard-based navigation inside the file panel, although the keyboard is preferred.
+Keen Commander supports both mouse-based and keyboard-based navigation inside the file panel, although the keyboard is preferred.
 Use a single mouse click to change the cursor position (i.e., the focused item) and scroll gestures to scroll through the contents of the file panel without changing the cursor position.
 The navigation hotkeys are the following:
 
@@ -131,7 +131,7 @@ To go to a parent folder, do the same with the `..` [pseudo-folder](https://en.w
 Displaying the `..` folder is optional and can be turned off in the Settings dialog.
 Pressing `Backward Delete` (Backspace) or `Cmd + Up` navigates to the parent folder, regardless of the current cursor position.
 
-Nimble Commander stores location history for each file panel.
+Keen Commander stores location history for each file panel.
 To navigate the history back and forth, use the `Cmd + [` and `Cmd + ]` hotkeys.
 
 There are some locations that can be navigated to using hotkeys:
@@ -154,7 +154,7 @@ Here is what the popup looks like:
 ![GoTo popup](Help-goto-popup.png)
 
 To navigate to an arbitrary location on the filesystem, you can use the GoTo dialog opened by the `Shift + Cmd + G` hotkey or through the menu: `Go > Go To Folder...`.
-In this dialog, you can type any path, and after clicking the Go button Nimble Commander will navigate to the specified folder.
+In this dialog, you can type any path, and after clicking the Go button Keen Commander will navigate to the specified folder.
 Below is the view of this dialog box:
 
 ![GoTo dialog](Help-goto-dialog.png)
@@ -170,21 +170,21 @@ The action performed when you press `Return` depends on the type of item:
 - For executable items, it runs the file inside the built-in terminal emulator.
 - For all other items, the default macOS association is used to open them.
 
-If you need to open an archive with a non-standard extension (.xlsx, .pak etc), you can force Nimble Commander to navigate into it instead of opening the item with an external application by using the `Cmd + Down` hotkey or the `Go > Enter` menu item.
+If you need to open an archive with a non-standard extension (.xlsx, .pak etc), you can force Keen Commander to navigate into it instead of opening the item with an external application by using the `Cmd + Down` hotkey or the `Go > Enter` menu item.
 
 The `Shift + Return` hotkey opens an item in macOS using its default association, regardless of the item type.
 
-To open an item outside of Nimble Commander using a specific application, select the application from the `Open With` menu, which is available in the context menu or the `File` menu.
+To open an item outside of Keen Commander using a specific application, select the application from the `Open With` menu, which is available in the context menu or the `File` menu.
 
 ## Panel Management
 You can swap the contents of the left and right panels using the `Cmd + U` hotkey or the menu item `View > Swap Panels`.
 This operation also transfers the focus to the opposite panel.  
 To sync the contents of the opposite panel with the contents of the current panel, you can use the `Opt + Cmd + U` hotkey or the menu item `View > Sync Panels`.  
-In most cases, Nimble Commander will automatically refresh the contents of the file panel whenever the underlying part of the filesystem changes.
+In most cases, Keen Commander will automatically refresh the contents of the file panel whenever the underlying part of the filesystem changes.
 Sometimes, however, it's not possible to automatically detect these changes.
 In such cases, the panel can be manually refreshed using the `Cmd + R` hotkey or the menu item `View > Refresh`.
 
-The two panels in a Nimble Commander's window normally have the same width.
+The two panels in a Keen Commander's window normally have the same width.
 If needed this proportion can be changed by either dragging the splitter located between them or by using the `Ctrl + Opt + Left` / `Ctrl + Opt + Right` hotkeys.
 Here is an example of panels with different widths:
 
@@ -198,13 +198,13 @@ The following screenshot provides an example of how single-pane mode looks:
 ![Single-pane mode](Help-panel-collapsed.png)
 
 ## Selection
-Nimble Commander follows the UX of orthodox file managers and diverges from the typical macOS UX when it comes to item selection.
+Keen Commander follows the UX of orthodox file managers and diverges from the typical macOS UX when it comes to item selection.
 It treats item selection and cursor position separately, which means moving the cursor does not change the selection of items in the panel.
 Below is an example of a panel with some selected items and the cursor focused on an item that is not selected:
 
 ![Items selection](Help-panel-selection.png)
 
-There are numerous ways to manipulate the item selection using the keyboard or mouse in Nimble Commander:
+There are numerous ways to manipulate the item selection using the keyboard or mouse in Keen Commander:
 
 - `Cmd + A`: selects all items.
 - `Opt + Cmd + A`: deselects all items.
@@ -219,7 +219,7 @@ There are numerous ways to manipulate the item selection using the keyboard or m
 - `Alt + Cmd + -`: deselects all items with the same extension as the currently focused item.
 
 ## Sorting Modes
-Nimble Commander offers various ways to organize items in a folder.
+Keen Commander offers various ways to organize items in a folder.
 You can sort the items in ascending or descending order based on the following properties:
 
 - Name
@@ -267,7 +267,7 @@ When changing the sorting order via hotkeys or the menu, the behavior depends on
 If the criteria are different, it will switch to the selected criteria with its default order (as shown in the table above). 
 Selecting the same sorting criteria again will toggle the order between ascending and descending.
 
-Nimble Commander also provides some customization options to fine-tune sorting:
+Keen Commander also provides some customization options to fine-tune sorting:
 
 - `Separate Folders from Files` places all folders before any regular files.
 - `Extensionless Folders` forces extension-based sorting to treat any folder as if it doesn't have an extension.
@@ -277,13 +277,13 @@ Nimble Commander also provides some customization options to fine-tune sorting:
   - `Case-Sensitive`:  A simple Unicode-based comparison that compares characters one by one without transformations. The fastest of the three.
 
 ## Hidden Items
-In Nimble Commander, items are considered hidden if their filenames begin with a dot (`"."`) or if they have the hidden file attribute (`UF_HIDDEN`) set.
+In Keen Commander, items are considered hidden if their filenames begin with a dot (`"."`) or if they have the hidden file attribute (`UF_HIDDEN`) set.
 The special parent folder entry (`".."`) is never treated as hidden.
 By default, hidden items are not shown in the file panels.
 You can toggle their visibility using the `Shift + Cmd + .` hotkey or by selecting `View > Show/Hide Hidden Items` from the menu.
 
 ## Quick Search
-Nimble Commander offers a fast way to locate a file in a folder by typing a few letters from its name.
+Keen Commander offers a fast way to locate a file in a folder by typing a few letters from its name.
 This keyboard-based navigation is called Quick Search.
 It's highly customizable and can behave differently based on your settings, but at its core, the idea is simple: any keyboard input can be used to filter folder items.
 To remove the filtering, press the `Esc` button to clear the search query.
@@ -316,7 +316,7 @@ When filtered-out items are configured to still be shown, and a key modifier is 
 Using normal keyboard navigation (Arrows, Home, End, etc.) while holding the modifier will restrict the cursor movement to only the matching files.
 
 ## View Modes
-Nimble Commander can display the contents of a panel in three modes: Brief, List, and Gallery.
+Keen Commander can display the contents of a panel in three modes: Brief, List, and Gallery.
 
 - Brief mode shows only basic item information, such as the filename, icon, and tag colors, and arranges the items in consecutive columns.
   This allows more items to fit on the screen and enables the cursor to move both vertically and horizontally.
@@ -332,7 +332,7 @@ This screenshot shows Gallery mode with the other panel collapsed:
 
 ![Gallery mode](Help-panel-gallery.png)
 
-By default, Nimble Commander has 5 preconfigured modes, which you can switch using the `View > View Mode` menu or via the hotkeys listed below:
+By default, Keen Commander has 5 preconfigured modes, which you can switch using the `View > View Mode` menu or via the hotkeys listed below:
 
 - `Ctrl + 1` - `Short`: A Brief mode that shows 3 equal-sized columns per panel.
 - `Ctrl + 2` - `Medium`: A Brief mode that uses dynamically sized columns depending on the widths of filenames.
@@ -343,7 +343,7 @@ By default, Nimble Commander has 5 preconfigured modes, which you can switch usi
 You can fine-tune, rearrange, and add new custom panel layouts in the Settings dialog: `Settings > Panels > Layout`.
 
 ## Quick Lists
-Quick Lists is another mechanism in Nimble Commander for accessing specific locations with minimal keypresses, tailored for keyboard use.
+Quick Lists is another mechanism in Keen Commander for accessing specific locations with minimal keypresses, tailored for keyboard use.
 It is similar to the Go To popup but provides more locations and does not mix different types of locations.
 A Quick List popup is shown inside the focused panel, and its content can depend on the panel itself.
 There are 6 kinds of Quick Lists, which can be accessed via the menu `Go > Quick Lists` or via the hotkeys below:
@@ -352,7 +352,7 @@ There are 6 kinds of Quick Lists, which can be accessed via the menu `Go > Quick
 - `Cmd + 2` - `History`: A history of recent locations visited in this panel.
 - `Cmd + 3` - `Favorites`: Favorite and frequently visited locations.
 - `Cmd + 4` - `Volumes`: Currently attached system volumes.
-- `Cmd + 5` - `Connections`: Network locations that Nimble Commander can connect to. Clicking on a connection establishes it and navigates the panel to the default location on that remote resource.
+- `Cmd + 5` - `Connections`: Network locations that Keen Commander can connect to. Clicking on a connection establishes it and navigates the panel to the default location on that remote resource.
 - `Cmd + 6` - `Tags`: A list of known file tags. Clicking on a tag shows all items with the selected tag in the panel.
 
 This screenshot shows a `Volumes` Quick List:
@@ -362,7 +362,7 @@ This screenshot shows a `Volumes` Quick List:
 ## Tabs
 File panels support a tabbed interface, allowing multiple locations to be opened simultaneously on either the left or right pane.
 The tab bar appears automatically if more than one tab is open in a pane, but it can also be forced to always show via the menu `View > Show Tab Bar` or by using the hotkey `Cmd + Shift + T`.
-The screenshot below shows Nimble Commander's window with two tabs in the left pane and three tabs in the right pane:
+The screenshot below shows Keen Commander's window with two tabs in the left pane and three tabs in the right pane:
 
 ![Tabbed Interface](Help-panel-tabs.png)
 
@@ -385,7 +385,7 @@ To close tabs, you can use the following hotkeys:
 - `Alt + Cmd + W` - closes all other tabs.
 
 ## Favorites
-Favorites is a list of frequently accessed locations, similar to those in other software. Nimble Commander provides quick access to these locations through the following:
+Favorites is a list of frequently accessed locations, similar to those in other software. Keen Commander provides quick access to these locations through the following:
 
 - The `Go > Favorites` menu.
 - Go To popups (`F1`/`F2`).
@@ -396,7 +396,7 @@ To add a directory to the list, use this window, click the `+` button, and selec
 Alternatively, you can add a directory with the hotkey `Cmd + B` or the `File > Add to Favorites` menu item.
 Use the `-` button in the Favorites window to remove a location.
 The Favorites window also allows you to synchronize the list with Finder Favorites or reset it to the default set of location.
-A favorite location can represent any path available in the macOS filesystem or any virtual filesystem supported by Nimble Commander, such as network filesystems, archive contents, file extended attributes, or the process list.
+A favorite location can represent any path available in the macOS filesystem or any virtual filesystem supported by Keen Commander, such as network filesystems, archive contents, file extended attributes, or the process list.
 
 This screenshot shows the `Favorites` window:
 
@@ -427,7 +427,7 @@ Once files are found, you can:
 # Operations
 
 ## Introduction
-Nimble Commander executes file operations in the background whenever possible to ensure the user interface remains responsive.
+Keen Commander executes file operations in the background whenever possible to ensure the user interface remains responsive.
 Most operations are tied to the window where they originated, allowing you to monitor progress and providing options to pause or cancel as needed.
 When file operations are in progress, they are displayed in the central part of the window, just above the file panels: 
 
@@ -456,7 +456,7 @@ To move items from one location to another, you can use the following methods:
 To quickly rename an item in place, single-click its filename or press Ctrl + F6.
 
 ## Batch Rename
-Nimble Commander allows you to rename multiple items at once by applying a rename pattern. To open the Batch Rename dialog, select the items you want to rename, then press the `Ctrl + M` hotkey or choose `Command > Batch Rename` from the menu:
+Keen Commander allows you to rename multiple items at once by applying a rename pattern. To open the Batch Rename dialog, select the items you want to rename, then press the `Ctrl + M` hotkey or choose `Command > Batch Rename` from the menu:
 
 ![Batch Rename](Help-batch-rename.png)
 
@@ -530,7 +530,7 @@ The Rename Dialog provides a preview of how the renamed list of files will look.
 No renaming will take place until you click the `OK` button or press `Cmd + Return`.
 
 ## Delete
-Nimble Commander allows you to delete filesystem items or move them to the Trash, where supported.
+Keen Commander allows you to delete filesystem items or move them to the Trash, where supported.
 To quickly move an item to the Trash, press the `Cmd + Backspace` hotkey or select the menu item `Command > Move to Trash`.
 If the Trash functionality is not supported on the current volume, a Delete dialog will appear, asking you to confirm whether you want to delete the item permanently.
 You can also invoke the Delete dialog using the `F8` / `Shift + F8` hotkeys or their corresponding menu items: `Command > Delete...` and `Command > Delete Permanently...`.
@@ -538,7 +538,7 @@ When applicable, the dialog provides an option to choose between deleting and mo
 The difference between the two commands lies in the default selection presented in the dialog.
 
 ## Create Folder
-There are two ways to create a folder in Nimble Commander:
+There are two ways to create a folder in Keen Commander:
 
   - Using the `F7` hotkey or the menu item `Command > Create Directory`. 
     This command opens the Create Directory dialog, where you can specify the name of the new folder before making any changes to the filesystem.
@@ -566,7 +566,7 @@ If any of the selected items is a folder, the dialog provides an option to apply
 Please note that changing certain attributes requires administrator rights and will fail if executed without enabling Admin Mode.
 
 ## Compress
-Nimble Commander includes a built-in compression tool that allows you to archive files.
+Keen Commander includes a built-in compression tool that allows you to archive files.
 Currently, only the ZIP archive format is supported.
 Archives can be password-protected using AES-256 encryption.
 
@@ -574,7 +574,7 @@ To create an archive in the same location as the source items, press `F9` or sel
 To place the resulting archive in the location of the opposite panel, press `Shift + F9` or select `Command > Compress To...`.
 
 ## Manage Links
-In Nimble Commander, you can create new hard links and create or edit symbolic links.
+In Keen Commander, you can create new hard links and create or edit symbolic links.
 By default, these actions do not have assigned hotkeys.
 They can be accessed via the `Command > Links` menu, which includes the following options:
 
@@ -583,11 +583,11 @@ They can be accessed via the `Command > Links` menu, which includes the followin
 - `Edit Symbolic Link`.
 
 # Virtual File Systems
-In addition to browsing the "real" filesystem available on macOS, Nimble Commander allows you to interact with other resources as if they were part of the normal filesystem.
+In addition to browsing the "real" filesystem available on macOS, Keen Commander allows you to interact with other resources as if they were part of the normal filesystem.
 Most operations, such as browsing, searching, viewing, and modifying, work seamlessly with these virtual filesystems (VFS).
 Opening a file stored on a VFS with an external application requires the file to be copied to a temporary location first.
 Small files are copied automatically, while opening larger files prompts for confirmation.
-When a file on a VFS is modified using an external editor, Nimble Commander automatically reflects the changes in the underlying VFS.
+When a file on a VFS is modified using an external editor, Keen Commander automatically reflects the changes in the underlying VFS.
 
 Currently, the following virtual filesystems are supported:
 
@@ -614,15 +614,15 @@ Currently, the following virtual filesystems are supported:
 
 # External Editors
 You can configure a list of editor applications in the `Settings` dialog.
-To modify these settings, navigate to `Nimble Commander > Settings > Editors`.
-When you press `F4` or select the `Command > External Editor` menu item, Nimble Commander selects an appropriate editor based on the file extension of the currently focused file and opens the file in that editor.
-External editors can be executed either as standalone macOS applications or as command-line tools within Nimble Commander’s terminal emulator.
+To modify these settings, navigate to `Keen Commander > Settings > Editors`.
+When you press `F4` or select the `Command > External Editor` menu item, Keen Commander selects an appropriate editor based on the file extension of the currently focused file and opens the file in that editor.
+External editors can be executed either as standalone macOS applications or as command-line tools within Keen Commander’s terminal emulator.
 
 # Tools
-Similar to external editors, tools allow you to define a set of applications that Nimble Commander can execute.
+Similar to external editors, tools allow you to define a set of applications that Keen Commander can execute.
 The key difference is that, with tools, you have full control over the parameters passed to the application at startup.  
 Additionally, tools can be assigned a designated hotkey, and their icons can be placed on the toolbar for easy access.
-To define external tools, navigate to `Nimble Commander > Settings > Tools`.  
+To define external tools, navigate to `Keen Commander > Settings > Tools`.  
 
 To execute a tool, you can:
 
@@ -636,10 +636,10 @@ Virtual File Systems (VFS) are not supported.
 When called, tools can run in one of two modes, depending on the `Startup Mode` setting:
 
   - `Run Detached`: Executes the tool as a standalone macOS application.
-  - `Run in Terminal`: Executes the tool as a command-line utility within Nimble Commander’s terminal emulator.
+  - `Run in Terminal`: Executes the tool as a command-line utility within Keen Commander’s terminal emulator.
 
 The parameters passed to an external tool are defined using placeholders.
-Nimble Commander replaces these placeholders with specific values when the tool is executed.
+Keen Commander replaces these placeholders with specific values when the tool is executed.
 
 Supported placeholders:
 
@@ -684,7 +684,7 @@ Supported placeholders:
   - `%xT`: Limits the total number of files passed to the tool to **x**.
 
 # Integrated Viewer
-Nimble Commander features a built-in viewer that lets you examine files without leaving the application:
+Keen Commander features a built-in viewer that lets you examine files without leaving the application:
 
 ![Integrated Viewer](Help-intergrated-viewer.png)
 
@@ -713,7 +713,7 @@ The viewer can operate within the application window where it was launched, repl
 To open the built-in viewer, press the `F3` hotkey or select the `Command > Internal Viewer` menu item. To close it, simply press `Esc`.
 
 # Integrated Terminal
-Nimble Commander includes a built-in terminal emulator, allowing you to run command-line utilities without switching to another application.
+Keen Commander includes a built-in terminal emulator, allowing you to run command-line utilities without switching to another application.
 The terminal emulator supports most VT100 commands and many extensions, such as 256 colors and mouse support.
 
 ![Terminal Emulator](Help-terminal.png)
@@ -722,7 +722,7 @@ The terminal is context-aware and synchronizes the current panel's folder with t
 This synchronization is bi-directional, executing `cd` in the terminal updates the panel path, and changing the folder in the panel updates the terminal’s working directory.
 Supported terminal shells include `bash`, `zsh`, `csh`, and `tcsh`.
 
-There are two ways to use the terminal emulator in Nimble Commander:
+There are two ways to use the terminal emulator in Keen Commander:
 
 - Full-Window Mode.  
   In full-window mode, the terminal occupies the entire application window, temporarily hiding the file panels.
@@ -732,7 +732,7 @@ There are two ways to use the terminal emulator in Nimble Commander:
 - Overlapped Mode.  
   In overlapped mode, the terminal is positioned below the file panels, allowing both to remain visible simultaneously.
   This configuration is particularly useful for users familiar with orthodox dual-pane file managers, where a command-line interface is always accessible.
-  If desired, you can configure Nimble Commander to redirect keyboard input directly to the overlapped terminal even when it isn’t focused by enabling the option under `Settings > Panels > Behavior > Redirect keyboard input to the overlapped terminal`.
+  If desired, you can configure Keen Commander to redirect keyboard input directly to the overlapped terminal even when it isn’t focused by enabling the option under `Settings > Panels > Behavior > Redirect keyboard input to the overlapped terminal`.
   To reveal the terminal in overlapped mode, press `Ctrl + Alt + Up` to move the file panels upward.
   You can hide it again by pressing `Ctrl + Alt + Down`.
   For a clearer view of the terminal, you can fully hide the file panels by pressing `Ctrl + Alt + O`, and press the same shortcut again to bring the panels back into view.
@@ -746,14 +746,14 @@ Some actions do not have default hotkeys but can still be accessed through the a
 
 | Action                                       | Key Equivalent            |
 | -----------------------------------------    | ------------------------- |
-| _**Nimble Commander Menu**_                  |                           |
+| _**Keen Commander Menu**_                  |                           |
 | &nbsp; About                                 |                           |
 | &nbsp; Preferences                           | Cmd + ,                   |
 | &nbsp; Enable Admin Mode                     |                           |
-| &nbsp; Hide Nimble Commander                 | Cmd + H                   |
+| &nbsp; Hide Keen Commander                 | Cmd + H                   |
 | &nbsp; Hide Others                           | Opt + Cmd+H               |
 | &nbsp; Show All                              |                           |
-| &nbsp; Quit Nimble Commander                 | Cmd + Q                   |
+| &nbsp; Quit Keen Commander                 | Cmd + Q                   |
 | &nbsp; Quit and Close All Windows            | Opt + Cmd + Q             |
 | _**File Menu**_                              |                           |
 | &nbsp; New Window                            | Cmd + N                   |
@@ -945,17 +945,17 @@ Some actions do not have default hotkeys but can still be accessed through the a
 
 # Frequently Asked Questions
 
-**Q**: I have an idea for Nimble Commander!  
+**Q**: I have an idea for Keen Commander!  
 **A**: That’s fantastic!
 Feel free to contribute your ideas and proposed changes to the project.
-The entire source code and build instructions for Nimble Commander are available in [this repository](https://github.com/mikekazakov/nimble-commander).
+The entire source code and build instructions for Keen Commander are available in [this repository](https://github.com/mikekazakov/nimble-commander).
 Be sure to read through the [CONTRIBUTING](https://github.com/mikekazakov/nimble-commander/blob/main/CONTRIBUTING.md) guidelines carefully before you start.
 
 ---
 
 **Q**: Can you implement a specific feature or request?  
 **A**: Likely not.
-As Nimble Commander is maintained by a single contributor, resources are limited, and I cannot accommodate all requests due to time and energy constraints.
+As Keen Commander is maintained by a single contributor, resources are limited, and I cannot accommodate all requests due to time and energy constraints.
 The Apple ecosystem is rather hostile to developers, and just maintaining the project up to date with the constant macOS/toolchain/dependencies changes requires significant effort.
 However, contributions of reasonable quality from the community are welcome.
 You can consider implementing the feature yourself.
@@ -963,7 +963,7 @@ Check out the [contribution guidelines](https://github.com/mikekazakov/nimble-co
 
 ---
 
-**Q**: Nimble Commander crashes/behaves incorrectly/etc. Can you fix it?  
+**Q**: Keen Commander crashes/behaves incorrectly/etc. Can you fix it?  
 **A**: Possibly.
 However, it is often difficult to track down the problem without a detailed description of the setup and a set of reproducible steps.
 Please spend some time describing in detail what happened and how it can be reproduced.
@@ -974,25 +974,25 @@ This will greatly help in resolving the issue.
 **Q**: Preview lacks a feature XYZ, is it possible to add it?  
 **A**: This might be challenging.
 The entire preview functionality is managed by macOS via the [Quick Look framework](https://en.wikipedia.org/wiki/Quick_Look).
-Rendition and behaviour for various file types is provided by various plugins in that system-wide framework, and Nimble Commander has no control over it.
+Rendition and behaviour for various file types is provided by various plugins in that system-wide framework, and Keen Commander has no control over it.
 Currently it doesn’t even have any content-specific logic.
 While it’s possible to start providing special handling for some specific file types, like images, it would require significant resources to implement, test, and maintain.
 
 ---
 
-**Q**: Can Nimble Commander access iCloud storage?  
-**A**: Nimble Commander does not provide first-class access to iCloud.
+**Q**: Can Keen Commander access iCloud storage?  
+**A**: Keen Commander does not provide first-class access to iCloud.
 Apple does not have an official API to allow applications to directly manipulate items outside of their own containers.
 At least that’s my understanding of the status quo at the moment of writing (I’d be glad to be proven wrong).
-However, you can manually navigate to `~/Library/Mobile Documents/com~apple~CloudDocs` and access the items there using the normal UI of Nimble Commander.
+However, you can manually navigate to `~/Library/Mobile Documents/com~apple~CloudDocs` and access the items there using the normal UI of Keen Commander.
 This usually works, but there is no guarantee that the content of that folder is properly synchronized.
 
 ---
 
-**Q**: Nimble Commander crashes with EXC_BAD_INSTRUCTION.  
+**Q**: Keen Commander crashes with EXC_BAD_INSTRUCTION.  
 **A**: This has been observed when macOS Catalina is installed on hardware that is not officially supported.
-Nimble Commander/x64 requires SSE4.2 since v1.2.9, which is available on all Mac models officially supported by Catalina.
-If this OS version is installed on a machine with a CPU lacking these instructions, Nimble Commander v1.2.9+ cannot run.
+Keen Commander/x64 requires SSE4.2 since v1.2.9, which is available on all Mac models officially supported by Catalina.
+If this OS version is installed on a machine with a CPU lacking these instructions, Keen Commander v1.2.9+ cannot run.
 The only workaround is to use an older version.
 
 ---
@@ -1008,7 +1008,7 @@ The reasons why were discussed here: [https://magnumbytes.com/forum/viewtopic.ph
 
 ---
 
-**Q**: How to make Nimble Commander restore the state of its windows after it has been closed and restarted?  
+**Q**: How to make Keen Commander restore the state of its windows after it has been closed and restarted?  
 **A**: Turn off the checkbox `System Settings > Desktop & Dock > Close windows when quitting an application`.
 By default, this option is turned on.
 
@@ -1025,19 +1025,19 @@ Toggle this option by selecting `Menu > View > Show Hidden Files` or by pressing
 
 ---
 
-**Q**: Do dialogs in Nimble Commander have hotkeys?  
+**Q**: Do dialogs in Keen Commander have hotkeys?  
 **A**: Yes, many dialogs have hotkeys using the Ctrl (^) key modifier.
 Hovering the mouse cursor over a UI element will display context help, which may show the hotkey for that element.
 
 ---
 
-**Q**: Where does Nimble Commander store its state?  
+**Q**: Where does Keen Commander store its state?  
 **A**: In these locations:
 
 - Main configuration files (managed by NC):  
-`~/Library/Application Support/Nimble Commander/Config`
+`~/Library/Application Support/Keen Commander/Config`
 - Volatile state file (managed by NC):  
-`~/Library/Application Support/Nimble Commander/State`
+`~/Library/Application Support/Keen Commander/State`
 - Windows state (managed by macOS):  
 `~/Library/Saved Application State/info.filesmanager.Files.savedState`
 - Application defaults (managed by macOS):  
@@ -1049,8 +1049,8 @@ Hovering the mouse cursor over a UI element will display context help, which may
 
 ---
 
-**Q**: Why does Nimble Commander keep forgetting the theme I selected?  
-**A**: Mostly likely, Nimble Commander automatically switches to another theme whenever the macOS system theme changes (Light/Dark) and/or when the app restarts.
+**Q**: Why does Keen Commander keep forgetting the theme I selected?  
+**A**: Mostly likely, Keen Commander automatically switches to another theme whenever the macOS system theme changes (Light/Dark) and/or when the app restarts.
 You can control this by navigating to `Settings -> Themes -> (...) -> Configure automatic switching...` and either turning off this functionality or setting the theme you want for both Light and Dark appearances.
 
 ---
