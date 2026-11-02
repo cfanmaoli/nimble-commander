@@ -13,6 +13,13 @@ git clone -b curl-8_23_0 --single-branch --depth=1 https://github.com/curl/curl.
 
 cd curl
 
+# curl 8.23 prefers pipe2() when it is compiled against the macOS 27 SDK. In the archive that is a
+# weak import, and linking the LTO-ed bitcode with an older SDK (as GitHub's macOS 26 runners do)
+# turns it into a hard undefined symbol, breaking the build. The fork targets macOS 12 anyway, so
+# take the portable pipe() path that every supported system has.
+perl -0pi -e 's/#elif defined\(__APPLE__\) && defined\(HAVE_BUILTIN_AVAILABLE\)/#elif 0 \/* pipe2() disabled by the fork, see bootstrap.sh *\//' lib/socketpair.c
+grep -q 'pipe2() disabled by the fork' lib/socketpair.c
+
 mkdir build
 cd build
 
