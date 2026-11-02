@@ -17,7 +17,14 @@ namespace Catch {
 
     class SonarQubeReporter final : public CumulativeReporterBase {
     public:
-        SonarQubeReporter( ReporterConfig&& config );
+        SonarQubeReporter(ReporterConfig&& config)
+        : CumulativeReporterBase(CATCH_MOVE(config))
+        , xml(m_stream) {
+            m_preferences.shouldRedirectStdOut = true;
+            m_preferences.shouldReportAllAssertions = false;
+            m_preferences.shouldReportAllAssertionStarts = false;
+            m_shouldStoreSuccesfulAssertions = false;
+        }
 
         static std::string getDescription() {
             using namespace std::string_literals;

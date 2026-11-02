@@ -19,7 +19,8 @@ namespace Catch {
     class ITestCaseRegistry {
     public:
         virtual ~ITestCaseRegistry(); // = default
-        virtual void enableFilenameTags() = 0;
+        // TODO: this exists only for adding filenames to test cases -- let's expose this in a saner way later
+        virtual std::vector<TestCaseInfo* > const& getAllInfos() const = 0;
         virtual std::vector<TestCaseHandle> const& getAllTests() const = 0;
         virtual std::vector<TestCaseHandle> const& getAllTestsSorted( IConfig const& config ) const = 0;
     };

@@ -17,40 +17,44 @@
 namespace Catch {
 namespace Matchers {
 
+    struct CasedString {
+        CasedString( std::string const& str, CaseSensitive caseSensitivity );
+        std::string adjustString( std::string const& str ) const;
+        StringRef caseSensitivitySuffix() const;
+
+        CaseSensitive m_caseSensitivity;
+        std::string m_str;
+    };
+
     class StringMatcherBase : public MatcherBase<std::string> {
     protected:
-        std::string m_target;
+        CasedString m_comparator;
         StringRef m_operation;
-        CaseSensitive m_caseSensitivity;
 
-        StringMatcherBase( std::string target,
-                           StringRef operation,
-                           CaseSensitive caseSensitivity );
     public:
+        StringMatcherBase( StringRef operation,
+                           CasedString const& comparator );
         std::string describe() const override;
     };
 
     class StringEqualsMatcher final : public StringMatcherBase {
     public:
-        StringEqualsMatcher( std::string comparator, CaseSensitive caseSensitivity );
+        StringEqualsMatcher( CasedString const& comparator );
         bool match( std::string const& source ) const override;
     };
     class StringContainsMatcher final : public StringMatcherBase {
     public:
-        StringContainsMatcher( std::string comparator,
-                               CaseSensitive caseSensitivity );
+        StringContainsMatcher( CasedString const& comparator );
         bool match( std::string const& source ) const override;
     };
     class StartsWithMatcher final : public StringMatcherBase {
     public:
-        StartsWithMatcher( std::string comparator,
-                           CaseSensitive caseSensitivity );
+        StartsWithMatcher( CasedString const& comparator );
         bool match( std::string const& source ) const override;
     };
     class EndsWithMatcher final : public StringMatcherBase {
     public:
-        EndsWithMatcher( std::string comparator,
-                         CaseSensitive caseSensitivity );
+        EndsWithMatcher( CasedString const& comparator );
         bool match( std::string const& source ) const override;
     };
 
@@ -65,15 +69,15 @@ namespace Matchers {
     };
 
     //! Creates matcher that accepts strings that are exactly equal to `str`
-    StringEqualsMatcher Equals( std::string str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
+    StringEqualsMatcher Equals( std::string const& str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
     //! Creates matcher that accepts strings that contain `str`
-    StringContainsMatcher ContainsSubstring( std::string str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
+    StringContainsMatcher ContainsSubstring( std::string const& str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
     //! Creates matcher that accepts strings that _end_ with `str`
-    EndsWithMatcher EndsWith( std::string str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
+    EndsWithMatcher EndsWith( std::string const& str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
     //! Creates matcher that accepts strings that _start_ with `str`
-    StartsWithMatcher StartsWith( std::string str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
+    StartsWithMatcher StartsWith( std::string const& str, CaseSensitive caseSensitivity = CaseSensitive::Yes );
     //! Creates matcher that accepts strings matching `regex`
-    RegexMatcher Matches( std::string regex, CaseSensitive caseSensitivity = CaseSensitive::Yes );
+    RegexMatcher Matches( std::string const& regex, CaseSensitive caseSensitivity = CaseSensitive::Yes );
 
 } // namespace Matchers
 } // namespace Catch

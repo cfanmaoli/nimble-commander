@@ -44,19 +44,6 @@ namespace Catch {
 
 #endif
 
-#if defined( CATCH_CONFIG_USE_BUILTIN_CONSTANT_P ) && \
-    !defined( CATCH_CONFIG_NO_USE_BUILTIN_CONSTANT_P )
-    // CATCH_INTERNAL_IGNORE_BUT_WARN already checks the expression on these
-    // compilers, so avoid checking it a third time in the loop condition.
-    #define INTERNAL_CATCH_TEST_LOOP_CONDITION( ... ) false
-#else
-    // * The double negation silences MSVC's C4800 warning.
-    // * We keep the expression to allow for warnings in the original context
-    // * The static_cast forces short-circuit evaluation if the type has overloaded &&.
-    #define INTERNAL_CATCH_TEST_LOOP_CONDITION( ... ) \
-        (void)0, (false) && static_cast<const bool&>( !!(__VA_ARGS__) )
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 #define INTERNAL_CATCH_TEST( macroName, resultDisposition, ... ) \
     do { /* NOLINT(bugprone-infinite-loop) */ \
@@ -70,7 +57,8 @@ namespace Catch {
             CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION \
         } INTERNAL_CATCH_CATCH( catchAssertionHandler ) \
         catchAssertionHandler.complete(); \
-    } while( INTERNAL_CATCH_TEST_LOOP_CONDITION( __VA_ARGS__ ) ) // the expression here is never evaluated at runtime, but is shown to some compilers
+    } while( (void)0, (false) && static_cast<const bool&>( !!(__VA_ARGS__) ) ) // the expression here is never evaluated at runtime but it forces the compiler to give it a look
+    // The double negation silences MSVC's C4800 warning, the static_cast forces short-circuit evaluation if the type has overloaded &&.
 
 ///////////////////////////////////////////////////////////////////////////////
 #define INTERNAL_CATCH_IF( macroName, resultDisposition, ... ) \

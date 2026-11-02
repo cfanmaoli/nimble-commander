@@ -41,8 +41,6 @@ namespace Catch {
                     return m_translateFunction( ex );
                 }
 #else
-                (void)it;
-                (void)itEnd;
                 return "You should never get here!";
 #endif
             }

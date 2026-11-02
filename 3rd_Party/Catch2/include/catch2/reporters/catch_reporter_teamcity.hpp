@@ -22,7 +22,13 @@ namespace Catch {
 
     class TeamCityReporter final : public StreamingReporterBase {
     public:
-        TeamCityReporter( ReporterConfig&& _config );
+        TeamCityReporter( ReporterConfig&& _config )
+        :   StreamingReporterBase( CATCH_MOVE(_config) )
+        {
+            m_preferences.shouldRedirectStdOut = true;
+            m_preferences.shouldReportAllAssertionStarts = false;
+        }
+
         ~TeamCityReporter() override;
 
         static std::string getDescription() {
