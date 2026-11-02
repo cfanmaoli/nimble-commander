@@ -16,7 +16,7 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
 | -arch arm64                | Build for Apple Silicon (the only supported architecture)
-| -mmacosx-version-min=10.15 | Minimum supported target version of macOS is 11.0
+| -mmacosx-version-min=12.0  | Minimum supported target version of macOS is 12.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden
 | -flto                      | Enable link-time optimization
@@ -39,16 +39,16 @@ already built `.a` files.
 | Library         | Version    | Released   | Source Code
 | --------------- | ---------- | ---------- | -----------------------------------------
 | abseil          | 2026.08.17 | 2026.08.17 | https://github.com/abseil/abseil-cpp.git
-| boost           | 1.92.0     | 2026.08.12 | https://archives.boost.io/release/1.92.0/source/boost_1_92_0.tar.gz
+| boost           | 1.92.0     | 2026.08.12 | https://boostorg.jfrog.io/artifactory/main/release/1.92.0/source/boost_1_92_0.tar.gz
 | bz2             | 1.0.8      | 2019.07.13 | https://sourceware.org/git/bzip2.git
-| Catch2          | 3.16.1     | 2026.10.08 | https://github.com/catchorg/Catch2
+| Catch2          | 3.15.1     | 2026.06.14 | https://github.com/catchorg/Catch2
 | curl            | 8.23.0     | 2026.10.14 | https://github.com/curl/curl.git
 | fmt             | 12.2.0     | 2026.06.16 | https://github.com/fmtlib/fmt.git
 | frozen          | 1.2.0      | 2024.06.02 | https://github.com/serge-sans-paille/frozen
-| gtest           | 1.18.0     | 2026.08.10 | https://github.com/google/googletest.git
+| gtest           | 1.18.0     | 2026.10.18 | https://github.com/google/googletest.git
 | letsmove        | 1.25       | 2020.07.09 | https://github.com/potionfactory/LetsMove.git
-| lexilla         | 5.5.4      | 2026.09.24 | https://github.com/ScintillaOrg/lexilla.git
-| libarchive      | 3.8.10     | 2026.10.14 | https://github.com/libarchive/libarchive.git
+| lexilla         | 5.5.0      | 2026.06.01 | https://github.com/ScintillaOrg/lexilla.git
+| libarchive      | 3.8.11     | 2026.10.30 | https://github.com/libarchive/libarchive.git
 | libcxx          | 21.x       | 2024.03.05 | https://github.com/llvm/llvm-project.git
 | libssh2         | 1.11.1     | 2024.10.16 | https://github.com/libssh2/libssh2.git
 | lz4             | 1.10.0     | 2024.07.22 | https://github.com/lz4/lz4.git
@@ -56,14 +56,14 @@ already built `.a` files.
 | lzo             | 2.10       | 2017.03.01 | http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
 | nlohmann        | 3.12.0     | 2025.04.11 | https://github.com/nlohmann/json.git
 | magic_enum      | 0.9.8      | 2026.05.03 | https://github.com/Neargye/magic_enum
-| openssl         | 3.5.9      | 2026.09.29 | https://github.com/openssl/openssl.git
+| openssl         | 3.6.5      | 2026.09.29 | https://github.com/openssl/openssl.git
 | pstld           | head       | 2024.06.21 | https://github.com/mikekazakov/pstld
 | pugixml         | 1.16       | 2026.06.16 | https://github.com/zeux/pugixml.git
 | rapidjson       | head       | 2025.02.05 | https://github.com/Tencent/rapidjson
 | re2             | 2025-11-05 | 2025.11.05 | https://github.com/google/re2.git
-| sparkle         | 2.10.0     | 2026.09.13 | https://github.com/sparkle-project/Sparkle.git
+| sparkle         | 2.10.1     | 2026.10.25 | https://github.com/sparkle-project/Sparkle.git
 | spdlog          | 1.17.0     | 2026.01.04 | https://github.com/gabime/spdlog.git
 | unrar           | 7.3.2      | 2026.10.27 | https://www.rarlab.com/rar/unrarsrc-7.3.2.tar.gz
-| unordered_dense | 5.3.2      | 2026.10.09 | https://github.com/martinus/unordered_dense.git
+| unordered_dense | 5.3.3      | 2026.10.22 | https://github.com/martinus/unordered_dense.git
 | zlib            | 1.3.2      | 2026.02.17 | https://zlib.net/zlib-1.3.2.tar.gz
 | zstd            | 1.5.7      | 2025.02.19 | https://github.com/facebook/zstd.git

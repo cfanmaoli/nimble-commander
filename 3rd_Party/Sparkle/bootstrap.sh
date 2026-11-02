@@ -9,16 +9,14 @@ TMP_DIR=${CUR_DIR}/sparkle.tmp
 mkdir ${TMP_DIR}
 cd ${TMP_DIR} 
 
-git clone -b 2.10.0 --single-branch --depth=1 --recursive https://github.com/sparkle-project/Sparkle.git
+git clone -b 2.10.1 --single-branch --depth=1 --recursive https://github.com/sparkle-project/Sparkle.git
 
 cd Sparkle
 
 XC="xcodebuild \
   -project Sparkle.xcodeproj \
   -scheme Sparkle \
-  -configuration Release \
-  ARCHS=arm64 \
-  ONLY_ACTIVE_ARCH=NO"
+  -configuration Release"
 BINARY_DIR=$($XC -showBuildSettings | grep " BUILT_PRODUCTS_DIR =" | sed -e 's/.*= *//')
 BINARY_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= *//')
 BINARY_PATH=$BINARY_DIR/$BINARY_NAME

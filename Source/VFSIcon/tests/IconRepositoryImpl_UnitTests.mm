@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Michael Kazakov. Subject to GNU General Public License version 3.
+// Copyright (C) 2018-2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconRepositoryImpl.h>
 #include <VFS/VFSListingInput.h>
 #include "Tests.h"
@@ -6,7 +6,6 @@
 using namespace nc::vfsicon;
 using ::testing::_;
 using ::testing::AnyNumber;
-using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Return;
 using base = detail::IconRepositoryImplBase;

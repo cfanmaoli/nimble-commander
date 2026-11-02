@@ -9,7 +9,6 @@ using namespace std::string_literals;
 using namespace nc::utility;
 using ::testing::_;
 using ::testing::Eq;
-using ::testing::Invoke;
 using ::testing::Return;
 
 TEST_CASE("BriefOnDiskStorageImpl writes the entire file")
