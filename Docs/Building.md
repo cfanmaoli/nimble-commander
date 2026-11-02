@@ -1,5 +1,5 @@
-# Building Keen Commander
-This guide outlines the steps to build Keen Commander from its source code. Follow these instructions to set up your development environment and start contributing to or experimenting with NC.
+# Building Nimble Commander-Fork
+This guide outlines the steps to build Nimble Commander-Fork from its source code. Follow these instructions to set up your development environment and start contributing to or experimenting with NC.
 
 ## Getting the code
 The source code for NC is available for cloning. Use the following command to clone the repository:  
@@ -16,7 +16,7 @@ After obtaining the source code, you'll need Xcode 27.2 to open and compile the 
 Make sure to select the `NimbleCommander-Unsigned` schema in Xcode. Now, you are ready to build the project. Use `Cmd+B` to build and `Cmd+R` to run the project under Xcode's debugger.
 
 ## Exploring the Source Code
-Keen Commander has a medium-sized codebase (~150KSloC) written in C++, Objective-C++ and Swift. The project includes the main application and 10 sub-projects:
+Nimble Commander-Fork has a medium-sized codebase (~150KSloC) written in C++, Objective-C++ and Swift. The project includes the main application and 10 sub-projects:
   * Base: Foundational, general-purpose tools.
   * Config: Configuration management.
   * CUI: Shared UI components.
@@ -30,11 +30,11 @@ Keen Commander has a medium-sized codebase (~150KSloC) written in C++, Objective
   * Viewer: Integrated file viewer component.
 
 ## Testing
-Keen Commander employs two testing strategies: unit tests (`_UT` suffix) for individual components, and integration tests (`_IT` suffix) for checking how those components interact. Each type of test is easily identifiable by its unique filename suffix and corresponding build target. For example, `Term` represents the library, `TermUT` the unit tests for this library, and `TermIT` the integration tests.  
+Nimble Commander-Fork employs two testing strategies: unit tests (`_UT` suffix) for individual components, and integration tests (`_IT` suffix) for checking how those components interact. Each type of test is easily identifiable by its unique filename suffix and corresponding build target. For example, `Term` represents the library, `TermUT` the unit tests for this library, and `TermIT` the integration tests.  
 Unit tests are quick and standalone, not requiring any external setups. In contrast, integration tests might need specific conditions, like running Docker VMs (detailed in `Source/VFS/tests/data/docker/[start|stop].sh`), to properly execute.  
 
 ## Limitations
-While this source code mirrors that of the official Keen Commander builds, the public repository does not include sensitive information such as specific accounts, addresses, and keys. Consequently, some features might be restricted or unavailable:
+While this source code mirrors that of the official Nimble Commander-Fork builds, the public repository does not include sensitive information such as specific accounts, addresses, and keys. Consequently, some features might be restricted or unavailable:
   * Privileged Helper: Requires proper signing to be installed and function correctly.
   
 ## Implementation Notes

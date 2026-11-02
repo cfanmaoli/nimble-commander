@@ -1,8 +1,8 @@
-# What's New in Keen Commander
+# What's New in Nimble Commander-Fork
 
-## Version 1.9.1 (Keen Commander)
+## Version 1.9.1 (Nimble Commander-Fork)
 - Forked from Nimble Commander 1.9.0, the last release made by the original author.
-- The application is now called Keen Commander and is built for Apple Silicon (arm64) only.
+- The application is now called Nimble Commander-Fork and is built for Apple Silicon (arm64) only.
 - Added language packs: export/import interface strings as JSON and switch languages without rebuilding.
 - Added twelve bundled themes: Solarized, Nord, Dracula, Gruvbox, One Dark, Tokyo Night, Catppuccin, GitHub and Monokai.
 - Added Trash support: browse the trash of every mounted volume, empty all of them and put items back.
@@ -69,7 +69,7 @@
 - Improved the security checks in the privileged helper.
 
 ## Version 1.6.0 (14 May 2024)
-- Keen Commander is now completely free and open source.
+- Nimble Commander-Fork is now completely free and open source.
 - Added support for file tags.
 - Fixed an issue that could stop directory updates on SMB volumes.
 - Fixed an issue where the mouse cursor could navigate to the wrong directory.
@@ -310,7 +310,7 @@
 - Fixed some visual and stability bugs.
 
 ## Version 1.1.2 (7 June 2016)
-- Changed the application’s title to Keen Commander.
+- Changed the application’s title to Nimble Commander-Fork.
 - Added basic support for editing remote files.
 - Added support for lightweight search with Spotlight.
 - Added the new ⌥⌘V shortcut to move item here.

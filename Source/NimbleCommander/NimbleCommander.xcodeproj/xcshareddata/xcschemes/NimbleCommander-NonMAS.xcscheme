@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CFC5121016C4BD3D00D247EE"
-               BuildableName = "Keen Commander.app"
+               BuildableName = "Nimble Commander-Fork.app"
                BlueprintName = "NimbleCommander-NonMAS"
                ReferencedContainer = "container:NimbleCommander.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CFC5121016C4BD3D00D247EE"
-            BuildableName = "Keen Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-NonMAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>
@@ -95,7 +95,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CFC5121016C4BD3D00D247EE"
-            BuildableName = "Keen Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-NonMAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>
@@ -118,7 +118,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CFC5121016C4BD3D00D247EE"
-            BuildableName = "Keen Commander.app"
+            BuildableName = "Nimble Commander-Fork.app"
             BlueprintName = "NimbleCommander-NonMAS"
             ReferencedContainer = "container:NimbleCommander.xcodeproj">
          </BuildableReference>

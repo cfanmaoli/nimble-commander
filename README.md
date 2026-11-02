@@ -1,6 +1,6 @@
-# Keen Commander
+# Nimble Commander-Fork
 
-Keen Commander is a community-maintained fork of
+Nimble Commander-Fork is a community-maintained fork of
 [Nimble Commander](https://github.com/mikekazakov/nimble-commander) — a free dual-pane file manager
 for macOS focused on speed, keyboard-driven navigation and flexibility.
 
@@ -48,5 +48,5 @@ Contributions, bug reports and translations are welcome — see [CONTRIBUTING.md
 
 ## License
 
-Keen Commander is distributed under the GNU General Public License version 3.
-Copyright (C) 2013-2026 Michael Kazakov, and the Keen Commander contributors for their changes.
+Nimble Commander-Fork is distributed under the GNU General Public License version 3.
+Copyright (C) 2013-2026 Michael Kazakov, and the Nimble Commander-Fork contributors for their changes.

@@ -8,13 +8,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Keen Commander"
+            "value" : "Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander"
+            "value" : "Nimble Commander-Fork"
           }
         }
       }
@@ -26,13 +26,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "An application in Keen Commander wants to use AppleScript."
+            "value" : "An application in Nimble Commander-Fork wants to use AppleScript."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander 中的某个应用程序想要使用 AppleScript。"
+            "value" : "Nimble Commander-Fork 中的某个应用程序想要使用 AppleScript。"
           }
         }
       }
@@ -44,13 +44,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions."
+            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "需要此访问权限，才能允许你使用 Keen Commander 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
+            "value" : "需要此访问权限，才能允许你使用 Nimble Commander-Fork 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
           }
         }
       }
@@ -62,13 +62,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions."
+            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "需要此访问权限，才能允许你使用 Keen Commander 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
+            "value" : "需要此访问权限，才能允许你使用 Nimble Commander-Fork 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
           }
         }
       }
@@ -80,13 +80,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions."
+            "value" : "The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "需要此访问权限，才能允许你使用 Keen Commander 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
+            "value" : "需要此访问权限，才能允许你使用 Nimble Commander-Fork 浏览和管理此文件夹中的项目。未经你的操作，本应用程序不会使用你的任何个人数据。"
           }
         }
       }

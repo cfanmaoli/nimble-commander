@@ -218,7 +218,7 @@ void ShowTrashErrorAlert(PanelController *_target, NSString *_message, NSString 
 void ShowTrashAccessDeniedAlert(PanelController *_target)
 {
     NSAlert *const alert = [NSAlert new];
-    alert.messageText = TrashLocalizedText(@"Keen Commander needs Full Disk Access to work with the Trash.");
+    alert.messageText = TrashLocalizedText(@"Nimble Commander-Fork needs Full Disk Access to work with the Trash.");
     alert.informativeText =
         TrashLocalizedText(@"Grant access in System Settings → Privacy & Security → Full Disk Access and try again.");
     [alert addButtonWithTitle:TrashLocalizedText(@"Open System Settings")];

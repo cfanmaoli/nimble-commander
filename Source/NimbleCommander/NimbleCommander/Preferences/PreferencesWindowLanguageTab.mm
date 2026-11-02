@@ -53,7 +53,7 @@ struct Entry {
 
     NSTextField *const description = [NSTextField
         wrappingLabelWithString:NSLocalizedStringFromTable(
-                                    @"You can translate the interface of Keen Commander into another language, or "
+                                    @"You can translate the interface of Nimble Commander-Fork into another language, or "
                                     @"use a translation made by someone else. Export the current language, replace the "
                                     @"text with your own translation, then import the file back and restart the app.",
                                     @"Preferences",
@@ -275,7 +275,7 @@ struct Entry {
     alert.messageText =
         NSLocalizedStringFromTable(@"Restart Required", @"Preferences", "Language preferences tab restart prompt");
     alert.informativeText =
-        NSLocalizedStringFromTable(@"The interface language will change the next time Keen Commander starts.",
+        NSLocalizedStringFromTable(@"The interface language will change the next time Nimble Commander-Fork starts.",
                                    @"Preferences",
                                    "Language preferences tab restart prompt");
     [alert addButtonWithTitle:NSLocalizedStringFromTable(
@@ -335,11 +335,11 @@ struct Entry {
     // the button is the deliberate way to apply a change, so ask once before dropping whatever
     // the user is doing in the other windows
     NSAlert *const alert = [[NSAlert alloc] init];
-    alert.messageText = NSLocalizedStringFromTable(@"Restart Keen Commander to apply the new language?",
+    alert.messageText = NSLocalizedStringFromTable(@"Restart Nimble Commander-Fork to apply the new language?",
                                                    @"Preferences",
                                                    "Language preferences tab restart confirmation");
     alert.informativeText =
-        NSLocalizedStringFromTable(@"The interface language will change the next time Keen Commander starts.",
+        NSLocalizedStringFromTable(@"The interface language will change the next time Nimble Commander-Fork starts.",
                                    @"Preferences",
                                    "Language preferences tab restart prompt");
     [alert addButtonWithTitle:NSLocalizedStringFromTable(
@@ -399,7 +399,7 @@ struct Entry {
 
     NSMutableString *const message = [NSMutableString string];
     [message appendFormat:NSLocalizedStringFromTable(
-                              @"Imported %@ entries for “%@”.\n\nRestart Keen Commander to see the new language.",
+                              @"Imported %@ entries for “%@”.\n\nRestart Nimble Commander-Fork to see the new language.",
                               @"Preferences",
                               "Language preferences tab import result"),
                           @(stats.imported),

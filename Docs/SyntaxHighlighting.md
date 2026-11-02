@@ -1,13 +1,13 @@
 # Implementation Notes - Syntax Highlighting
-*This brief document explains the design and some implementation details of how syntax highlighting works in Keen Commander's built-in viewer.*
+*This brief document explains the design and some implementation details of how syntax highlighting works in Nimble Commander-Fork's built-in viewer.*
 
 ## Styles Definitions
 
-Keen Commander relies on [Lexilla](https://github.com/ScintillaOrg/lexilla) for lexing and styling.
+Nimble Commander-Fork relies on [Lexilla](https://github.com/ScintillaOrg/lexilla) for lexing and styling.
 
 This library provides a multitude of different styles with complex relationships, which is excessive for the built-in viewer.
 
-To simplify the styling logic, Keen Commander currently uses only eight styles:
+To simplify the styling logic, Nimble Commander-Fork currently uses only eight styles:
   - Default (non-styled text)
   - Comment
   - Preprocessor
@@ -31,7 +31,7 @@ Themes can define colors for each of these styles. For example:
 }
 ```
 
-To make this work, [each of the styles](https://github.com/ScintillaOrg/lexilla/blob/master/include/SciLexer.h) for a specific lexer must be mapped to one of Keen Commander’s styles.
+To make this work, [each of the styles](https://github.com/ScintillaOrg/lexilla/blob/master/include/SciLexer.h) for a specific lexer must be mapped to one of Nimble Commander-Fork’s styles.
 
 ## Settings Files
 
@@ -71,7 +71,7 @@ In addition to the styles mapping, the settings file also provides the name of t
 
 These JSON files are located in the application's `SyntaxHighlighting` directory, shipped with the application. This directory also contains the `Main.json` file, which defines the list of known languages, their file masks, and the filenames of the settings for each language. 
 
-Keen Commander supports overriding these settings with files placed in the `~/Library/Application Support/Keen Commander/SyntaxHighlighting` directory. Any file will first be looked for in the `Application Support` directory, and if not found, in the application directory. Changes in the overrides directory will be automatically picked up by Keen Commander, and the next time the Viewer is shown, the updated settings will be used.
+Nimble Commander-Fork supports overriding these settings with files placed in the `~/Library/Application Support/Nimble Commander-Fork/SyntaxHighlighting` directory. Any file will first be looked for in the `Application Support` directory, and if not found, in the application directory. Changes in the overrides directory will be automatically picked up by Nimble Commander-Fork, and the next time the Viewer is shown, the updated settings will be used.
 
 ## Helper Tool
 
@@ -83,7 +83,7 @@ The main application communicates with the helper by providing it with UTF-8 tex
 
 Once ready, the helper tool responds back with a single blob of data containing styles: 1 byte per each input UTF-8 code unit.
 
-The await process is asynchronous on Keen Commander’s side to avoid freezing the whole application. However, the built-in viewer allows up to 16ms of synchronous wait before falling back to deferred highlighting. This way, visual flicker is avoided.
+The await process is asynchronous on Nimble Commander-Fork’s side to avoid freezing the whole application. However, the built-in viewer allows up to 16ms of synchronous wait before falling back to deferred highlighting. This way, visual flicker is avoided.
 
 ## Adding More Languages
 
@@ -96,5 +96,5 @@ To add syntax highlighting for a new language, follow these steps:
     Refer to the [Lexilla lexers]( https://github.com/ScintillaOrg/lexilla/blob/master/lexers/) to locate the file.
   - Specify one or multipe lists of language keywords, separated by spaces.
   - Include any required lexer properties.
-  - Map the Scintilla styles to Keen Commander styles in the configuration file.
+  - Map the Scintilla styles to Nimble Commander-Fork styles in the configuration file.
   - In the `Main.json` file, add the new configuration file, give it a name and a filemask to determine when to use this syntax.

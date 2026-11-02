@@ -1,25 +1,25 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Keen Commander needs Full Disk Access to work with the Trash." : {
+    "Nimble Commander-Fork needs Full Disk Access to work with the Trash." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander needs Full Disk Access to work with the Trash."
+            "value" : "Nimble Commander-Fork needs Full Disk Access to work with the Trash."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander требуется полный доступ к диску для работы с Корзиной."
+            "value" : "Nimble Commander-Fork требуется полный доступ к диску для работы с Корзиной."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander 需要「完全磁盘访问权限」才能操作废纸篓。"
+            "value" : "Nimble Commander-Fork 需要「完全磁盘访问权限」才能操作废纸篓。"
           }
         }
       }
@@ -588,19 +588,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thank you for using a registered copy of Keen Commander! Please restart it for the changes to take effect."
+            "value" : "Thank you for using a registered copy of Nimble Commander-Fork! Please restart it for the changes to take effect."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Спасибо за использование зарегистрированной копии Keen Commander!"
+            "value" : "Спасибо за использование зарегистрированной копии Nimble Commander-Fork!"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "感谢你使用 Keen Commander 的已注册副本！请重新启动以使更改生效。"
+            "value" : "感谢你使用 Nimble Commander-Fork 的已注册副本！请重新启动以使更改生效。"
           }
         }
       }
@@ -634,19 +634,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This is a trial version of Keen Commander.\nTo continue using this software after the 30-day trial period, you have to either buy a license or install the paid version from Mac App Store.\nThis window appears only in the trial version."
+            "value" : "This is a trial version of Nimble Commander-Fork.\nTo continue using this software after the 30-day trial period, you have to either buy a license or install the paid version from Mac App Store.\nThis window appears only in the trial version."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это пробная версия Keen Commander.\nЧтобы продолжить использование этого продукта после окончания пробного периода в 30 дней, Вам нужно купить лицензию или установить платную версию из Mac App Store.\nЭто окно появляется только в пробной версии."
+            "value" : "Это пробная версия Nimble Commander-Fork.\nЧтобы продолжить использование этого продукта после окончания пробного периода в 30 дней, Вам нужно купить лицензию или установить платную версию из Mac App Store.\nЭто окно появляется только в пробной версии."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这是 Keen Commander 的试用版。\n30 天试用期结束后若需继续使用本软件，你必须购买许可证或从 Mac App Store 安装付费版本。\n此窗口仅在试用版中显示。"
+            "value" : "这是 Nimble Commander-Fork 的试用版。\n30 天试用期结束后若需继续使用本软件，你必须购买许可证或从 Mac App Store 安装付费版本。\n此窗口仅在试用版中显示。"
           }
         }
       }
@@ -923,7 +923,7 @@
       }
     },
     "Check for Updates..." : {
-      "comment" : "Menu item title for check if any Keen Commander updates are available",
+      "comment" : "Menu item title for check if any Nimble Commander-Fork updates are available",
       "localizations" : {
         "ru" : {
           "stringUnit" : {
@@ -2395,22 +2395,22 @@
         }
       }
     },
-    "Keen Commander will copy them to a temporary location before they can be opened." : {
+    "Nimble Commander-Fork will copy them to a temporary location before they can be opened." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander 会先将它们拷贝到临时位置，然后才能打开。"
+            "value" : "Nimble Commander-Fork 会先将它们拷贝到临时位置，然后才能打开。"
           }
         }
       }
     },
-    "Keen Commander will create a copy in a temporary location before it can be opened." : {
+    "Nimble Commander-Fork will create a copy in a temporary location before it can be opened." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keen Commander 会先在临时位置创建副本，然后才能打开。"
+            "value" : "Nimble Commander-Fork 会先在临时位置创建副本，然后才能打开。"
           }
         }
       }

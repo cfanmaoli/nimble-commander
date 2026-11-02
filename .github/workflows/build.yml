@@ -127,7 +127,7 @@ jobs:
         cd Scripts && ./build_unsigned.sh
     - uses: actions/upload-artifact@v4
       with:
-        name: keen-commander-unsigned
+        name: nimble-commander-fork-unsigned
         path: Scripts/*.dmg
         if-no-files-found: error
     - uses: actions/upload-artifact@v4

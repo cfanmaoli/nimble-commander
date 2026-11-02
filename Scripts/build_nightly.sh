@@ -54,8 +54,8 @@ APP_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= 
 APP_PATH="${BUILT_PATH}/${APP_NAME}"
 VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "${APP_PATH}/Contents/Info.plist" )
 BUILD=$( $PBUDDY -c "Print CFBundleVersion" "${APP_PATH}/Contents/Info.plist" )
-DMG_NAME="keen-commander-nightly-${VERSION}(${BUILD}).dmg"
-DSYM_ZIP_NAME="keen-commander-nightly-${VERSION}(${BUILD}).dSYM.zip"
+DMG_NAME="nimble-commander-fork-nightly-${VERSION}(${BUILD}).dmg"
+DSYM_ZIP_NAME="nimble-commander-fork-nightly-${VERSION}(${BUILD}).dSYM.zip"
 DSYM_ZIP_PATH="${PWD}/${DSYM_ZIP_NAME}"
 
 # Package all freshly built dSYM directories for symbolication
@@ -71,7 +71,7 @@ done
 
 # Wrap the built application into a .dmg disk image
 create-dmg \
- --volname "Keen Commander Nightly" \
+ --volname "Nimble Commander-Fork Nightly" \
  --window-pos 200 200 \
  --window-size 610 386 \
  --background "dmg/background.png" \

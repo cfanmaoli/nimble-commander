@@ -7,19 +7,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please authenticate as an Administrator to provide Keen Commander additional rights"
+            "value" : "Please authenticate as an Administrator to provide Nimble Commander-Fork additional rights"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы предоставить Keen Commander дополнительные права"
+            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы предоставить Nimble Commander-Fork дополнительные права"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请以管理员身份进行认证，以向 Keen Commander 提供额外权限"
+            "value" : "请以管理员身份进行认证，以向 Nimble Commander-Fork 提供额外权限"
           }
         }
       }
@@ -30,19 +30,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please authenticate as an Administrator to allow Keen Commander install additional components."
+            "value" : "Please authenticate as an Administrator to allow Nimble Commander-Fork install additional components."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы позволить Keen Commander установить дополнительные компоненты."
+            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы позволить Nimble Commander-Fork установить дополнительные компоненты."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请以管理员身份进行认证，以允许 Keen Commander 安装附加组件。"
+            "value" : "请以管理员身份进行认证，以允许 Nimble Commander-Fork 安装附加组件。"
           }
         }
       }

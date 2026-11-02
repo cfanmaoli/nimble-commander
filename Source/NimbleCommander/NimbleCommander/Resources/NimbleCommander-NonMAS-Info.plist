@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Keen Commander</string>
+	<string>Nimble Commander-Fork</string>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Keen Commander</string>
+	<string>Nimble Commander-Fork</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,15 +31,15 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>An application in Keen Commander wants to use AppleScript.</string>
+	<string>An application in Nimble Commander-Fork wants to use AppleScript.</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>The access is needed in order to allow you to browse and manage the items in this folder with Keen Commander. This application will not use any of your personal data without your actions.</string>
+	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2013-2026 Michael Kazakov.
 All rights reserved.</string>
@@ -53,12 +53,12 @@ All rights reserved.</string>
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Reveal in Keen Commander</string>
+				<string>Reveal in Nimble Commander-Fork</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>revealItemService</string>
 			<key>NSPortName</key>
-			<string>Keen Commander</string>
+			<string>Nimble Commander-Fork</string>
 			<key>NSRequiredContext</key>
 			<dict/>
 			<key>NSSendTypes</key>
@@ -71,12 +71,12 @@ All rights reserved.</string>
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Open Folder in Keen Commander</string>
+				<string>Open Folder in Nimble Commander-Fork</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>openFolderService</string>
 			<key>NSPortName</key>
-			<string>Keen Commander</string>
+			<string>Nimble Commander-Fork</string>
 			<key>NSRequiredContext</key>
 			<dict/>
 			<key>NSSendFileTypes</key>
