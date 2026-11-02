@@ -1,48 +1,50 @@
-[![Build and Test](https://github.com/mikekazakov/nimble-commander/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mikekazakov/nimble-commander/actions/workflows/build.yml)
-[![Nightly Build](https://github.com/mikekazakov/nimble-commander/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/mikekazakov/nimble-commander/actions/workflows/nightly.yml)
+# Nimble Commander-Fork — `evil` branch
 
-# Nimble Commander
+> ## ⚠️ This is the evil branch
+>
+> Unlike the [`main` branch](https://github.com/cfanmaoli/nimble-commander/tree/main), this branch
+> bundles the proprietary **UnRAR** library to get the best possible RAR support. That makes the
+> resulting binary impossible to distribute under the project's GPLv3 license.
+>
+> - **No prebuilt binaries, DMGs, nightly builds or releases are published for this branch — ever.**
+> - **Build it yourself** if you want to use it (see [Docs/Building.md](Docs/Building.md)).
+> - **Do not redistribute** anything built from this branch.
+>
+> It exists for personal use only. The clean, GPLv3-compatible variant — where RAR archives are read
+> through libarchive instead — lives on the [`main` branch](https://github.com/cfanmaoli/nimble-commander/tree/main).
 
-> **This fork adds language packs.** A *Preferences → Language* tab exports the interface strings of
-> the current language as JSON, imports a translation back, and switches between the built-in
-> languages and any imported pack — so a language the app does not ship can be translated with an AI
-> in a few minutes, without Xcode, a rebuild or a re-sign. See
-> **[Tools/language-packs.md](Tools/language-packs.md)** for how it works and what it deliberately
-> does not touch. The feature was offered upstream in
-> [#746](https://github.com/mikekazakov/nimble-commander/issues/746) and not merged there, so it is
-> not a pull-request candidate; everything else in this fork tracks upstream `main`.
+---
 
-![](Docs/nc.png)
-Nimble Commander is a free dual-pane file manager for macOS, designed with a focus on speed, keyboard-based navigation, and flexibility.  
-The project's aim is to blend the user experience of classic file managers from the '80s-'90s with the modern look and feel of Mac computers.  
-Visit the project's website at: https://magnumbytes.com.  
+Nimble Commander-Fork is a community-maintained fork of
+[Nimble Commander](https://github.com/mikekazakov/nimble-commander) — a free dual-pane file manager
+for macOS focused on speed, keyboard-driven navigation and flexibility. Upstream development stopped
+after the 1.9.0 release, so the fork continues from that point.
 
-# Getting Nimble Commander
+## What this branch adds on top of `main`
 
-## Nightly Builds
-You can download the latest nightly build of the app from [GitHub Actions](https://github.com/mikekazakov/nimble-commander/actions/workflows/nightly.yml).  
-Go to the most recent integration and select the `nimble-commander-nightly` in the `Artifacts` section (a GitHub account is required).
+Everything from the `main` branch, plus:
 
-## Current Release
-Direct download link: https://magnumbytes.com/downloads/releases/nimble-commander.dmg.  
-Available on Mac App Store: https://itunes.apple.com/app/files-lite/id905202937?ls=1&mt=12.  
-Install via Homebrew: `brew install nimble-commander`.  
+- **RAR via UnRAR** — archives are listed and extracted with the official UnRAR 7.3.2 library
+  instead of libarchive, giving correct behaviour for solid archives and a much faster listing of
+  large ones.
+- **Password-protected RARs** — the password prompt works for encrypted headers and payloads.
+- **Multi-volume RARs** — `.part1.rar` / `.r00` sets are followed automatically.
 
-## Past Releases
-Access all previous releases at https://github.com/mikekazakov/nimble-commander-releases. 
+Everything else (Apple Silicon only builds, language packs, extra themes, Trash support, fixes) is
+shared with `main`.
 
-# Documentation
-The user guide can be found here: [Help.md](Docs/Help.md).
+## Building
 
-# Changelog
-Details about each released version can be found in the [WHATS_NEW.md](WHATS_NEW.md) file.
+See [Docs/Building.md](Docs/Building.md). The bundled libraries are precompiled for arm64; run
+`3rd_Party/bootstrap.sh` to rebuild them from their sources. Remember that you are building a
+binary that includes UnRAR and therefore must not be published.
 
-# Building from Source
-For build instructions and an overview of the source code, please refer to the [Building.md](Docs/Building.md) document.
+## License
 
-# Contributing to the Project
-Your contributions are welcome and greatly appreciated! For guidelines on how to contribute, including reporting bugs, suggesting features, and submitting code changes, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+The project's own source code is distributed under the GNU General Public License version 3,
+Copyright (C) 2013-2026 Michael Kazakov and the contributors.
 
-# License
-Copyright (C) 2013-2026 Michael Kazakov (mike.kazakov@gmail.com)  
-The source code is distributed under GNU General Public License version 3.
+The bundled UnRAR source code is `(c) Alexander Roshal` and is distributed under its own license,
+which permits use in any software but requires the license text to be kept together with the
+package. Combining it with GPLv3 code is what makes this branch non-distributable; this is why no
+builds are provided.
