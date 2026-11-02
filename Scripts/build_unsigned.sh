@@ -67,5 +67,5 @@ create-dmg \
  --icon-size 128 \
  --icon "${APP_NAME}" 176 192 \
  --app-drop-link 432 192 \
- "nimble-commander-unsigned-${VERSION}(${BUILD}).dmg" \
+ "keen-commander-unsigned-${VERSION}(${BUILD}).dmg" \
  "${APP_NAME}"
