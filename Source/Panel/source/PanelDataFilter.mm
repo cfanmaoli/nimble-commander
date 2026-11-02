@@ -230,7 +230,8 @@ bool IsLatinOnly(NSString *_text) noexcept
         return false;
     for( NSUInteger i = 0; i < _text.length; ++i ) {
         const unichar c = [_text characterAtIndex:i];
-        if( !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) )
+        const bool is_latin_letter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        if( !is_latin_letter )
             return false;
     }
     return true;
@@ -257,9 +258,8 @@ PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _typ
     if( needle_utf8 == nullptr )
         return std::nullopt;
     std::string needle{needle_utf8};
-    std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char _c) {
-        return static_cast<char>(std::tolower(_c));
-    });
+    std::ranges::transform(
+        needle, needle.begin(), [](unsigned char _c) { return static_cast<char>(std::tolower(_c)); });
 
     // where in the initials does the criterion sit?
     size_t begin = std::string::npos;
@@ -283,13 +283,12 @@ PinyinInitialsSearch(NSString *_name, NSString *_text, TextualFilter::Where _typ
     }
 
     if( _type == TextualFilter::Where::Beginning || _type == TextualFilter::Where::BeginningOrEnding ) {
-        if( initials.text.compare(0, needle.size(), needle) == 0 )
+        if( initials.text.starts_with(needle) )
             begin = 0;
     }
     if( begin == std::string::npos &&
         (_type == TextualFilter::Where::Ending || _type == TextualFilter::Where::BeginningOrEnding) ) {
-        if( initials.text.size() >= needle.size() &&
-            initials.text.compare(initials.text.size() - needle.size(), needle.size(), needle) == 0 )
+        if( initials.text.size() >= needle.size() && initials.text.ends_with(needle) )
             begin = initials.text.size() - needle.size();
     }
     if( begin == std::string::npos && _type == TextualFilter::Where::Anywhere )

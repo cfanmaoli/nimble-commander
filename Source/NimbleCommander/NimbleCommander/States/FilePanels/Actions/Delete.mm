@@ -313,9 +313,10 @@ void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
                   completionHandler:^(NSModalResponse _response) {
                     if( _response != NSAlertFirstButtonReturn )
                         return;
-                    dispatch_to_default([items = std::move(items), weak_target] {
+                    // Obj-C blocks capture 'items' as a const copy, so moving it out is pointless.
+                    dispatch_to_default([paths = items, weak_target] {
                         int failures = 0;
-                        for( const std::string &path : items ) {
+                        for( const std::string &path : paths ) {
                             std::error_code ec;
                             std::filesystem::remove_all(path, ec);
                             if( ec )

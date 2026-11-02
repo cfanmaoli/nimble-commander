@@ -52,8 +52,8 @@ std::string ErrorText(NSError *_error, const char *_fallback)
 std::string Trim(std::string _s)
 {
     const auto not_space = [](unsigned char _c) { return !std::isspace(_c); };
-    _s.erase(_s.begin(), std::find_if(_s.begin(), _s.end(), not_space));
-    _s.erase(std::find_if(_s.rbegin(), _s.rend(), not_space).base(), _s.end());
+    _s.erase(_s.begin(), std::ranges::find_if(_s, not_space));
+    _s.erase(std::ranges::find_if(_s.rbegin(), _s.rend(), not_space).base(), _s.end());
     return _s;
 }
 
@@ -61,8 +61,8 @@ bool IsValidPackIdentifier(const std::string &_s)
 {
     if( _s.empty() || _s.size() > 64 || _s == "." || _s == ".." )
         return false;
-    return std::all_of(
-        _s.begin(), _s.end(), [](unsigned char _c) { return std::isalnum(_c) || _c == '-' || _c == '_' || _c == '.'; });
+    return std::ranges::all_of(
+        _s, [](unsigned char _c) { return std::isalnum(_c) || _c == '-' || _c == '_' || _c == '.'; });
 }
 
 std::string SanitizePackIdentifier(const std::string &_s)
@@ -214,7 +214,7 @@ bool PlaceholdersCompatible(NSString *_source, NSString *_key, NSString *_transl
         return true;
     // Strings with a stray '%' ("%% Insert the % character") can't be parsed unambiguously -
     // rather than rejecting a perfectly good translation, let those through unchecked.
-    if( source.count('?') || translation.count('?') )
+    if( source.contains('?') || translation.contains('?') )
         return true;
     // A plural source ("Compressing %#@items@") may legitimately be spelled out with a plain
     // numeric placeholder - compare against the key, which holds the non-plural form.
@@ -429,11 +429,11 @@ void LoadActiveOverlay()
 
     bool built_in = false;
     std::string identifier = selection;
-    if( selection.rfind("builtin:", 0) == 0 ) {
+    if( selection.starts_with("builtin:") ) {
         built_in = true;
         identifier = selection.substr(8);
     }
-    else if( selection.rfind("pack:", 0) == 0 ) {
+    else if( selection.starts_with("pack:") ) {
         identifier = selection.substr(5);
     }
     if( identifier.empty() )
@@ -574,8 +574,8 @@ std::vector<std::string> BuiltInLanguages()
         for( NSString *language in(g_main_bundle ?: NSBundle.mainBundle).localizations )
             if( [language isKindOfClass:NSString.class] && ![language isEqualToString:@"Base"] )
                 result.emplace_back(language.UTF8String);
-        std::sort(result.begin(), result.end());
-        result.erase(std::unique(result.begin(), result.end()), result.end());
+        std::ranges::sort(result);
+        result.erase(std::ranges::unique(result).begin(), result.end());
         return result;
     }
 }
@@ -602,10 +602,10 @@ void SetActiveLanguageSelection(const std::string &_selection)
 
 std::string ActivePackIdentifier()
 {
-    const std::string selection = ActiveLanguageSelection();
-    if( selection.rfind("builtin:", 0) == 0 )
+    std::string selection = ActiveLanguageSelection();
+    if( selection.starts_with("builtin:") )
         return {};
-    if( selection.rfind("pack:", 0) == 0 )
+    if( selection.starts_with("pack:") )
         return selection.substr(5);
     return selection; // packs imported before the popup existed
 }
