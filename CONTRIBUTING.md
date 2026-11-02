@@ -61,6 +61,7 @@ If you're interested in contributing code to Nimble Commander, here's how to get
      Getting feedback early on can save time and ensure that your efforts align with the project's direction.
   2. Look at the build instructions: Please refer to the [Building](Docs/Building.md) document in the repository.     
   3. Follow the code style: Make sure your changes closely follow the existing code style and that linters and tests pass.
+     See [Continuous integration](Docs/CI.md) for what the CI checks and how to run them locally.
      Try to keep changes small and localized.
      If possible, prefer a couple of smaller, separate changes instead of a single large one.
   4. Submit a Pull Request: Once you've made your changes and tested them, submit a pull request.
