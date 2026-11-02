@@ -1,5 +1,7 @@
 # Nimble Commander-Fork — `evil` branch
 
+[**English**](README.md) | [简体中文](README.zh-Hans.md)
+
 > ## ⚠️ This is the evil branch
 >
 > Unlike the [`main` branch](https://github.com/cfanmaoli/nimble-commander/tree/main), this branch
