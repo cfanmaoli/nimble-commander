@@ -521,7 +521,7 @@ std::expected<void, Error> ArchiveHost::ReadUnrarListing(const VFSCancelChecker 
         // Windows-style path separators, normalize them as well.
         std::string path{"/"};
         path += NormalizeUTF8ToNFD(archive_entry.name);
-        std::replace(path.begin(), path.end(), '\\', '/');
+        std::ranges::replace(path, '\\', '/');
 
         if( path == "/" || path == "/." )
             continue; // skip root and "." entries - the root is handled manually

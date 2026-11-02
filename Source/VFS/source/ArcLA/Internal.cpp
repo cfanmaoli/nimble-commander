@@ -1,5 +1,6 @@
 // Copyright (C) 2013-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "Internal.h"
+#include <bit>
 #include <cassert>
 #include <CoreFoundation/CoreFoundation.h>
 #include <chrono>
@@ -120,7 +121,7 @@ int State::Errno()
 
 namespace {
 
-constexpr size_t g_BufferLimit = 1024 * 1024;
+constexpr size_t g_BufferLimit = static_cast<size_t>(1024) * 1024;
 
 // The archive index is built by libarchive, which decodes RAR's Unicode file names into a
 // decomposed form, while UnRAR reports them precomposed. Compare the two canonically.
@@ -151,9 +152,10 @@ bool AreCanonicallyEquivalent(const std::string &_lhs, const std::string &_rhs)
 // UnRAR hands out wide characters, on POSIX they are UTF-32.
 std::string WideToUTF8(const wchar_t *_str)
 {
+    static_assert(sizeof(wchar_t) == sizeof(uint32_t), "wchar_t is expected to be UTF-32 on POSIX");
     std::string out;
     for( ; _str != nullptr && *_str != 0; ++_str ) {
-        const auto cp = static_cast<uint32_t>(*_str);
+        const auto cp = std::bit_cast<uint32_t>(*_str);
         if( cp < 0x80 ) {
             out += static_cast<char>(cp);
         }
@@ -349,7 +351,11 @@ int UnrarStream::Impl::RawCallback(unsigned int _msg, LPARAM _user_data, LPARAM 
     if( _msg != UCM_PROCESSDATA )
         return 1;
 
+    // UnRAR's C callback hands the user data over as an integer - there is no other way to pass a
+    // pointer through it.
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     auto *self = reinterpret_cast<Impl *>(_user_data);
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     return self->Push(reinterpret_cast<const void *>(_p1), static_cast<size_t>(_p2)) ? 1 : 0;
 }
 

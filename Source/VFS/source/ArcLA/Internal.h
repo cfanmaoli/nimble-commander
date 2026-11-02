@@ -71,7 +71,7 @@ public:
     bool Next(Entry &_entry);
 
     // 0 after a clean EOF, a POSIX code otherwise.
-    int Error() const;
+    [[nodiscard]] int Error() const;
 
 private:
     UnrarArchive();
