@@ -558,11 +558,10 @@ static bool AllowConnectionFrom(const char *_bin_path)
     if( !_bin_path )
         return false;
 
-    const char *last_sl = strrchr(_bin_path, '/');
-    if( !last_sl )
-        return false;
-
-    return strcmp(last_sl, "/Nimble Commander-Fork") == 0;
+    // The client has to be an application bundle, the actual identity is established by
+    // CheckSignature() below - matching the executable's file name here used to break every
+    // time the application got renamed.
+    return strstr(_bin_path, ".app/Contents/MacOS/") != nullptr;
 }
 
 static bool CheckSignature(const char *_bin_path)
