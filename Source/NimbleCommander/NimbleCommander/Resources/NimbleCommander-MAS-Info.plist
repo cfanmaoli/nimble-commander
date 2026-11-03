@@ -40,6 +40,7 @@
 	<string>The access is needed in order to allow you to browse and manage the items in this folder with Nimble Commander-Fork. This application will not use any of your personal data without your actions.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2013-2026 Michael Kazakov.
+Copyright © 2026 The Nimble Commander-Fork contributors.
 All rights reserved.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>

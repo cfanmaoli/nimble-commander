@@ -9,7 +9,7 @@ body:
         Thanks for taking the time to fill out this report on the UI issue!
   - type: markdown
     attributes:
-      value: "Please make sure to read the [contributing guidelines](https://github.com/mikekazakov/nimble-commander/blob/main/CONTRIBUTING.md) and **Help.pdf** (including the F.A.Q. section) before submitting an issue."
+      value: "Please make sure to read the [contributing guidelines](https://github.com/cfanmaoli/nimble-commander/blob/main/CONTRIBUTING.md) and **Help.pdf** (including the F.A.Q. section) before submitting an issue."
   - type: checkboxes
     id: agreement
     attributes:

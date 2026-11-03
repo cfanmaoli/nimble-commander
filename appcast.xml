@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>Nimble Commander-Fork</title>
+        <link>https://github.com/cfanmaoli/nimble-commander</link>
+        <description>Update feed for Nimble Commander-Fork. The fork doesn't publish prebuilt binaries, so
+            this feed intentionally contains no items - 'Check for Updates' reports that the installed
+            version is the latest one.</description>
+        <language>en</language>
+    </channel>
+</rss>

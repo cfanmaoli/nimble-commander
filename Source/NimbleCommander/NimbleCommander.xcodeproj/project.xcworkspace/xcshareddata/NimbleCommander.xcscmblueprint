@@ -33,7 +33,7 @@
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "86B1D2467EF5CDCCE524112DDD2EFB231FA28639"
     },
     {
-      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/mikekazakov\/nimblecommander.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/cfanmaoli\/nimble-commander.git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "A2052F3732EC5031AAEE7DE75E773F81F5ACC749"
     },

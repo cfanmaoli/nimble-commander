@@ -26,26 +26,43 @@ In case Provisioning Profiles or Signing Certificates have expired, renew them f
 ## Step 6: Write "What's New"
 Update 'WHATS_NEW.md' with the list of changes since the last release.
 
-## Step 7: Make a release build
-Use the 'Release Build' workflow in GitHub Actions on the `main` branch. 
+## Step 7: Make the build
+The `Build and Test` workflow builds and packages an unsigned DMG on every push to `main`
+(`nimble-commander-fork-unsigned` artifact). For the full matrix - all four configurations, the
+full clang-tidy and the integration tests - trigger the same workflow manually with the `full`
+input ticked, or wait for the nightly run.
 
-## Step 8: Create a GitHub Release
+## Step 8: Create a GitHub Release (only if binaries are to be published)
+The fork deliberately doesn't distribute prebuilt binaries that contain the UnRAR library, and the
+clean variant is built locally by whoever needs it - see the README. Should that policy ever change:
 - Releases -> Draft a new release
 - Create new tag: `vX.Y.Z` (the new version)
 - Target: `main`
-- Add changelog, add the release build.
+- Add the changelog and attach the DMG from the CI artifact.
 
-## Step 9: Build a Sparkle manifest
-- Check `template.xml` and update if necessary. 
-- Write `whats-new-X.Y.Z.html` from the information in `WHATS_NEW.md`.
-- Place the release build and run `compose.sh`.
+## Step 9: Update the Sparkle feed
+The application reads its update feed from the root of the `main` branch - see `SUFeedURL` in
+`Source/NimbleCommander/NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist`. The checked-in
+`appcast.xml` is intentionally empty, so `Check for Updates` simply reports that the installed
+version is the latest one.
 
-## Step 10: Update nimble-commander-website
-- Place the release build into `/downloads/releases/` as `nimble-commander-X.Y.Z(ABCD).dmg` and as `nimble-commander.dmg`.
-- Place the new Sparkle manifest into `/downloads/releases/` as `sparkle-nimble-commander.xml`.
-- Update the front page.
-- Update the `whats-new` page.
-- Update other pages if needed.
-- Commit, push, done - congratulations - the new version is out!
+If release builds are ever published, add an item to that file, for example:
 
-## Step 11: Release on Mac App Store as well
+```xml
+<item>
+  <title>Version X.Y.Z</title>
+  <pubDate>...</pubDate>
+  <sparkle:version>BUILD</sparkle:version>
+  <sparkle:shortVersionString>X.Y.Z</sparkle:shortVersionString>
+  <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+  <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/vX.Y.Z/nimble-commander-fork-X.Y.Z.dmg"
+             type="application/octet-stream" />
+</item>
+```
+
+The fork doesn't set `SUPublicEDKey`, so the feed is served without EdDSA signatures. Before the
+first real release, generate a key pair with Sparkle's `generate_keys` tool, put the public key
+back into the plist, sign the appcast and keep the private key out of the repository.
+
+## Step 10: Mac App Store
+The fork doesn't ship the sandboxed MAS build.

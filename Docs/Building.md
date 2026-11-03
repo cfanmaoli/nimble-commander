@@ -3,9 +3,9 @@ This guide outlines the steps to build Nimble Commander-Fork from its source cod
 
 ## Getting the code
 The source code for NC is available for cloning. Use the following command to clone the repository:  
-`git clone https://github.com/mikekazakov/nimble-commander`  
+`git clone https://github.com/cfanmaoli/nimble-commander`  
 To minimize internet bandwidth, you can opt to fetch only the latest version with:  
-`git clone https://github.com/mikekazakov/nimble-commander --depth=1`
+`git clone https://github.com/cfanmaoli/nimble-commander --depth=1`
 
 ## Compiling the Project
 After obtaining the source code, you'll need Xcode 27.2 to open and compile the project. Navigate to the `NimbleCommander.xcodeproj` folder within the source code and open it using either the Xcode GUI or the command line with:  
