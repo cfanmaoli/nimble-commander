@@ -9,7 +9,7 @@
 	<key>CFBundleName</key>
 	<string>PrivilegedIOHelperV2</string>
 	<key>CFBundleVersion</key>
-	<string>1.1</string>
+	<string>1.2</string>
 	<key>SMAuthorizedClients</key>
 	<array>
 		<string>identifier info.filesmanager.Files and anchor apple generic and certificate leaf[subject.OU] = "359W39ZS37"</string>

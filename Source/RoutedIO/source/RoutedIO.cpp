@@ -170,10 +170,15 @@ bool RoutedIO::TurnOn()
             }
         }
         else {
-            // the helper is not current + we can't ask it to remove itself. protocol/signing probs?
-            // anyway, can't go this way, no turning routing on
-            Log::Error("Failed to communicate with an outdated helper.");
-            return false;
+            // The helper is not current and we can't ask it to remove itself - it may be an old
+            // build whose client checks no longer accept this application. Ask to install the
+            // bundled helper anyway: SMJobBless replaces an installed helper with a newer
+            // CFBundleVersion, so this is the way out of that state.
+            Log::Warn("Failed to communicate with an outdated helper, replacing it directly.");
+            if( !AskToInstallHelper() ) {
+                Log::Error("Failed to install the privileged helper.");
+                return false;
+            }
         }
     }
 
