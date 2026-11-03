@@ -1,18 +1,9 @@
 name: Build and Test
 
 on:
-  push:
-    paths-ignore:
-      - '.github/ISSUE_TEMPLATE/**'
-      - 'Docs/**'
-      - 'Tools/**'
-      - '**/*.md'
-  pull_request:
-    paths-ignore:
-      - '.github/ISSUE_TEMPLATE/**'
-      - 'Docs/**'
-      - 'Tools/**'
-      - '**/*.md'
+  # The fork is developed locally and CI is deliberately not wired to every commit: a workflow that
+  # fires on each push only burns the shared macOS runner pool. Run it manually when needed, or let
+  # the nightly do it.
   schedule:
     # Nightly, 18:00 UTC
     - cron: '0 18 * * *'
@@ -26,7 +17,7 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same branch supersedes whatever is still running - the macOS runner pool is
+# A newer run on the same branch supersedes whatever is still running - the macOS runner pool is
 # limited, and stale runs only make everyone wait longer.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -56,14 +47,14 @@ jobs:
         cd Scripts && ./run_clang_format.sh --check
 
   unit-tests:
-    # Push: Debug only. Pull request: Debug and Release. Nightly / full dispatch: everything.
+    # Manual dispatch: Debug only. Nightly / full dispatch: every configuration.
     needs: clang-format
     runs-on: macos-26
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        configuration: ${{ fromJSON(((github.event_name == 'schedule') || (github.event_name == 'workflow_dispatch' && inputs.full)) && '["Debug","Release","ASAN","UBSAN"]' || (github.event_name == 'pull_request') && '["Debug","Release"]' || '["Debug"]') }}
+        configuration: ${{ fromJSON(((github.event_name == 'schedule') || inputs.full) && '["Debug","Release","ASAN","UBSAN"]' || '["Debug"]') }}
     steps:
     - name: Select the Xcode version
       run: |
@@ -74,48 +65,27 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install the test dependencies
       run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
-    - name: Decide whether clang-tidy runs
-      id: tidy
-      run: |
-        if [ "${{ matrix.configuration }}" = "Debug" ] && { [ "${{ github.event_name }}" != "push" ] || [ "${{ inputs.full }}" = "true" ]; }; then
-          echo "run=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "run=false" >> "$GITHUB_OUTPUT"
-        fi
     - name: Build and run the unit tests
       env:
         # Build the whole project and keep the compilation database when clang-tidy is about to
         # reuse it - that saves a complete second build of everything.
-        EMIT_COMPILE_DB: ${{ steps.tidy.outputs.run == 'true' && '1' || '' }}
+        EMIT_COMPILE_DB: ${{ matrix.configuration == 'Debug' && '1' || '' }}
       run: "cd Scripts && ./run_all_unit_tests.sh ${{ matrix.configuration }}"
     - name: Cache the Homebrew downloads
-      if: steps.tidy.outputs.run == 'true'
+      if: matrix.configuration == 'Debug'
       uses: actions/cache@v5
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}-tidy
     - name: Install LLVM
-      if: steps.tidy.outputs.run == 'true'
+      if: matrix.configuration == 'Debug'
       run: brew install llvm@${{ env.LLVM_VERSION }}
     - name: Run clang-tidy
-      if: steps.tidy.outputs.run == 'true'
+      if: matrix.configuration == 'Debug'
       run: |
         export PATH="$(brew --prefix)/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
         cd Scripts
-        if [ "${{ github.event_name }}" != "pull_request" ]; then
-          ./run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp
-          exit 0
-        fi
-        # On pull requests only the touched translation units are analysed - unless a header
-        # changed, in which case everything that includes it has to be looked at.
-        git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
-        git diff --name-only FETCH_HEAD HEAD -- Source > /tmp/tidy-changed-files.txt
-        cat /tmp/tidy-changed-files.txt
-        if grep -qE '\.(h|hpp)$' /tmp/tidy-changed-files.txt; then
-          ./run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp
-        else
-          ./run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp --files /tmp/tidy-changed-files.txt
-        fi
+        ./run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp
     - uses: actions/upload-artifact@v6
       if: always()
       with:
@@ -159,8 +129,7 @@ jobs:
       run: cd Scripts && ./run_all_integration_tests.sh
 
   build-unsigned:
-    # The unsigned DMG is produced for pushes and the nightly only - pull requests don't need one.
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+    # Every remaining run is deliberate, so produce the unsigned DMG in all of them.
     needs: unit-tests
     runs-on: macos-26
     timeout-minutes: 40

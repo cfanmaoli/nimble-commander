@@ -1,19 +1,21 @@
 # Continuous integration
 
 Everything is driven by a single workflow, [`.github/workflows/build.yml`](../.github/workflows/build.yml).
-The heavy jobs are deliberately kept off the everyday push path - GitHub's macOS runner pool is limited
-and a pipeline that takes seven full builds per push starves the queue.
+The fork is developed locally and the workflow is **not** wired to commits - it runs nightly or on
+demand. A workflow that fires on every push only burns the shared macOS runner pool, and seven full
+builds per push is exactly what used to starve the queue.
 
 ## What runs when
 
 | Event | Jobs |
 |---|---|
-| `push` | clang-format, unit tests (Debug), unsigned DMG |
-| `pull_request` | clang-format, unit tests (Debug + Release), clang-tidy (touched files only) |
-| `schedule` (nightly) | everything: all four test configurations, full clang-tidy, integration tests, DMG |
-| `workflow_dispatch` | same as push; tick `full` to get the nightly set |
+| `schedule` (nightly) | everything: clang-format, all four test configurations, full clang-tidy, integration tests, DMG |
+| `workflow_dispatch` | clang-format, Debug tests + clang-tidy, DMG; tick `full` to get the nightly set |
 
-A newer push to the same branch cancels the stale run (`concurrency`), and every job has a
+Trigger a run from the Actions tab (*Build and Test* → *Run workflow*) or with
+`gh workflow run build.yml --ref main -f full=true`.
+
+A newer run on the same branch cancels the stale one (`concurrency`), and every job has a
 `timeout-minutes` cap so a stuck build cannot hold a runner for an hour.
 
 ## Jobs
@@ -23,9 +25,8 @@ A newer push to the same branch cancels the stale run (`concurrency`), and every
   and runs every test binary: `Debug`, `Release`, `ASAN`, `UBSAN`.
   The Debug job also builds the whole project (`All`) and keeps its compilation database when
   clang-tidy is going to run, so tidy does not need a second build of everything.
-- **clang-tidy** (inside the Debug job) - `Scripts/run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp`.
-  On pull requests only the touched translation units are analysed; if a header changed, everything
-  is analysed instead.
+- **clang-tidy** (inside the Debug job) - `Scripts/run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp`,
+  reusing the compilation database that the Debug build has just produced.
 - **integration-tests** - starts the docker/colima dependencies and runs
   `Scripts/run_all_integration_tests.sh`.
 - **build-unsigned** - `Scripts/build_unsigned.sh`, producing the `nimble-commander-fork-unsigned` DMG.
