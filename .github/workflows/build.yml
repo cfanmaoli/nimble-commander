@@ -73,7 +73,7 @@ jobs:
         xcodebuild -version
     - uses: actions/checkout@v5
     - name: Install the test dependencies
-      run: gem install xcpretty
+      run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
     - name: Decide whether clang-tidy runs
       id: tidy
       run: |
@@ -153,10 +153,10 @@ jobs:
          # TODO: Replace this with a better solution. See https://github.com/actions/runner-images/issues/7522
          echo Killing XProtect...; sudo pkill -9 XProtect >/dev/null || true;
          echo Waiting for XProtect process...; while pgrep XProtect; do sleep 3; done;
+    - name: Install the test dependencies
+      run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
     - name: Build and run integration tests
-      run: |
-        gem install xcpretty
-        cd Scripts && ./run_all_integration_tests.sh
+      run: cd Scripts && ./run_all_integration_tests.sh
 
   build-unsigned:
     # The unsigned DMG is produced for pushes and the nightly only - pull requests don't need one.
@@ -179,10 +179,13 @@ jobs:
     - name: Install the dependencies
       run: brew install create-dmg pandoc basictex
     - uses: actions/checkout@v5
+    - name: Install the test dependencies
+      # 'gem install' has to happen before path_helper reshuffles the PATH - afterwards it resolves
+      # to the un-writable system ruby.
+      run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
     - name: Build and package
       run: |
         eval "$(/usr/libexec/path_helper)"
-        gem install xcpretty
         cd Scripts && ./build_unsigned.sh
     - uses: actions/upload-artifact@v4
       with:
