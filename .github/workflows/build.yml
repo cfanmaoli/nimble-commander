@@ -44,7 +44,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Cache the Homebrew downloads
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}
@@ -90,7 +90,7 @@ jobs:
       run: "cd Scripts && ./run_all_unit_tests.sh ${{ matrix.configuration }}"
     - name: Cache the Homebrew downloads
       if: steps.tidy.outputs.run == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}-tidy
@@ -116,7 +116,7 @@ jobs:
         else
           ./run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp --files /tmp/tidy-changed-files.txt
         fi
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       if: always()
       with:
         name: unit-tests-logs-${{ matrix.configuration }}
@@ -172,7 +172,7 @@ jobs:
         fi
         xcodebuild -version
     - name: Cache the Homebrew downloads
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-${{ runner.os }}-packaging-${{ hashFiles('.github/workflows/build.yml') }}
@@ -187,12 +187,12 @@ jobs:
       run: |
         eval "$(/usr/libexec/path_helper)"
         cd Scripts && ./build_unsigned.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: nimble-commander-fork-unsigned
         path: Scripts/*.dmg
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       if: always()
       with:
         name: build-logs
