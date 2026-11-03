@@ -35,8 +35,66 @@ Unit tests are quick and standalone, not requiring any external setups. In contr
 
 ## Limitations
 While this source code mirrors that of the official Nimble Commander-Fork builds, the public repository does not include sensitive information such as specific accounts, addresses, and keys. Consequently, some features might be restricted or unavailable:
-  * Privileged Helper: Requires proper signing to be installed and function correctly.
-  
+  * Privileged Helper: Requires proper signing to be installed and function correctly - see
+    [Admin Mode and the privileged helper](#admin-mode-and-the-privileged-helper).
+
+## Admin Mode and the privileged helper
+
+Admin Mode runs a privileged helper as a launchd daemon:
+
+* `/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist`
+* `/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2`
+
+The application installs it with `SMJobBless()` the first time Admin Mode is enabled, and macOS asks
+for administrator credentials. Both sides declare the code-signing requirement the other has to
+satisfy:
+
+* the application lists the helper in `SMPrivilegedExecutables` (`NimbleCommander-NonMAS-Info.plist`);
+* the helper lists its clients in `SMAuthorizedClients` (`Source/RoutedIO/source/PrivilegedIOHelper-Info.plist`).
+
+With a locally signed build both requirements point at the signing team rather than at a developer's
+name - e.g. `certificate leaf[subject.OU] = "359W39ZS37"` - because the CN of an Apple Development
+certificate contains the developer's Apple ID, which has no business being in the sources. If the
+certificate or the team ever changes, update both plists, otherwise the helper will silently reject
+the application.
+
+Two things to keep in mind while developing:
+
+* The helper lives outside the application bundle, so it is **not** replaced when the application is
+  rebuilt and reinstalled - it is updated only when Admin Mode is enabled again.
+  `Scripts/sign-install-fork.sh` prints a note when the bundled and the installed helpers differ; a
+  fresh Admin Mode toggle (with an administrator password) updates it.
+* `SMJobBless()` replaces an installed helper only when its `CFBundleVersion`
+  (`Source/RoutedIO/source/PrivilegedIOHelper-Info.plist`) is greater - bump it whenever the helper's
+  code changes.
+
+The helper identifies its clients by the requirement above plus the fact that the client lives in an
+application bundle. It deliberately does not match the executable's file name, which used to break
+every time the application was renamed.
+
+To check what is installed:
+
+```sh
+# is the installed helper the same as the bundled one?
+shasum /Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2 \
+       "/Applications/Nimble Commander-Fork.app/Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV2"
+
+# is the daemon running?
+launchctl print system/info.filesmanager.Files.PrivilegedIOHelperV2
+
+# did the helper accept or reject a connection?
+log show --last 10m --style compact --predicate 'process == "info.filesmanager.Files.PrivilegedIOHelperV2"'
+```
+
+If the application reports *"Failed to access the privileged helper."* and cannot recover by itself,
+remove the outdated helper and enable Admin Mode again:
+
+```sh
+sudo launchctl bootout system/info.filesmanager.Files.PrivilegedIOHelperV2
+sudo rm -f /Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist \
+           /Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2
+```
+
 ## Implementation Notes
   * [Syntax Highlighting](SyntaxHighlighting.md)
   * [Creating Image Templates from SF Symbols](ImageTemplatesFromSFSymbols.md)
