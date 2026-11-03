@@ -40,7 +40,7 @@ Below is the compatibility table for the older releases:
 
 Nimble Commander-Fork is portable; it doesn't require the installation of additional components and can run from any folder.
 When downloaded from the Mac App Store, Nimble Commander-Fork is automatically placed in the `/Applications` folder.
-If it was downloaded from the website, it can be copied into the `/Applications` folder by dragging the icon there.
+If it was built from source, it can be copied into the `/Applications` folder by dragging the icon there.
 You can also run Nimble Commander-Fork directly from a `.dmg` disk image; in this case, Nimble Commander-Fork will offer to move itself to the `/Applications` folder.
 
 ![Copying NC from a dmg](Help-install-dmg.png)
@@ -72,7 +72,7 @@ Alternatively, you can grant Nimble Commander-Fork Full Disk Access in System Se
 
 ## Version Differences
 
-There are two existing versions of Nimble Commander-Fork: the sandboxed version available in the Mac App Store, and the standalone version available for direct download from the website.
+There are two existing versions of Nimble Commander-Fork: the sandboxed version for the Mac App Store, and the standalone version that is built from source (see [Building](Building.md)).
 Both versions are mostly equal in terms of functionality.
 The sandboxed version consumes slightly more resources due to sandboxing, but it provides an additional layer of protection.
 The notable features missing from the sandboxed version are:
@@ -948,8 +948,8 @@ Some actions do not have default hotkeys but can still be accessed through the a
 **Q**: I have an idea for Nimble Commander-Fork!  
 **A**: That’s fantastic!
 Feel free to contribute your ideas and proposed changes to the project.
-The entire source code and build instructions for Nimble Commander-Fork are available in [this repository](https://github.com/mikekazakov/nimble-commander).
-Be sure to read through the [CONTRIBUTING](https://github.com/mikekazakov/nimble-commander/blob/main/CONTRIBUTING.md) guidelines carefully before you start.
+The entire source code and build instructions for Nimble Commander-Fork are available in [this repository](https://github.com/cfanmaoli/nimble-commander).
+Be sure to read through the [CONTRIBUTING](https://github.com/cfanmaoli/nimble-commander/blob/main/CONTRIBUTING.md) guidelines carefully before you start.
 
 ---
 
@@ -959,7 +959,7 @@ As Nimble Commander-Fork is maintained by a single contributor, resources are li
 The Apple ecosystem is rather hostile to developers, and just maintaining the project up to date with the constant macOS/toolchain/dependencies changes requires significant effort.
 However, contributions of reasonable quality from the community are welcome.
 You can consider implementing the feature yourself.
-Check out the [contribution guidelines](https://github.com/mikekazakov/nimble-commander/blob/main/CONTRIBUTING.md) for more information.
+Check out the [contribution guidelines](https://github.com/cfanmaoli/nimble-commander/blob/main/CONTRIBUTING.md) for more information.
 
 ---
 
@@ -998,13 +998,12 @@ The only workaround is to use an older version.
 ---
 
 **Q**: How can I download a previous version?  
-**A**: All previous releases are available here: [https://github.com/mikekazakov/nimble-commander-releases](https://github.com/mikekazakov/nimble-commander-releases)
+**A**: The fork doesn't publish prebuilt binaries - check out the tag you need and build it from source, see [Building](Building.md).
 
 ---
 
 **Q**: Do you plan to add capabilities to modify existing archives?  
 **A**: There are no plans to add this feature at the moment unless someone steps up to implement it.
-The reasons why were discussed here: [https://magnumbytes.com/forum/viewtopic.php?f=6&t=205](https://magnumbytes.com/forum/viewtopic.php?f=6&t=205)
 
 ---
 

@@ -68,3 +68,12 @@ in one place when moving to a newer toolchain.
 
 Homebrew downloads are cached between runs, and `brew update` is intentionally not called - it is
 slow and it was the flakiest step of the old pipeline.
+
+## The update feed
+
+The non-MAS build checks for updates through Sparkle, which reads `SUFeedURL` from
+`NimbleCommander-NonMAS-Info.plist`. It points at `appcast.xml` in the root of the `main` branch
+of this repository, so the update check never reaches the upstream project. The checked-in appcast
+has no items on purpose - the fork doesn't publish prebuilt binaries - so `Check for Updates`
+reports that the installed version is the latest one. See [Release.md](Release.md) for what to do
+if that policy ever changes.
