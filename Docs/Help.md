@@ -342,6 +342,17 @@ By default, Nimble Commander-Fork has 5 preconfigured modes, which you can switc
 
 You can fine-tune, rearrange, and add new custom panel layouts in the Settings dialog: `Settings > Panels > Layout`.
 
+## Flat View
+
+Flat View lists everything underneath the current directory - files and folders from all levels - in
+a single panel, instead of showing just the immediate children. It is handy for working with a deep
+folder tree without jumping in and out of directories.
+
+Toggle it with `View > Flat View` or the `Option + Command + B` hotkey. The panel's path bar keeps
+showing the directory the view was flattened from, and toggling the view off - or navigating anywhere -
+restores the regular listing. Symbolic links to directories are listed but not followed, and the
+traversal is capped to keep a huge tree from locking up the panel.
+
 ## Quick Lists
 Quick Lists is another mechanism in Nimble Commander-Fork for accessing specific locations with minimal keypresses, tailored for keyboard use.
 It is similar to the Go To popup but provides more locations and does not mix different types of locations.

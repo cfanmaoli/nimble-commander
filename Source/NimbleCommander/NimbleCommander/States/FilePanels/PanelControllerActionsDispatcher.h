@@ -91,6 +91,7 @@ using PanelActionsMap = ankerl::unordered_dense::map<SEL, std::unique_ptr<const 
 - (IBAction)OnCalculateSizes:(id)sender;
 - (IBAction)OnCalculateAllSizes:(id)sender;
 - (IBAction)ToggleViewHiddenFiles:(id)sender;
+- (IBAction)onToggleFlatView:(id)sender;
 - (IBAction)ToggleSeparateFoldersFromFiles:(id)sender;
 - (IBAction)ToggleExtensionlessFolders:(id)sender;
 - (IBAction)onToggleNaturalCollation:(id)sender;

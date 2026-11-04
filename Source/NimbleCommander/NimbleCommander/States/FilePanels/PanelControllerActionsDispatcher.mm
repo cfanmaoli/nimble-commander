@@ -463,6 +463,10 @@ static void Perform(SEL _sel, const PanelActionsMap &_map, PanelController *_tar
 {
     PERFORM;
 }
+- (IBAction)onToggleFlatView:(id)sender
+{
+    PERFORM;
+}
 - (IBAction)ToggleSeparateFoldersFromFiles:(id)sender
 {
     PERFORM;

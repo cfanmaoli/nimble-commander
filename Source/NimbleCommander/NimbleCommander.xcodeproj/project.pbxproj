@@ -133,6 +133,7 @@
 		CF0A48532BDDA2BE00833160 /* ToggleLayout.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0260D11E9F10060025B50F /* ToggleLayout.mm */; };
 		CF0A48552BDDA2C400833160 /* ToggleSingleOrDualMode.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF197C421FB81ACA009F6C59 /* ToggleSingleOrDualMode.mm */; };
 		CF0A48562BDDA2C800833160 /* ToggleSort.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0139AE1E99DAC100E44F2D /* ToggleSort.mm */; };
+		CFA0F1A32BDDAA00000000A3 /* ToggleFlatView.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA0F1A22BDDAA00000000A2 /* ToggleFlatView.mm */; };
 		CF0A48572BDDA2CD00833160 /* ViewFile.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF5E9A371FCBC521005608F5 /* ViewFile.mm */; };
 		CF0A48582BDDA39600833160 /* Layout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CF31F66F1DFE644B005A1A40 /* Layout.cpp */; };
 		CF0A48592BDDA39B00833160 /* PanelBriefView.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFD3CB1C1DA4C888006DA143 /* PanelBriefView.mm */; };
@@ -877,6 +878,8 @@
 		A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowLanguageTab.mm; path = NimbleCommander/Preferences/PreferencesWindowLanguageTab.mm; sourceTree = SOURCE_ROOT; };
 		CF0139AD1E99DAC100E44F2D /* ToggleSort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ToggleSort.h; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.h; sourceTree = SOURCE_ROOT; };
 		CF0139AE1E99DAC100E44F2D /* ToggleSort.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ToggleSort.mm; path = NimbleCommander/States/FilePanels/Actions/ToggleSort.mm; sourceTree = SOURCE_ROOT; };
+		CFA0F1A12BDDAA00000000A1 /* ToggleFlatView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ToggleFlatView.h; path = NimbleCommander/States/FilePanels/Actions/ToggleFlatView.h; sourceTree = SOURCE_ROOT; };
+		CFA0F1A22BDDAA00000000A2 /* ToggleFlatView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ToggleFlatView.mm; path = NimbleCommander/States/FilePanels/Actions/ToggleFlatView.mm; sourceTree = SOURCE_ROOT; };
 		CF0139B01E99EC4A00E44F2D /* DefaultAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DefaultAction.h; path = NimbleCommander/States/FilePanels/Actions/DefaultAction.h; sourceTree = SOURCE_ROOT; };
 		CF0139B11E99EC4A00E44F2D /* DefaultAction.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = DefaultAction.mm; path = NimbleCommander/States/FilePanels/Actions/DefaultAction.mm; sourceTree = SOURCE_ROOT; };
 		CF0139B31E99F7C200E44F2D /* FindFiles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FindFiles.h; path = NimbleCommander/States/FilePanels/Actions/FindFiles.h; sourceTree = SOURCE_ROOT; };
@@ -1846,6 +1849,8 @@
 				CF197C421FB81ACA009F6C59 /* ToggleSingleOrDualMode.mm */,
 				CF0139AD1E99DAC100E44F2D /* ToggleSort.h */,
 				CF0139AE1E99DAC100E44F2D /* ToggleSort.mm */,
+				CFA0F1A12BDDAA00000000A1 /* ToggleFlatView.h */,
+				CFA0F1A22BDDAA00000000A2 /* ToggleFlatView.mm */,
 				CF5E9A361FCBC521005608F5 /* ViewFile.h */,
 				CF5E9A371FCBC521005608F5 /* ViewFile.mm */,
 			);
@@ -3171,6 +3176,7 @@
 				CFF8353E2DC8D1B400CED300 /* PanelGalleryView.mm in Sources */,
 				CF0A485D2BDDA3AE00833160 /* PanelBriefViewDynamicWidthLayout.mm in Sources */,
 				CF0A48562BDDA2C800833160 /* ToggleSort.mm in Sources */,
+				CFA0F1A32BDDAA00000000A3 /* ToggleFlatView.mm in Sources */,
 				CF0A481E2BDDA03100833160 /* PanelController+DataAccess.mm in Sources */,
 				CF0A488F2BDDA5AD00833160 /* ShellState.mm in Sources */,
 				CF0A481B2BDDA02200833160 /* NCPanelOpenWithMenuDelegate.mm in Sources */,

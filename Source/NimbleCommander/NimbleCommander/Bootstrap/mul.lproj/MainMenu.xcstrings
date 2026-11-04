@@ -4603,6 +4603,30 @@
         }
       }
     },
+    "FlV-fv-001.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Flat View\"; ObjectID = \"FlV-fv-001\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Flat View"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плоский вид"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平铺"
+          }
+        }
+      }
+    },
     "zNZ-x6-hcs.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Panels Position\"; ObjectID = \"zNZ-x6-hcs\";",
       "extractionState" : "extracted_with_value",

@@ -114,11 +114,15 @@
 
 - (std::string)currentDirectoryPath
 {
+    if( self.isFlatView )
+        return self.flatViewRoot; // the flat listing spans nested directories, the root is the anchor
     return self.data.DirectoryPathWithTrailingSlash();
 }
 
 - (const VFSHostPtr &)vfs
 {
+    if( self.isFlatView && self.flatViewHost != nullptr )
+        return self.flatViewHost;
     return self.data.Host();
 }
 

@@ -198,6 +198,17 @@ using ContextMenuProvider =
 - (void)loadListing:(const VFSListingPtr &)_listing;
 
 /**
+ * Flat view lists every file and directory underneath the current directory, recursively, in a
+ * single listing. It is only available on top of a regular directory listing; leaving it reloads
+ * that directory.
+ */
+@property(nonatomic, readonly) bool isFlatView;
+- (void)toggleFlatView;
+- (void)reloadFlatView;
+- (std::string)flatViewRoot;
+- (const VFSHostPtr &)flatViewHost;
+
+/**
  * Delayed entry selection change - panel controller will memorize such request.
  * If _check_now flag is on then controller will look for requested element and if it was found - select it.
  * If there was another pending selection request - it will be overwrited by the new one.
