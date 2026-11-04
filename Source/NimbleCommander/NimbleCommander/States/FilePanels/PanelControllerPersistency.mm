@@ -28,8 +28,20 @@ config::Value ControllerStateJSONEncoder::Encode(ControllerStateEncoding::Option
     config::Value json(rapidjson::kObjectType);
 
     if( _options & ControllerStateEncoding::EncodeContentState ) {
-        if( auto v = m_Persistency.EncodeVFSPath(m_Panel.data.Listing()); v.GetType() != rapidjson::kNullType )
-            json.AddMember(config::MakeStandaloneString(g_RestorationDataKey), std::move(v), config::g_CrtAllocator);
+        config::Value path{rapidjson::kNullType};
+        if( m_Panel.isFlatView ) {
+            // The flat view is a temporary listing; the panel should come back as the directory it
+            // was flattened from, rather than losing its contents entirely.
+            const VFSHostPtr &host = m_Panel.flatViewHost;
+            if( host != nullptr )
+                path = m_Persistency.EncodeVFSPath(*host, m_Panel.flatViewRoot);
+        }
+        else {
+            path = m_Persistency.EncodeVFSPath(m_Panel.data.Listing());
+        }
+
+        if( path.GetType() != rapidjson::kNullType )
+            json.AddMember(config::MakeStandaloneString(g_RestorationDataKey), std::move(path), config::g_CrtAllocator);
         else
             return config::Value{rapidjson::kNullType};
     }

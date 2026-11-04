@@ -11,6 +11,7 @@
 #include "Actions/SpotlightSearch.h"
 #include "Actions/OpenWithExternalEditor.h"
 #include "Actions/ToggleSort.h"
+#include "Actions/ToggleFlatView.h"
 #include "Actions/FindFiles.h"
 #include "Actions/ShowGoToPopup.h"
 #include "Actions/MakeNew.h"
@@ -85,6 +86,7 @@ PanelActionsMap BuildPanelActionsMap(nc::config::Config &_global_config,
     add(@selector(ToggleSeparateFoldersFromFiles:), new ToggleSortingFoldersSeparation);
     add(@selector(ToggleExtensionlessFolders:), new ToggleSortingExtensionlessFolders);
     add(@selector(ToggleViewHiddenFiles:), new ToggleSortingShowHidden);
+    add(@selector(onToggleFlatView:), new ToggleFlatView);
     add(@selector(onToggleViewLayout1:), new ToggleLayout{0});
     add(@selector(onToggleViewLayout2:), new ToggleLayout{1});
     add(@selector(onToggleViewLayout3:), new ToggleLayout{2});

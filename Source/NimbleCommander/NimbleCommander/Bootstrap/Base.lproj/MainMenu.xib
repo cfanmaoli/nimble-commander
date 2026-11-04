@@ -470,6 +470,12 @@ DQ
                                     <action selector="ToggleViewHiddenFiles:" target="-1" id="Ayw-w8-zaF"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Flat View" tag="13180" keyEquivalent="b" id="FlV-fv-001">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                <connections>
+                                    <action selector="onToggleFlatView:" target="-1" id="FlV-fv-a01"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="t5L-ik-2nt"/>
                             <menuItem title="Panels Position" id="zNZ-x6-hcs">
                                 <modifierMask key="keyEquivalentModifierMask"/>

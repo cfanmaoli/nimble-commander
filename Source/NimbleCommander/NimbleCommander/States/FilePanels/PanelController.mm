@@ -1,5 +1,7 @@
 // Copyright (C) 2013-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "PanelController.h"
+#include "PanelController+DataAccess.h"
+#include <VFS/VFSListingInput.h>
 #include <Base/algo.h>
 #include <Utility/NSView+Sugar.h>
 #include <Utility/NSMenu+Hierarchical.h>
@@ -128,8 +130,69 @@ static void HeatUpConfigValues()
     bool receivesUpdateNotifications; // returns true if underlying vfs will notify controller that content has changed
 @end
 
+namespace {
+
+// Collects everything underneath the given directory into a single listing. Symbolic links to
+// directories are listed but not followed, so that a link loop cannot hang the traversal.
+VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
+                               const std::string &_root,
+                               unsigned long _fetch_flags,
+                               const VFSCancelChecker &_cancel_checker)
+{
+    constexpr size_t max_directories = size_t{64} * 1024;
+    constexpr int max_items = 1'000'000;
+
+    try {
+        std::vector<VFSListingPtr> listings;
+        std::vector<std::vector<unsigned>> indices;
+        std::vector<std::string> directories;
+        directories.emplace_back(_root);
+
+        size_t total_items = 0;
+        for( size_t index = 0; index != directories.size() && listings.size() < max_directories; ++index ) {
+            if( _cancel_checker && _cancel_checker() )
+                return {};
+
+            const std::string &directory = directories[index];
+            std::expected<VFSListingPtr, Error> fetched =
+                _host->FetchDirectoryListing(directory, _fetch_flags, _cancel_checker);
+            if( !fetched )
+                continue;
+
+            const VFSListingPtr &listing = *fetched;
+            std::vector<unsigned> wanted;
+            for( unsigned item_index = 0, items = listing->Count(); item_index != items; ++item_index ) {
+                const VFSListingItem item{listing, item_index};
+                const std::string &filename = item.Filename();
+                // '.' and '..' have no place in a flat view - the latter would also make the
+                // traversal walk towards the filesystem root endlessly.
+                if( filename == "." || filename == ".." )
+                    continue;
+                wanted.emplace_back(item_index);
+                if( item.IsDir() && !item.IsSymlink() )
+                    directories.emplace_back(item.Directory() + filename + "/");
+            }
+
+            total_items += wanted.size();
+            if( total_items > max_items )
+                break;
+            if( wanted.empty() )
+                continue;
+            listings.emplace_back(listing);
+            indices.emplace_back(std::move(wanted));
+        }
+
+        if( listings.empty() )
+            return {}; // nothing underneath - keep the regular directory listing
+        return VFSListing::Build(VFSListing::Compose(listings, indices));
+    } catch( ... ) {
+        return {};
+    }
+}
+
+} // namespace
+
 @implementation PanelController {
-    // Main controller's possessions
     data::Model m_Data; // owns
     PanelView *m_View;  // create and owns
 
@@ -138,6 +201,12 @@ static void HeatUpConfigValues()
 
     // VFS listing fetch flags
     unsigned long m_VFSFetchingFlags;
+
+    // flat view state
+    bool m_FlatView;
+    unsigned long m_FlatViewGeneration;
+    std::string m_FlatViewRoot;
+    VFSHostPtr m_FlatViewHost;
 
     // background operations' queues
     nc::base::SerialQueue m_DirectorySizeCountingQ;
@@ -419,6 +488,11 @@ static void HeatUpConfigValues()
     }
 
     // later: maybe check PanelType somehow
+
+    if( m_FlatView ) {
+        [self reloadFlatView];
+        return;
+    }
 
     if( self.isUniform ) {
         const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0);
@@ -929,6 +1003,10 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         [self CancelBackgroundOperations]; // clean running operations if any
         dispatch_or_run_in_main_queue([=] {
             [m_View savePathState];
+            m_FlatView = false;
+            m_FlatViewHost.reset();
+            m_FlatViewRoot.clear();
+            ++m_FlatViewGeneration;
             m_Data.Load(*listing, data::Model::PanelType::Directory);
             for( const auto &i : _request->RequestSelectedEntries )
                 m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
@@ -990,6 +1068,90 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         [m_View panelChangedWithFocusedFilename:"" loadPreviousState:false];
         [self onPathChanged];
     });
+}
+
+- (bool)isFlatView
+{
+    return m_FlatView;
+}
+
+- (std::string)flatViewRoot
+{
+    return m_FlatViewRoot;
+}
+
+- (const VFSHostPtr &)flatViewHost
+{
+    return m_FlatViewHost;
+}
+
+- (void)toggleFlatView
+{
+    if( m_FlatView ) {
+        [self leaveFlatView];
+        return;
+    }
+
+    if( !self.isUniform )
+        return;
+
+    const VFSHostPtr host = self.vfs;
+    const std::string root = m_Data.DirectoryPathWithTrailingSlash();
+    if( host == nullptr || root.empty() )
+        return;
+
+    m_FlatViewHost = host;
+    m_FlatViewRoot = root;
+    m_FlatView = true;
+    ++m_FlatViewGeneration;
+    [self reloadFlatView];
+}
+
+- (void)leaveFlatView
+{
+    const VFSHostPtr host = m_FlatViewHost;
+    const std::string root = m_FlatViewRoot;
+
+    m_FlatView = false;
+    m_FlatViewHost.reset();
+    m_FlatViewRoot.clear();
+    ++m_FlatViewGeneration;
+
+    if( host == nullptr || root.empty() )
+        return;
+
+    const auto request = std::make_shared<DirectoryChangeRequest>();
+    request->RequestedDirectory = root;
+    request->VFS = host;
+    request->PerformAsynchronous = false;
+    [self GoToDirWithContext:request];
+}
+
+- (void)reloadFlatView
+{
+    if( !m_FlatView )
+        return;
+
+    const VFSHostPtr host = m_FlatViewHost;
+    const std::string root = m_FlatViewRoot;
+    const unsigned long generation = m_FlatViewGeneration;
+    const unsigned long fetch_flags = m_VFSFetchingFlags;
+    if( host == nullptr || root.empty() )
+        return;
+
+    __weak PanelController *weak_self = self;
+    [self commitCancelableLoadingTask:[host, root, generation, fetch_flags, weak_self](
+                                          const std::function<bool()> &_is_cancelled) {
+        const VFSListingPtr listing = BuildFlatListing(host, root, fetch_flags, _is_cancelled);
+        if( !listing )
+            return; // cancelled, or nothing could be fetched at all
+        dispatch_to_main_queue([weak_self, listing, generation] {
+            PanelController *const panel = weak_self;
+            if( panel == nil || !panel->m_FlatView || panel->m_FlatViewGeneration != generation )
+                return;
+            [panel loadListing:listing];
+        });
+    }];
 }
 
 - (void)recoverFromInvalidDirectory
