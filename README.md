@@ -27,6 +27,9 @@ changed to avoid confusion with the original project.
 - **More bundled themes** — Solarized (light/dark), Nord, Dracula, Gruvbox (light/dark), One Dark,
   Tokyo Night, Catppuccin (Mocha/Latte), GitHub Dark and Monokai, next to the original Light, Dark
   and Classic themes.
+- **Flat view** — `View > Flat View` (`Option + Command + B`) lists the entire subtree of the
+  current directory in one panel, so a deep folder tree can be worked with without navigating in
+  and out.
 - **Trash support** — browse `~/.Trash` and the per-volume trashes (`/Volumes/*/.Trashes/<uid>`),
   empty all of them at once and put items back to their original locations.
 - **RAR support without proprietary code** — RAR archives are read through libarchive, the same

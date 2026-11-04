@@ -29,6 +29,8 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
   [Tools/language-packs.md](Tools/language-packs.md)。
 - **更多内置主题** —— 在原有的 Light、Dark、Classic 之外，新增 Solarized（亮/暗）、Nord、Dracula、
   Gruvbox（亮/暗）、One Dark、Tokyo Night、Catppuccin（Mocha/Latte）、GitHub Dark 和 Monokai。
+- **平铺视图** —— `显示 > 平铺`（快捷键 `Option + Command + B`）把当前目录及其所有子目录里的文件和文件夹
+  一次性列在同一个面板里，处理层级很深的目录时不用来回进出。
 - **支持废纸篓** —— 可以浏览 `~/.Trash` 和各磁盘的废纸篓（`/Volumes/*/.Trashes/<uid>`），一次清空全部，
   也可以把条目放回原来的位置。
 - **RAR 支持且不涉及专有代码** —— RAR 归档通过 libarchive 读取，和上游用的是同一套后端；本分支不附带任何
