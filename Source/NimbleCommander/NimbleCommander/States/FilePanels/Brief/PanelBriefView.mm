@@ -118,6 +118,9 @@ BuildItemsLayout(NSFont *_font, PanelBriefViewColumnsLayout _layout, NSUInteger 
     PanelBriefViewColumnsLayout m_ColumnsLayout;
     __weak PanelView *m_PanelView;
     nc::ThemesManager::ObservationTicket m_ThemeObservation;
+
+    // sweeping walks every raw entry - pointless to do on every single update of a huge listing
+    int m_UpdatesSinceIconSweep;
 }
 
 @synthesize columnsLayout = m_ColumnsLayout;
@@ -177,6 +180,8 @@ BuildItemsLayout(NSFont *_font, PanelBriefViewColumnsLayout _layout, NSUInteger 
     m_ThemeObservation = NCAppDelegate.me.themesManager.ObserveChanges(
         nc::ThemesManager::Notifications::FilePanelsBrief | nc::ThemesManager::Notifications::FilePanelsGeneral,
         nc::objc_callback(self, @selector(themeDidChange)));
+
+    m_UpdatesSinceIconSweep = 0;
 
     return self;
 }
@@ -426,7 +431,12 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
     assert(m_Data);
     [self calculateFilenamesWidths];
     m_IconSlotToItemIndexMapping.clear();
-    IconRepositoryCleaner{*m_IconsRepository, *m_Data}.SweepUnusedSlots();
+    const auto items_count = m_Data->SortedEntriesCount();
+    ++m_UpdatesSinceIconSweep;
+    if( items_count < 20'000 || m_UpdatesSinceIconSweep >= 64 ) {
+        m_UpdatesSinceIconSweep = 0;
+        IconRepositoryCleaner{*m_IconsRepository, *m_Data}.SweepUnusedSlots();
+    }
     [m_CollectionView reloadData];
     [self onVolatileDataChanged];
     [m_Background setNeedsDisplay:true];

@@ -82,6 +82,11 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 
     std::function<void(data::SortMode)> m_SortModeChangeCallback;
 
+    // Sweeping the icon repository means walking every raw entry, which is way too expensive to do
+    // on each update of a listing with hundreds of thousands of items - do it every so often
+    // instead, the number of the registered icons is bounded anyway.
+    int m_UpdatesSinceIconSweep;
+
     PanelListViewColumnsLayout m_AssignedLayout;
     ThemesManager::ObservationTicket m_ThemeObservation;
 }
@@ -97,6 +102,7 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
     self = [super initWithFrame:_frame];
     if( self ) {
         m_IconRepository = &_ir;
+        m_UpdatesSinceIconSweep = 0;
 
         [self calculateItemLayout];
 
@@ -579,7 +585,14 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     const auto old_rows_count = static_cast<int>(m_TableView.numberOfRows);
     const auto new_rows_count = data->SortedEntriesCount();
 
-    IconRepositoryCleaner{*m_IconRepository, *m_Data}.SweepUnusedSlots();
+    // Sweeping walks every raw entry of the listing, so on a million-entry directory it is the most
+    // expensive part of a bulk update and plain pointless to do for every single patch. Do it once
+    // in a while instead - the number of the registered icons is bounded by the repository.
+    ++m_UpdatesSinceIconSweep;
+    if( new_rows_count < 20'000 || m_UpdatesSinceIconSweep >= 64 ) {
+        m_UpdatesSinceIconSweep = 0;
+        IconRepositoryCleaner{*m_IconRepository, *m_Data}.SweepUnusedSlots();
+    }
 
     auto block = ^(PanelListViewRowView *row_view, NSInteger rowIndex) {
       const int row = static_cast<int>(rowIndex);

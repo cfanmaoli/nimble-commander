@@ -728,6 +728,26 @@ bool Listing::HasDisplayFilename(unsigned _ind) const
     return m_DisplayFilenames.has(_ind);
 }
 
+bool Listing::HasAnyDisplayFilenames() const noexcept
+{
+    return m_DisplayFilenames.size() != 0;
+}
+
+bool Listing::HasAnyAddTimes() const noexcept
+{
+    return m_AddTimes.size() != 0;
+}
+
+bool Listing::HasAnySymlinks() const noexcept
+{
+    return m_Symlinks.size() != 0;
+}
+
+bool Listing::HasAnyTags() const noexcept
+{
+    return !m_Tags.empty();
+}
+
 const std::string &Listing::DisplayFilename(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);

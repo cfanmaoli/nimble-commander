@@ -380,3 +380,33 @@ FSEvents 的回调可能一秒内来几十次（解压、批量拷贝）。回�
 `Source/Panel/tests/PanelData_UT.mm`：`ApplyPatchedListing`（删除+追加、只追加）验证条目数、名字查找、
 排序顺序、以及选择状态在补丁后仍然保留。
 
+
+---
+
+## 8. 第三轮：把增量刷新的 305 ms 拆开
+
+加了更细的埋点后，单次目录变动的成本分布如下（1M 目录，k=1）：
+
+| 阶段 | Brief 布局（默认） | List 布局 |
+|---|---|---|
+| 重建 listing（复制 100 万条目）| 152–171 ms | 151–163 ms |
+| ├ 复制条目 | ~110 ms | ~97–107 ms |
+| └ `Listing::Build`（含 1M 次 CFString）| ~54 ms | ~54 ms |
+| 模型增量应用 | 11 ms | 11 ms |
+| 视图更新 | **133 ms** | **16 ms** |
+| 合计 | ~305 ms | **~180 ms** |
+
+两个结论：
+
+1. **List 布局下单次变动已经降到 ~180 ms**（改前 5.1 s，约 28 倍）。
+2. **Brief 布局（默认布局）多出的 133 ms 全部是 `NCPanelBriefView onDataChanged` 里的
+   `[m_CollectionView reloadData]` + `NCPanelBriefViewDynamicWidthLayout prepareLayout`**：
+   该布局引擎对 100 万个 item 做全量重排。这不是 O(n) 的小常数问题，而是需要增量布局引擎才
+   能真正解决的，先记在待办里；顺带把 Brief 视图的图标表清理也改成了每 64 次更新一次。
+
+顺带做的小优化：
+
+- `ProducePatchedListing` 现在会先查一次 `Listing::HasAnyDisplayFilenames()/HasAnyAddTimes()/
+  HasAnySymlinks()/HasAnyTags()`，整类属性不存在时跳过 100 万次 `has()` 调用。
+- 图标表清理在两个视图里都改成「小列表每次都做，大列表每 64 次做一次」。
+

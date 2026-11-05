@@ -237,8 +237,20 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     in.unix_modes.reserve(total);
     in.unix_types.reserve(total);
 
+    // the per-item attribute checks are not free - skip the whole category when a listing simply
+    // doesn't carry it
+    struct Attrs {
+        bool display_filenames;
+        bool add_times;
+        bool symlinks;
+        bool tags;
+    };
+    const auto attrs_of = [](const VFSListing &_l) {
+        return Attrs{_l.HasAnyDisplayFilenames(), _l.HasAnyAddTimes(), _l.HasAnySymlinks(), _l.HasAnyTags()};
+    };
+
     unsigned n = 0;
-    const auto append_item = [&](const VFSListing &_l, unsigned _i) {
+    const auto append_item = [&](const VFSListing &_l, const Attrs &_attrs, unsigned _i) {
         in.filenames.emplace_back(_l.Filename(_i));
         in.unix_modes.emplace_back(_l.UnixMode(_i));
         in.unix_types.emplace_back(_l.UnixType(_i));
@@ -251,33 +263,51 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
         in.uids.insert(n, _l.HasUID(_i) ? _l.UID(_i) : 0);
         in.gids.insert(n, _l.HasGID(_i) ? _l.GID(_i) : 0);
         in.unix_flags.insert(n, _l.HasUnixFlags(_i) ? _l.UnixFlags(_i) : 0);
-        if( _l.HasDisplayFilename(_i) )
+        if( _attrs.display_filenames && _l.HasDisplayFilename(_i) )
             in.display_filenames.insert(n, _l.DisplayFilename(_i));
-        if( _l.HasAddTime(_i) )
+        if( _attrs.add_times && _l.HasAddTime(_i) )
             in.add_times.insert(n, _l.AddTime(_i));
-        if( _l.HasSymlink(_i) )
+        if( _attrs.symlinks && _l.HasSymlink(_i) )
             in.symlinks.insert(n, _l.Symlink(_i));
-        if( _l.HasTags(_i) ) {
+        if( _attrs.tags && _l.HasTags(_i) ) {
             const auto tags = _l.Tags(_i);
             in.tags.emplace(n, std::vector<utility::Tags::Tag>(tags.begin(), tags.end()));
         }
         ++n;
     };
 
+    const Attrs base_attrs = attrs_of(_base);
+    const auto perf_copy_begin = std::chrono::steady_clock::now();
     size_t removed_pos = 0;
     for( unsigned i = 0, e = _base.Count(); i != e; ++i ) {
         if( removed_pos < _removed.size() && _removed[removed_pos] == i ) {
             ++removed_pos;
             continue;
         }
-        append_item(_base, i);
+        append_item(_base, base_attrs, i);
     }
-    for( auto &ptr : _appended )
+    for( auto &ptr : _appended ) {
+        const Attrs attrs = attrs_of(*ptr);
         for( unsigned i = 0, e = ptr->Count(); i != e; ++i )
-            append_item(*ptr, i);
+            append_item(*ptr, attrs, i);
+    }
 
     assert(n == total);
-    return VFSListing::Build(std::move(in));
+    const auto perf_copied = std::chrono::steady_clock::now();
+    VFSListingPtr patched = VFSListing::Build(std::move(in));
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] patchcopy n=%zu copy=%.1fms build=%.1fms\n",
+                     total,
+                     ms(perf_copy_begin, perf_copied),
+                     ms(perf_copied, perf_end));
+    }
+    return patched;
 }
 
 } // namespace
@@ -739,8 +769,11 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     m_Data.ApplyPatchedListing(_listing, _removed, _appended);
     const auto perf_patched = std::chrono::steady_clock::now();
     m_DataGeneration++;
+    const auto perf_view_begin = std::chrono::steady_clock::now();
     [m_View dataUpdated];
+    const auto perf_view_done = std::chrono::steady_clock::now();
     [m_QuickSearch dataUpdated];
+    const auto perf_qs_done = std::chrono::steady_clock::now();
     if( [self checkAgainstRequestedFocusing] ) {
         Log::Trace("Cursor position was changed by requested focusing, skipping RestoredCursorPosition()");
     }
@@ -756,10 +789,12 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
         std::fprintf(stderr,
-                     "[perf] incr.ui n=%u model=%.1fms view=%.1fms total=%.1fms\n",
+                     "[perf] incr.ui n=%u model=%.1fms view=%.1fms qs=%.1fms rest=%.1fms total=%.1fms\n",
                      _listing->Count(),
                      ms(perf_begin, perf_patched),
-                     ms(perf_patched, perf_end),
+                     ms(perf_view_begin, perf_view_done),
+                     ms(perf_view_done, perf_qs_done),
+                     ms(perf_qs_done, perf_end),
                      ms(perf_begin, perf_end));
     }
 }

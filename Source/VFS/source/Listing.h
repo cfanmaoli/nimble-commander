@@ -137,6 +137,13 @@ public:
     std::span<const utility::Tags::Tag> Tags(unsigned _ind) const; // will return {} if there are no tags
 
     bool HasDisplayFilename(unsigned _ind) const;
+
+    // Cheap whole-listing queries: true if at least one entry carries the corresponding attribute.
+    // Useful to skip per-item checks when a listing simply doesn't have them.
+    [[nodiscard]] bool HasAnyDisplayFilenames() const noexcept;
+    [[nodiscard]] bool HasAnyAddTimes() const noexcept;
+    [[nodiscard]] bool HasAnySymlinks() const noexcept;
+    [[nodiscard]] bool HasAnyTags() const noexcept;
     const std::string &DisplayFilename(unsigned _ind) const;
     CFStringRef DisplayFilenameCF(unsigned _ind) const;
 #ifdef __OBJC__
