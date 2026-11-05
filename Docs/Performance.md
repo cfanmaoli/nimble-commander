@@ -439,3 +439,31 @@ FSEvents 的回调可能一秒内来几十次（解压、批量拷贝）。回�
 **这一阶段的“渐进式首屏”还没有做**：真正的首屏 <100 ms 需要流式枚举（边枚举边出名字），
 这属于阶段 D 的惰性属性工作，下一轮处理。
 
+
+---
+
+## 10. 第五轮：CFString 惰性化 + ASCII 快排（阶段 D 的一部分）
+
+`Listing::Build` 原本给每个条目预建一个 CFString，1M 项就是 100 万次分配（47 ms + 约 50 MB）。
+现在：
+
+- **CFString 惰性化**：`m_FilenamesCF` 改成 `std::atomic<CFStringRef>[]`，`FilenameCF()` 命中才建、
+  未命中时加锁建一次（双检），析构时逐个 `CFRelease`。
+- **排序不再需要 CFString**：`IndirectListingComparator::CompareNames()` 对纯 ASCII 名字直接按字节
+  比较（大小写不敏感 = `tolower` 逐字节比较，与 `CFStringCompare(kCFCompareCaseInsensitive)` 对
+  ASCII 完全等价）；非 ASCII 或“自然排序”才回落到原来的 CFString 比较。
+- **raw 名排序并行化**：`DoRawSort()` 超过 1 万项改用 `pstld::sort`。
+
+实测（1M 目录）：
+
+| 指标 | 改前 | 改后 |
+|---|---|---|
+| `Listing::Build` | 55 ms | **11 ms**（其中 filenames 47 → 3.6 ms）|
+| `prepare`（排序+索引+统计）| 205 ms | **~175 ms** |
+| 单次目录变动（List 布局）| ~180 ms | **~140 ms** |
+| 载入后常驻内存 | 456 MB | **419 MB** |
+
+`clang-format` 通过、9 个单元测试套件全绿（含 `Comparators_UT` 的排序语义校验）。
+内存离 250 MB 的目标还有距离：剩下的主要是 listing 里 7 个 8 字节属性和 4 个 int 索引向量，
+要做紧凑存储（name arena + 位域 + 按需属性）才能达到。
+

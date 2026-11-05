@@ -130,7 +130,7 @@ Model::PreparedLoad Model::PrepareLoad(const VFSListingPtr &_listing,
     scratch.m_HardFiltering.text.OnPanelDataLoad();
     scratch.m_SoftFiltering.OnPanelDataLoad();
 
-    // both sorts are independent - run them concurrently, exactly like Load() used to
+    // Both sorts are independent - run them concurrently, exactly like Load() always did
     {
         const base::DispatchGroup exec_group{base::DispatchGroup::High};
         exec_group.Run([&] { DoRawSort(*scratch.m_Listing, scratch.m_EntriesByRawName); });
@@ -584,7 +584,11 @@ static void DoRawSort(const VFSListing &_from, std::vector<unsigned> &_to)
 {
     _to.resize(_from.Count());
     std::ranges::iota(_to, 0);
-    std::ranges::sort(_to, [&_from](unsigned _1, unsigned _2) { return _from.Filename(_1) < _from.Filename(_2); });
+    const auto less = [&_from](unsigned _1, unsigned _2) { return _from.Filename(_1) < _from.Filename(_2); };
+    if( _to.size() < g_ParallelSortThresh )
+        std::sort(_to.begin(), _to.end(), less);
+    else
+        pstld::sort(_to.begin(), _to.end(), less);
 }
 
 void Model::SetSortMode(struct SortMode _mode)

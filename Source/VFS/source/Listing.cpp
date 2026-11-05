@@ -111,7 +111,14 @@ static void Compress(ListingInput &_input)
 
 Listing::Listing() = default;
 
-Listing::~Listing() = default;
+Listing::~Listing()
+{
+    if( !m_FilenamesCF )
+        return;
+    for( size_t i = 0, e = m_ItemsCount; i != e; ++i )
+        if( const CFStringRef s = m_FilenamesCF[i].load(std::memory_order_relaxed); s != nullptr )
+            CFRelease(s);
+}
 
 template <class It>
 static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> CopyToUniquePtr(It first, It last)
@@ -411,17 +418,18 @@ void Listing::BuildFilenames()
     size_t i = 0;
     const size_t e = m_ItemsCount;
 
-    m_FilenamesCF = std::make_unique<base::CFString[]>(e);
+    m_FilenamesCF = std::make_unique<std::atomic<CFStringRef>[]>(e);
+    for( size_t n = 0; n != e; ++n )
+        m_FilenamesCF[n].store(nullptr, std::memory_order_relaxed);
     m_ExtensionOffsets = std::make_unique<uint16_t[]>(e);
     m_DisplayFilenamesCF = variable_container<base::CFString>(variable_container<>::type::sparse);
 
     for( ; i != e; ++i ) {
         const auto &current = m_Filenames[i];
 
-        // build Cocoa strings for filenames.
-        // if filename is badly broken and UTF8 is invalid - treat it like MacRoman encoding
-        m_FilenamesCF[i] = UTF8WithFallback(current);
-
+        // NB: the filenames are not bridged into CFStrings here - that happens lazily in
+        // FilenameCF(), see the comment in the header. Display names are few, so they are built
+        // eagerly.
         if( m_DisplayFilenames.has(static_cast<unsigned>(i)) )
             m_DisplayFilenamesCF.insert(static_cast<unsigned>(i),
                                         UTF8WithFallback(m_DisplayFilenames[static_cast<unsigned>(i)]));
@@ -474,7 +482,24 @@ const std::string &Listing::Filename(unsigned _ind) const
 CFStringRef Listing::FilenameCF(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return *m_FilenamesCF[_ind];
+    if( const CFStringRef cached = m_FilenamesCF[_ind].load(std::memory_order_acquire); cached != nullptr )
+        return cached;
+    return MaterializeFilenameCF(_ind);
+}
+
+CFStringRef Listing::MaterializeFilenameCF(unsigned _ind) const
+{
+    const std::lock_guard<std::mutex> lock(m_FilenamesCFLock);
+    if( const CFStringRef cached = m_FilenamesCF[_ind].load(std::memory_order_relaxed); cached != nullptr )
+        return cached;
+    // if the filename is badly broken and UTF8 is invalid - treat it like MacRoman encoding
+    const base::CFString created = UTF8WithFallback(m_Filenames[_ind]);
+    if( !created )
+        return nullptr;
+    const CFStringRef raw = *created;
+    CFRetain(raw); // the array takes its own reference
+    m_FilenamesCF[_ind].store(raw, std::memory_order_release);
+    return raw;
 }
 
 std::string Listing::Path(unsigned _ind) const

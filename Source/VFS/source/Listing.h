@@ -8,6 +8,8 @@
 #include <Utility/Tags.h>
 #include <chrono>
 #include <span>
+#include <atomic>
+#include <mutex>
 #include <ankerl/unordered_dense.h>
 
 /**
@@ -175,13 +177,17 @@ private:
     Listing();
 
     void BuildFilenames();
+    CFStringRef MaterializeFilenameCF(unsigned _ind) const;
 
     unsigned m_ItemsCount;
     time_t m_CreationTime;
     std::chrono::nanoseconds m_CreationTicks; // the kernel ticks stamp at which the Listing was created
     std::string m_Title;
     std::unique_ptr<std::string[]> m_Filenames;
-    std::unique_ptr<base::CFString[]> m_FilenamesCF;
+    // Filenames are bridged into CFStrings lazily: most of the items of a huge listing are never
+    // displayed, and sorting can compare plain strings (see IndirectListingComparator).
+    mutable std::unique_ptr<std::atomic<CFStringRef>[]> m_FilenamesCF;
+    mutable std::mutex m_FilenamesCFLock;
     std::unique_ptr<uint16_t[]> m_ExtensionOffsets;
     std::unique_ptr<mode_t[]> m_UnixModes;
     std::unique_ptr<uint8_t[]> m_UnixTypes;
