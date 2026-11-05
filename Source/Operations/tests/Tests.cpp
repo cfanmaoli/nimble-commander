@@ -1,5 +1,10 @@
 // Copyright (C) 2019-2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <algorithm>
+#include <atomic>
+#include <cstdlib>
+#include <iostream>
+#include <thread>
+#include <unistd.h>
 #include <catch2/catch_all.hpp>
 
 #define GTEST_DONT_DEFINE_FAIL 1
@@ -63,22 +68,38 @@ TempTestDir::~TempTestDir()
 
 TempTestDmg::TempTestDmg(TempTestDir &_test_dir)
 {
+    // hdiutil is not always cooperative, especially on CI, and a leftover mount of a previous image
+    // makes attaching a new one with the same volume name fail - use a unique name and retry.
+    static std::atomic_uint instances = 0;
+    const auto volume_name = "nc_test_" + std::to_string(::getpid()) + "_" + std::to_string(instances++);
     const auto dmg_path = _test_dir.directory / "tmp_image.dmg";
     const auto create_cmd =
-        "/usr/bin/hdiutil create -size 1m -fs HFS+ -volname SomethingWickedThisWayComes12345 " + dmg_path.native();
-    const auto mount_cmd = "/usr/bin/hdiutil attach " + dmg_path.native();
+        "/usr/bin/hdiutil create -size 1m -fs HFS+ -volname " + volume_name + " " + dmg_path.native();
+    if( Execute(create_cmd) != 0 )
+        return;
 
-    REQUIRE(Execute(create_cmd) == 0);
-    REQUIRE(Execute(mount_cmd) == 0);
+    const auto mount_cmd = "/usr/bin/hdiutil attach -nobrowse " + dmg_path.native();
+    bool mounted = false;
+    for( int attempt = 0; attempt != 3 && !mounted; ++attempt ) {
+        mounted = Execute(mount_cmd) == 0;
+        if( !mounted )
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    if( !mounted )
+        return;
 
-    directory = "/Volumes/SomethingWickedThisWayComes12345";
-    REQUIRE(WaitUntilNativeFSManSeesVolumeAtPath(directory, std::chrono::seconds(5)));
+    const auto volume_path = std::filesystem::path("/Volumes") / volume_name;
+    if( !WaitUntilNativeFSManSeesVolumeAtPath(volume_path, std::chrono::seconds(15)) ) {
+        Execute("/usr/bin/hdiutil detach " + volume_path.native());
+        return;
+    }
+    directory = volume_path;
 }
 
 TempTestDmg::~TempTestDmg()
 {
-    const auto unmount_cmd = "/usr/bin/hdiutil detach /Volumes/SomethingWickedThisWayComes12345";
-    Execute(unmount_cmd);
+    if( !directory.empty() )
+        Execute("/usr/bin/hdiutil detach " + directory.native());
 }
 
 static int Execute(const std::string &_command)
@@ -90,7 +111,10 @@ static int Execute(const std::string &_command)
     while( c.running() && pipe_stream && std::getline(pipe_stream, line) && !line.empty() )
         ;
     c.wait();
-    return c.exit_code();
+    const int rc = c.exit_code();
+    if( rc != 0 )
+        std::cerr << "Command failed with code " << rc << ": " << _command << '\n';
+    return rc;
 }
 
 static bool RunMainLoopUntilExpectationOrTimeout(std::chrono::nanoseconds _timeout, std::function<bool()> _expectation)

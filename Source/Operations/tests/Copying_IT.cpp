@@ -1123,6 +1123,8 @@ TEST_CASE(PREFIX "Moving a locked native regular item to a separate volume")
     // sections.
     TempTestDir dir;
     const TempTestDmg dmg(dir);
+    if( !dmg.Mounted() )
+        SKIP("hdiutil could not create or mount a temporary image");
     const auto host = TestEnv().vfs_native;
     const auto filename = "old_name";
     const auto new_filename = "old_name";
