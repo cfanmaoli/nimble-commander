@@ -133,6 +133,8 @@ static void HeatUpConfigValues()
 @property(nonatomic, readonly)
     bool receivesUpdateNotifications; // returns true if underlying vfs will notify controller that content has changed
 
+- (void)accumulateChangedNames:(const std::vector<std::string> &)_names;
+- (void)schedulePendingRefresh;
 - (void)refreshPanelIncrementallyWithChangedNames:(std::vector<std::string>)_names;
 - (void)applyPatchedListing:(const VFSListingPtr &)_listing
                     removed:(const std::vector<unsigned> &)_removed
@@ -287,6 +289,12 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     // VFS changes observation
     vfs::HostDirObservationTicket m_UpdatesObservationTicket;
 
+    // Names of the entries reported as changed, coalesced over a short time window so that a burst
+    // of changes (e.g. unpacking an archive into a directory) results in a handful of patches
+    // instead of a reload per file.
+    std::vector<std::string> m_PendingChangedNames;
+    bool m_PendingRefreshScheduled;
+
     // VFS listing fetch flags
     unsigned long m_VFSFetchingFlags;
 
@@ -382,6 +390,7 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
         m_NextActivityTicket = 1;
         m_DataGeneration = 0;
         m_IsAnythingWorksInBackground = false;
+        m_PendingRefreshScheduled = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
 
@@ -555,6 +564,49 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     [m_View setNeedsDisplay];
 }
 
+// Coalesces the changes reported by FSEvents over a short window: a bulk operation then costs a
+// single patch instead of one per reported file.
+- (void)accumulateChangedNames:(const std::vector<std::string> &)_names
+{
+    if( _names.empty() )
+        return;
+    m_PendingChangedNames.insert(m_PendingChangedNames.end(), _names.begin(), _names.end());
+    [self schedulePendingRefresh];
+}
+
+- (void)schedulePendingRefresh
+{
+    if( m_PendingRefreshScheduled )
+        return;
+    m_PendingRefreshScheduled = true;
+    __weak PanelController *weak_self = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+      PanelController *const pc = weak_self;
+      if( pc == nil )
+          return;
+      pc->m_PendingRefreshScheduled = false;
+
+      // don't step on the toes of an operation that is already running - try again a bit later
+      if( !pc->m_DirectoryLoadingQ.Empty() || pc->m_DirectoryReLoadingQ.Length() > 0 ) {
+          [pc schedulePendingRefresh];
+          return;
+      }
+
+      std::vector<std::string> names;
+      names.swap(pc->m_PendingChangedNames);
+      if( names.empty() )
+          return;
+      std::ranges::sort(names);
+      names.erase(std::ranges::unique(names).begin(), names.end());
+      if( names.size() > 4096 ) {
+          // too many to patch, the bookkeeping would cost more than a reload
+          [pc refreshPanel];
+          return;
+      }
+      [pc refreshPanelIncrementallyWithChangedNames:std::move(names)];
+    });
+}
+
 - (void)refreshPanelIncrementallyWithChangedNames:(std::vector<std::string>)_names
 {
     Log::Debug("[PanelController refreshPanelIncrementallyWithChangedNames] {} name(s)", _names.size());
@@ -563,8 +615,9 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
         [self refreshPanel];
         return;
     }
-    if( !m_DirectoryLoadingQ.Empty() || m_DirectoryReLoadingQ.Length() >= 2 ) {
-        // a full (re)load is already on its way - it will pick the changes up
+    if( !m_DirectoryLoadingQ.Empty() || m_DirectoryReLoadingQ.Length() > 0 ) {
+        // a load/reload is already in flight - replay these names once it's finished
+        [self accumulateChangedNames:_names];
         return;
     }
 
@@ -965,6 +1018,7 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     // update directory changes notification ticket
     __weak PanelController *weakself = self;
     m_UpdatesObservationTicket.reset();
+    m_PendingChangedNames.clear();
     if( self.isUniform ) {
         const std::string current_directory_path = self.currentDirectoryPath;
         auto dir_change_callback = [=](std::span<const std::string> _changed_names) {
@@ -983,7 +1037,7 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
                     return;
                 }
                 if( !changed_names.empty() )
-                    [pc refreshPanelIncrementallyWithChangedNames:changed_names];
+                    [pc accumulateChangedNames:changed_names];
                 else
                     [pc refreshPanel];
             });
