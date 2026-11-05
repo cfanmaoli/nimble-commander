@@ -259,7 +259,8 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
 
 int Fetching::ReadDirAttributesBulk(const int _dir_fd,
                                     const std::function<void(size_t _fetched_now)> &_cb_fetch,
-                                    const Callback &_cb_param)
+                                    const Callback &_cb_param,
+                                    const size_t _max_entries)
 {
     attrlist attr_list;
     memset(&attr_list, 0, sizeof(attr_list));
@@ -280,6 +281,7 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
     // vs 176 calls with 1 MiB, measured ~5% faster end-to-end).
     constexpr size_t attr_buf_size = 1024 * 1024;
     const std::unique_ptr<char[]> attr_buf = std::make_unique<char[]>(attr_buf_size);
+    size_t processed_entries = 0;
     CallbackParams params;
     while( true ) {
         const int retcount = getattrlistbulk(_dir_fd, &attr_list, &attr_buf[0], attr_buf_size, options);
@@ -293,6 +295,8 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
 
         const char *entry_start = &attr_buf[0];
         for( int index = 0; index < retcount; index++ ) {
+            if( _max_entries != 0 && processed_entries >= _max_entries )
+                return 0;
             const char *field = entry_start;
             const uint32_t length = *reinterpret_cast<const uint32_t *>(field);
             field += sizeof(uint32_t);
@@ -418,6 +422,7 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
             }
 
             _cb_param(params);
+            ++processed_entries;
         }
     }
 }

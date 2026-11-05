@@ -236,6 +236,15 @@ public:
                                                                       unsigned long _flags,                          //
                                                                       const VFSCancelChecker &_cancel_checker = {}); //
 
+    // Produces a listing that contains at most '_max_items' entries of the directory. Hosts that
+    // can't do such a partial enumeration return an empty expected value - the caller then has to
+    // go with the full FetchDirectoryListing(). Used to get the first screenful of a huge
+    // directory on the screen without waiting for the whole enumeration.
+    virtual std::expected<VFSListingPtr, Error> FetchDirectoryListingPreview(std::string_view _path,
+                                                                             size_t _max_items,
+                                                                             unsigned long _flags,
+                                                                             const VFSCancelChecker &_cancel_checker);
+
     // Produces a regular listing, consisting of a single element.
     // If there's no overriden implementaition in derived class, VFSHost will try to produce this listing with Stat().
     virtual std::expected<VFSListingPtr, Error> FetchSingleItemListing(std::string_view _path_to_item,                //

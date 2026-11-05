@@ -53,6 +53,11 @@ public:
 
     HostDirObservationTicket ObserveDirectoryChanges(std::string_view _path, std::function<void()> _handler) override;
 
+    std::expected<VFSListingPtr, Error> FetchDirectoryListingPreview(std::string_view _path,
+                                                                     size_t _max_items,
+                                                                     unsigned long _flags,
+                                                                     const VFSCancelChecker &_cancel_checker) override;
+
     HostDirObservationTicket ObserveDirectoryChangesWithPaths(std::string_view _path,
                                                               DirectoryChangePathsHandler _handler) override;
 
@@ -115,6 +120,10 @@ public:
     nc::utility::NativeFSManager &NativeFSManager() const noexcept;
 
 private:
+    std::expected<VFSListingPtr, Error> FetchDirectoryListingImpl(std::string_view _path,
+                                                                  unsigned long _flags,
+                                                                  const VFSCancelChecker &_cancel_checker,
+                                                                  size_t _max_items);
     static uint32_t MergeUnixFlags(uint32_t _symlink_flags, uint32_t _target_flags) noexcept;
 
     // This function only allows fetching tags if it was originally requsted and the path does not lead to a network

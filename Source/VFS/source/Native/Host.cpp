@@ -71,7 +71,26 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
                                                                       const unsigned long _flags,
                                                                       const VFSCancelChecker &_cancel_checker)
 {
-    Log::Trace("NativeHost::FetchDirectoryListing() called with path='{}',_flags: {}", _path, _flags);
+    return FetchDirectoryListingImpl(_path, _flags, _cancel_checker, 0);
+}
+
+std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingPreview(std::string_view _path,
+                                                                             size_t _max_items,
+                                                                             const unsigned long _flags,
+                                                                             const VFSCancelChecker &_cancel_checker)
+{
+    if( _max_items == 0 )
+        return std::unexpected(Error{Error::POSIX, EINVAL});
+    return FetchDirectoryListingImpl(_path, _flags | VFSFlags::F_NoDotDot, _cancel_checker, _max_items);
+}
+
+std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::string_view _path,
+                                                                          const unsigned long _flags,
+                                                                          const VFSCancelChecker &_cancel_checker,
+                                                                          const size_t _max_items)
+{
+    Log::Trace(
+        "NativeHost::FetchDirectoryListingImpl() called with path='{}',_flags: {}, max: {}", _path, _flags, _max_items);
     const auto perf_begin = std::chrono::steady_clock::now();
 
     using namespace native;
@@ -168,7 +187,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
 
     // when Admin Mode is on - we use different fetch route
     const int ret =
-        is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
+        is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items)
                      : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});

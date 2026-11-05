@@ -53,10 +53,13 @@ public:
     /**
      * the most performant way to fetch data
      * returns 0 on success or errno value on error
+     * '_max_entries' can be used to stop the enumeration early, e.g. to get a preview of a
+     * directory with a million items. Zero means "no limit".
      */
     static int ReadDirAttributesBulk(const int _dir_fd,
                                      const std::function<void(size_t _fetched_now)> &_cb_fetch,
-                                     const Callback &_cb_param);
+                                     const Callback &_cb_param,
+                                     size_t _max_entries = 0);
 };
 
 } // namespace nc::vfs::native

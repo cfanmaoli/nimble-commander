@@ -467,3 +467,32 @@ FSEvents 的回调可能一秒内来几十次（解压、批量拷贝）。回�
 内存离 250 MB 的目标还有距离：剩下的主要是 listing 里 7 个 8 字节属性和 4 个 int 索引向量，
 要做紧凑存储（name arena + 位域 + 按需属性）才能达到。
 
+
+---
+
+## 11. 第六轮：首屏预览（阶段 D 的首屏部分）
+
+打开 100 万项目录时，用户要盯着空白窗口等 2.2 秒（内核枚举），这是整个流程里最难受的部分。
+现在枚举可以提前收工：
+
+- `Fetching::ReadDirAttributesBulk()` / `NativeHost::FetchDirectoryListingImpl()` 增加 `_max_items`，
+  读满即停。
+- 新虚函数 `Host::FetchDirectoryListingPreview(path, max_items, flags)`：默认返回 ENOTSUP（其它 host
+  不支持就算了），`NativeHost` 覆盖它。
+- `PanelController` 在正式枚举之前先取 4096 条（约 23 ms），`PrepareLoad`（约 3 ms）之后立刻装进面板，
+  然后才继续读完整目录；完整列表到了再替换。只有目录确实大于 4096 条时才发预览，小目录不受影响。
+  预览的安装带“旧 listing 指针”检查：如果期间已经有更新的列表装上去了，预览就直接丢弃。
+
+实测（1M 目录）：
+
+```
+[perf] preview n=4096 ready=25.8ms
+[perf] fetch   n=1000002 enum=2191.2ms build=11.9ms total=2203.3ms
+```
+
+**首屏从 ~2.2 s 降到 ~30 ms**（含准备与视图更新），完整列表仍在大约 2.4 s 后就位。
+新增单元测试覆盖 preview 的条数上限、超量请求、以及 0 的非法参数。
+
+注意：预览期间面板里是完整的 4096 条真实条目，不是占位符——对它们做复制/删除等操作是安全的；
+完整列表到达时会整体替换（行数变化走 `noteNumberOfRowsChanged`）。
+

@@ -1319,6 +1319,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                                           sortMode:(data::SortMode)_sort_mode
                                         hardFilter:(data::HardFilter)_hard_filter
                                         softFilter:(data::TextualFilter)_soft_filter
+                                   previousListing:(const VFSListingPtr &)_previous_listing
 {
     assert(_request != nullptr);
     assert(_request->VFS != nullptr);
@@ -1332,6 +1333,37 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         auto directory = _request->RequestedDirectory;
         auto &vfs = *_request->VFS;
         const auto canceller = VFSCancelChecker([&] { return m_DirectoryLoadingQ.IsStopped(); });
+
+        // Showing nothing for the seconds a huge directory takes to enumerate is the worst part of
+        // opening it. Fetch the first screenful right away and put it on screen while the rest is
+        // still being read.
+        {
+            static constexpr size_t preview_items = 4096;
+            const auto perf_preview_begin = std::chrono::steady_clock::now();
+            const std::expected<VFSListingPtr, Error> preview =
+                vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller);
+            if( preview && (*preview)->Count() >= preview_items ) {
+                const auto prepared_preview = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
+                    *preview, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
+                if( std::getenv("NC_PERF_LOG") != nullptr ) {
+                    using namespace std::chrono;
+                    const auto ms = duration_cast<microseconds>(steady_clock::now() - perf_preview_begin).count();
+                    std::fprintf(stderr,
+                                 "[perf] preview n=%u ready=%.1fms\n",
+                                 (*preview)->Count(),
+                                 static_cast<double>(ms) / 1000.0);
+                }
+                dispatch_to_main_queue([self, prepared_preview, _previous_listing] {
+                    // don't clobber anything that may have been installed in the meantime
+                    if( m_Data.ListingPtr() != _previous_listing )
+                        return;
+                    m_Data.InstallLoad(std::move(*prepared_preview));
+                    m_DataGeneration++;
+                    [m_View dataUpdated];
+                });
+            }
+        }
+
         const std::expected<VFSListingPtr, Error> listing =
             vfs.FetchDirectoryListing(directory, m_VFSFetchingFlags, canceller);
         if( _request->LoadingResultCallback ) {
@@ -1416,15 +1448,21 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         const std::expected<void, Error> result = [self doGoToDirWithContext:_request
                                                                     sortMode:sort_mode
                                                                   hardFilter:hard_filtering
-                                                                  softFilter:soft_filtering];
+                                                                  softFilter:soft_filtering
+                                                             previousListing:m_Data.ListingPtr()];
         return result;
     }
     else {
         if( !m_DirectoryLoadingQ.Empty() )
             return {};
 
+        const VFSListingPtr previous_listing = m_Data.ListingPtr();
         m_DirectoryLoadingQ.Run([=] {
-            [self doGoToDirWithContext:_request sortMode:sort_mode hardFilter:hard_filtering softFilter:soft_filtering];
+            [self doGoToDirWithContext:_request
+                              sortMode:sort_mode
+                            hardFilter:hard_filtering
+                            softFilter:soft_filtering
+                       previousListing:previous_listing];
         });
         return {};
     }

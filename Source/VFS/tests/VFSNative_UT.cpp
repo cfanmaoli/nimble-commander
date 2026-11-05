@@ -256,6 +256,35 @@ TEST_CASE(PREFIX "FetchDirectoryListing reads symlink value and resolves target 
     }
 }
 
+TEST_CASE(PREFIX "FetchDirectoryListingPreview stops at the requested amount")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_preview_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 20; ++i )
+        std::ofstream(root / ("f" + std::to_string(i)));
+
+    const auto full = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot);
+    REQUIRE(full);
+    CHECK((*full)->Count() == 20);
+
+    const auto preview = host().FetchDirectoryListingPreview(root.c_str(), 8, Flags::F_NoDotDot, {});
+    REQUIRE(preview);
+    CHECK((*preview)->Count() == 8);
+    for( const auto &item : **preview )
+        CHECK(std::filesystem::exists(root / item.Filename()));
+
+    // a limit bigger than the directory itself returns everything
+    const auto all = host().FetchDirectoryListingPreview(root.c_str(), 100, Flags::F_NoDotDot, {});
+    REQUIRE(all);
+    CHECK((*all)->Count() == 20);
+
+    // zero means "no limit is not allowed", the caller has to ask for a real number
+    const auto zero = host().FetchDirectoryListingPreview(root.c_str(), 0, Flags::F_NoDotDot, {});
+    CHECK(!zero);
+}
+
 } // namespace VFSNativeTests
 
 #undef PREFIX
