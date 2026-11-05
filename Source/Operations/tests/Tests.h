@@ -19,6 +19,8 @@ struct TempTestDir {
 struct TempTestDmg {
     TempTestDmg(TempTestDir &_test_dir);
     ~TempTestDmg();
+    // False when the image could not be created or mounted - the tests using it should skip then.
+    [[nodiscard]] bool Mounted() const noexcept { return !directory.empty(); }
     std::filesystem::path directory;
 };
 
