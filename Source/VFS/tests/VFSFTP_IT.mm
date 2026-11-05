@@ -312,7 +312,10 @@ TEST_CASE(PREFIX "big files reading cancellation")
         finished = true;
     }};
 
-    const auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(1);
+    // The point of the assertion is that Close() doesn't hang forever - it used to be an infinite
+    // wait. A generous deadline keeps it meaningful without failing on a slow CI machine, where
+    // tearing down a 200 MB FTP transfer can take much longer than a second.
+    const auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(15);
     while( !finished ) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         REQUIRE((std::chrono::system_clock::now() < deadline));
