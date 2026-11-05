@@ -470,7 +470,7 @@ DQ
                                     <action selector="ToggleViewHiddenFiles:" target="-1" id="Ayw-w8-zaF"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Flat View" tag="13180" keyEquivalent="b" id="FlV-fv-001">
+                            <menuItem title="Flat View" tag="13181" keyEquivalent="b" id="FlV-fv-001">
                                 <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
                                     <action selector="onToggleFlatView:" target="-1" id="FlV-fv-a01"/>

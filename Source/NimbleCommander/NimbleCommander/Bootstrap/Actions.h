@@ -85,7 +85,7 @@ static constexpr std::pair<const char*,int> g_ActionsTags[] = {
     {"menu.view.sorting_case_insens",                   13'162},
     {"menu.view.sorting_case_sens",                     13'163},
     {"menu.view.show_tabs",                             13'179},
-    {"menu.view.flat_view",                             13'180},
+    {"menu.view.flat_view",                             13'181},
     {"menu.view.show_toolbar",                          13'180},
     {"menu.view.show_terminal",                         13'190},
     {"menu.view.panels_position.move_up",               13'200},
