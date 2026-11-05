@@ -2,6 +2,7 @@
 #pragma once
 
 #include <VFS/VFSListing.h>
+#include "PanelDataItemVolatileData.h"
 #include "PanelDataSortMode.h"
 #include "PanelDataStatistics.h"
 #include "PanelDataFilter.h"
@@ -52,6 +53,40 @@ public:
     void Load(const VFSListingPtr &_listing, PanelType _type);
 
     void ReLoad(const VFSListingPtr &_listing);
+
+    /**
+     * The outcome of the heavy part of Load(): the volatile data, the sort orders, the filtering
+     * indices and the statistics. Produced by PrepareLoad().
+     */
+    struct PreparedLoad {
+        VFSListingPtr listing;
+        PanelType type = PanelType::Directory;
+        HardFilter hard_filtering;
+        TextualFilter soft_filtering;
+        std::vector<ItemVolatileData> volatile_data;
+        std::vector<unsigned> entries_by_raw_name;
+        std::vector<unsigned> entries_by_custom_sort;
+        std::vector<unsigned> reverse_to_custom_sort;
+        std::vector<unsigned> entries_by_soft_filtering;
+        Statistics statistics;
+    };
+
+    /**
+     * Does everything Load() does apart from touching the Model object itself: allocates the
+     * volatile data, runs both sorts, builds the filtering indices and computes the statistics.
+     * Safe to call from any thread - the model instance is left untouched.
+     */
+    [[nodiscard]] static PreparedLoad PrepareLoad(const VFSListingPtr &_listing,
+                                                  PanelType _type,
+                                                  SortMode _sort_mode,
+                                                  HardFilter _hard_filtering,
+                                                  TextualFilter _soft_filtering);
+
+    /**
+     * Installs the outcome of PrepareLoad(), the cheap remainder of Load().
+     * Must be called on the main thread.
+     */
+    void InstallLoad(PreparedLoad &&_prepared);
 
     /**
      * Applies a listing that was produced by patching the current one: the entries at

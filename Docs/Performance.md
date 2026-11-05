@@ -410,3 +410,32 @@ FSEvents 的回调可能一秒内来几十次（解压、批量拷贝）。回�
   HasAnySymlinks()/HasAnyTags()`，整类属性不存在时跳过 100 万次 `has()` 调用。
 - 图标表清理在两个视图里都改成「小列表每次都做，大列表每 64 次做一次」。
 
+
+---
+
+## 9. 第四轮：把模型构建挪出主线程（阶段 B）
+
+打开一个 100 万项的目录时，主线程原本要空等 200 ms 做建索引和排序。现在把它拆成两半：
+
+- `Model::PrepareLoad()`（静态、可在任意线程）：分配 volatile data、跑两次排序（仍然是并发的）、
+  建过滤索引、算统计。实现上是造一个临时的 `Model` 来复用现成的排序/过滤代码，不碰真正的模型。
+- `Model::InstallLoad()`（主线程）：只是把准备好的数组 move 进来，微秒级。
+- `Load()` 仍然存在，语义不变（= PrepareLoad + InstallLoad），所以所有既有调用方和测试不受影响。
+
+`PanelController` 在后台队列里 fetch 完之后直接 `PrepareLoad`，主线程只做 `InstallLoad`。
+排序顺序/过滤条件由主线程在派发前快照下来传进去（模型是主线程独占的）。
+
+实测（1M 目录，先 fetch 后 prepare）：
+
+```
+[perf] fetch   n=1000002 enum=2226.3ms build=55.6ms total=2282.1ms
+[perf] prepare n=1000002 vd=2.9ms sorts=198.8ms softfilter=0.2ms stats=5.3ms total=207.3ms
+[perf] ui      n=1000002 modelLoad=0.0ms dataUpdated=33.6ms tail=76.1ms total=109.8ms
+```
+
+主线程阻塞从 **205 ms → 0 ms**，UI 阶段从 **330 ms → 110 ms**，总墙钟基本不变（200 ms 的活挪到了后台）。
+新增单元测试验证 `PrepareLoad + InstallLoad` 与 `Load` 得到完全一致的状态。
+
+**这一阶段的“渐进式首屏”还没有做**：真正的首屏 <100 ms 需要流式枚举（边枚举边出名字），
+这属于阶段 D 的惰性属性工作，下一轮处理。
+

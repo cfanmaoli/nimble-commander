@@ -755,6 +755,32 @@ TEST_CASE(PREFIX "ReLoad a temporary listing")
     }
 }
 
+TEST_CASE("PrepareLoad and InstallLoad produce the same state as Load")
+{
+    const VFSListingPtr listing = ProduceDummyListing({"banana", "apple", "cherry", "date"});
+
+    Model directly;
+    directly.Load(listing, Model::PanelType::Directory);
+
+    Model prepared;
+    auto state = Model::PrepareLoad(
+        listing, Model::PanelType::Directory, directly.SortMode(), directly.HardFiltering(), directly.SoftFiltering());
+    prepared.InstallLoad(std::move(state));
+
+    REQUIRE(directly.RawEntriesCount() == prepared.RawEntriesCount());
+    REQUIRE(directly.SortedEntriesCount() == prepared.SortedEntriesCount());
+    CHECK(directly.Stats().total_entries_amount == prepared.Stats().total_entries_amount);
+
+    for( int i = 0; i != directly.SortedEntriesCount(); ++i ) {
+        CHECK(directly.EntryAtSortPosition(i).Filename() == prepared.EntryAtSortPosition(i).Filename());
+        CHECK(directly.RawIndexForSortIndex(i) == prepared.RawIndexForSortIndex(i));
+    }
+
+    // the lookups still work
+    CHECK(prepared.SortedIndexForName("apple") >= 0);
+    CHECK(prepared.SortedIndexForName("kiwi") == -1);
+}
+
 TEST_CASE("ApplyPatchedListing")
 {
     const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c", "d"});

@@ -1316,6 +1316,9 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 }
 
 - (std::expected<void, Error>)doGoToDirWithContext:(std::shared_ptr<DirectoryChangeRequest>)_request
+                                          sortMode:(data::SortMode)_sort_mode
+                                        hardFilter:(data::HardFilter)_hard_filter
+                                        softFilter:(data::TextualFilter)_soft_filter
 {
     assert(_request != nullptr);
     assert(_request->VFS != nullptr);
@@ -1341,6 +1344,10 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
         // TODO: need an ability to show errors at least
 
+        // do the expensive part of the model setup right here, on the background queue
+        const auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
+            *listing, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
+
         [self CancelBackgroundOperations]; // clean running operations if any
         dispatch_or_run_in_main_queue([=] {
             const auto perf_begin = std::chrono::steady_clock::now();
@@ -1349,7 +1356,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_FlatViewHost.reset();
             m_FlatViewRoot.clear();
             ++m_FlatViewGeneration;
-            m_Data.Load(*listing, data::Model::PanelType::Directory);
+            m_Data.InstallLoad(std::move(*prepared));
             const auto perf_loaded = std::chrono::steady_clock::now();
             for( const auto &i : _request->RequestSelectedEntries )
                 m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
@@ -1395,19 +1402,30 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     assert(_request->VFS != nullptr);
     Log::Debug("[PanelController GoToDirWithContext] was called with {}", *_request);
 
+    // The sort order and the filters are owned by the model, which is main-thread-only - take a
+    // snapshot of them here so that the heavy part of the load can run on a background queue.
+    const data::SortMode sort_mode = m_Data.SortMode();
+    const data::HardFilter hard_filtering = m_Data.HardFiltering();
+    const data::TextualFilter soft_filtering = m_Data.SoftFiltering();
+
     if( !_request->PerformAsynchronous ) {
         assert(dispatch_is_main_queue());
         m_DirectoryLoadingQ.Stop();
         m_DirectoryLoadingQ.Wait();
 
-        const std::expected<void, Error> result = [self doGoToDirWithContext:_request];
+        const std::expected<void, Error> result = [self doGoToDirWithContext:_request
+                                                                    sortMode:sort_mode
+                                                                  hardFilter:hard_filtering
+                                                                  softFilter:soft_filtering];
         return result;
     }
     else {
         if( !m_DirectoryLoadingQ.Empty() )
             return {};
 
-        m_DirectoryLoadingQ.Run([=] { [self doGoToDirWithContext:_request]; });
+        m_DirectoryLoadingQ.Run([=] {
+            [self doGoToDirWithContext:_request sortMode:sort_mode hardFilter:hard_filtering softFilter:soft_filtering];
+        });
         return {};
     }
 }

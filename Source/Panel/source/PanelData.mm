@@ -104,6 +104,88 @@ static void InitVolatileDataWithListing(std::vector<ItemVolatileData> &_vd, cons
     }
 }
 
+Model::PreparedLoad Model::PrepareLoad(const VFSListingPtr &_listing,
+                                       PanelType _type,
+                                       struct SortMode _sort_mode,
+                                       HardFilter _hard_filtering,
+                                       TextualFilter _soft_filtering)
+{
+    if( !_listing )
+        throw std::logic_error("PanelData::PrepareLoad: listing can't be nullptr");
+
+    const auto perf_begin = std::chrono::steady_clock::now();
+
+    // A scratch model lets us reuse the existing sorting/filtering machinery as is - none of these
+    // operations depend on the instance they are called on.
+    Model scratch;
+    scratch.m_Listing = _listing;
+    scratch.m_Type = _type;
+    scratch.m_CustomSortMode = _sort_mode;
+    scratch.m_HardFiltering = std::move(_hard_filtering);
+    scratch.m_SoftFiltering = std::move(_soft_filtering);
+
+    InitVolatileDataWithListing(scratch.m_VolatileData, *scratch.m_Listing);
+    const auto perf_vd = std::chrono::steady_clock::now();
+
+    scratch.m_HardFiltering.text.OnPanelDataLoad();
+    scratch.m_SoftFiltering.OnPanelDataLoad();
+
+    // both sorts are independent - run them concurrently, exactly like Load() used to
+    {
+        const base::DispatchGroup exec_group{base::DispatchGroup::High};
+        exec_group.Run([&] { DoRawSort(*scratch.m_Listing, scratch.m_EntriesByRawName); });
+        exec_group.Run([&] { scratch.DoSortWithHardFiltering(); });
+        exec_group.Wait();
+    }
+    const auto perf_sorted = std::chrono::steady_clock::now();
+    scratch.BuildSoftFilteringIndeces();
+    const auto perf_filtered = std::chrono::steady_clock::now();
+    scratch.UpdateStatictics();
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] prepare n=%u vd=%.1fms sorts=%.1fms softfilter=%.1fms stats=%.1fms total=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_vd),
+                     ms(perf_vd, perf_sorted),
+                     ms(perf_sorted, perf_filtered),
+                     ms(perf_filtered, perf_end),
+                     ms(perf_begin, perf_end));
+    }
+
+    PreparedLoad prepared;
+    prepared.listing = std::move(scratch.m_Listing);
+    prepared.type = scratch.m_Type;
+    prepared.hard_filtering = std::move(scratch.m_HardFiltering);
+    prepared.soft_filtering = std::move(scratch.m_SoftFiltering);
+    prepared.volatile_data = std::move(scratch.m_VolatileData);
+    prepared.entries_by_raw_name = std::move(scratch.m_EntriesByRawName);
+    prepared.entries_by_custom_sort = std::move(scratch.m_EntriesByCustomSort);
+    prepared.reverse_to_custom_sort = std::move(scratch.m_ReverseToCustomSort);
+    prepared.entries_by_soft_filtering = std::move(scratch.m_EntriesBySoftFiltering);
+    prepared.statistics = scratch.m_Stats;
+    return prepared;
+}
+
+void Model::InstallLoad(PreparedLoad &&_prepared)
+{
+    assert(dispatch_is_main_queue()); // STA api design
+    m_Listing = std::move(_prepared.listing);
+    m_Type = _prepared.type;
+    m_HardFiltering = std::move(_prepared.hard_filtering);
+    m_SoftFiltering = std::move(_prepared.soft_filtering);
+    m_VolatileData = std::move(_prepared.volatile_data);
+    m_EntriesByRawName = std::move(_prepared.entries_by_raw_name);
+    m_EntriesByCustomSort = std::move(_prepared.entries_by_custom_sort);
+    m_ReverseToCustomSort = std::move(_prepared.reverse_to_custom_sort);
+    m_EntriesBySoftFiltering = std::move(_prepared.entries_by_soft_filtering);
+    m_Stats = _prepared.statistics;
+}
+
 void Model::Load(const VFSListingPtr &_listing, PanelType _type)
 {
     assert(dispatch_is_main_queue()); // STA api design
@@ -116,40 +198,7 @@ void Model::Load(const VFSListingPtr &_listing, PanelType _type)
               _listing->Count(),
               _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
 
-    const auto perf_begin = std::chrono::steady_clock::now();
-    m_Listing = _listing;
-    m_Type = _type;
-    InitVolatileDataWithListing(m_VolatileData, *m_Listing);
-    const auto perf_vd = std::chrono::steady_clock::now();
-
-    m_HardFiltering.text.OnPanelDataLoad();
-    m_SoftFiltering.OnPanelDataLoad();
-
-    // now sort our new data
-    const base::DispatchGroup exec_group{base::DispatchGroup::High};
-    exec_group.Run([this] { DoRawSort(*m_Listing, m_EntriesByRawName); });
-    exec_group.Run([this] { DoSortWithHardFiltering(); });
-    exec_group.Wait();
-    const auto perf_sorted = std::chrono::steady_clock::now();
-    BuildSoftFilteringIndeces();
-    const auto perf_filtered = std::chrono::steady_clock::now();
-    // update stats
-    UpdateStatictics();
-    if( std::getenv("NC_PERF_LOG") != nullptr ) {
-        using namespace std::chrono;
-        const auto perf_end = steady_clock::now();
-        const auto ms = [](auto _from, auto _to) {
-            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
-        };
-        std::fprintf(stderr,
-                     "[perf] model.load n=%u vd=%.1fms sorts=%.1fms softfilter=%.1fms stats=%.1fms total=%.1fms\n",
-                     _listing->Count(),
-                     ms(perf_begin, perf_vd),
-                     ms(perf_vd, perf_sorted),
-                     ms(perf_sorted, perf_filtered),
-                     ms(perf_filtered, perf_end),
-                     ms(perf_begin, perf_end));
-    }
+    InstallLoad(PrepareLoad(_listing, _type, m_CustomSortMode, m_HardFiltering, m_SoftFiltering));
 }
 
 void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
