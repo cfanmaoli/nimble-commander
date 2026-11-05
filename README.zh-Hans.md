@@ -54,6 +54,7 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 ## 参与贡献
 
 欢迎提交代码、报告问题和贡献翻译 —— 见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+本项目由 DeepSeek 在人工全程监督与审查下编写。
 
 ## 许可证
 

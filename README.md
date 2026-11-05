@@ -54,6 +54,7 @@ Details about each released version can be found in [WHATS_NEW.md](WHATS_NEW.md)
 ## Contributing
 
 Contributions, bug reports and translations are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+The fork itself is written by DeepSeek under continuous human supervision and review.
 
 ## License
 
