@@ -9,8 +9,8 @@ builds per push is exactly what used to starve the queue.
 
 | Event | Jobs |
 |---|---|
-| `schedule` (nightly) | everything: clang-format, all four test configurations, full clang-tidy, integration tests, DMG |
-| `workflow_dispatch` | clang-format, Debug tests + clang-tidy, DMG; tick `full` to get the nightly set |
+| `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG |
+| `workflow_dispatch` | Debug tests with clang-format and clang-tidy, DMG; tick `full` to get the nightly set |
 
 Trigger a run from the Actions tab (*Build and Test* → *Run workflow*) or with
 `gh workflow run build.yml --ref main -f full=true`.
@@ -20,11 +20,13 @@ A newer run on the same branch cancels the stale one (`concurrency`), and every 
 
 ## Jobs
 
-- **clang-format** - installs LLVM and runs `Scripts/run_clang_format.sh --check` over `Source`.
 - **unit-tests** - `Scripts/run_all_unit_tests.sh <configuration>` builds the `UnitTests` umbrella
   and runs every test binary: `Debug`, `Release`, `ASAN`, `UBSAN`.
   The Debug job also builds the whole project (`All`) and keeps its compilation database when
   clang-tidy is going to run, so tidy does not need a second build of everything.
+  It is the only job that installs LLVM, and it runs `Scripts/run_clang_format.sh --check` and
+  clang-tidy itself - folding the linting in here means there is no separate gate job whose
+  cancellation (e.g. when no runner can be acquired) would skip every other job.
 - **clang-tidy** (inside the Debug job) - `Scripts/run_clang_tidy.sh --check --use-db run_all_unit_tests.tmp`,
   reusing the compilation database that the Debug build has just produced.
 - **integration-tests** - starts the docker/colima dependencies and runs

@@ -29,26 +29,10 @@ env:
 
 jobs:
 
-  clang-format:
-    runs-on: macos-26
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v5
-    - name: Cache the Homebrew downloads
-      uses: actions/cache@v5
-      with:
-        path: ~/Library/Caches/Homebrew
-        key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}
-    - name: Install LLVM
-      run: brew install llvm@${{ env.LLVM_VERSION }}
-    - name: Run clang-format
-      run: |
-        export PATH="$(brew --prefix)/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
-        cd Scripts && ./run_clang_format.sh --check
-
   unit-tests:
     # Manual dispatch: Debug only. Nightly / full dispatch: every configuration.
-    needs: clang-format
+    # The Debug job also runs clang-format and clang-tidy, so there is no separate lint job that
+    # every other job would have to wait for.
     runs-on: macos-26
     timeout-minutes: 60
     strategy:
@@ -65,21 +49,26 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install the test dependencies
       run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
+    - name: Cache the Homebrew downloads
+      if: matrix.configuration == 'Debug'
+      uses: actions/cache@v5
+      with:
+        path: ~/Library/Caches/Homebrew
+        key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}
+    - name: Install LLVM
+      if: matrix.configuration == 'Debug'
+      run: brew install llvm@${{ env.LLVM_VERSION }}
+    - name: Run clang-format
+      if: matrix.configuration == 'Debug'
+      run: |
+        export PATH="$(brew --prefix)/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+        cd Scripts && ./run_clang_format.sh --check
     - name: Build and run the unit tests
       env:
         # Build the whole project and keep the compilation database when clang-tidy is about to
         # reuse it - that saves a complete second build of everything.
         EMIT_COMPILE_DB: ${{ matrix.configuration == 'Debug' && '1' || '' }}
       run: "cd Scripts && ./run_all_unit_tests.sh ${{ matrix.configuration }}"
-    - name: Cache the Homebrew downloads
-      if: matrix.configuration == 'Debug'
-      uses: actions/cache@v5
-      with:
-        path: ~/Library/Caches/Homebrew
-        key: brew-${{ runner.os }}-llvm${{ env.LLVM_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}-tidy
-    - name: Install LLVM
-      if: matrix.configuration == 'Debug'
-      run: brew install llvm@${{ env.LLVM_VERSION }}
     - name: Run clang-tidy
       if: matrix.configuration == 'Debug'
       run: |
