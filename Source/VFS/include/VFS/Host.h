@@ -352,6 +352,17 @@ public:
      */
     virtual HostDirObservationTicket ObserveDirectoryChanges(std::string_view _path, std::function<void()> _handler);
 
+    using DirectoryChangePathsHandler = std::function<void(std::span<const std::string>)>;
+
+    /**
+     * Same as ObserveDirectoryChanges(), but the handler also receives the names of the entries
+     * that changed inside the watched directory. An empty span means that the exact entries are
+     * unknown and the client has to reload the directory from scratch.
+     * The default implementation forwards to ObserveDirectoryChanges() with an empty span.
+     */
+    virtual HostDirObservationTicket ObserveDirectoryChangesWithPaths(std::string_view _path,
+                                                                      DirectoryChangePathsHandler _handler);
+
     /**
      * Will fire _handler whenever a file identified by '_path' is changed.
      * Can return an empty token if observation is unavailable.

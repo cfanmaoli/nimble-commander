@@ -561,6 +561,14 @@ HostDirObservationTicket NativeHost::ObserveDirectoryChanges(std::string_view _p
     return t ? HostDirObservationTicket(t, shared_from_this()) : HostDirObservationTicket();
 }
 
+HostDirObservationTicket NativeHost::ObserveDirectoryChangesWithPaths(std::string_view _path,
+                                                                      DirectoryChangePathsHandler _handler)
+{
+    auto &inst = nc::utility::FSEventsDirUpdate::Instance();
+    const uint64_t t = inst.AddWatchPath(_path, std::move(_handler));
+    return t ? HostDirObservationTicket(t, shared_from_this()) : HostDirObservationTicket();
+}
+
 void NativeHost::StopDirChangeObserving(unsigned long _ticket)
 {
     auto &inst = nc::utility::FSEventsDirUpdate::Instance();

@@ -14,6 +14,8 @@ class FSEventsDirUpdateImpl : public FSEventsDirUpdate
 public:
     uint64_t AddWatchPath(std::string_view _path, std::function<void()> _handler) override;
 
+    uint64_t AddWatchPath(std::string_view _path, EventPathsHandler _handler) override;
+
     void RemoveWatchPathWithTicket(uint64_t _ticket) override;
 
     // Implementation detail exposed for testability
@@ -27,6 +29,7 @@ private:
         std::string path; // canonical fs representation, should include a trailing slash
         FSEventStreamRef stream = nullptr;
         std::vector<std::pair<uint64_t, std::function<void()>>> handlers;
+        std::vector<std::pair<uint64_t, EventPathsHandler>> path_handlers;
     };
 
     using WatchesT = ankerl::unordered_dense::
@@ -42,6 +45,9 @@ private:
                                           const FSEventStreamEventFlags _flags[],
                                           const FSEventStreamEventId _ids[]);
     static FSEventStreamRef CreateEventStream(const std::string &path, void *context);
+
+    // Registers a handler for '_path', creating (or reusing) the underlying event stream.
+    uint64_t AddWatchPathImpl(std::string_view _path, const std::function<void(WatchData &, uint64_t)> &_attach);
 
     spinlock m_Lock;
     WatchesT m_Watches;                // path -> watch data;

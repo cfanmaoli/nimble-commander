@@ -54,6 +54,19 @@ public:
     void ReLoad(const VFSListingPtr &_listing);
 
     /**
+     * Applies a listing that was produced by patching the current one: the entries at
+     * '_removed_old_indices' (sorted ascending, unique) are dropped and the last '_appended_count'
+     * entries of '_listing' are the freshly fetched ones.
+     * Retains the volatile data (selection, icons, calculated sizes) of all the other entries and
+     * the already established sort order, so applying a handful of changes to a million-entry
+     * listing costs O(n) with cheap operations instead of a full re-sort.
+     * Preconditions: no hard filtering is active, both listings are uniform.
+     */
+    void ApplyPatchedListing(const VFSListingPtr &_listing,
+                             std::span<const unsigned> _removed_old_indices,
+                             unsigned _appended_count);
+
+    /**
      * Tells whether Model was provided with a valid listing object.
      */
     [[nodiscard]] bool IsLoaded() const noexcept;

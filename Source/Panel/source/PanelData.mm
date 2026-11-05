@@ -152,6 +152,119 @@ void Model::Load(const VFSListingPtr &_listing, PanelType _type)
     }
 }
 
+void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
+                                std::span<const unsigned> _removed_old_indices,
+                                unsigned _appended_count)
+{
+    assert(dispatch_is_main_queue());
+    assert(_listing);
+    assert(_listing->IsUniform());
+    assert(m_Listing && m_Listing->IsUniform());
+    assert(!m_HardFiltering.IsFiltering());
+
+    const unsigned old_count = m_Listing->Count();
+    const unsigned new_count = _listing->Count();
+    assert(new_count == old_count - static_cast<unsigned>(_removed_old_indices.size()) + _appended_count);
+    if( new_count != old_count - static_cast<unsigned>(_removed_old_indices.size()) + _appended_count )
+        throw std::logic_error("Model::ApplyPatchedListing: listing doesn't match the patch");
+
+    // old raw index -> new raw index, or 'invalid' for the dropped entries
+    constexpr unsigned invalid = std::numeric_limits<unsigned>::max();
+    std::vector<unsigned> old_to_new(old_count, invalid);
+    {
+        size_t removed_pos = 0;
+        unsigned new_index = 0;
+        for( unsigned old_index = 0; old_index != old_count; ++old_index ) {
+            if( removed_pos < _removed_old_indices.size() && _removed_old_indices[removed_pos] == old_index ) {
+                ++removed_pos;
+                continue;
+            }
+            old_to_new[old_index] = new_index++;
+        }
+        assert(new_index + _appended_count == new_count);
+    }
+
+    const auto init_volatile_data = [&](ItemVolatileData &_vd, unsigned _index) {
+        _vd = ItemVolatileData{};
+        if( _listing->IsDir(_index) ) {
+            if( _listing->HasSize(_index) ) {
+                const auto sz = _listing->Size(_index);
+                if( sz != std::numeric_limits<uint64_t>::max() )
+                    _vd.size = sz;
+            }
+        }
+        else {
+            _vd.size = _listing->Size(_index);
+        }
+    };
+
+    // volatile data: keep everything that survives and add fresh entries for the appended ones
+    std::vector<ItemVolatileData> new_vd(new_count);
+    for( unsigned old_index = 0; old_index != old_count; ++old_index ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_vd[new_index] = m_VolatileData[old_index];
+    }
+    for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+        init_volatile_data(new_vd[i], i);
+
+    // raw-name order: the retained entries keep their relative order, the appended ones are
+    // inserted at their alphabetical positions
+    std::vector<unsigned> new_by_raw_name;
+    new_by_raw_name.reserve(new_count);
+    for( const unsigned old_index : m_EntriesByRawName ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_by_raw_name.emplace_back(new_index);
+    }
+    const auto name_less = [&](unsigned _lhs, unsigned _rhs) {
+        return _listing->Filename(_lhs) < _listing->Filename(_rhs);
+    };
+    for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+        new_by_raw_name.insert(std::lower_bound(new_by_raw_name.begin(), new_by_raw_name.end(), i, name_less), i);
+
+    // custom sort order: same story - the retained entries are already ordered correctly, the
+    // appended ones have to be placed according to the current sort mode
+    std::vector<unsigned> new_by_custom_sort;
+    new_by_custom_sort.reserve(new_count);
+    for( const unsigned old_index : m_EntriesByCustomSort ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_by_custom_sort.emplace_back(new_index);
+    }
+
+    if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
+        const IndirectListingComparator cmp{*_listing, new_vd, m_CustomSortMode};
+        const auto first = std::next(new_by_custom_sort.begin(), _listing->IsDotDot(0) ? 1 : 0);
+        for( unsigned i = new_count - _appended_count; i != new_count; ++i ) {
+            const bool is_dotdot = _listing->IsDotDot(i);
+            auto pos =
+                is_dotdot ? new_by_custom_sort.begin() : std::lower_bound(first, new_by_custom_sort.end(), i, cmp);
+            new_by_custom_sort.insert(pos, i);
+        }
+    }
+    else {
+        for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+            new_by_custom_sort.emplace_back(i);
+    }
+
+    m_Listing = _listing;
+    m_VolatileData = std::move(new_vd);
+    m_EntriesByRawName = std::move(new_by_raw_name);
+    m_EntriesByCustomSort = std::move(new_by_custom_sort);
+
+    m_ReverseToCustomSort.resize(new_count);
+    std::ranges::fill(m_ReverseToCustomSort, invalid);
+    for( unsigned i = 0; i != new_count; ++i ) {
+        const unsigned raw_index = m_EntriesByCustomSort[i];
+        assert(raw_index < new_count);
+        m_ReverseToCustomSort[raw_index] = i;
+    }
+
+    BuildSoftFilteringIndeces();
+    UpdateStatictics();
+}
+
 static void UpdateWithExisingVD(ItemVolatileData &_new_vd, const ItemVolatileData &_ex_vd)
 {
     if( _new_vd.size == ItemVolatileData::invalid_size ) {

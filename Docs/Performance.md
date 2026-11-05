@@ -326,3 +326,47 @@ raw-name 排序 + O(n) 合并，再串行重排一次（`PanelData.mm:151-229`�
 3. **排序键**（P1-2）与**去重复排序**（P1-4）：排序只占 0.2 s，优先级下降。
 4. **惰性属性**（P1-3）：枚举 2.8 s → 理论 0.7 s（readdir 0.6 s），但需要“属性未就绪”的 UI 状态。
 5. **图标表清理**（每次 `dataUpdated` 扫全表）与**惰性 CFString**（约 -60 MB）。
+
+---
+
+## 7. 第二轮：路径级增量刷新（阶段 C）
+
+### 7.1 做了什么
+
+1. **FSEvents 现在带条目名**：事件流加上 `kFSEventStreamCreateFlagFileEvents`（原来只有目录级事件），
+   回调里把「直接子项」的名字收集起来交给上层。
+2. **VFS 新接口** `Host::ObserveDirectoryChangesWithPaths(path, void(std::span<const std::string>))`：
+   默认实现退化成旧的 `void()` 版本（其它 host 不用改），`NativeHost` 覆盖它。
+3. **列表打补丁** `ProducePatchedListing()`（PanelController.mm）：对变更路径做 `FetchSingleItemListing`
+   （每条一次 `lstat`，微秒级），然后把「旧 listing 去掉被删/被改条目 + 新条目」重新拼成一个新的
+   `VFSListing`。这里刻意不走 `VFSListing::Compose()`——Compose 用稀疏容器逐条插入，1M 项要上千万次哈希插入。
+4. **模型增量应用** `Model::ApplyPatchedListing()`：保留所有存活条目的 volatile data（选择、图标、目录大小）、
+   保留已排好的顺序，只做 O(n) 的索引重映射 + k 次二分插入；不再重排 100 万项。
+
+### 7.2 实测（1M 文件目录，改一个文件）
+
+```
+[perf] incr    k=1 removed=1 appended=1 fetch=0.1ms  patch=154.2ms
+[perf] incr.ui n=1000003 model=10.3ms view=131.8ms total=142.1ms
+```
+
+| | 改前 | 改后 |
+|---|---|---|
+| 单次目录变动 CPU | 5.1–5.3 s | **≈ 305 ms** |
+| 墙钟 | 4.4–5.5 s | ≈ 0.3 s |
+| 内存 | 新旧 listing 同时存在，峰值 +160 MB | 峰值几乎没有增长 |
+
+17 倍的提升来自「不再重新枚举 100 万项」；剩下的 305 ms 里，160 ms 是重建 listing（复制 100 万个名字/属性
++ 47 ms 建 CFString），132 ms 是视图更新，10 ms 是模型。下一轮（阶段 D）会把这两块继续压下去。
+
+### 7.3 边界情况
+
+- 变更条目超过 128 个、或有非 ENOENT 的错误 → 自动退回全量刷新。
+- 正在做全量加载 / 已有两个重载排队 / 处于平铺模式 / 有硬过滤 → 退回全量刷新。
+- 目录本身的事件（`ShouldFire`）仍然会触发全量刷新。
+
+### 7.4 新增的单元测试
+
+`Source/Panel/tests/PanelData_UT.mm`：`ApplyPatchedListing`（删除+追加、只追加）验证条目数、名字查找、
+排序顺序、以及选择状态在补丁后仍然保留。
+

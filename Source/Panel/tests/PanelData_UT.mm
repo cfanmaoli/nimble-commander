@@ -755,6 +755,63 @@ TEST_CASE(PREFIX "ReLoad a temporary listing")
     }
 }
 
+TEST_CASE("ApplyPatchedListing")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c", "d"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    // select 'c' so that we can check that the volatile data survives the patch
+    const int c_pos = data.SortedIndexForName("c");
+    REQUIRE(c_pos >= 0);
+    data.CustomFlagsSelectSorted(c_pos, true);
+
+    // the new listing drops 'b' (old raw index 1) and appends 'ab' at the end
+    const VFSListingPtr l2 = ProduceDummyListing({"a", "c", "d", "ab"});
+    const std::vector<unsigned> removed = {1};
+    data.ApplyPatchedListing(l2, removed, 1);
+
+    CHECK(data.RawEntriesCount() == 4);
+    CHECK(data.SortedEntriesCount() == 4);
+    CHECK(data.Stats().total_entries_amount == 4);
+
+    // the names are still all there and 'b' is gone
+    CHECK(data.SortedIndexForName("a") >= 0);
+    CHECK(data.SortedIndexForName("ab") >= 0);
+    CHECK(data.SortedIndexForName("c") >= 0);
+    CHECK(data.SortedIndexForName("d") >= 0);
+    CHECK(data.SortedIndexForName("b") == -1);
+
+    // the sort order is 'a', 'ab', 'c', 'd'
+    REQUIRE(data.SortedIndexForName("a") != -1);
+    CHECK(data.SortedIndexForName("a") < data.SortedIndexForName("ab"));
+    CHECK(data.SortedIndexForName("ab") < data.SortedIndexForName("c"));
+    CHECK(data.SortedIndexForName("c") < data.SortedIndexForName("d"));
+
+    // 'c' is still selected
+    const int new_c_pos = data.SortedIndexForName("c");
+    REQUIRE(new_c_pos >= 0);
+    CHECK(data.VolatileDataAtSortPosition(new_c_pos).is_selected());
+    // and the entry that has just appeared is not
+    const int ab_pos = data.SortedIndexForName("ab");
+    REQUIRE(ab_pos >= 0);
+    CHECK(!data.VolatileDataAtSortPosition(ab_pos).is_selected());
+}
+
+TEST_CASE("ApplyPatchedListing with an addition only")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    const VFSListingPtr l2 = ProduceDummyListing({"a", "c", "b"});
+    data.ApplyPatchedListing(l2, {}, 1);
+
+    CHECK(data.RawEntriesCount() == 3);
+    CHECK(data.SortedIndexForName("a") < data.SortedIndexForName("b"));
+    CHECK(data.SortedIndexForName("b") < data.SortedIndexForName("c"));
+}
+
 } // namespace
 
 #undef PREFIX

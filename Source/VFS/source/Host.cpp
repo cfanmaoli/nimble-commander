@@ -224,6 +224,14 @@ HostDirObservationTicket Host::ObserveDirectoryChanges([[maybe_unused]] std::str
     return {};
 }
 
+HostDirObservationTicket Host::ObserveDirectoryChangesWithPaths([[maybe_unused]] std::string_view _path,
+                                                                DirectoryChangePathsHandler _handler)
+{
+    if( !_handler )
+        return {};
+    return ObserveDirectoryChanges(_path, [handler = std::move(_handler)] { handler({}); });
+}
+
 void Host::StopDirChangeObserving([[maybe_unused]] unsigned long _ticket)
 {
 }

@@ -43,6 +43,8 @@
 #include <Base/mach_time.h>
 
 #include <algorithm>
+#include <span>
+#include <vector>
 
 using namespace nc;
 using namespace nc::core;
@@ -130,6 +132,11 @@ static void HeatUpConfigValues()
 
 @property(nonatomic, readonly)
     bool receivesUpdateNotifications; // returns true if underlying vfs will notify controller that content has changed
+
+- (void)refreshPanelIncrementallyWithChangedNames:(std::vector<std::string>)_names;
+- (void)applyPatchedListing:(const VFSListingPtr &)_listing
+                    removed:(const std::vector<unsigned> &)_removed
+                   appended:(unsigned)_appended;
 @end
 
 namespace {
@@ -190,6 +197,85 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
     } catch( ... ) {
         return {};
     }
+}
+
+// Produces a new listing out of '_base' by dropping the entries at '_removed' (sorted ascending)
+// and appending the items from '_appended' (single-item listings of the freshly stat'ed entries).
+// Rebuilding through VFSListing::Compose() would sort the data into sparse containers, which is
+// O(n) hash-map insertions for a million items - here everything that can stay dense stays dense.
+VFSListingPtr ProducePatchedListing(const VFSListing &_base,
+                                    const std::vector<unsigned> &_removed,
+                                    const std::vector<VFSListingPtr> &_appended)
+{
+    using nc::base::variable_container;
+    if( !_base.HasCommonHost() || !_base.HasCommonDirectory() )
+        return {};
+
+    nc::vfs::ListingInput in;
+    in.hosts.insert(0, _base.Host(0));
+    in.directories.insert(0, _base.Directory(0));
+    in.sizes.reset(variable_container<>::type::dense);
+    in.inodes.reset(variable_container<>::type::dense);
+    in.atimes.reset(variable_container<>::type::dense);
+    in.mtimes.reset(variable_container<>::type::dense);
+    in.ctimes.reset(variable_container<>::type::dense);
+    in.btimes.reset(variable_container<>::type::dense);
+    in.uids.reset(variable_container<>::type::dense);
+    in.gids.reset(variable_container<>::type::dense);
+    in.unix_flags.reset(variable_container<>::type::dense);
+
+    const auto appended_items = [&] {
+        size_t n = 0;
+        for( auto &ptr : _appended )
+            n += ptr->Count();
+        return n;
+    }();
+    const auto total = static_cast<size_t>(_base.Count()) - _removed.size() + appended_items;
+    in.filenames.reserve(total);
+    in.unix_modes.reserve(total);
+    in.unix_types.reserve(total);
+
+    unsigned n = 0;
+    const auto append_item = [&](const VFSListing &_l, unsigned _i) {
+        in.filenames.emplace_back(_l.Filename(_i));
+        in.unix_modes.emplace_back(_l.UnixMode(_i));
+        in.unix_types.emplace_back(_l.UnixType(_i));
+        in.sizes.insert(n, _l.HasSize(_i) ? _l.Size(_i) : uint64_t(-1));
+        in.inodes.insert(n, _l.HasInode(_i) ? _l.Inode(_i) : 0);
+        in.atimes.insert(n, _l.HasATime(_i) ? _l.ATime(_i) : 0);
+        in.mtimes.insert(n, _l.HasMTime(_i) ? _l.MTime(_i) : 0);
+        in.ctimes.insert(n, _l.HasCTime(_i) ? _l.CTime(_i) : 0);
+        in.btimes.insert(n, _l.HasBTime(_i) ? _l.BTime(_i) : 0);
+        in.uids.insert(n, _l.HasUID(_i) ? _l.UID(_i) : 0);
+        in.gids.insert(n, _l.HasGID(_i) ? _l.GID(_i) : 0);
+        in.unix_flags.insert(n, _l.HasUnixFlags(_i) ? _l.UnixFlags(_i) : 0);
+        if( _l.HasDisplayFilename(_i) )
+            in.display_filenames.insert(n, _l.DisplayFilename(_i));
+        if( _l.HasAddTime(_i) )
+            in.add_times.insert(n, _l.AddTime(_i));
+        if( _l.HasSymlink(_i) )
+            in.symlinks.insert(n, _l.Symlink(_i));
+        if( _l.HasTags(_i) ) {
+            const auto tags = _l.Tags(_i);
+            in.tags.emplace(n, std::vector<utility::Tags::Tag>(tags.begin(), tags.end()));
+        }
+        ++n;
+    };
+
+    size_t removed_pos = 0;
+    for( unsigned i = 0, e = _base.Count(); i != e; ++i ) {
+        if( removed_pos < _removed.size() && _removed[removed_pos] == i ) {
+            ++removed_pos;
+            continue;
+        }
+        append_item(_base, i);
+    }
+    for( auto &ptr : _appended )
+        for( unsigned i = 0, e = ptr->Count(); i != e; ++i )
+            append_item(*ptr, i);
+
+    assert(n == total);
+    return VFSListing::Build(std::move(in));
 }
 
 } // namespace
@@ -469,6 +555,162 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
     [m_View setNeedsDisplay];
 }
 
+- (void)refreshPanelIncrementallyWithChangedNames:(std::vector<std::string>)_names
+{
+    Log::Debug("[PanelController refreshPanelIncrementallyWithChangedNames] {} name(s)", _names.size());
+
+    if( m_FlatView || !self.isUniform || _names.size() > 128 ) {
+        [self refreshPanel];
+        return;
+    }
+    if( !m_DirectoryLoadingQ.Empty() || m_DirectoryReLoadingQ.Length() >= 2 ) {
+        // a full (re)load is already on its way - it will pick the changes up
+        return;
+    }
+
+    const VFSListingPtr listing = m_Data.ListingPtr();
+    if( listing == nullptr || listing->Count() == 0 || !listing->IsUniform() || !listing->HasCommonHost() ||
+        !listing->HasCommonDirectory() || m_Data.HardFiltering().IsFiltering() ) {
+        [self refreshPanel];
+        return;
+    }
+
+    const VFSHostPtr host = self.vfs;
+    const std::string directory = m_Data.DirectoryPathWithTrailingSlash();
+    if( host == nullptr || directory.empty() ) {
+        [self refreshPanel];
+        return;
+    }
+
+    struct Change {
+        std::string name;
+        int old_index;
+    };
+    std::vector<Change> changes;
+    changes.reserve(_names.size());
+    for( const auto &name : _names ) {
+        // m_Data is a main-thread-only object, so resolve the names against the listing here
+        const auto indices = m_Data.RawIndicesForName(name);
+        changes.push_back(Change{name, indices.empty() ? -1 : static_cast<int>(indices.front())});
+    }
+
+    const unsigned long fetch_flags = m_VFSFetchingFlags;
+    __weak PanelController *weak_self = self;
+    m_DirectoryReLoadingQ.Run([=] {
+        if( m_DirectoryReLoadingQ.IsStopped() )
+            return;
+        const auto perf_begin = std::chrono::steady_clock::now();
+
+        std::vector<unsigned> removed;
+        std::vector<VFSListingPtr> appended;
+        bool need_full_reload = false;
+        for( const auto &change : changes ) {
+            const std::expected<VFSListingPtr, Error> fetched =
+                host->FetchSingleItemListing(directory + change.name, fetch_flags, [] { return false; });
+            if( fetched ) {
+                appended.emplace_back(*fetched);
+                if( change.old_index >= 0 )
+                    removed.emplace_back(static_cast<unsigned>(change.old_index));
+            }
+            else if( fetched.error().Domain() == Error::POSIX && fetched.error().Code() == ENOENT ) {
+                // the entry is really gone
+                if( change.old_index >= 0 )
+                    removed.emplace_back(static_cast<unsigned>(change.old_index));
+            }
+            else {
+                // something unusual, e.g. a permission problem - let the slow path deal with it
+                need_full_reload = true;
+                break;
+            }
+        }
+
+        if( need_full_reload ) {
+            dispatch_to_main_queue([=] {
+                if( PanelController *const pc = weak_self )
+                    [pc refreshPanel];
+            });
+            return;
+        }
+
+        if( removed.empty() && appended.empty() )
+            return;
+
+        std::ranges::sort(removed);
+        removed.erase(std::ranges::unique(removed).begin(), removed.end());
+        const unsigned appended_count = static_cast<unsigned>(appended.size());
+        const auto perf_fetched = std::chrono::steady_clock::now();
+        const VFSListingPtr patched = ProducePatchedListing(*listing, removed, appended);
+        if( std::getenv("NC_PERF_LOG") != nullptr ) {
+            using namespace std::chrono;
+            const auto perf_end = steady_clock::now();
+            const auto ms = [](auto _from, auto _to) {
+                return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+            };
+            std::fprintf(stderr,
+                         "[perf] incr k=%zu removed=%zu appended=%u fetch=%.1fms patch=%.1fms\n",
+                         changes.size(),
+                         removed.size(),
+                         appended_count,
+                         ms(perf_begin, perf_fetched),
+                         ms(perf_fetched, perf_end));
+        }
+        if( patched == nullptr ) {
+            Log::Warn("[PanelController] failed to patch the listing, falling back to a full reload");
+            dispatch_to_main_queue([=] {
+                if( PanelController *const pc = weak_self )
+                    [pc refreshPanel];
+            });
+            return;
+        }
+
+        dispatch_to_main_queue([=] {
+            PanelController *const pc = weak_self;
+            if( pc == nil )
+                return;
+            if( pc.currentDirectoryPath != directory )
+                return;
+            [pc applyPatchedListing:patched removed:removed appended:appended_count];
+        });
+    });
+}
+
+- (void)applyPatchedListing:(const VFSListingPtr &)_listing
+                    removed:(const std::vector<unsigned> &)_removed
+                   appended:(unsigned)_appended
+{
+    Log::Info(
+        "Applying a patched listing, {} entries ({} dropped, {} added)", _listing->Count(), _removed.size(), _appended);
+    [self CancelBackgroundOperations];
+    const auto perf_begin = std::chrono::steady_clock::now();
+    const auto pers = CursorBackup{m_View.curpos, m_Data};
+    m_Data.ApplyPatchedListing(_listing, _removed, _appended);
+    const auto perf_patched = std::chrono::steady_clock::now();
+    m_DataGeneration++;
+    [m_View dataUpdated];
+    [m_QuickSearch dataUpdated];
+    if( [self checkAgainstRequestedFocusing] ) {
+        Log::Trace("Cursor position was changed by requested focusing, skipping RestoredCursorPosition()");
+    }
+    else {
+        m_View.curpos = pers.RestoredCursorPosition();
+    }
+    [self onCursorChanged];
+    [m_View setNeedsDisplay];
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] incr.ui n=%u model=%.1fms view=%.1fms total=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_patched),
+                     ms(perf_patched, perf_end),
+                     ms(perf_begin, perf_end));
+    }
+}
+
 - (void)refreshPanelDiscardingCaches:(bool)_force
 {
     Log::Debug("refreshPanelDiscardingCaches:{} was called", _force);
@@ -725,21 +967,29 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
     m_UpdatesObservationTicket.reset();
     if( self.isUniform ) {
         const std::string current_directory_path = self.currentDirectoryPath;
-        auto dir_change_callback = [=] {
+        auto dir_change_callback = [=](std::span<const std::string> _changed_names) {
+            // the handler may inject changes from different threads - hand them over by value
+            const std::vector<std::string> changed_names(_changed_names.begin(), _changed_names.end());
             dispatch_to_main_queue([=] {
-                Log::Debug("Got a notification about a directory change: '{}'", current_directory_path);
-                if( PanelController *const pc = weakself ) {
-                    if( pc.currentDirectoryPath == current_directory_path ) {
-                        [pc refreshPanel];
-                    }
-                    else {
-                        Log::Debug("Discarded a stale directory change notification");
-                    }
+                Log::Debug("Got a notification about a directory change: '{}', {} changed entr{}",
+                           current_directory_path,
+                           changed_names.size(),
+                           changed_names.size() == 1 ? "y" : "ies");
+                PanelController *const pc = weakself;
+                if( pc == nil )
+                    return;
+                if( pc.currentDirectoryPath != current_directory_path ) {
+                    Log::Debug("Discarded a stale directory change notification");
+                    return;
                 }
+                if( !changed_names.empty() )
+                    [pc refreshPanelIncrementallyWithChangedNames:changed_names];
+                else
+                    [pc refreshPanel];
             });
         };
         m_UpdatesObservationTicket =
-            self.vfs->ObserveDirectoryChanges(current_directory_path, std::move(dir_change_callback));
+            self.vfs->ObserveDirectoryChangesWithPaths(current_directory_path, std::move(dir_change_callback));
     }
 
     [self clearFocusingRequest];

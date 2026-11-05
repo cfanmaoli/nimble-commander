@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <functional>
+#include <span>
 
 namespace nc::utility {
 
@@ -19,6 +20,12 @@ public:
     // Zero will be returned to indicate an error.
     // Any other values represent observation tickets.
     virtual uint64_t AddWatchPath(std::string_view _path, std::function<void()> _handler) = 0;
+
+    // Same as AddWatchPath(), but the handler also receives the names of the entries that changed
+    // directly inside the watched directory. An empty span means "something changed, but the exact
+    // entries are unknown" - the client then has to do a full reload.
+    using EventPathsHandler = std::function<void(std::span<const std::string>)>;
+    virtual uint64_t AddWatchPath(std::string_view _path, EventPathsHandler _handler);
 
     // Deregisters the watcher identified by _ticket.
     virtual void RemoveWatchPathWithTicket(uint64_t _ticket) = 0;
