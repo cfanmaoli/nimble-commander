@@ -256,16 +256,23 @@ BuildItemsLayout(NSFont *_font, PanelBriefViewColumnsLayout _layout, NSUInteger 
     return item;
 }
 
-static std::vector<CFStringRef> GatherDisplayFilenames(const data::Model *_data)
+// Measuring the intrinsic width of every single filename does not scale: in a directory with a
+// million entries it costs dozens of seconds of CPU and hundreds of megabytes of memory (the
+// underlying CTFramesetter-based bulk measurement builds one giant string out of all of them).
+// Above this threshold only a prefix is measured and the rest get the widest measured value -
+// the visual difference is negligible, the cost drops from seconds to milliseconds.
+static constexpr size_t g_MaxMeasuredFilenames = 20'000;
+
+static std::vector<CFStringRef> GatherDisplayFilenames(const data::Model *_data, size_t _limit)
 {
     if( _data == nullptr )
         return {};
 
     const auto &sorted_idices = _data->SortedDirectoryEntries();
     const auto &listing = _data->Listing();
-    const auto count = static_cast<int>(sorted_idices.size());
+    const auto count = std::min(sorted_idices.size(), _limit);
     auto strings = std::vector<CFStringRef>(count, nullptr);
-    for( int i = 0; i < count; ++i )
+    for( size_t i = 0; i < count; ++i )
         strings[i] = listing.DisplayFilenameCF(sorted_idices[i]);
     return strings;
 }
@@ -276,8 +283,9 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
         return;
     const auto &sorted_idices = _data->SortedDirectoryEntries();
     const auto &listing = _data->Listing();
-    assert(sorted_idices.size() == _widths.size());
-    const auto count = static_cast<int>(sorted_idices.size());
+    // _widths may cover only a prefix of the sorted entries - the rest wasn't measured on purpose
+    assert(_widths.size() <= sorted_idices.size());
+    const auto count = static_cast<int>(std::min(_widths.size(), sorted_idices.size()));
     for( int i = 0; i < count; ++i ) {
         const auto raw_idx = sorted_idices[i];
         if( const auto tags = listing.Tags(raw_idx); !tags.empty() ) {
@@ -291,10 +299,11 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
 {
     Log::Trace("[PanelBriefView calculateFilenamesWidths] started");
     at_scope_end([] { Log::Trace("[PanelBriefView calculateFilenamesWidths] finished"); });
-    const auto strings = GatherDisplayFilenames(m_Data);
-    const auto count = static_cast<int>(strings.size());
+    const auto total_count = m_Data ? m_Data->SortedDirectoryEntries().size() : 0;
+    const auto strings = GatherDisplayFilenames(m_Data, g_MaxMeasuredFilenames);
+    const auto measured_count = static_cast<int>(strings.size());
 
-    if( count == 0 ) {
+    if( measured_count == 0 ) {
         m_IntrinsicItemsWidths.clear();
         return;
     }
@@ -302,17 +311,22 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
     const auto font = nc::CurrentTheme().FilePanelsBriefFont();
     auto widths = TextWidthsCache::Instance().Widths(strings, font);
     PadWithSpaceForTags(widths, m_Data);
-    assert(static_cast<int>(widths.size()) == count);
+    assert(static_cast<int>(widths.size()) == measured_count);
 
     const auto &layout = m_ItemLayout;
     const unsigned short width_addition = (2 * layout.inset_left) + layout.icon_size + layout.inset_right;
     if( m_ColumnsLayout.dynamic_width_equal ) {
-        const auto max_width = *std::max_element(widths.begin(), widths.begin());
+        const auto max_width = *std::max_element(widths.begin(), widths.end());
         const unsigned short width = max_width + width_addition;
-        std::ranges::fill(widths, width);
+        widths.assign(static_cast<size_t>(total_count), width);
     }
     else {
         std::ranges::for_each(widths, [width_addition](auto &width) { width += width_addition; });
+        if( widths.size() < total_count ) {
+            // the rest of the items weren't measured - give them the widest value we've seen
+            const auto max_width = *std::max_element(widths.begin(), widths.end());
+            widths.resize(total_count, max_width);
+        }
     }
     m_IntrinsicItemsWidths = std::move(widths);
 }

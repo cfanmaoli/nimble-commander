@@ -28,6 +28,8 @@
 #include <NimbleCommander/Core/VFSInstanceManager.h>
 #include "Actions/OpenFile.h"
 #include "Actions/GoToFolder.h"
+#include <chrono>
+#include <cstdio>
 #include "Actions/Enter.h"
 #include <Operations/Copying.h>
 #include <Panel/CursorBackup.h>
@@ -1002,19 +1004,36 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
         [self CancelBackgroundOperations]; // clean running operations if any
         dispatch_or_run_in_main_queue([=] {
+            const auto perf_begin = std::chrono::steady_clock::now();
             [m_View savePathState];
             m_FlatView = false;
             m_FlatViewHost.reset();
             m_FlatViewRoot.clear();
             ++m_FlatViewGeneration;
             m_Data.Load(*listing, data::Model::PanelType::Directory);
+            const auto perf_loaded = std::chrono::steady_clock::now();
             for( const auto &i : _request->RequestSelectedEntries )
                 m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
             m_DataGeneration++;
             [m_View dataUpdated];
+            const auto perf_updated = std::chrono::steady_clock::now();
             [m_View panelChangedWithFocusedFilename:_request->RequestFocusedEntry
                                   loadPreviousState:_request->LoadPreviousViewState];
             [self onPathChanged];
+            if( std::getenv("NC_PERF_LOG") != nullptr ) {
+                using namespace std::chrono;
+                const auto perf_end = steady_clock::now();
+                const auto ms = [](auto _from, auto _to) {
+                    return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+                };
+                std::fprintf(stderr,
+                             "[perf] ui n=%u modelLoad=%.1fms dataUpdated=%.1fms tail=%.1fms total=%.1fms\n",
+                             (*listing)->Count(),
+                             ms(perf_begin, perf_loaded),
+                             ms(perf_loaded, perf_updated),
+                             ms(perf_updated, perf_end),
+                             ms(perf_begin, perf_end));
+            }
         });
     } catch( std::exception &e ) {
         ShowExceptionAlert(e);
@@ -1058,15 +1077,32 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 {
     [self CancelBackgroundOperations]; // clean running operations if any
     dispatch_or_run_in_main_queue([=] {
+        const auto perf_begin = std::chrono::steady_clock::now();
         [m_View savePathState];
         if( _listing->IsUniform() )
             m_Data.Load(_listing, data::Model::PanelType::Directory);
         else
             m_Data.Load(_listing, data::Model::PanelType::Temporary);
+        const auto perf_loaded = std::chrono::steady_clock::now();
         m_DataGeneration++;
         [m_View dataUpdated];
+        const auto perf_updated = std::chrono::steady_clock::now();
         [m_View panelChangedWithFocusedFilename:"" loadPreviousState:false];
         [self onPathChanged];
+        if( std::getenv("NC_PERF_LOG") != nullptr ) {
+            using namespace std::chrono;
+            const auto perf_end = steady_clock::now();
+            const auto ms = [](auto _from, auto _to) {
+                return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+            };
+            std::fprintf(stderr,
+                         "[perf] ui n=%u loadListing=%.1fms dataUpdated=%.1fms pathChanged=%.1fms total=%.1fms\n",
+                         _listing->Count(),
+                         ms(perf_begin, perf_loaded),
+                         ms(perf_loaded, perf_updated),
+                         ms(perf_updated, perf_end),
+                         ms(perf_begin, perf_end));
+        }
     });
 }
 

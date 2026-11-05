@@ -23,6 +23,8 @@
 #include <sys/mount.h>
 #include <pstld/pstld.h>
 #include <fmt/ranges.h>
+#include <chrono>
+#include <cstdio>
 #include <algorithm>
 
 namespace nc::vfs {
@@ -70,6 +72,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
                                                                       const VFSCancelChecker &_cancel_checker)
 {
     Log::Trace("NativeHost::FetchDirectoryListing() called with path='{}',_flags: {}", _path, _flags);
+    const auto perf_begin = std::chrono::steady_clock::now();
 
     using namespace native;
     if( !_path.starts_with('/') )
@@ -104,6 +107,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
     listing_source.display_filenames.reset(variable_container<>::type::sparse);
 
     std::vector<uint64_t> ext_flags; // store EF_xxx here
+    std::vector<dev_t> devs;         // store st_dev here, used by the display names pass
     constexpr size_t initial_prealloc_size = 64;
     size_t allocated_size = 0;
     auto resize_dense = [&](size_t _sz) {
@@ -120,6 +124,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         listing_source.gids.resize(_sz);
         listing_source.sizes.resize(_sz);
         ext_flags.resize(_sz);
+        devs.resize(_sz);
         allocated_size = _sz;
     };
 
@@ -143,16 +148,8 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         if( _params.add_time >= 0 )
             listing_source.add_times.insert(_n, _params.add_time);
 
-        if( _flags & VFSFlags::F_LoadDisplayNames )
-            if( S_ISDIR(listing_source.unix_modes[_n]) && !listing_source.filenames[_n].empty() &&
-                listing_source.filenames[_n] != ".." ) {
-                static auto &dnc = DisplayNamesCache::Instance();
-                if( auto display_name = dnc.DisplayName(
-                        _params.inode, _params.dev, listing_source.directories[0] + listing_source.filenames[_n]) )
-                    listing_source.display_filenames.insert(_n, std::string(*display_name));
-            }
-
         ext_flags[_n] = _params.ext_flags;
+        devs[_n] = _params.dev;
     };
 
     size_t next_entry_index = 0;
@@ -182,6 +179,36 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
     // check if final entries count is less than approximate
     if( next_entry_index < allocated_size )
         resize_dense(next_entry_index);
+
+    // Now fetch the localized display names, if requested. This is a rather expensive operation:
+    // for every directory it costs a stat() plus a LaunchServices-backed
+    // -[NSFileManager displayNameAtPath:] plus a Unicode normalisation - measured ~60us per entry,
+    // which makes a directory with 200k subdirectories take ~10 seconds to open. The overwhelming
+    // majority of the display names are identical to the plain filenames, so it only pays off on
+    // small/medium listings - for huge ones the feature is simply skipped.
+    if( _flags & VFSFlags::F_LoadDisplayNames ) {
+        static constexpr size_t max_items_for_display_names = 20'000;
+        if( next_entry_index <= max_items_for_display_names ) {
+            auto &dnc = DisplayNamesCache::Instance();
+            const std::string &directory = listing_source.directories[0];
+            for( size_t n = 0; n != next_entry_index; ++n ) {
+                if( !S_ISDIR(listing_source.unix_modes[n]) )
+                    continue;
+                const auto &filename = listing_source.filenames[n];
+                if( filename.empty() || filename == ".." )
+                    continue;
+                if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
+                    listing_source.display_filenames.insert(n, std::string(*display_name));
+            }
+        }
+        else {
+            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
+                       listing_source.directories[0],
+                       next_entry_index);
+        }
+    }
+
+    const auto perf_enumerated = std::chrono::steady_clock::now();
 
     // Now the main fetching is done there's a second pass to gather optional attributes per item:
     // - symlinks
@@ -261,8 +288,26 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         }
     });
 
+    const auto perf_epilogue = std::chrono::steady_clock::now();
+
     // And, finally, compose the listing source into a compact immutable listing object.
-    return VFSListing::Build(std::move(listing_source));
+    const VFSListingPtr listing = VFSListing::Build(std::move(listing_source));
+
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] fetch n=%zu enum=%.1fms epilogue=%.1fms build=%.1fms total=%.1fms\n",
+                     static_cast<size_t>(next_entry_index),
+                     ms(perf_begin, perf_enumerated),
+                     ms(perf_enumerated, perf_epilogue),
+                     ms(perf_epilogue, perf_end),
+                     ms(perf_begin, perf_end));
+    }
+    return listing;
 }
 
 std::expected<VFSListingPtr, Error> NativeHost::FetchSingleItemListing(std::string_view _path,

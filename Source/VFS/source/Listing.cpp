@@ -5,6 +5,8 @@
 #include <sys/param.h>
 #include <Base/mach_time.h>
 #include <cassert>
+#include <chrono>
+#include <cstdio>
 
 namespace nc::vfs {
 
@@ -133,8 +135,12 @@ static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> MoveToUn
 
 base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
 {
+    using clock = std::chrono::steady_clock;
+    const auto perf_begin = clock::now();
     Validate(_input); // will throw an exception on error
+    const auto perf_validated = clock::now();
     Compress(_input);
+    const auto perf_compressed = clock::now();
 
     auto l = base::intrusive_ptr<Listing>{new Listing};
     l->m_ItemsCount = static_cast<unsigned>(_input.filenames.size());
@@ -159,7 +165,24 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_Tags = std::move(_input.tags);
     l->m_CreationTime = time(nullptr);
     l->m_CreationTicks = base::machtime();
+    const auto perf_moved = clock::now();
     l->BuildFilenames();
+
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] build n=%u validate=%.1fms compress=%.1fms move=%.1fms filenames=%.1fms total=%.1fms\n",
+                     l->m_ItemsCount,
+                     ms(perf_begin, perf_validated),
+                     ms(perf_validated, perf_compressed),
+                     ms(perf_compressed, perf_moved),
+                     ms(perf_moved, perf_end),
+                     ms(perf_begin, perf_end));
+    }
 
     return l;
 }

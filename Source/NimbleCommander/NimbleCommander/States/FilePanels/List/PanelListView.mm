@@ -617,7 +617,17 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     };
     [m_TableView enumerateAvailableRowViewsUsingBlock:block];
 
-    if( old_rows_count < new_rows_count ) {
+    // Inserting/removing a huge range (e.g. all 1M rows when a listing of a whole directory gets
+    // replaced) makes AppKit update its row bookkeeping index by index, which is very expensive.
+    // For such wholesale changes just tell it that the row count has changed.
+    const int row_delta = std::max(new_rows_count, old_rows_count) - std::min(new_rows_count, old_rows_count);
+    if( row_delta > 1000 ) {
+        if( old_rows_count == 0 || new_rows_count == 0 )
+            [m_TableView reloadData];
+        else
+            [m_TableView noteNumberOfRowsChanged];
+    }
+    else if( old_rows_count < new_rows_count ) {
         const auto to_add = NSMakeRange(old_rows_count, new_rows_count - old_rows_count);
         [m_TableView insertRowsAtIndexes:[NSIndexSet indexSetWithIndexesInRange:to_add]
                            withAnimation:NSTableViewAnimationEffectNone];

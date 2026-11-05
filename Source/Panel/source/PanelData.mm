@@ -10,6 +10,8 @@
 #include <magic_enum.hpp>
 #include <numeric>
 #include <pstld/pstld.h>
+#include <chrono>
+#include <cstdio>
 
 namespace nc::panel::data {
 
@@ -114,9 +116,11 @@ void Model::Load(const VFSListingPtr &_listing, PanelType _type)
               _listing->Count(),
               _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
 
+    const auto perf_begin = std::chrono::steady_clock::now();
     m_Listing = _listing;
     m_Type = _type;
     InitVolatileDataWithListing(m_VolatileData, *m_Listing);
+    const auto perf_vd = std::chrono::steady_clock::now();
 
     m_HardFiltering.text.OnPanelDataLoad();
     m_SoftFiltering.OnPanelDataLoad();
@@ -126,9 +130,26 @@ void Model::Load(const VFSListingPtr &_listing, PanelType _type)
     exec_group.Run([this] { DoRawSort(*m_Listing, m_EntriesByRawName); });
     exec_group.Run([this] { DoSortWithHardFiltering(); });
     exec_group.Wait();
+    const auto perf_sorted = std::chrono::steady_clock::now();
     BuildSoftFilteringIndeces();
+    const auto perf_filtered = std::chrono::steady_clock::now();
     // update stats
     UpdateStatictics();
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] model.load n=%u vd=%.1fms sorts=%.1fms softfilter=%.1fms stats=%.1fms total=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_vd),
+                     ms(perf_vd, perf_sorted),
+                     ms(perf_sorted, perf_filtered),
+                     ms(perf_filtered, perf_end),
+                     ms(perf_begin, perf_end));
+    }
 }
 
 static void UpdateWithExisingVD(ItemVolatileData &_new_vd, const ItemVolatileData &_ex_vd)

@@ -275,7 +275,10 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
     //    getattrlist() will return ENOTSUP if it is not supported on a particular volume.
 
     constexpr uint64_t options = FSOPT_ATTR_CMN_EXTENDED;
-    constexpr size_t attr_buf_size = 65536;
+    // A larger buffer means fewer getattrlistbulk() calls - the per-call overhead is non-trivial
+    // for directories with hundreds of thousands of entries (2809 calls for 1M items with 64 KiB
+    // vs 176 calls with 1 MiB, measured ~5% faster end-to-end).
+    constexpr size_t attr_buf_size = 1024 * 1024;
     const std::unique_ptr<char[]> attr_buf = std::make_unique<char[]>(attr_buf_size);
     CallbackParams params;
     while( true ) {
