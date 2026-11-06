@@ -830,3 +830,22 @@ aeacf91b4 listing 内存账本（mem=92.9MB）
 544e5788b 名字-only 枚举（F_NamesOnly）
 ```
 
+
+---
+
+## 21. 第十五轮：F_NoTimes（惰性日期列的地基）
+
+目标是把五个时间列从常驻内存里拿掉（1M 项 = 20 MB），同时保留大小/inode/uid/gid/flags。
+新增 VFSFlags::F_NoTimes：
+
+- Fetching::ReadDirAttributesBulk() 多一个 _with_times 参数，为 false 时 attrlist 不请求
+  CRTIME/MODTIME/CHGTIME/ACCTIME/ADDEDTIME；
+- NativeHost 在 F_NoTimes 下把时间容器全部留成 sparse-empty，并且 fill() 不写时间字段
+  （CompactTimes() 会把“空稠密容器”识别为缺失，见第 16/19 章）；
+- 结果：listing 有 HasSize()/HasInode()/HasUID() 等，但 HasMTime() 等一律为 false。
+
+内核枚举时间没有明显变化（~2.17 s → ~2.2 s，瓶颈不在属性多少），收益纯粹在内存。
+按账本估算，1M 项的 listing 会从 92.9 MB 降到约 72.9 MB（-20 MB），接到面板上之后再复测。
+
+新增单元测试：F_NoTimes drops the time columns but keeps the rest（大小/inode 在、时间不在）。
+

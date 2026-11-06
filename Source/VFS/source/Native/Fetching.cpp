@@ -260,15 +260,18 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
 int Fetching::ReadDirAttributesBulk(const int _dir_fd,
                                     const std::function<void(size_t _fetched_now)> &_cb_fetch,
                                     const Callback &_cb_param,
-                                    const size_t _max_entries)
+                                    const size_t _max_entries,
+                                    const bool _with_times)
 {
     attrlist attr_list;
     memset(&attr_list, 0, sizeof(attr_list));
     attr_list.bitmapcount = ATTR_BIT_MAP_COUNT;
     attr_list.commonattr = ATTR_CMN_RETURNED_ATTRS | ATTR_CMN_NAME | ATTR_CMN_ERROR | ATTR_CMN_DEVID |
-                           ATTR_CMN_OBJTYPE | ATTR_CMN_CRTIME | ATTR_CMN_MODTIME | ATTR_CMN_CHGTIME | ATTR_CMN_ACCTIME |
-                           ATTR_CMN_ADDEDTIME | ATTR_CMN_OWNERID | ATTR_CMN_GRPID | ATTR_CMN_ACCESSMASK |
-                           ATTR_CMN_FLAGS | ATTR_CMN_FILEID;
+                           ATTR_CMN_OBJTYPE | ATTR_CMN_OWNERID | ATTR_CMN_GRPID | ATTR_CMN_ACCESSMASK | ATTR_CMN_FLAGS |
+                           ATTR_CMN_FILEID;
+    if( _with_times )
+        attr_list.commonattr |=
+            ATTR_CMN_CRTIME | ATTR_CMN_MODTIME | ATTR_CMN_CHGTIME | ATTR_CMN_ACCTIME | ATTR_CMN_ADDEDTIME;
     attr_list.fileattr = ATTR_FILE_DATALENGTH;
     attr_list.forkattr = ATTR_CMNEXT_EXT_FLAGS;
 

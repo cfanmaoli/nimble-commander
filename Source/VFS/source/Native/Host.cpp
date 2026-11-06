@@ -176,11 +176,20 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     listing_source.hosts[0] = shared_from_this();
     listing_source.directories[0] = EnsureTrailingSlash(std::string(_path));
     listing_source.inodes.reset(variable_container<>::type::dense);
-    listing_source.atimes.reset(variable_container<>::type::dense);
-    listing_source.mtimes.reset(variable_container<>::type::dense);
-    listing_source.ctimes.reset(variable_container<>::type::dense);
-    listing_source.btimes.reset(variable_container<>::type::dense);
-    listing_source.add_times.reset(variable_container<>::type::sparse);
+    if( _flags & VFSFlags::F_NoTimes ) {
+        listing_source.atimes.reset(variable_container<>::type::sparse);
+        listing_source.mtimes.reset(variable_container<>::type::sparse);
+        listing_source.ctimes.reset(variable_container<>::type::sparse);
+        listing_source.btimes.reset(variable_container<>::type::sparse);
+        listing_source.add_times.reset(variable_container<>::type::sparse);
+    }
+    else {
+        listing_source.atimes.reset(variable_container<>::type::dense);
+        listing_source.mtimes.reset(variable_container<>::type::dense);
+        listing_source.ctimes.reset(variable_container<>::type::dense);
+        listing_source.btimes.reset(variable_container<>::type::dense);
+        listing_source.add_times.reset(variable_container<>::type::sparse);
+    }
     listing_source.unix_flags.reset(variable_container<>::type::dense);
     listing_source.uids.reset(variable_container<>::type::dense);
     listing_source.gids.reset(variable_container<>::type::dense);
@@ -213,22 +222,25 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     // allocate space for up to 64 items upfront
     resize_dense(initial_prealloc_size);
 
+    const bool no_times = (_flags & VFSFlags::F_NoTimes) != 0;
     auto fill = [&](size_t _n, const Fetching::CallbackParams &_params) {
         assert(_n < listing_source.filenames.size());
         listing_source.filenames[_n] = _params.filename;
         listing_source.inodes[_n] = _params.inode;
         listing_source.unix_types[_n] = IFTODT(_params.mode);
-        listing_source.atimes[_n] = _params.acc_time;
-        listing_source.mtimes[_n] = _params.mod_time;
-        listing_source.ctimes[_n] = _params.chg_time;
-        listing_source.btimes[_n] = _params.crt_time;
+        if( !no_times ) {
+            listing_source.atimes[_n] = _params.acc_time;
+            listing_source.mtimes[_n] = _params.mod_time;
+            listing_source.ctimes[_n] = _params.chg_time;
+            listing_source.btimes[_n] = _params.crt_time;
+            if( _params.add_time >= 0 )
+                listing_source.add_times.insert(_n, _params.add_time);
+        }
         listing_source.unix_modes[_n] = _params.mode;
         listing_source.unix_flags[_n] = _params.flags;
         listing_source.uids[_n] = _params.uid;
         listing_source.gids[_n] = _params.gid;
         listing_source.sizes[_n] = _params.size;
-        if( _params.add_time >= 0 )
-            listing_source.add_times.insert(_n, _params.add_time);
 
         ext_flags[_n] = _params.ext_flags;
         devs[_n] = _params.dev;
@@ -250,8 +262,9 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
 
     // when Admin Mode is on - we use different fetch route
     const int ret =
-        is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items)
-                     : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
+        is_native_io
+            ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items, (_flags & VFSFlags::F_NoTimes) == 0)
+            : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});
 

@@ -313,6 +313,40 @@ TEST_CASE(PREFIX "Names-only listing carries no attributes")
     CHECK((*listing)->IsDir(static_cast<unsigned>(std::distance(
         (*listing)->begin(), std::ranges::find_if(**listing, [](auto &it) { return it.Filename() == "subdir"; })))));
 }
+TEST_CASE(PREFIX "F_NoTimes drops the time columns but keeps the rest")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_no_times_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 3; ++i ) {
+        std::ofstream out(root / ("t" + std::to_string(i)));
+        out << "hello world";
+    }
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NoTimes);
+    REQUIRE(listing);
+    REQUIRE((*listing)->Count() == 3);
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK((*listing)->HasSize(i));
+        CHECK((*listing)->Size(i) == 11);
+        CHECK((*listing)->HasInode(i));
+        CHECK(!(*listing)->HasMTime(i));
+        CHECK(!(*listing)->HasATime(i));
+        CHECK(!(*listing)->HasBTime(i));
+        CHECK(!(*listing)->HasCTime(i));
+        CHECK(!(*listing)->HasAddTime(i));
+    }
+
+    // and the usual fetch still has them
+    const auto full = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot);
+    REQUIRE(full);
+    REQUIRE((*full)->Count() == 3);
+    for( unsigned i = 0; i != (*full)->Count(); ++i ) {
+        CHECK((*full)->HasMTime(i));
+        CHECK((*full)->HasSize(i));
+    }
+}
 } // namespace VFSNativeTests
 
 #undef PREFIX
