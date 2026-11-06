@@ -1001,3 +1001,52 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 - 9 个套件全绿（VFSUT 42732/69 等）；`clang-format --check` 通过；app 重编译/签名/安装；
 - 惰性模式实测：`listing mem=61.8MB`，载入、增量、取数均无异常。
 
+
+---
+
+## 26. 第二十轮：测量方法修正 + 裁掉向量容量超调
+
+### 26.1 终于找到 footprint 不可比的根因
+
+之前每次压测的“基线”里都可能已经躺着一份 1M listing。根因不是 LaunchServices、不是 State.json、也不是
+任何配置文件——是 **Cocoa 的窗口恢复（window restoration）**：即使删掉
+`~/Library/Saved Application State/info.filesmanager.Files.savedState` 和四个 App Support 目录里的
+`State`，AppKit 仍会把上次的窗口/标签恢复出来（它会自己重新落盘）。
+
+干净的测法是在启动时加参数：
+
+```
+/Applications/Nimble Commander-Fork.app/Contents/MacOS/Nimble Commander-Fork -ApplePersistenceIgnoreState YES
+```
+
+加了这个参数之后，启动日志里就只剩 `default content left=/Users/lim/ ...` + 一次 `goto request=...`，
+不再出现莫名其妙的大目录。临时的 `[perf] goto` / `[perf] default content` 埋点已经移除。
+
+顺带把**目录路径**加进了 `[perf] fetch` 行（`dir=/...`），以后排查“谁在读这个目录”会快很多。
+
+### 26.2 直接测量（干净启动 + 打开 1M 目录）
+
+| 模式 | 空转基线 | 打开 100 万项目录后 |
+|---|---|---|
+| 完整属性（默认）| ~105 MB | **~400 MB**（两次干净测量：393 / 402 MB）|
+| 惰性日期 + 惰性大小 | ~105 MB | **~270 MB**（269.9 / 271.9 MB）|
+
+**这比之前文档里估算的 283 / 252 MB 要高**：之前的估算是“底噪 + listing 账本 + 模型”，漏掉了
+载入期一次性分配的容器（`ext_flags`/`devs` 各 8 MB、排序索引数组、枚举缓冲区等）在 malloc 里被保留的页面。
+结论：**默认模式约 400 MB，惰性模式约 270 MB，250 MB 的目标没有真正达到**（差 ~20 MB）。
+
+试过在载入后调用 `malloc_zone_pressure_relief()` 把临时页还给系统：干净 A/B 下 footprint 没有稳定收益
+（多次测量抖动 270–380 MB，甚至有 944 MB 的离群值），已回退，不留这段代码。
+
+### 26.3 本轮保留的改动：裁掉向量容量超调
+
+枚举器按几何增长填向量，100 万项会带上十几%的空容量。`Listing::Build` 在接管这些向量后按
+`capacity > size * 1.06` 做 `shrink_to_fit()`（一次 ~3 ms 的拷贝）：
+
+```
+默认模式：mem=92.9MB -> 81.1MB   (-11.8 MB)
+惰性模式：mem=61.8MB -> 54.4MB   (-7.4 MB)
+```
+
+`mem=` 是 `Listing::ApproximateMemoryFootprint()`，不受 footprint 抖动影响，可作为确定性的回归指标。
+

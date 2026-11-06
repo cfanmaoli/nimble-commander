@@ -171,6 +171,14 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_Hosts = std::move(_input.hosts);
     l->m_Directories = std::move(_input.directories);
     l->m_Filenames = std::move(_input.filenames);
+    // The enumerator grows its vectors geometrically, so a million-entry listing can carry tens of
+    // percent of dead capacity. Trim it now that the final size is known - one copy of the data in
+    // exchange for the resident memory.
+    const auto trim = [](auto &_v) {
+        if( _v.capacity() > _v.size() + _v.size() / 16 )
+            _v.shrink_to_fit();
+    };
+    trim(l->m_Filenames);
     l->m_DisplayFilenames = std::move(_input.display_filenames);
     l->m_Sizes = std::move(_input.sizes);
     l->m_Inodes = std::move(_input.inodes);
@@ -181,6 +189,8 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_AddTimes = CompactTimes(_input.add_times, l->m_ItemsCount);
     l->m_UnixModes = std::move(_input.unix_modes);
     l->m_UnixTypes = std::move(_input.unix_types);
+    trim(l->m_UnixModes);
+    trim(l->m_UnixTypes);
     l->m_UIDS = std::move(_input.uids);
     l->m_GIDS = std::move(_input.gids);
     l->m_UnixFlags = std::move(_input.unix_flags);
