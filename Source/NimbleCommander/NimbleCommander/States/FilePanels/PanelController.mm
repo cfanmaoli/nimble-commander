@@ -1900,16 +1900,21 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     __weak PanelController *weak_self = self;
     [self commitCancelableLoadingTask:[host, root, generation, fetch_flags, max_items, max_directories, weak_self](
                                           const std::function<bool()> &_is_cancelled) {
+        const auto flat_begin = std::chrono::steady_clock::now();
         const FlatListingResult result =
             BuildFlatListing(host, root, fetch_flags, _is_cancelled, max_items, max_directories);
-        if( std::getenv("NC_PERF_LOG") != nullptr )
+        if( std::getenv("NC_PERF_LOG") != nullptr ) {
+            using namespace std::chrono;
+            const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
             std::fprintf(stderr,
-                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d\n",
+                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d took=%lldms\n",
                          root.c_str(),
                          result.scanned_items,
                          result.scanned_directories,
                          result.truncated ? 1 : 0,
-                         result.listing ? 1 : 0);
+                         result.listing ? 1 : 0,
+                         static_cast<long long>(ms));
+        }
         if( !result.listing )
             return; // cancelled, or nothing could be fetched at all
         dispatch_to_main_queue([weak_self, result, generation] {
