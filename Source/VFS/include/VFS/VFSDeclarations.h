@@ -170,6 +170,13 @@ struct Flags {
 
     /** load Finder Tafs. */
     static constexpr uint64_t F_LoadTags = 0x100000000ull;
+
+    /**
+     * For listing. Enumerate the names and the entry types only, without the attributes - that's
+     * an order of magnitude faster on huge directories (readdir instead of getattrlistbulk), the
+     * client is then expected to fetch the attributes of the entries it actually needs.
+     */
+    static constexpr uint64_t F_NamesOnly = 0x200000000ull;
 };
 
 class Listing;

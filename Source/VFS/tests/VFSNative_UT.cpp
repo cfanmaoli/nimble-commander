@@ -285,6 +285,34 @@ TEST_CASE(PREFIX "FetchDirectoryListingPreview stops at the requested amount")
     CHECK(!zero);
 }
 
+TEST_CASE(PREFIX "Names-only listing carries no attributes")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_names_only_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 5; ++i )
+        std::ofstream(root / ("n" + std::to_string(i)));
+    std::filesystem::create_directories(root / "subdir");
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NamesOnly);
+    REQUIRE(listing);
+    CHECK((*listing)->Count() == 6);
+    CHECK(ListingHas(*listing, "n0"));
+    CHECK(ListingHas(*listing, "subdir"));
+
+    // no attributes at all
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK(!(*listing)->HasSize(i));
+        CHECK(!(*listing)->HasMTime(i));
+        CHECK(!(*listing)->HasATime(i));
+        CHECK(!(*listing)->HasInode(i));
+        CHECK(!(*listing)->HasUID(i));
+    }
+    // but the entry types are known
+    CHECK((*listing)->IsDir(static_cast<unsigned>(std::distance(
+        (*listing)->begin(), std::ranges::find_if(**listing, [](auto &it) { return it.Filename() == "subdir"; })))));
+}
 } // namespace VFSNativeTests
 
 #undef PREFIX

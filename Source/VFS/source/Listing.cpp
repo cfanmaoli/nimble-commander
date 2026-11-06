@@ -134,11 +134,14 @@ static variable_container<int32_t> CompactTimes(const variable_container<time_t>
         case variable_container<>::type::common:
             return variable_container<int32_t>(clamp(_src[0]));
         case variable_container<>::type::dense: {
+            const auto src = _src.dense_values();
+            // an empty dense container means "no such attribute" (e.g. a names-only listing)
+            if( src.size() != _count )
+                return variable_container<int32_t>(variable_container<>::type::sparse);
             variable_container<int32_t> dst(variable_container<>::type::dense);
             dst.resize(_count);
             auto values = dst.dense_values();
-            const auto src = _src.dense_values();
-            for( size_t i = 0; i != values.size() && i != src.size(); ++i )
+            for( size_t i = 0; i != values.size(); ++i )
                 values[i] = clamp(src[i]);
             return dst;
         }

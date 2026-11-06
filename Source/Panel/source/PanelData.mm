@@ -98,7 +98,8 @@ static void InitVolatileDataWithListing(std::vector<ItemVolatileData> &_vd, cons
                     _vd[i].size = sz;
             }
         }
-        else {
+        else if( _listing.HasSize(i) ) {
+            // the listings built with F_NamesOnly simply don't have the sizes
             _vd[i].size = _listing.Size(i);
         }
     }

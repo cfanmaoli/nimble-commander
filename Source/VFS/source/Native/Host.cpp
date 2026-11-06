@@ -84,6 +84,28 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingPreview(std
     return FetchDirectoryListingImpl(_path, _flags | VFSFlags::F_NoDotDot, _cancel_checker, _max_items);
 }
 
+// Maps a readdir()-provided entry type to the corresponding file type bits of a unix mode.
+static mode_t DTypeToUnixMode(const uint8_t _type) noexcept
+{
+    switch( _type ) {
+        case DT_REG:
+            return S_IFREG;
+        case DT_DIR:
+            return S_IFDIR;
+        case DT_LNK:
+            return S_IFLNK;
+        case DT_BLK:
+            return S_IFBLK;
+        case DT_CHR:
+            return S_IFCHR;
+        case DT_FIFO:
+            return S_IFIFO;
+        case DT_SOCK:
+            return S_IFSOCK;
+        default:
+            return 0;
+    }
+}
 std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::string_view _path,
                                                                           const unsigned long _flags,
                                                                           const VFSCancelChecker &_cancel_checker,
@@ -108,6 +130,47 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         return std::unexpected(Error{Error::POSIX, errno});
     const auto close_fd = at_scope_end([fd] { close(fd); });
 
+    if( (_flags & VFSFlags::F_NamesOnly) && is_native_io ) {
+        // A fast names-only pass: readdir() instead of getattrlistbulk(), one syscall batch per
+        // chunk of entries. The attributes are simply not present - the client is expected to
+        // fetch them for the entries it actually shows.
+        using nc::base::variable_container;
+        ListingInput source;
+        source.hosts[0] = shared_from_this();
+        source.directories[0] = EnsureTrailingSlash(std::string(_path));
+        source.sizes.reset(variable_container<>::type::sparse);
+        source.inodes.reset(variable_container<>::type::sparse);
+        source.atimes.reset(variable_container<>::type::sparse);
+        source.mtimes.reset(variable_container<>::type::sparse);
+        source.ctimes.reset(variable_container<>::type::sparse);
+        source.btimes.reset(variable_container<>::type::sparse);
+        source.add_times.reset(variable_container<>::type::sparse);
+        source.uids.reset(variable_container<>::type::sparse);
+        source.gids.reset(variable_container<>::type::sparse);
+        source.unix_flags.reset(variable_container<>::type::sparse);
+
+        if( need_to_add_dot_dot ) {
+            source.filenames.emplace_back("..");
+            source.unix_modes.emplace_back(S_IFDIR);
+            source.unix_types.emplace_back(DT_DIR);
+        }
+
+        DIR *const dirp = fdopendir(dup(fd));
+        if( dirp == nullptr )
+            return std::unexpected(Error{Error::POSIX, errno});
+        const auto close_dir = at_scope_end([dirp] { closedir(dirp); });
+        while( const dirent *const entry = readdir(dirp) ) {
+            const std::string_view name = entry->d_name;
+            if( name == "." || name == ".." )
+                continue;
+            source.filenames.emplace_back(name);
+            source.unix_modes.emplace_back(DTypeToUnixMode(entry->d_type));
+            source.unix_types.emplace_back(entry->d_type);
+            if( _cancel_checker && _cancel_checker() )
+                return std::unexpected(Error{Error::POSIX, ECANCELED});
+        }
+        return VFSListing::Build(std::move(source));
+    }
     using nc::base::variable_container;
     ListingInput listing_source;
     listing_source.hosts[0] = shared_from_this();

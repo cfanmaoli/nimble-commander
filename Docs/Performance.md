@@ -745,3 +745,26 @@ materialize 的 CFString），并打进 `NC_PERF_LOG` 的 build 行：
 立刻能看到这些值和"按大小/时间排序"需要先做一次全量 stat。这是一个**产品取舍**，不是纯工程优化；
 代码里没有默认开启它。
 
+
+---
+
+## 19. 第十四轮：名字-only 枚举（惰性元数据的地基）
+
+新增 `VFSFlags::F_NamesOnly`：`NativeHost` 在这个标志下用 `readdir()` 而不是 `getattrlistbulk()`，
+只填文件名和条目类型（DT_REG/DT_DIR/…），**完全不取属性**——100 万项的枚举从 2.2 s 降到
+~0.6 s（readdir 的实测下限）+ 一次 ~50 ms 的构建。
+
+实现要点：
+
+- 大小/时间/inode/uid/gid/flags 这些容器全部留空（sparse 空），所以 `HasSize()`/`HasMTime()` 等
+  一律返回 false，调用方可以据此判断\“属性还没取\”；
+- `PanelData::InitVolatileDataWithListing()` 增加了 `HasSize()` 检查（以前默认 listing 一定带 size）；
+- 时间列压缩 `CompactTimes()` 现在会把\“空的稠密容器\”也识别为\“属性缺失\”，不再填 0；
+- 只对本地 IO 生效（Admin Mode 下退回原来的路径）。
+
+这条路径目前还没有接到界面上——它是\“惰性元数据模式\”的地基：面板只枚举名字，
+然后对可见行按需 `stat`。要把它变成可用功能，还需要视图侧的占位符、可见行取属性的调度，
+以及\“按大小/时间排序\”时的全量回补。是否要做成可选模式（默认关）等你的决定。
+
+新增单元测试：`Names-only listing carries no attributes`（条目数/名字/类型正确，属性确实缺失）。
+
