@@ -30,6 +30,7 @@
 #include "Actions/GoToFolder.h"
 #include <chrono>
 #include <cstdio>
+#include <ankerl/unordered_dense.h>
 #include "Actions/Enter.h"
 #include <Operations/Copying.h>
 #include <Panel/CursorBackup.h>
@@ -377,6 +378,9 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_LazyDatesQ;
     bool m_LazyDates;
     bool m_LazySizes;
+    // raw indices whose attributes are being fetched right now - the scroll notifications can
+    // fire many times before the first result lands, so this keeps the work bounded
+    ankerl::unordered_dense::set<unsigned> m_LazyPending;
 
     NCPanelQuickSearch *m_QuickSearch;
 
@@ -585,6 +589,31 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     return m_View.active;
 }
 
+namespace {
+
+// True when the sort order is derived from the timestamps or the sizes - the lazy modes don't
+// carry them, so a full attribute pass is needed before such a sort can make sense.
+bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
+{
+    using M = nc::panel::data::SortMode;
+    switch( _mode.sort ) {
+        case M::SortBySize:
+        case M::SortBySizeRev:
+        case M::SortByModTime:
+        case M::SortByModTimeRev:
+        case M::SortByBirthTime:
+        case M::SortByBirthTimeRev:
+        case M::SortByAddTime:
+        case M::SortByAddTimeRev:
+        case M::SortByAccessTime:
+        case M::SortByAccessTimeRev:
+            return true;
+        default:
+            return false;
+    }
+}
+
+} // namespace
 - (void)changeSortingModeTo:(data::SortMode)_mode
 {
     if( _mode != m_Data.SortMode() ) {
@@ -597,6 +626,13 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         [m_View dataSortingHasChanged];
         [m_View dataUpdated];
         [self markRestorableStateAsInvalid];
+
+        if( SortModeNeedsAttributes(_mode) && (m_LazyDates || m_LazySizes) ) {
+            // the listing doesn't carry what this sort needs - reload it with the full attributes
+            m_LazyDates = false;
+            m_LazySizes = false;
+            [self refreshPanel];
+        }
     }
 }
 
@@ -875,12 +911,18 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         const int raw_index = m_Data.RawIndexForSortIndex(i);
         if( raw_index < 0 )
             continue;
-        if( m_LazyDates && m_Data.FetchedTimesAtRawPos(raw_index) )
+        if( m_LazyPending.contains(static_cast<unsigned>(raw_index)) )
+            continue;
+        const bool need_dates = m_LazyDates && !m_Data.FetchedTimesAtRawPos(raw_index).has_value();
+        const bool need_size = m_LazySizes && !m_Data.HasFetchedSize(static_cast<unsigned>(raw_index));
+        if( !need_dates && !need_size )
             continue;
         raw_indices.push_back(static_cast<unsigned>(raw_index));
     }
     if( raw_indices.empty() )
         return;
+    for( const unsigned raw_index : raw_indices )
+        m_LazyPending.insert(raw_index);
 
     const auto host = listing->Host();
     const auto directory = listing->Directory();
@@ -915,7 +957,9 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         }
         if( fetched.empty() )
             return;
-        dispatch_to_main_queue([self, fetched = std::move(fetched)] {
+        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = std::move(raw_indices)] {
+            for( const unsigned raw_index : raw_indices )
+                m_LazyPending.erase(raw_index);
             if( !m_LazyDates && !m_LazySizes )
                 return;
             for( const auto &i : fetched ) {
@@ -1268,6 +1312,16 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 {
     if( auto wc = objc_cast<NCMainWindowController>(self.state.window.delegate) )
         [wc invalidateRestorableState];
+}
+
+- (void)panelView:(PanelView *) [[maybe_unused]] _view visibleSortedRangeChangedTo:(NSRange)_range
+{
+    if( (!m_LazyDates && !m_LazySizes) || _range.location == NSNotFound )
+        return;
+    // pull in a bit more than what's visible, so that a small scroll doesn't need a round trip
+    const NSUInteger margin = 100;
+    const NSUInteger begin = _range.location > margin ? _range.location - margin : 0;
+    [self fetchLazyDatesForSortedRange:NSMakeRange(begin, _range.length + 2 * margin)];
 }
 
 - (void)onCursorChanged

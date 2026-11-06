@@ -966,3 +966,31 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 - 新增单元测试 `F_NoSizes drops the sizes but keeps the times`；
 - 9 个套件全绿（VFSUT 42714/69 等）；`clang-format --check` 通过；app 重编译/签名/安装。
 
+
+---
+
+## 25. 第十九轮：惰性模式的收尾（滚动补取、排序回退、去重）
+
+### 25.1 滚动补取
+
+`PanelListView` 现在监听 `NSViewBoundsDidChangeNotification`（`contentView.postsBoundsChangedNotifications`），
+把 `rowsInRect:` 得到的可见排序区间通过 `PanelViewDelegate` 的
+`panelView:visibleSortedRangeChangedTo:` 交给面板，面板再取 `[可见区间 ± 100]` 的属性。
+
+### 25.2 排序回退
+
+惰性模式下按大小/时间排序是没有意义的（这些列不在内存里），所以 `changeSortingModeTo:` 检测到
+新的排序需要属性时，会关掉当前面板的惰性开关并触发一次**全量属性刷新**，之后再排序。
+
+### 25.3 去重
+
+滚动通知会在结果回来之前连发很多次，所以加了 `m_LazyPending`（在途索引集合）：正在取的索引不会重复排队；
+同时用 `Model::HasFetchedSize()` / `FetchedTimesAtRawPos()` 跳过已经取到的行。
+
+实测同一次载入 + 自动滚动过程中单条目 stat 次数：**1280 → 440**（首屏 200 + 光标窗口 220 + 少量几何变化）。
+
+### 25.4 验证
+
+- 9 个套件全绿（VFSUT 42732/69 等）；`clang-format --check` 通过；app 重编译/签名/安装；
+- 惰性模式实测：`listing mem=61.8MB`，载入、增量、取数均无异常。
+

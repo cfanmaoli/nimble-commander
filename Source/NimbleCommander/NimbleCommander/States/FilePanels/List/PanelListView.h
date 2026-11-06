@@ -23,6 +23,10 @@ class Model;
 @property(nonatomic, readonly) int itemsInColumn;
 @property(nonatomic) int cursorPosition;
 @property(nonatomic) std::function<void(nc::panel::data::SortMode)> sortModeChangeCallback;
+
+// Called with the range of the sorted positions that are on screen, whenever the scrolling moved
+// them. Used to pull in the attributes that the lazy modes don't keep in memory.
+@property(nonatomic) std::function<void(NSRange)> visibleRangeChangedCallback;
 @property(nonatomic, readonly) PanelView *panelView;
 
 - (void)onDataChanged;

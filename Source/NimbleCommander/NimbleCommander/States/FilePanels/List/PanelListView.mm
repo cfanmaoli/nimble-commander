@@ -96,6 +96,7 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 @synthesize dateModifiedFormattingStyle = m_DateModifiedFormattingStyle;
 @synthesize dateAccessedFormattingStyle = m_DateAccessedFormattingStyle;
 @synthesize sortModeChangeCallback = m_SortModeChangeCallback;
+@synthesize visibleRangeChangedCallback = m_VisibleRangeChangedCallback;
 
 - (id)initWithFrame:(NSRect)_frame iconRepository:(nc::vfsicon::IconRepository &)_ir
 {
@@ -112,6 +113,11 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
         m_ScrollView.layer.drawsAsynchronously = false;
         m_ScrollView.hasVerticalScroller = true;
         m_ScrollView.hasHorizontalScroller = true;
+        m_ScrollView.contentView.postsBoundsChangedNotifications = true;
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(onScrollViewBoundsChanged:)
+                                                   name:NSViewBoundsDidChangeNotification
+                                                 object:m_ScrollView.contentView];
         m_ScrollView.borderType = NSNoBorder;
         m_ScrollView.drawsBackground = true;
         [self addSubview:m_ScrollView];
@@ -262,6 +268,16 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
     m_TagsColumn.headerCell.alignment = NSTextAlignmentLeft;
     m_TagsColumn.resizingMask = NSTableColumnUserResizingMask;
     [m_TagsColumn addObserver:self forKeyPath:@"width" options:0 context:nullptr];
+}
+
+- (void)onScrollViewBoundsChanged:(NSNotification *) [[maybe_unused]] _note
+{
+    if( !m_VisibleRangeChangedCallback || !m_TableView )
+        return;
+    const NSRange rows = [m_TableView rowsInRect:m_TableView.visibleRect];
+    if( rows.location == NSNotFound )
+        return;
+    m_VisibleRangeChangedCallback(rows);
 }
 
 - (void)dealloc

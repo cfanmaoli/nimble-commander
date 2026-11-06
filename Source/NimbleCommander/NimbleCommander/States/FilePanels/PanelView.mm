@@ -192,6 +192,14 @@ struct StateStorage {
         if( PanelView *const strong_self = weak_self )
             [strong_self.controller changeSortingModeTo:_sm];
     };
+    view.visibleRangeChangedCallback = [=](NSRange _range) {
+        PanelView *const strong_self = weak_self;
+        if( strong_self == nil )
+            return;
+        const id<PanelViewDelegate> controller = strong_self.controller;
+        if( [controller respondsToSelector:@selector(panelView:visibleSortedRangeChangedTo:)] )
+            [controller panelView:strong_self visibleSortedRangeChangedTo:_range];
+    };
     return view;
 }
 

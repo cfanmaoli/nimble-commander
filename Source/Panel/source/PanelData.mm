@@ -1158,6 +1158,11 @@ void Model::SetFetchedSize(unsigned _raw_index, uint64_t _size)
     m_VolatileData[_raw_index].size = _size;
 }
 
+bool Model::HasFetchedSize(unsigned _raw_index) const noexcept
+{
+    return _raw_index < m_VolatileData.size() && m_VolatileData[_raw_index].is_size_calculated();
+}
+
 std::optional<Model::FetchedTimes> Model::FetchedTimesAtRawPos(int _raw_pos) const
 {
     if( _raw_pos < 0 || m_FetchedTimes.empty() )
