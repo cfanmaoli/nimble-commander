@@ -205,9 +205,9 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
 // and appending the items from '_appended' (single-item listings of the freshly stat'ed entries).
 // Rebuilding through VFSListing::Compose() would sort the data into sparse containers, which is
 // O(n) hash-map insertions for a million items - here everything that can stay dense stays dense.
-VFSListingPtr ProducePatchedListing(const VFSListing &_base,
-                                    const std::vector<unsigned> &_removed,
-                                    const std::vector<VFSListingPtr> &_appended)
+VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
+                                           const std::vector<unsigned> &_removed,
+                                           const std::vector<VFSListingPtr> &_appended)
 {
     using nc::base::variable_container;
     if( !_base.HasCommonHost() || !_base.HasCommonDirectory() )
@@ -265,15 +265,17 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
         in.filenames.emplace_back(_l.Filename(_i));
         in.unix_modes.emplace_back(_l.UnixMode(_i));
         in.unix_types.emplace_back(_l.UnixType(_i));
-        in.sizes.insert(n, _l.HasSize(_i) ? _l.Size(_i) : uint64_t(-1));
-        in.inodes.insert(n, _l.HasInode(_i) ? _l.Inode(_i) : 0);
-        in.atimes.insert(n, _l.HasATime(_i) ? _l.ATime(_i) : 0);
-        in.mtimes.insert(n, _l.HasMTime(_i) ? _l.MTime(_i) : 0);
-        in.ctimes.insert(n, _l.HasCTime(_i) ? _l.CTime(_i) : 0);
-        in.btimes.insert(n, _l.HasBTime(_i) ? _l.BTime(_i) : 0);
-        in.uids.insert(n, _l.HasUID(_i) ? _l.UID(_i) : 0);
-        in.gids.insert(n, _l.HasGID(_i) ? _l.GID(_i) : 0);
-        in.unix_flags.insert(n, _l.HasUnixFlags(_i) ? _l.UnixFlags(_i) : 0);
+        // the containers are dense and pre-sized, so a direct index beats a mode dispatch + a
+        // bounds check per element
+        in.sizes[n] = _l.HasSize(_i) ? _l.Size(_i) : uint64_t(-1);
+        in.inodes[n] = _l.HasInode(_i) ? _l.Inode(_i) : 0;
+        in.atimes[n] = _l.HasATime(_i) ? _l.ATime(_i) : 0;
+        in.mtimes[n] = _l.HasMTime(_i) ? _l.MTime(_i) : 0;
+        in.ctimes[n] = _l.HasCTime(_i) ? _l.CTime(_i) : 0;
+        in.btimes[n] = _l.HasBTime(_i) ? _l.BTime(_i) : 0;
+        in.uids[n] = _l.HasUID(_i) ? _l.UID(_i) : 0;
+        in.gids[n] = _l.HasGID(_i) ? _l.GID(_i) : 0;
+        in.unix_flags[n] = _l.HasUnixFlags(_i) ? _l.UnixFlags(_i) : 0;
         if( _attrs.display_filenames && _l.HasDisplayFilename(_i) )
             in.display_filenames.insert(n, _l.DisplayFilename(_i));
         if( _attrs.add_times && _l.HasAddTime(_i) )
@@ -733,7 +735,11 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
         removed.erase(std::ranges::unique(removed).begin(), removed.end());
         const unsigned appended_count = static_cast<unsigned>(appended.size());
         const auto perf_fetched = std::chrono::steady_clock::now();
-        const VFSListingPtr patched = ProducePatchedListing(*listing, removed, appended);
+        // the bulk implementation is the fast path, the generic one handles the listings that
+        // carry per-item extras (display names, tags, symlinks)
+        VFSListingPtr patched = VFSListing::ProducePatchedListing(*listing, removed, appended);
+        if( patched == nullptr )
+            patched = ProducePatchedListingGeneric(*listing, removed, appended);
         if( std::getenv("NC_PERF_LOG") != nullptr ) {
             using namespace std::chrono;
             const auto perf_end = steady_clock::now();

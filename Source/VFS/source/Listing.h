@@ -40,6 +40,20 @@ public:
     static base::intrusive_ptr<const Listing> Build(ListingInput &&_input);
 
     /**
+     * Produces a new listing out of '_base' by dropping the entries at '_removed' (sorted
+     * ascending, unique) and appending everything from '_appended' (typically single-item listings
+     * of the freshly fetched entries). Unlike a rebuild through Compose(), the arrays are copied in
+     * bulk, which is an order of magnitude faster for a listing with a million entries.
+     * Only the plain shape is supported - a listing (or any of the appended ones) that carries
+     * display names, symlinks, tags or added-times makes this return nullptr, the caller then has
+     * to fall back to a generic implementation.
+     */
+    static base::intrusive_ptr<const Listing>
+    ProducePatchedListing(const Listing &_base,
+                          std::span<const unsigned> _removed,
+                          const std::vector<base::intrusive_ptr<const Listing>> &_appended);
+
+    /**
      * compose many listings into a new ListingInput.
      * it will contain only sparse-based variable containers.
      * will throw on errors

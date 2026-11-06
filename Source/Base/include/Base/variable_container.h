@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cassert>
+#include <span>
 #include <vector>
 #include <variant>
 #include <ankerl/unordered_dense.h>
@@ -69,6 +70,11 @@ public:
     // For the dense mode uses vector<>::operator[].
     // For the sparse mode uses unordered_flat_map<>::find (precondition: the element must exist).
     const T &operator[](size_t _at) const noexcept;
+
+    // Returns a view of the underlying dense storage. Empty if the container is in another mode.
+    // Intended for the code that has to copy/move the data in bulk.
+    [[nodiscard]] std::span<const T> dense_values() const noexcept;
+    [[nodiscard]] std::span<T> dense_values() noexcept;
 
     // Returns the amount of elements inside the container.
     // For common mode always returns 1.
@@ -204,6 +210,22 @@ const typename variable_container<T>::dense_type &variable_container<T>::Dense()
 {
     assert(std::holds_alternative<dense_type>(m_Storage));
     return *std::get_if<dense_type>(&m_Storage);
+}
+
+template <class T>
+std::span<const T> variable_container<T>::dense_values() const noexcept
+{
+    if( mode() != type::dense )
+        return {};
+    return Dense();
+}
+
+template <class T>
+std::span<T> variable_container<T>::dense_values() noexcept
+{
+    if( mode() != type::dense )
+        return {};
+    return Dense();
 }
 
 template <class T>
