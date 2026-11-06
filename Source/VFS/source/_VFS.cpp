@@ -17,6 +17,7 @@
 #include "ArcLA/Host.cpp"
 #include "ArcLA/Internal.cpp"
 #include "ArcLARaw/Host.cpp"
+#include "Native/Columnar.cpp"
 #include "Native/Fetching.cpp"
 #include "Native/File.cpp"
 #include "Native/Host.cpp"

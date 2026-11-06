@@ -150,7 +150,7 @@ MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
 MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatScanThreads, "filePanel.general.flatScanThreads", 0);
 
 // How the flat listing is enumerated: "columnar" (the default - the native bulk walk in
-// rust/nc_core, entries straight into one ListingInput) or "composed" (one VFS listing per
+// (built in Columnar.cpp), entries straight into one ListingInput) or "composed" (one VFS listing per
 // directory, composed at the end - the only option for archives and network hosts). The names
 // describe the strategy; the implementation language is an implementation detail.
 // Read on every call on purpose: a cached std::string would need an exit-time destructor.
@@ -198,7 +198,7 @@ namespace {
 // directories are listed but not followed, so that a link loop cannot hang the traversal.
 namespace {
 
-// Which of the two implementations builds the flat listing. The Rust one enumerates with
+// Which of the two strategies builds the flat listing. The columnar one enumerates with
 // getattrlistbulk and fills a single ListingInput; the VFS one goes through the host abstraction
 // (and stays in charge of archives and network hosts).
 nc::core::FlatListingResult BuildFlatListingForPanel(const VFSHostPtr &_host,

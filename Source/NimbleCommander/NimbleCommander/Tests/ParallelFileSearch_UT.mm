@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "Tests.h"
-#include <NimbleCommander/Core/RustFileSearch.h>
+#include <NimbleCommander/Core/ParallelFileSearch.h>
 #include <VFS/SearchForFiles.h>
 #include <VFS/Native.h>
 #include <Utility/FSEventsFileUpdateImpl.h>
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#define PREFIX "RustFileSearch "
+#define PREFIX "ParallelFileSearch "
 
 namespace {
 
@@ -77,11 +77,11 @@ std::vector<std::string> RunCppSearch(const std::string &_root, const std::strin
     return found;
 }
 
-std::vector<std::string> RunRustSearch(const std::string &_root, const std::string &_mask)
+std::vector<std::string> RunParallelSearch(const std::string &_root, const std::string &_mask)
 {
     std::vector<std::string> found;
-    nc::core::RustFileSearch search;
-    nc::core::RustFileSearch::Filter filter;
+    nc::core::ParallelFileSearch search;
+    nc::core::ParallelFileSearch::Filter filter;
     filter.mask = _mask;
     filter.search_files = true;
     filter.search_dirs = false;
@@ -90,7 +90,7 @@ std::vector<std::string> RunRustSearch(const std::string &_root, const std::stri
     const bool started = search.Go(
         _root,
         filter,
-        [&](const nc::core::RustFileSearch::Hit &_hit) { found.emplace_back(_hit.dir_path + _hit.name); },
+        [&](const nc::core::ParallelFileSearch::Hit &_hit) { found.emplace_back(_hit.dir_path + _hit.name); },
         [&] { finished = true; });
     REQUIRE(started);
     search.Wait();
@@ -120,8 +120,8 @@ TEST_CASE(PREFIX "finds the same files as the C++ search")
 
     for( const std::string &mask : {std::string{}, std::string("*.txt"), std::string("*.md"), std::string("f*")} ) {
         const auto cpp = RunCppSearch(root_str, mask);
-        const auto rust = RunRustSearch(root_str, mask);
-        CHECK(cpp == rust);
+        const auto parallel = RunParallelSearch(root_str, mask);
+        CHECK(cpp == parallel);
         // and both agree with the expected set, computed from the mask directly
         if( !mask.empty() )
             CHECK(cpp == Expected(cpp, mask));
@@ -133,8 +133,8 @@ TEST_CASE(PREFIX "finds the same files as the C++ search")
 TEST_CASE(PREFIX "respects the size filter")
 {
     const auto root = MakeTree();
-    nc::core::RustFileSearch search;
-    nc::core::RustFileSearch::Filter filter;
+    nc::core::ParallelFileSearch search;
+    nc::core::ParallelFileSearch::Filter filter;
     filter.mask = "*.txt";
     filter.min_size = 2;
     std::vector<std::string> found;
@@ -165,38 +165,42 @@ TEST_CASE(PREFIX "benchmark against the C++ walker")
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - begin).count();
     };
 
-    size_t cpp_count = 0, rust_count = 0;
+    size_t cpp_count = 0, parallel_count = 0;
     const auto cpp_us = time([&] { cpp_count = RunCppSearch(root_str, "*.txt").size(); });
-    const auto rust_us = time([&] { rust_count = RunRustSearch(root_str, "*.txt").size(); });
-    CHECK(cpp_count == rust_count);
+    const auto parallel_us = time([&] { parallel_count = RunParallelSearch(root_str, "*.txt").size(); });
+    CHECK(cpp_count == parallel_count);
     CHECK(cpp_count == 5000);
     std::fprintf(stderr,
-                 "[perf] rust_search cpp=%lldus rust=%lldus ratio=%.2f\n",
+                 "[perf] parallel_search cpp=%lldus parallel=%lldus ratio=%.2f\n",
                  static_cast<long long>(cpp_us),
-                 static_cast<long long>(rust_us),
-                 rust_us ? static_cast<double>(cpp_us) / static_cast<double>(rust_us) : 0.0);
+                 static_cast<long long>(parallel_us),
+                 parallel_us ? static_cast<double>(cpp_us) / static_cast<double>(parallel_us) : 0.0);
     std::filesystem::remove_all(root);
 }
-TEST_CASE(PREFIX "rejects masks it cannot handle")
+TEST_CASE(PREFIX "supports mask lists and rejects bad roots")
 {
-    CHECK(nc::core::RustFileSearch::CanHandleMask("*.txt"));
-    CHECK(nc::core::RustFileSearch::CanHandleMask(""));
-    CHECK(!nc::core::RustFileSearch::CanHandleMask("*.txt,*.md"));
-    CHECK(!nc::core::RustFileSearch::CanHandleMask("文件*"));
-
-    nc::core::RustFileSearch search;
-    nc::core::RustFileSearch::Filter filter;
+    // the C++ matcher understands comma-separated mask lists, unlike the previous implementation
+    const auto root = MakeTree();
+    const std::string root_str = root.string();
+    std::vector<std::string> found;
+    nc::core::ParallelFileSearch search;
+    nc::core::ParallelFileSearch::Filter filter;
     filter.mask = "*.txt,*.md";
-    CHECK(!search.Go("/tmp", filter, nullptr, nullptr));
-    filter.mask = "";
-    CHECK(!search.Go("relative", filter, nullptr, nullptr));
+    REQUIRE(search.Go(root_str, filter, [&](const auto &_hit) { found.emplace_back(_hit.name); }, nullptr));
+    search.Wait();
+    std::ranges::sort(found);
+    CHECK(found == std::vector<std::string>{"a.txt", "b.txt", "c.md", "d.txt", "e.md", "f.txt", "notes.txt"});
+    std::filesystem::remove_all(root);
+
+    nc::core::ParallelFileSearch bad;
+    CHECK(!bad.Go("relative", filter, nullptr, nullptr));
 }
 
 TEST_CASE(PREFIX "cancellation stops the walk")
 {
     const auto root = MakeTree();
-    nc::core::RustFileSearch search;
-    nc::core::RustFileSearch::Filter filter;
+    nc::core::ParallelFileSearch search;
+    nc::core::ParallelFileSearch::Filter filter;
     filter.mask = "*.txt";
     std::atomic<int> found{0};
     REQUIRE(search.Go(root.string(), filter, [&](const auto &) { ++found; }, nullptr));

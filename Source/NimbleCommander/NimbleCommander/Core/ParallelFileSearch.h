@@ -10,16 +10,16 @@
 
 namespace nc::core {
 
-// A filename search backed by the Rust core (rust/nc_core). It only covers the native
-// filesystem and the classic (glob) masks - the VFS SearchForFiles remains the implementation for
-// archives, network hosts, content filters and regular expressions.
-class RustFileSearch
+// A filename search over the native filesystem, done in parallel. It mirrors the parts of
+// vfs::SearchForFiles the find-files dialog uses for local directories and reuses the same
+// utility::FileMask for matching, so that the two implementations agree on what a match is.
+class ParallelFileSearch
 {
 public:
     struct Filter {
-        // A single classic mask with wildcards, e.g. "*.txt". Empty means "match everything".
+        // A classic mask, e.g. "*.txt"; empty means "match everything". The same syntax as
+        // utility::FileMask (wildcards, comma-separated alternatives and regexes are all fine).
         std::string mask;
-        bool case_sensitive = false;
         bool search_files = true;
         bool search_dirs = false;
         bool go_into_subdirs = true;
@@ -30,20 +30,18 @@ public:
 
     struct Hit {
         std::string name;     // file name without the directory
-        std::string dir_path; // the directory it was found in, with a trailing slash
+        std::string dir_path; // absolute directory, with a trailing slash
         uint64_t size = 0;
         bool is_dir = false;
     };
 
     using FoundCallback = std::function<void(const Hit &)>;
 
-    RustFileSearch();
-    ~RustFileSearch();
-    RustFileSearch(const RustFileSearch &) = delete;
-    RustFileSearch &operator=(const RustFileSearch &) = delete;
+    ParallelFileSearch();
+    ~ParallelFileSearch();
+    ParallelFileSearch(const ParallelFileSearch &) = delete;
+    ParallelFileSearch &operator=(const ParallelFileSearch &) = delete;
 
-    // Returns false if the search couldn't be started (already running / bad arguments).
-    // The callbacks are invoked from a worker thread.
     bool Go(const std::string &_root, const Filter &_filter, FoundCallback _found, std::function<void()> _finish);
 
     void Stop();
@@ -53,10 +51,6 @@ public:
     [[nodiscard]] uint64_t FilesSeen() const;
     [[nodiscard]] uint64_t DirsSeen() const;
     [[nodiscard]] uint64_t Matches() const;
-
-    // True when the given mask can be handled by the Rust matcher: a single classic mask with
-    // ASCII-only wildcards (the C++ FileMask also accepts comma-separated lists and regexes).
-    [[nodiscard]] static bool CanHandleMask(std::string_view _mask);
 
     // opaque state; public only so that the translation unit's helpers can name it
     struct Impl;

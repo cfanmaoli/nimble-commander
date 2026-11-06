@@ -221,6 +221,3 @@ xcuserdata/
 #
 compile_commands.json
 Scripts/*.tmp/
-
-# Rust build artifacts
-rust/target/

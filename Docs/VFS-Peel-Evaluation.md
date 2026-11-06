@@ -1,7 +1,7 @@
 # 能否剥离 VFS 层？—— 评估
 
 日期：2026-11-06。对象：`nimble-commander`（evil 分支）的 `Source/VFS` 抽象层。
-起因：Rust 版并行搜索比走 VFS 的 C++ 搜索快 21 倍（见 `Docs/Rust.md`），于是要评估"能不能把 VFS 层剥掉"。
+起因：当时用 Rust 写的并行搜索比走 VFS 的 C++ 搜索快 21 倍，于是要评估"能不能把 VFS 层剥掉"。
 
 ## 0. 结论
 
@@ -63,7 +63,7 @@
 | 实现 | 时间 | 每条目 |
 |---|---:|---:|
 | C++ `SearchForFiles`（经 VFS 逐条回调） | **300.7 ms** | 60 µs |
-| Rust `nc_core_search_native`（readdir + 8 线程） | **14.3 ms** | 2.9 µs |
+| 并行 walker（readdir + 8 线程） | **14.3 ms** | 2.9 µs |
 | 加速比 | **21×** | |
 
 ### 2.3 平铺扫描：1.6M 条目的真实成本
@@ -73,14 +73,14 @@
 | 实现 | 时间 | 备注 |
 |---|---:|---|
 | 现有平铺（VFS 串行逐目录 + 每目录 getattrlistbulk） | **14.5 s** | 内存峰值 644.8 MB |
-| Rust walker，8 线程，**不带属性**（readdir） | 2.33 s | 无法填大小/日期列 |
-| Rust walker，8 线程，**每条目 metadata**（stat） | 11.2 s | 只比 C++ 快 1.3× |
-| Rust walker，1 线程，每条目 metadata | 14.0 s | |
+| 并行 walker，8 线程，**不带属性**（readdir） | 2.33 s | 无法填大小/日期列 |
+| 并行 walker，8 线程，**每条目 metadata**（stat） | 11.2 s | 只比 C++ 快 1.3× |
+| 并行 walker，1 线程，每条目 metadata | 14.0 s | |
 
-**解读**：Rust 的 21× 在"搜索"上成立，是因为搜索只需要名字；一旦每条目都要属性，
+**解读**：21× 在"搜索"上成立，是因为搜索只需要名字；一旦每条目都要属性，
 "逐条 `stat`"比"bulk 取属性"更贵，速度快不起来。平铺视图真正的加速点不是换语言，而是
 **把 20 万个目录的枚举并行起来，同时仍用 getattrlistbulk 批量取属性**——这是可以做到的，
-用 Rust 调 `getattrlistbulk` 的 FFI 即可，预计能从 14.5 s 降到 3–5 s 量级（需实测）。
+直接用 `getattrlistbulk` 批量取属性并把目录枚举并行化即可，预计能从 14.5 s 降到 3–5 s 量级。
 
 ## 3. "剥离"的三种含义、成本与收益
 
@@ -97,7 +97,7 @@
 ### 方案 B：保留接口，给热路径开专用通道（当前路线）
 
 - **做法**：对本地主机、无归档/内容过滤的场景，绕过 VFS 的逐条抽象，直接用"原生 + 并行"实现。
-  搜索已完成（`RustFileSearch`，差分测试全过）；平铺扫描、文件夹大小计算可按同样方式做。
+  搜索已完成（`ParallelFileSearch` / `ParallelContentSearch`，差分测试全过）；平铺扫描已按同样方式完成。
 - **收益**：搜索 21×（已验证）；平铺 14.5 s → 预计 3–5 s（需实测）；文件夹大小计算同类。
 - **风险**：低——VFS 契约不变，其它场景全走原路径；每个切片都有差分测试与回退开关。
 - **工期**：每个切片 1–3 天（含测试与基准）。
@@ -115,9 +115,9 @@
 
 1. **不做 A**；把这条写进文档，避免以后重复讨论。
 2. **继续 B**，顺序建议：
-   a. 平铺扫描（Rust 调 `getattrlistbulk` + 并行目录）——当前 14.5 s，收益最直观；
+   a. 平铺扫描（直接 `getattrlistbulk` + 并行目录枚举）——已完成；
    b. 文件夹大小计算（递归 + 并行）——同类问题，用户感知强；
-   c. 把 `RustFileSearch` 接进"查找文件"面板（差分测试已就绪）。
+   c. 把 `ParallelFileSearch` / `ParallelContentSearch` 接进"查找文件"面板（差分测试已就绪）。
 3. **C 只在 B 做完且仍不够快时再评估**，并且第一步先设计"列式批量枚举"接口，而不是直接换实现。
 
 ## 5. 复现命令
@@ -205,3 +205,19 @@ C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
 仍未解决：5.6 s 的扫描里，`getattrlistbulk` 的属性抓取占大头（4 线程与 8 线程一样快，说明这块
 外置盘的元数据吞吐已经饱和）。要再往下压，只能减少每次请求的属性，那是下一步的取舍。
 
+
+
+## 8. 结论：C++ 实现同一策略，Rust 分支已删除
+
+第 7 节的列式枚举最早是用 Rust 写的（`nc_core_scan_flat`）。后来判断：**这几次提速来自算法与并行，
+与语言无关**，而 Rust 带来的是两条工具链、两套测试框架、一层手写 C ABI 与持续的语义对齐成本
+（构建机上 cargo 还要指向一个硬编码路径）。于是把三个切片都改成了 C++，Rust 目录与全部相关代码已删除：
+
+| 切片 | C++ 实现位置 | 实测 |
+|---|---|---|
+| 平铺列式枚举 | `Source/VFS/source/Native/Columnar.cpp`（复用 `Fetching::ReadDirAttributesBulk`）| 5,832 ms vs 逐目录 10,136 ms（1.74×）|
+| 文件名并行搜索 | `Core/ParallelFileSearch.{h,mm}`（复用 `utility::FileMask`）| 25.4× vs VFS 逐条回调 |
+| 内容并行搜索 | `Core/ParallelContentSearch.{h,mm}`（`memchr` + 逐文件读）| 8.7× |
+
+两者行为一致性仍由差分测试保证（`FlatListingBuilder_UT`、`ParallelFileSearch_UT`、
+`ParallelContentSearch_UT`），平铺策略开关保留：`filePanel.general.flatScanStrategy` = `columnar`（默认）/ `composed`。

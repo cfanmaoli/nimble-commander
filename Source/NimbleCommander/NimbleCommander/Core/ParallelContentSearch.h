@@ -9,10 +9,10 @@
 
 namespace nc::core {
 
-// A text search inside the files of a native directory tree, backed by the Rust core
-// (nc_core_search_content). The C++ implementation in VFS (SearchForFiles + SearchInFile) stays
-// in charge of archives, network hosts and non-UTF-8 encodings.
-class RustContentSearch
+// A text search inside the files of a native directory tree, done natively and in parallel.
+// The C++ VFS implementation (SearchForFiles + SearchInFile) stays in charge of archives,
+// network hosts and non-UTF-8 encodings; this covers the common case of UTF-8/ASCII content.
+class ParallelContentSearch
 {
 public:
     struct Filter {
@@ -33,10 +33,10 @@ public:
 
     using FoundCallback = std::function<void(const Hit &)>;
 
-    RustContentSearch();
-    ~RustContentSearch();
-    RustContentSearch(const RustContentSearch &) = delete;
-    RustContentSearch &operator=(const RustContentSearch &) = delete;
+    ParallelContentSearch();
+    ~ParallelContentSearch();
+    ParallelContentSearch(const ParallelContentSearch &) = delete;
+    ParallelContentSearch &operator=(const ParallelContentSearch &) = delete;
 
     bool Go(const std::string &_root, const Filter &_filter, FoundCallback _found, std::function<void()> _finish);
 

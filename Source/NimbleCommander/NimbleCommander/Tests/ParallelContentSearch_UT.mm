@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "Tests.h"
-#include <NimbleCommander/Core/RustContentSearch.h>
+#include <NimbleCommander/Core/ParallelContentSearch.h>
 #include <VFS/SearchForFiles.h>
 #include <VFS/Native.h>
 #include <Utility/FSEventsFileUpdateImpl.h>
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#define PREFIX "RustContentSearch "
+#define PREFIX "ParallelContentSearch "
 
 namespace {
 
@@ -78,18 +78,18 @@ RunCpp(const std::string &_root, const std::string &_text, const bool _case_sens
 }
 
 std::vector<std::pair<std::string, uint64_t>>
-RunRust(const std::string &_root, const std::string &_text, const bool _case_sensitive)
+RunParallel(const std::string &_root, const std::string &_text, const bool _case_sensitive)
 {
     std::vector<std::pair<std::string, uint64_t>> found;
-    nc::core::RustContentSearch search;
-    nc::core::RustContentSearch::Filter filter;
+    nc::core::ParallelContentSearch search;
+    nc::core::ParallelContentSearch::Filter filter;
     filter.text = _text;
     filter.case_sensitive = _case_sensitive;
     bool finished = false;
     const bool started = search.Go(
         _root,
         filter,
-        [&](const nc::core::RustContentSearch::Hit &_hit) {
+        [&](const nc::core::ParallelContentSearch::Hit &_hit) {
             found.emplace_back(_hit.dir_path + _hit.name, _hit.offset);
         },
         [&] { finished = true; });
@@ -109,8 +109,14 @@ TEST_CASE(PREFIX "finds the same files as the C++ content search")
 
     for( const bool case_sensitive : {false, true} ) {
         const auto cpp = RunCpp(root_str, "needle", case_sensitive);
-        const auto rust = RunRust(root_str, "needle", case_sensitive);
-        CHECK(cpp == rust);
+        const auto par = RunParallel(root_str, "needle", case_sensitive);
+        if( cpp != par ) {
+            for( const auto &e : cpp )
+                std::fprintf(stderr, "  cpp: %s @ %llu\n", e.first.c_str(), static_cast<unsigned long long>(e.second));
+            for( const auto &e : par )
+                std::fprintf(stderr, "  par: %s @ %llu\n", e.first.c_str(), static_cast<unsigned long long>(e.second));
+        }
+        CHECK(cpp == par);
     }
 
     std::filesystem::remove_all(root);
@@ -119,8 +125,8 @@ TEST_CASE(PREFIX "finds the same files as the C++ content search")
 TEST_CASE(PREFIX "honours the maximum file size")
 {
     const auto root = MakeTree();
-    nc::core::RustContentSearch search;
-    nc::core::RustContentSearch::Filter filter;
+    nc::core::ParallelContentSearch search;
+    nc::core::ParallelContentSearch::Filter filter;
     filter.text = "needle";
     filter.max_file_size = 8; // "the needle is here" is longer than that
     std::vector<std::string> found;
@@ -154,11 +160,11 @@ TEST_CASE(PREFIX "benchmark against the C++ content search")
     };
 
     const auto [cpp_n, cpp_us] = time([&] { return RunCpp(root_str, "needle", false).size(); });
-    const auto [rust_n, rust_us] = time([&] { return RunRust(root_str, "needle", false).size(); });
+    const auto [rust_n, rust_us] = time([&] { return RunParallel(root_str, "needle", false).size(); });
     CHECK(cpp_n == rust_n);
     CHECK(cpp_n == 200);
     std::fprintf(stderr,
-                 "[perf] rust_content cpp=%lldus rust=%lldus ratio=%.2f\n",
+                 "[perf] parallel_content cpp=%lldus rust=%lldus ratio=%.2f\n",
                  cpp_us,
                  rust_us,
                  rust_us ? static_cast<double>(cpp_us) / static_cast<double>(rust_us) : 0.0);
