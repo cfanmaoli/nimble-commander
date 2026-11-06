@@ -236,6 +236,17 @@ VFSListingPtr ProducePatchedListing(const VFSListing &_base,
     in.filenames.reserve(total);
     in.unix_modes.reserve(total);
     in.unix_types.reserve(total);
+    // pre-size the dense containers so that the per-item inserts below are plain assignments
+    // instead of a size check + an amortized growth of a million-element vector
+    in.sizes.resize(total);
+    in.inodes.resize(total);
+    in.atimes.resize(total);
+    in.mtimes.resize(total);
+    in.ctimes.resize(total);
+    in.btimes.resize(total);
+    in.uids.resize(total);
+    in.gids.resize(total);
+    in.unix_flags.resize(total);
 
     // the per-item attribute checks are not free - skip the whole category when a listing simply
     // doesn't carry it
