@@ -40,6 +40,27 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 
 其余内容（仅 Apple Silicon、语言包、额外主题、废纸篓支持、各种修复）与 `main` 完全一致。
 
+## 大目录下的性能
+
+这个分支针对「十万到上百万项」的目录做了一组优化（基准目录是 100 万项）。实测数据和推导过程见
+[Docs/Performance.md](Docs/Performance.md)，一句话版本：
+
+| | 之前 | 现在 |
+|---|---|---|
+| 100 万项目录首屏 | ~2.2 s | **~34 ms**（先上预览 listing，其余在后台读）|
+| 100 万项目录里的一次变动 | 2.4 s（默认视图选项下会整目录重读）| **~40 ms**（路径级 FSEvents + 增量补丁）|
+| 读取目录本身 | ~5.7 s CPU | ~2.35 s，其中 2.17 s 是内核枚举 |
+| 常驻内存（100 万项）| ~650 MB | 默认 ~283 MB，惰性模式 ~252 MB |
+
+有两个可选开关，在超大目录上用「信息换内存」。配置在
+`~/Library/Application Support/Nimble Commander-Fork/Config/Config.json`，默认都关：
+
+- `filePanel.general.lazyDates` —— 枚举时不取五个时间列（100 万项省 20 MB），日期列随滚动补取
+  （面板只对可见行做 stat）；
+- `filePanel.general.lazySizes` —— 同样处理大小列（再省 8 MB）。
+
+开启后，按受影响的列排序会先做一次带完整属性的重读，未取到的行显示 `--`。
+
 ## 编译
 
 见 [Docs/Building.md](Docs/Building.md)。随附的第三方库已经为 arm64 预编译好，需要自己重建时运行
