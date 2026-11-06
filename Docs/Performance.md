@@ -1196,3 +1196,17 @@ heap All zones: 142.9 MB  （空转 20.4 MB）
 结论：**在不动这些语义的前提下，惰性模式的 footprint 就是 ~270 MB 量级**；250 MB 需要再做一轮
 `ItemVolatileData` 瘦身（以及接受随之而来的语义取舍）。
 
+
+---
+
+## 31. 第二十五轮：给惰性属性/高亮的模型 API 补测试
+
+惰性日期/大小和快速搜索高亮都改成了模型侧的按需存储，但没有单元测试覆盖。本轮补上（`PanelData_UT`）：
+
+- `FetchedTimes and the lazy attributes` —— `SetFetchedTimes`/`FetchedTimesAtRawPos`/
+  `SetFetchedSize`/`HasFetchedSize` 的读写、越界请求被忽略、重新载入后清空；
+- `Quick-search highlights live next to the volatile data` —— 高亮的读写、按原始索引与按排序位置
+  两种取法一致、未设置的相邻项为空、重新排序（无过滤器时）会清空高亮。
+
+PanelUT 从 56 个用例 / 1359 断言增加到 58 / 1382，全部套件仍然全绿。
+

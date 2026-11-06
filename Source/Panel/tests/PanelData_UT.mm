@@ -781,6 +781,73 @@ TEST_CASE("PrepareLoad and InstallLoad produce the same state as Load")
     CHECK(prepared.SortedIndexForName("kiwi") == -1);
 }
 
+TEST_CASE(PREFIX "FetchedTimes and the lazy attributes")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    // nothing was fetched yet
+    CHECK(!data.FetchedTimesAtRawPos(0));
+    CHECK(!data.FetchedTimesAtRawPos(2));
+    CHECK(!data.HasFetchedSize(1));
+
+    Model::FetchedTimes times;
+    times.mtime = 12345;
+    times.atime = 54321;
+    times.addtime = -1;
+    data.SetFetchedTimes(1, times);
+    data.SetFetchedSize(1, 4242);
+
+    const auto fetched = data.FetchedTimesAtRawPos(1);
+    REQUIRE(fetched);
+    CHECK(fetched->mtime == 12345);
+    CHECK(fetched->atime == 54321);
+    CHECK(fetched->addtime == -1);
+    CHECK(data.HasFetchedSize(1));
+
+    // out of range requests are ignored, not crashed on
+    CHECK(!data.FetchedTimesAtRawPos(-1));
+    CHECK(!data.FetchedTimesAtRawPos(3));
+    data.SetFetchedTimes(100, times);
+    data.SetFetchedSize(100, 1);
+    CHECK(!data.FetchedTimesAtRawPos(100));
+    CHECK(!data.HasFetchedSize(100));
+
+    // a reload drops the fetched values - the raw indices change
+    data.Load(ProduceDummyListing({"a", "b", "c"}), Model::PanelType::Directory);
+    CHECK(!data.FetchedTimesAtRawPos(1));
+    CHECK(!data.HasFetchedSize(1));
+}
+
+TEST_CASE(PREFIX "Quick-search highlights live next to the volatile data")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"box.txt", "xbox.txt"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    CHECK(data.HighlightForSortPosition(0).empty());
+
+    const std::array<QuickSearchHighlight::Range, 1> ranges = {QuickSearchHighlight::Range{.offset = 0, .length = 3}};
+    const auto raw_indices = data.RawIndicesForName("box.txt");
+    REQUIRE(!raw_indices.empty());
+    const unsigned box_raw = raw_indices.front();
+    data.SetHighlightForRawIndex(box_raw, QuickSearchHighlight(ranges));
+
+    const auto hl = data.HighlightForSortPosition(data.SortedIndexForName("box.txt"));
+    CHECK(!hl.empty());
+    const auto unpacked = hl.unpack();
+    REQUIRE(unpacked.count == 1);
+    CHECK(unpacked.segments[0].offset == 0);
+    CHECK(unpacked.segments[0].length == 3);
+
+    // both lookups address the same entry
+    CHECK(data.HighlightForRawIndex(box_raw).unpack().count == 1);
+    CHECK(data.HighlightForRawIndex((box_raw + 1) % data.RawEntriesCount()).empty());
+    // and a re-sort without an active filter drops the highlights
+    data.SetSortMode(SortMode{.sort = SortMode::SortByNameRev});
+    CHECK(data.HighlightForSortPosition(data.SortedIndexForName("box.txt")).empty());
+}
 TEST_CASE("ApplyPatchedListing")
 {
     const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c", "d"});
