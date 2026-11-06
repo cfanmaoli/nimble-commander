@@ -849,3 +849,56 @@ aeacf91b4 listing 内存账本（mem=92.9MB）
 
 新增单元测试：F_NoTimes drops the time columns but keeps the rest（大小/inode 在、时间不在）。
 
+
+---
+
+## 22. 第十六轮：增量刷新在默认视图选项下其实没生效（已修）+ 惰性日期模式
+
+### 22.1 一个被压测环境掩盖的真问题
+
+做惰性日期的联调时发现：**默认配置下（隐藏文件不显示，`HardFilter::show_hidden == false`）**，
+`refreshPanelIncrementallyWithChangedNames:` 一进门就命中
+
+```objc
+m_Data.HardFiltering().IsFiltering()   // show_hidden==false 时恒为 true
+```
+
+于是每次目录变动都退回**全量刷新**（1M 目录 = 2.4 s）。之前的基准里这个分支没被触发，是因为压测脚本
+跑过若干轮后把 `show_hidden` 留成了 true——也就是说文档里早先的“43 ms”是在隐藏文件显示的状态下测的。
+
+修复分两处：
+
+- `Model::ApplyPatchedListing()` 现在会按 `m_HardFiltering` 过滤**新增条目**（被过滤掉的不进
+  `m_EntriesByCustomSort`），`m_ReverseToCustomSort` 只对可见条目建映射；
+- `PanelController` 去掉增量路径上的 `HardFiltering().IsFiltering()` 守卫。
+
+修复后（1M 目录、默认隐藏文件、List 布局）：
+
+```
+[perf] incr k=1 removed=0 appended=1 mem=81.1MB fetch=0.1ms patch=8.1ms
+[perf] incr.ui n=1000005 model=11.5ms view=19.5ms total=31.0ms
+```
+
+即 **~39 ms**，而修复前是 ~2.4 s 的全量刷新——默认配置下提升约 60 倍。
+
+### 22.2 惰性日期模式（默认关）
+
+配置项 `filePanel.general.lazyDates`（默认 `false`）。开启后：
+
+- 目录大于预览阈值时用 `F_NoTimes` 枚举，listing 不再带五个时间列；
+- 日期列对未取到的行显示 `--`；
+- 载入后对**最前面 200 个排序项**批量 `stat`（后台队列），结果存进模型的 `FetchedTimes` 覆盖表，
+  只刷新这些行；滚动时按需补取（目前只做首屏，滚动补取还没接）。
+
+实测（1M 目录）：
+
+```
+listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
+[perf] incr k=1 ... mem=77.2MB fetch=0.1ms patch=56.0ms   （补丁走通用路径，因为时间列是空的）
+[perf] incr.ui ... total=32.1ms
+```
+
+### 22.3 验证
+
+- 9 个套件全绿；`clang-format --check` 通过；app 重编译/签名/安装。
+

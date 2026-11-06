@@ -74,6 +74,13 @@
              * When loading directory listings for file panels, should "entry" be present
              */
             "showDotDotEntry": true,
+
+            /**
+             * Load the date columns lazily for the huge directories: the enumeration then skips the
+             * timestamps (20MB per million entries) and the panel fetches them for the rows it shows.
+             * Off by default - the date columns are then empty until a row is scrolled into view.
+             */
+            "lazyDates": false,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

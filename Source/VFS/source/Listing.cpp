@@ -975,6 +975,11 @@ size_t Listing::ApproximateMemoryFootprint() const noexcept
     return total;
 }
 
+bool Listing::HasAnyTimes() const noexcept
+{
+    return m_ATimes.size() != 0 || m_MTimes.size() != 0 || m_CTimes.size() != 0 || m_BTimes.size() != 0;
+}
+
 bool Listing::HasAnyDisplayFilenames() const noexcept
 {
     return m_DisplayFilenames.size() != 0;

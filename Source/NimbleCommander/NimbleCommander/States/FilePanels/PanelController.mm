@@ -120,6 +120,7 @@ struct CalculatedSizesBatch {
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowDotDotEntry, g_ConfigShowDotDotEntry);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowLocalizedFilenames, g_ConfigShowLocalizedFilenames);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigEnableFinderTags, g_ConfigEnableFinderTags);
+MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazyDates, "filePanel.general.lazyDates");
 
 static void HeatUpConfigValues()
 {
@@ -140,6 +141,7 @@ static void HeatUpConfigValues()
                     removed:(const std::vector<unsigned> &)_removed
                    appended:(unsigned)_appended;
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
+- (void)fetchLazyDatesForTopEntries;
 @end
 
 namespace {
@@ -219,10 +221,14 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     in.directories.insert(0, _base.Directory(0));
     in.sizes.reset(variable_container<>::type::dense);
     in.inodes.reset(variable_container<>::type::dense);
-    in.atimes.reset(variable_container<>::type::dense);
-    in.mtimes.reset(variable_container<>::type::dense);
-    in.ctimes.reset(variable_container<>::type::dense);
-    in.btimes.reset(variable_container<>::type::dense);
+    // a listing may simply not carry the timestamps (lazy dates) - keep them absent instead of
+    // filling in zeros, the panel would otherwise show 1970 for every entry
+    const bool base_has_times = _base.HasAnyTimes();
+    const auto times_type = base_has_times ? variable_container<>::type::dense : variable_container<>::type::sparse;
+    in.atimes.reset(times_type);
+    in.mtimes.reset(times_type);
+    in.ctimes.reset(times_type);
+    in.btimes.reset(times_type);
     in.uids.reset(variable_container<>::type::dense);
     in.gids.reset(variable_container<>::type::dense);
     in.unix_flags.reset(variable_container<>::type::dense);
@@ -241,10 +247,12 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     // instead of a size check + an amortized growth of a million-element vector
     in.sizes.resize(total);
     in.inodes.resize(total);
-    in.atimes.resize(total);
-    in.mtimes.resize(total);
-    in.ctimes.resize(total);
-    in.btimes.resize(total);
+    if( base_has_times ) {
+        in.atimes.resize(total);
+        in.mtimes.resize(total);
+        in.ctimes.resize(total);
+        in.btimes.resize(total);
+    }
     in.uids.resize(total);
     in.gids.resize(total);
     in.unix_flags.resize(total);
@@ -270,10 +278,22 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         // bounds check per element
         in.sizes[n] = _l.HasSize(_i) ? _l.Size(_i) : uint64_t(-1);
         in.inodes[n] = _l.HasInode(_i) ? _l.Inode(_i) : 0;
-        in.atimes[n] = _l.HasATime(_i) ? _l.ATime(_i) : 0;
-        in.mtimes[n] = _l.HasMTime(_i) ? _l.MTime(_i) : 0;
-        in.ctimes[n] = _l.HasCTime(_i) ? _l.CTime(_i) : 0;
-        in.btimes[n] = _l.HasBTime(_i) ? _l.BTime(_i) : 0;
+        if( base_has_times ) {
+            in.atimes[n] = _l.HasATime(_i) ? _l.ATime(_i) : 0;
+            in.mtimes[n] = _l.HasMTime(_i) ? _l.MTime(_i) : 0;
+            in.ctimes[n] = _l.HasCTime(_i) ? _l.CTime(_i) : 0;
+            in.btimes[n] = _l.HasBTime(_i) ? _l.BTime(_i) : 0;
+        }
+        else { // lazy dates - only the items that actually have them (the freshly fetched ones)
+            if( _l.HasATime(_i) )
+                in.atimes.insert(n, _l.ATime(_i));
+            if( _l.HasMTime(_i) )
+                in.mtimes.insert(n, _l.MTime(_i));
+            if( _l.HasCTime(_i) )
+                in.ctimes.insert(n, _l.CTime(_i));
+            if( _l.HasBTime(_i) )
+                in.btimes.insert(n, _l.BTime(_i));
+        }
         in.uids[n] = _l.HasUID(_i) ? _l.UID(_i) : 0;
         in.gids[n] = _l.HasGID(_i) ? _l.GID(_i) : 0;
         in.unix_flags[n] = _l.HasUnixFlags(_i) ? _l.UnixFlags(_i) : 0;
@@ -352,6 +372,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_DirectorySizeCountingQ;
     nc::base::SerialQueue m_DirectoryLoadingQ;
     nc::base::SerialQueue m_DirectoryReLoadingQ;
+    nc::base::SerialQueue m_LazyDatesQ;
+    bool m_LazyDates;
 
     NCPanelQuickSearch *m_QuickSearch;
 
@@ -435,6 +457,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_DataGeneration = 0;
         m_IsAnythingWorksInBackground = false;
         m_PendingRefreshScheduled = false;
+        m_LazyDates = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
 
@@ -667,7 +690,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 
     const VFSListingPtr listing = m_Data.ListingPtr();
     if( listing == nullptr || listing->Count() == 0 || !listing->IsUniform() || !listing->HasCommonHost() ||
-        !listing->HasCommonDirectory() || m_Data.HardFiltering().IsFiltering() ) {
+        !listing->HasCommonDirectory() ) {
         [self refreshPanel];
         return;
     }
@@ -716,6 +739,12 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
             }
             else {
                 // something unusual, e.g. a permission problem - let the slow path deal with it
+                if( std::getenv("NC_PERF_LOG") != nullptr )
+                    std::fprintf(stderr,
+                                 "[perf] incr.fetch-failed domain=%s code=%lld name=%s\n",
+                                 fetched.error().Domain().c_str(),
+                                 static_cast<long long>(fetched.error().Code()),
+                                 change.name.c_str());
                 need_full_reload = true;
                 break;
             }
@@ -748,10 +777,11 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
                 return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
             };
             std::fprintf(stderr,
-                         "[perf] incr k=%zu removed=%zu appended=%u fetch=%.1fms patch=%.1fms\n",
+                         "[perf] incr k=%zu removed=%zu appended=%u mem=%.1fMB fetch=%.1fms patch=%.1fms\n",
                          changes.size(),
                          removed.size(),
                          appended_count,
+                         patched ? static_cast<double>(patched->ApproximateMemoryFootprint()) / (1024.0 * 1024.0) : 0.0,
                          ms(perf_begin, perf_fetched),
                          ms(perf_fetched, perf_end));
         }
@@ -817,6 +847,71 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     }
 }
 
+- (void)fetchLazyDatesForTopEntries
+{
+    assert(dispatch_is_main_queue());
+    if( !m_LazyDates )
+        return;
+    const VFSListingPtr listing = m_Data.ListingPtr();
+    if( !listing || listing->Count() == 0 )
+        return;
+
+    // The rows the user sees right away; the scroll-driven fetching is done separately.
+    constexpr int amount = 200;
+    std::vector<unsigned> raw_indices;
+    const int total = m_Data.SortedEntriesCount();
+    const int count = std::min(total, amount);
+    raw_indices.reserve(static_cast<size_t>(count));
+    for( int i = 0; i != count; ++i ) {
+        const int raw_index = m_Data.RawIndexForSortIndex(i);
+        if( raw_index < 0 )
+            continue;
+        if( m_Data.FetchedTimesAtRawPos(raw_index) )
+            continue;
+        raw_indices.push_back(static_cast<unsigned>(raw_index));
+    }
+    if( raw_indices.empty() )
+        return;
+
+    const auto host = listing->Host();
+    const auto directory = listing->Directory();
+    std::vector<std::string> paths;
+    paths.reserve(raw_indices.size());
+    for( auto raw_index : raw_indices )
+        paths.emplace_back(directory + listing->Filename(raw_index));
+
+    m_LazyDatesQ.Run([self, paths = std::move(paths), raw_indices = std::move(raw_indices), host] {
+        std::vector<std::pair<unsigned, data::Model::FetchedTimes>> fetched;
+        fetched.reserve(paths.size());
+        for( size_t i = 0; i != paths.size(); ++i ) {
+            if( m_LazyDatesQ.IsStopped() )
+                return;
+            const auto item = host->FetchSingleItemListing(paths[i], VFSFlags::F_NoFollow, {});
+            if( !item || (*item)->Count() != 1 )
+                continue;
+            const auto &entry = **item;
+            data::Model::FetchedTimes times;
+            times.atime = entry.HasATime(0) ? entry.ATime(0) : 0;
+            times.mtime = entry.HasMTime(0) ? entry.MTime(0) : 0;
+            times.ctime = entry.HasCTime(0) ? entry.CTime(0) : 0;
+            times.btime = entry.HasBTime(0) ? entry.BTime(0) : 0;
+            times.addtime = entry.HasAddTime(0) ? entry.AddTime(0) : -1;
+            fetched.emplace_back(raw_indices[i], times);
+        }
+        if( fetched.empty() )
+            return;
+        dispatch_to_main_queue([self, fetched = std::move(fetched)] {
+            if( !m_LazyDates )
+                return;
+            for( const auto &i : fetched )
+                m_Data.SetFetchedTimes(i.first, i.second);
+            // repaint the rows that are on screen
+            [m_View volatileDataChanged];
+            [m_View dataUpdated];
+        });
+    });
+}
+
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared
 {
     assert(dispatch_is_main_queue());
@@ -864,7 +959,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     }
 
     if( self.isUniform ) {
-        const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0);
+        const auto fetch_flags =
+            m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0) | (m_LazyDates ? VFSFlags::F_NoTimes : 0);
         const auto dirpath = m_Data.DirectoryPathWithTrailingSlash();
         const auto vfs = self.vfs;
         // the model is main-thread-only, so its state is captured here and the heavy merging is
@@ -1122,10 +1218,16 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
                     Log::Debug("Discarded a stale directory change notification");
                     return;
                 }
-                if( !changed_names.empty() )
+                if( !changed_names.empty() ) {
+                    if( std::getenv("NC_PERF_LOG") != nullptr )
+                        std::fprintf(stderr, "[perf] change.paths n=%zu\n", changed_names.size());
                     [pc accumulateChangedNames:changed_names];
-                else
+                }
+                else {
+                    if( std::getenv("NC_PERF_LOG") != nullptr )
+                        std::fprintf(stderr, "[perf] change.no_paths -> full refresh\n");
                     [pc refreshPanel];
+                }
             });
         };
         m_UpdatesObservationTicket =
@@ -1385,6 +1487,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         auto &vfs = *_request->VFS;
         const auto canceller = VFSCancelChecker([&] { return m_DirectoryLoadingQ.IsStopped(); });
 
+        bool big_directory = false;
         // Showing nothing for the seconds a huge directory takes to enumerate is the worst part of
         // opening it. Fetch the first screenful right away and put it on screen while the rest is
         // still being read.
@@ -1394,6 +1497,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             const std::expected<VFSListingPtr, Error> preview =
                 vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller);
             if( preview && (*preview)->Count() >= preview_items ) {
+                big_directory = true;
                 const auto prepared_preview = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
                     *preview, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
                 if( std::getenv("NC_PERF_LOG") != nullptr ) {
@@ -1415,8 +1519,12 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             }
         }
 
+        // Only the huge directories benefit from lazy dates, and the preview has just told us
+        // whether this one is big.
+        const bool lazy_dates = big_directory && ConfigLazyDates();
+        const unsigned long fetch_flags = m_VFSFetchingFlags | (lazy_dates ? VFSFlags::F_NoTimes : 0);
         const std::expected<VFSListingPtr, Error> listing =
-            vfs.FetchDirectoryListing(directory, m_VFSFetchingFlags, canceller);
+            vfs.FetchDirectoryListing(directory, fetch_flags, canceller);
         if( _request->LoadingResultCallback ) {
             _request->LoadingResultCallback(listing ? std::expected<void, Error>{}
                                                     : std::expected<void, Error>{std::unexpected(listing.error())});
@@ -1439,12 +1547,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_FlatViewHost.reset();
             m_FlatViewRoot.clear();
             ++m_FlatViewGeneration;
+            m_LazyDates = lazy_dates;
             m_Data.InstallLoad(std::move(*prepared));
             const auto perf_loaded = std::chrono::steady_clock::now();
             for( const auto &i : _request->RequestSelectedEntries )
                 m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
             m_DataGeneration++;
             [m_View dataUpdated];
+            [self fetchLazyDatesForTopEntries];
             const auto perf_updated = std::chrono::steady_clock::now();
             [m_View panelChangedWithFocusedFilename:_request->RequestFocusedEntry
                                   loadPreviousState:_request->LoadPreviousViewState];

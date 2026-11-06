@@ -162,6 +162,9 @@ public:
      */
     [[nodiscard]] size_t ApproximateMemoryFootprint() const noexcept;
 
+    /** True when the listing carries at least one of the time columns. */
+    [[nodiscard]] bool HasAnyTimes() const noexcept;
+
     [[nodiscard]] bool HasAnyDisplayFilenames() const noexcept;
     [[nodiscard]] bool HasAnyAddTimes() const noexcept;
     [[nodiscard]] bool HasAnySymlinks() const noexcept;

@@ -10,6 +10,8 @@
 #include <vector>
 #include <string_view>
 #include <span>
+#include <optional>
+#include <ankerl/unordered_dense.h>
 
 namespace nc::panel::data {
 
@@ -170,6 +172,22 @@ public:
      * the sorted ones one-to-one, see SortIndexForSoftFiltered().
      */
     [[nodiscard]] const std::vector<unsigned> &EntriesBySoftFiltering() const noexcept;
+
+    /**
+     * The times of an entry that were fetched on demand, for the listings that don't carry them
+     * (see VFSFlags::F_NoTimes).
+     */
+    struct FetchedTimes {
+        time_t atime = 0;
+        time_t mtime = 0;
+        time_t ctime = 0;
+        time_t btime = 0;
+        time_t addtime = -1;
+    };
+
+    void SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times);
+    [[nodiscard]] std::optional<FetchedTimes> FetchedTimesAtRawPos(int _raw_pos) const;
+    void ClearFetchedTimes();
 
     // The number of entries visible after the soft filtering.
     [[nodiscard]] int SoftFilteredCount() const noexcept;
@@ -378,6 +396,9 @@ private:
 
     // sorted and filtered, points at m_EntriesByCustomSort indices, not the raw ones
     std::vector<unsigned> m_EntriesBySoftFiltering;
+
+    // Times fetched on demand for the of entries of a listing that doesn't carry them itself.
+    ankerl::unordered_dense::map<unsigned, FetchedTimes> m_FetchedTimes;
     struct SortMode m_CustomSortMode;
     HardFilter m_HardFiltering;
     TextualFilter m_SoftFiltering;

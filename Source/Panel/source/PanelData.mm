@@ -185,6 +185,7 @@ void Model::InstallLoad(PreparedLoad &&_prepared)
     m_ReverseToCustomSort = std::move(_prepared.reverse_to_custom_sort);
     m_EntriesBySoftFiltering = std::move(_prepared.entries_by_soft_filtering);
     m_Stats = _prepared.statistics;
+    m_FetchedTimes.clear();
 }
 
 void Model::Load(const VFSListingPtr &_listing, PanelType _type)
@@ -210,7 +211,6 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
     assert(_listing);
     assert(_listing->IsUniform());
     assert(m_Listing && m_Listing->IsUniform());
-    assert(!m_HardFiltering.IsFiltering());
 
     const unsigned old_count = m_Listing->Count();
     const unsigned new_count = _listing->Count();
@@ -283,10 +283,21 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
             new_by_custom_sort.emplace_back(new_index);
     }
 
+    // The custom-sort array holds the *visible* entries only, so an appended entry that the hard
+    // filter rejects (e.g. a dotfile while the hidden ones are not shown) must not land there.
+    const auto visible = [&](unsigned _i) {
+        if( !m_HardFiltering.IsFiltering() )
+            return true;
+        QuickSearchHighlight unused_highlight;
+        return m_HardFiltering.IsValidItem(_listing->Item(_i), unused_highlight);
+    };
+
     if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
         const IndirectListingComparator cmp{*_listing, new_vd, m_CustomSortMode};
         const auto first = std::next(new_by_custom_sort.begin(), _listing->IsDotDot(0) ? 1 : 0);
         for( unsigned i = new_count - _appended_count; i != new_count; ++i ) {
+            if( !visible(i) )
+                continue;
             const bool is_dotdot = _listing->IsDotDot(i);
             auto pos =
                 is_dotdot ? new_by_custom_sort.begin() : std::lower_bound(first, new_by_custom_sort.end(), i, cmp);
@@ -295,17 +306,20 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
     }
     else {
         for( unsigned i = new_count - _appended_count; i != new_count; ++i )
-            new_by_custom_sort.emplace_back(i);
+            if( visible(i) )
+                new_by_custom_sort.emplace_back(i);
     }
 
     m_Listing = _listing;
     m_VolatileData = std::move(new_vd);
     m_EntriesByRawName = std::move(new_by_raw_name);
     m_EntriesByCustomSort = std::move(new_by_custom_sort);
+    // the raw indices changed, the fetched times can't be mapped anymore
+    m_FetchedTimes.clear();
 
     m_ReverseToCustomSort.resize(new_count);
     std::ranges::fill(m_ReverseToCustomSort, invalid);
-    for( unsigned i = 0; i != new_count; ++i ) {
+    for( unsigned i = 0, e = static_cast<unsigned>(m_EntriesByCustomSort.size()); i != e; ++i ) {
         const unsigned raw_index = m_EntriesByCustomSort[i];
         assert(raw_index < new_count);
         m_ReverseToCustomSort[raw_index] = i;
@@ -1128,6 +1142,28 @@ void Model::BuildSoftFilteringIndeces()
         m_EntriesBySoftFiltering.clear();
         m_EntriesBySoftFiltering.shrink_to_fit();
     }
+}
+
+void Model::SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times)
+{
+    if( _raw_index >= m_Listing->Count() )
+        return;
+    m_FetchedTimes[_raw_index] = _times;
+}
+
+std::optional<Model::FetchedTimes> Model::FetchedTimesAtRawPos(int _raw_pos) const
+{
+    if( _raw_pos < 0 || m_FetchedTimes.empty() )
+        return std::nullopt;
+    const auto it = m_FetchedTimes.find(static_cast<unsigned>(_raw_pos));
+    if( it == m_FetchedTimes.end() )
+        return std::nullopt;
+    return it->second;
+}
+
+void Model::ClearFetchedTimes()
+{
+    m_FetchedTimes.clear();
 }
 
 int Model::SoftFilteredCount() const noexcept
