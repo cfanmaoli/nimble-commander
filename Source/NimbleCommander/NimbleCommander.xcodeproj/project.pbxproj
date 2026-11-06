@@ -42,6 +42,7 @@
 		AB12CD34EF56000000000018 /* RustCore.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000019 /* RustCore.mm */; };
 		AB12CD34EF56000000000021 /* RustFileSearch.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000022 /* RustFileSearch.mm */; };
 		AB12CD34EF56000000000025 /* FlatListingBuilder.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000026 /* FlatListingBuilder.mm */; };
+		AB12CD34EF56000000000029 /* RustContentSearch.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF5600000000002A /* RustContentSearch.mm */; };
 		CF0A47F62BDD9E7200833160 /* AppDelegate+MainWindowCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA1716220196CB400F507D5 /* AppDelegate+MainWindowCreation.mm */; };
 		CF0A47F72BDD9E7A00833160 /* AppDelegate+Migration.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2F21DFD16540039A104 /* AppDelegate+Migration.mm */; };
 		CF0A47F82BDD9E8000833160 /* AppDelegate+ViewerCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFD799ED21F48F140043A26D /* AppDelegate+ViewerCreation.mm */; };
@@ -256,6 +257,7 @@
 		CF67F1BF2954689000B92944 /* Theme_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF67F1BE2954689000B92944 /* Theme_UT.mm */; };
 		AB12CD34EF56000000000023 /* RustFileSearch_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000024 /* RustFileSearch_UT.mm */; };
 		AB12CD34EF56000000000027 /* FlatListingBuilder_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */; };
+		AB12CD34EF5600000000002B /* RustContentSearch_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF5600000000002C /* RustContentSearch_UT.mm */; };
 		CF67F1C02954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
 		CF67F1C12954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
 		CF67F1C22954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
@@ -1087,6 +1089,7 @@
 		CF67F1BE2954689000B92944 /* Theme_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Theme_UT.mm; path = NimbleCommander/Tests/Theme_UT.mm; sourceTree = "<group>"; };
 		AB12CD34EF56000000000024 /* RustFileSearch_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustFileSearch_UT.mm; path = NimbleCommander/Tests/RustFileSearch_UT.mm; sourceTree = "<group>"; };
 		AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FlatListingBuilder_UT.mm; path = NimbleCommander/Tests/FlatListingBuilder_UT.mm; sourceTree = "<group>"; };
+		AB12CD34EF5600000000002C /* RustContentSearch_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustContentSearch_UT.mm; path = NimbleCommander/Tests/RustContentSearch_UT.mm; sourceTree = "<group>"; };
 		CF67F1C42954BF9400B92944 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PreferencesWindowThemesTabAutomaticSwitchingSheet.xib; sourceTree = "<group>"; };
 		CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RoutedIO.xcodeproj; path = ../RoutedIO/RoutedIO.xcodeproj; sourceTree = "<group>"; };
 		CF69CFD61DA2250C00992B84 /* VFS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VFS.xcodeproj; path = ../VFS/VFS.xcodeproj; sourceTree = "<group>"; };
@@ -1330,6 +1333,7 @@
 		AB12CD34EF56000000000019 /* RustCore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustCore.mm; path = NimbleCommander/Core/RustCore.mm; sourceTree = SOURCE_ROOT; };
 		AB12CD34EF56000000000022 /* RustFileSearch.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustFileSearch.mm; path = NimbleCommander/Core/RustFileSearch.mm; sourceTree = SOURCE_ROOT; };
 		AB12CD34EF56000000000026 /* FlatListingBuilder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FlatListingBuilder.mm; path = NimbleCommander/Core/FlatListingBuilder.mm; sourceTree = SOURCE_ROOT; };
+		AB12CD34EF5600000000002A /* RustContentSearch.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustContentSearch.mm; path = NimbleCommander/Core/RustContentSearch.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC2391DFBDEBA0039A104 /* AppDelegateCPP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegateCPP.h; path = NimbleCommander/Bootstrap/AppDelegateCPP.h; sourceTree = SOURCE_ROOT; };
 		CFDAC23A1DFBDEBA0039A104 /* AppDelegateCPP.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegateCPP.mm; path = NimbleCommander/Bootstrap/AppDelegateCPP.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC23F1DFBE18C0039A104 /* ActionsShortcutsManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ActionsShortcutsManager.h; path = NimbleCommander/Core/ActionsShortcutsManager.h; sourceTree = SOURCE_ROOT; };
@@ -1759,6 +1763,7 @@
 				CF67F1BE2954689000B92944 /* Theme_UT.mm */,
 				AB12CD34EF56000000000024 /* RustFileSearch_UT.mm */,
 				AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */,
+				AB12CD34EF5600000000002C /* RustContentSearch_UT.mm */,
 				CFD2D26028A03DC0003C18F9 /* ThemesManager_UT.mm */,
 			);
 			name = Tests;
@@ -3163,6 +3168,7 @@
 				AB12CD34EF56000000000018 /* RustCore.mm in Sources */,
 				AB12CD34EF56000000000021 /* RustFileSearch.mm in Sources */,
 				AB12CD34EF56000000000025 /* FlatListingBuilder.mm in Sources */,
+				AB12CD34EF56000000000029 /* RustContentSearch.mm in Sources */,
 				CF0A484A2BDDA29500833160 /* ShowGoToPopup.mm in Sources */,
 				CF0A47FD2BDD9EB800833160 /* VFSInit.mm in Sources */,
 				CF0A48322BDDA15300833160 /* CopyToPasteboard.mm in Sources */,
@@ -3305,6 +3311,7 @@
 				CF67F1BF2954689000B92944 /* Theme_UT.mm in Sources */,
 				AB12CD34EF56000000000023 /* RustFileSearch_UT.mm in Sources */,
 				AB12CD34EF56000000000027 /* FlatListingBuilder_UT.mm in Sources */,
+				AB12CD34EF5600000000002B /* RustContentSearch_UT.mm in Sources */,
 				CF764D572587875E00D7ED17 /* PanelBriefViewFixedWidthLayoutEngine_UT.mm in Sources */,
 				CF371DAA2D18472E0034EB3F /* ActionsShortcutsManager_UT.cpp in Sources */,
 				CF764D4F258785CC00D7ED17 /* PanelBriefViewFixedNumberLayoutEngine_UT.mm in Sources */,

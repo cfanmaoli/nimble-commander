@@ -118,6 +118,8 @@ struct Shared {
     matches: AtomicU64,
     files_seen: AtomicU64,
     dirs_seen: AtomicU64,
+    files_scanned: AtomicU64,
+    files_skipped: AtomicU64,
     working: AtomicUsize,
     stop: AtomicBool,
 }
@@ -283,6 +285,8 @@ pub extern "C" fn nc_core_search_native(params: *const NcSearchParams, stats: *m
                 matches: AtomicU64::new(0),
                 files_seen: AtomicU64::new(0),
                 dirs_seen: AtomicU64::new(0),
+                files_scanned: AtomicU64::new(0),
+                files_skipped: AtomicU64::new(0),
                 working: AtomicUsize::new(0),
                 stop: AtomicBool::new(false),
             },
@@ -1048,6 +1052,385 @@ mod flat_tests {
             ),
             NC_ERR_INVALID_ARG
         );
+    }
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// Content search
+//
+// The find-files dialog can search for text inside files; the C++ implementation opens every file
+// through the VFS and matches with SearchInFile (CFString based, one encoding at a time). This is
+// the same job done natively, in parallel, straight on the bytes - the common case is UTF-8/ASCII
+// and does not need the encoding machinery.
+// ---------------------------------------------------------------------------------------------
+
+pub const NC_CONTENT_CASE_INSENSITIVE: u32 = 1 << 0;
+pub const NC_CONTENT_WHOLE_PHRASE: u32 = 1 << 1;
+
+#[repr(C)]
+pub struct NcContentParams {
+    /// Absolute UTF-8 path of the tree to search.
+    pub root: *const c_char,
+    /// The needle, as raw bytes (UTF-8 for text).
+    pub needle: *const c_char,
+    pub needle_len: u32,
+    /// NC_CONTENT_* bits.
+    pub options: u32,
+    /// 0 = automatic.
+    pub threads: u32,
+    /// Files larger than this are skipped; 0 means "no limit".
+    pub max_file_size: u64,
+}
+
+#[repr(C)]
+#[derive(Default, Clone, Copy)]
+pub struct NcContentStats {
+    pub files_scanned: u64,
+    pub files_skipped: u64,
+    pub matches: u64,
+}
+
+/// Called for every file that contains the needle. \`rel_path\` is relative to the search root.
+pub type NcContentCallback =
+    extern "C" fn(ctx: *mut c_void, rel_path: *const c_char, offset: u64, bytes_len: u64);
+
+fn ascii_fold(b: u8) -> u8 {
+    if b.is_ascii_uppercase() {
+        b + 32
+    } else {
+        b
+    }
+}
+
+fn is_word_byte(b: u8) -> bool {
+    b.is_ascii_alphanumeric() || b == b'_'
+}
+
+/// Finds the first occurrence of \`needle\` in \`hay\`. Returns its byte offset.
+pub fn find_bytes(hay: &[u8], needle: &[u8], case_insensitive: bool, whole_phrase: bool) -> Option<usize> {
+    if needle.is_empty() || hay.len() < needle.len() {
+        return None;
+    }
+    let first = if case_insensitive { ascii_fold(needle[0]) } else { needle[0] };
+    let last_start = hay.len() - needle.len();
+    let mut i = 0usize;
+    while i <= last_start {
+        // find a candidate first byte; the standard library's position() is vectorised for u8
+        let Some(rel) = hay[i..=last_start]
+            .iter()
+            .position(|&b| if case_insensitive { ascii_fold(b) == first } else { b == first })
+        else {
+            return None;
+        };
+        i += rel;
+        let matched = if case_insensitive {
+            hay[i..i + needle.len()]
+                .iter()
+                .zip(needle.iter())
+                .all(|(a, b)| ascii_fold(*a) == ascii_fold(*b))
+        } else {
+            &hay[i..i + needle.len()] == needle
+        };
+        if matched {
+            if !whole_phrase {
+                return Some(i);
+            }
+            let before_ok = i == 0 || !is_word_byte(hay[i - 1]);
+            let after = i + needle.len();
+            let after_ok = after == hay.len() || !is_word_byte(hay[after]);
+            if before_ok && after_ok {
+                return Some(i);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+/// The parts of NcContentParams the workers need, unpacked and declared thread-safe.
+///
+/// Safety: the C caller keeps the root, the needle, the callback, its context and the cancel flag
+/// alive for the whole call, and the callback is documented to be callable from any thread.
+struct ContentParams<'a> {
+    on_found: Option<NcContentCallback>,
+    ctx: *mut c_void,
+    cancel_flag: *const c_int,
+    max_file_size: u64,
+    needle: &'a [u8],
+}
+
+unsafe impl Send for ContentParams<'_> {}
+unsafe impl Sync for ContentParams<'_> {}
+
+struct ContentJob<'a> {
+    queue: Mutex<Vec<PathBuf>>,
+    shared: Shared,
+    params: ContentParams<'a>,
+    root: &'a Path,
+    case_insensitive: bool,
+    whole_phrase: bool,
+}
+
+impl ContentJob<'_> {
+    fn worker(&self) {
+        let mut files_scanned = 0u64;
+        let mut files_skipped = 0u64;
+        let mut matches = 0u64;
+        loop {
+            if self.shared.stop.load(Ordering::Relaxed)
+                || is_cancelled(self.params.cancel_flag)
+            {
+                break;
+            }
+            let next = {
+                let mut q = self.queue.lock().unwrap();
+                q.pop()
+            };
+            let Some(dir) = next else {
+                if self.shared.working.load(Ordering::SeqCst) == 0 {
+                    break;
+                }
+                std::thread::yield_now();
+                continue;
+            };
+            self.shared.working.fetch_add(1, Ordering::SeqCst);
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                self.shared.working.fetch_sub(1, Ordering::SeqCst);
+                continue;
+            };
+            let mut subdirs: Vec<PathBuf> = Vec::new();
+            for entry in entries.flatten() {
+                if self.shared.stop.load(Ordering::Relaxed) || is_cancelled(self.params.cancel_flag) {
+                    break;
+                }
+                let Ok(file_type) = entry.file_type() else {
+                    continue;
+                };
+                let path = entry.path();
+                if file_type.is_dir() {
+                    subdirs.push(path);
+                    continue;
+                }
+                if !file_type.is_file() {
+                    continue; // symlinks, devices, sockets
+                }
+                let Ok(metadata) = entry.metadata() else {
+                    continue;
+                };
+                if self.params.max_file_size != 0 && metadata.len() > self.params.max_file_size {
+                    files_skipped += 1;
+                    continue;
+                }
+                let Ok(content) = std::fs::read(&path) else {
+                    continue;
+                };
+                files_scanned += 1;
+                if let Some(offset) =
+                    find_bytes(&content, self.params.needle, self.case_insensitive, self.whole_phrase)
+                {
+                    matches += 1;
+                    if let Some(cb) = self.params.on_found {
+                        let relative = path.strip_prefix(self.root).unwrap_or(&path);
+                        if let Ok(relative_c) =
+                            std::ffi::CString::new(relative.to_string_lossy().as_bytes().to_vec())
+                        {
+                            cb(
+                                self.params.ctx,
+                                relative_c.as_ptr(),
+                                offset as u64,
+                                self.params.needle.len() as u64,
+                            );
+                        }
+                    }
+                }
+            }
+            if !subdirs.is_empty() {
+                let mut q = self.queue.lock().unwrap();
+                q.append(&mut subdirs);
+            }
+            self.shared.working.fetch_sub(1, Ordering::SeqCst);
+        }
+        self.shared.files_scanned.fetch_add(files_scanned, Ordering::Relaxed);
+        self.shared.files_skipped.fetch_add(files_skipped, Ordering::Relaxed);
+        self.shared.matches.fetch_add(matches, Ordering::Relaxed);
+    }
+}
+
+/// Searches the contents of the files under \`params->root\` for \`params->needle\`.
+#[no_mangle]
+pub extern "C" fn nc_core_search_content(
+    params: *const NcContentParams,
+    on_found: Option<NcContentCallback>,
+    ctx: *mut c_void,
+    cancel_flag: *const c_int,
+    stats: *mut NcContentStats,
+) -> i32 {
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        if params.is_null() {
+            return NC_ERR_INVALID_ARG;
+        }
+        let params = unsafe { &*params };
+        let Ok(Some(root_str)) = parse_cstr(params.root) else {
+            return NC_ERR_INVALID_ARG;
+        };
+        if root_str.is_empty() || params.needle.is_null() || params.needle_len == 0 {
+            return NC_ERR_INVALID_ARG;
+        }
+        let root = PathBuf::from(root_str);
+        if !root.is_absolute() {
+            return NC_ERR_INVALID_ARG;
+        }
+        // SAFETY: the caller keeps the needle alive for the duration of the call.
+        let needle = unsafe { std::slice::from_raw_parts(params.needle as *const u8, params.needle_len as usize) };
+        let threads = if params.threads == 0 {
+            std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(16)
+        } else {
+            (params.threads as usize).clamp(1, 64)
+        };
+
+        let job = ContentJob {
+            queue: Mutex::new(vec![root.clone()]),
+            shared: Shared {
+                matches: AtomicU64::new(0),
+                files_seen: AtomicU64::new(0),
+                dirs_seen: AtomicU64::new(0),
+                files_scanned: AtomicU64::new(0),
+                files_skipped: AtomicU64::new(0),
+                working: AtomicUsize::new(0),
+                stop: AtomicBool::new(false),
+            },
+            params: ContentParams {
+                on_found,
+                ctx,
+                cancel_flag,
+                max_file_size: params.max_file_size,
+                needle,
+            },
+            root: root.as_path(),
+            case_insensitive: params.options & NC_CONTENT_CASE_INSENSITIVE != 0,
+            whole_phrase: params.options & NC_CONTENT_WHOLE_PHRASE != 0,
+        };
+
+        std::thread::scope(|scope| {
+            for _ in 0..threads {
+                scope.spawn(|| job.worker());
+            }
+        });
+
+        if !stats.is_null() {
+            // SAFETY: non-null and owned by the caller.
+            unsafe {
+                *stats = NcContentStats {
+                    files_scanned: job.shared.files_scanned.load(Ordering::Relaxed),
+                    files_skipped: job.shared.files_skipped.load(Ordering::Relaxed),
+                    matches: job.shared.matches.load(Ordering::Relaxed),
+                };
+            }
+        }
+        NC_OK
+    }));
+    match result {
+        Ok(rc) => rc,
+        Err(_) => NC_ERR_PANIC,
+    }
+}
+
+#[cfg(test)]
+mod content_tests {
+    use super::*;
+
+    #[test]
+    fn finds_literal_bytes() {
+        assert_eq!(find_bytes(b"hello world", b"world", false, false), Some(6));
+        assert_eq!(find_bytes(b"hello world", b"World", false, false), None);
+        assert_eq!(find_bytes(b"hello world", b"World", true, false), Some(6));
+        assert_eq!(find_bytes(b"abc", b"abcd", false, false), None);
+        assert_eq!(find_bytes(b"", b"a", false, false), None);
+        assert_eq!(find_bytes(b"aaab", b"aab", false, false), Some(1));
+    }
+
+    #[test]
+    fn whole_phrase_respects_word_boundaries() {
+        assert_eq!(find_bytes(b"a cat sat", b"cat", false, true), Some(2));
+        assert_eq!(find_bytes(b"concatenate", b"cat", false, true), None);
+        assert_eq!(find_bytes(b"cat9", b"cat", false, true), None);
+        assert_eq!(find_bytes(b"(cat)", b"cat", false, true), Some(1));
+    }
+
+    #[test]
+    fn searches_files_in_a_tree() {
+        let root = std::env::temp_dir().join(format!("nc_content_test_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("sub")).unwrap();
+        std::fs::write(root.join("a.txt"), b"the needle is here").unwrap();
+        std::fs::write(root.join("b.txt"), b"nothing to see").unwrap();
+        std::fs::write(root.join("sub/c.txt"), b"another NEEDLE").unwrap();
+
+        static SEEN: Mutex<Vec<(String, u64)>> = Mutex::new(Vec::new());
+        extern "C" fn on_found(_ctx: *mut c_void, rel: *const c_char, offset: u64, _len: u64) {
+            let s = unsafe { CStr::from_ptr(rel) }.to_string_lossy().into_owned();
+            SEEN.lock().unwrap().push((s, offset));
+        }
+
+        let root_c = std::ffi::CString::new(root.to_str().unwrap()).unwrap();
+        let needle = b"needle";
+        let params = NcContentParams {
+            root: root_c.as_ptr(),
+            needle: needle.as_ptr() as *const c_char,
+            needle_len: needle.len() as u32,
+            options: NC_CONTENT_CASE_INSENSITIVE,
+            threads: 2,
+            max_file_size: 0,
+        };
+        let mut stats = NcContentStats::default();
+        assert_eq!(
+            nc_core_search_content(
+                &params,
+                Some(on_found),
+                std::ptr::null_mut(),
+                std::ptr::null(),
+                &mut stats
+            ),
+            NC_OK
+        );
+        let mut seen = SEEN.lock().unwrap().clone();
+        seen.sort();
+        assert_eq!(
+            seen,
+            vec![("a.txt".to_string(), 4), ("sub/c.txt".to_string(), 8)]
+        );
+        assert_eq!(stats.matches, 2);
+        assert_eq!(stats.files_scanned, 3);
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn respects_the_size_limit() {
+        let root = std::env::temp_dir().join(format!("nc_content_size_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("small.txt"), b"needle").unwrap();
+        std::fs::write(root.join("big.txt"), vec![b'x'; 64]).unwrap();
+
+        let root_c = std::ffi::CString::new(root.to_str().unwrap()).unwrap();
+        let needle = b"needle";
+        let params = NcContentParams {
+            root: root_c.as_ptr(),
+            needle: needle.as_ptr() as *const c_char,
+            needle_len: needle.len() as u32,
+            options: 0,
+            threads: 1,
+            max_file_size: 32,
+        };
+        let mut stats = NcContentStats::default();
+        assert_eq!(
+            nc_core_search_content(&params, None, std::ptr::null_mut(), std::ptr::null(), &mut stats),
+            NC_OK
+        );
+        assert_eq!(stats.files_skipped, 1);
+        let _ = std::fs::remove_dir_all(&root);
     }
 }
 

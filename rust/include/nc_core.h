@@ -114,6 +114,42 @@ int32_t nc_core_scan_flat(const char *root,
                           const volatile int32_t *cancel_flag,
                           nc_flat_stats *stats);
 
+
+// ---------------------------------------------------------------------------------------------
+// Content search
+// ---------------------------------------------------------------------------------------------
+
+enum {
+    NC_CONTENT_CASE_INSENSITIVE = 1 << 0,
+    NC_CONTENT_WHOLE_PHRASE = 1 << 1,
+};
+
+typedef struct nc_content_params {
+    const char *root;   // absolute UTF-8 path
+    const char *needle; // raw bytes, usually UTF-8 text
+    uint32_t needle_len;
+    uint32_t options;       // NC_CONTENT_* bits
+    uint32_t threads;       // 0 = auto
+    uint64_t max_file_size; // 0 = no limit
+} nc_content_params;
+
+typedef struct nc_content_stats {
+    uint64_t files_scanned;
+    uint64_t files_skipped;
+    uint64_t matches;
+} nc_content_stats;
+
+// Called for every file that contains the needle, possibly from any worker thread. rel_path is
+// relative to the search root and only valid for the duration of the call.
+typedef void (*nc_content_callback)(
+    void *ctx, const char *rel_path, uint64_t offset, uint64_t bytes_len);
+
+int32_t nc_core_search_content(const nc_content_params *params,
+                               nc_content_callback on_found,
+                               void *ctx,
+                               const volatile int32_t *cancel_flag,
+                               nc_content_stats *stats);
+
 #ifdef __cplusplus
 }
 #endif

@@ -111,3 +111,32 @@ honest framing is "a specialised native fast path" rather than "Rust is 21x fast
   next step, and is the point where the user-visible speedup appears.
 - The MAS/NonMAS targets still need the two build settings and the script phase.
 
+
+## 内容搜索（第三个切片）
+
+`nc_core_search_content` 在本地文件树里并行搜索文件内容：
+
+- 输入是原始字节（通常是 UTF-8 文本）+ 选项（大小写不敏感、整词匹配）+ 文件大小上限；
+- 遍历用与文件名搜索相同的并行 BFS，每个正则文件整体读入后匹配（`find_bytes`：先按首字节扫描，
+  再做整段比较；大小写不敏感按 ASCII 折叠；整词匹配检查前后字节是否字母数字）；
+- 命中通过回调上报（相对路径 + 偏移 + 长度），统计 files_scanned / files_skipped / matches。
+
+C++ 适配层 `Core/RustContentSearch.{h,mm}` 把相对路径拼成绝对目录 + 文件名，并串行化回调
+（Rust 侧有多个 worker，和文件名搜索一样）。
+
+差分测试（`RustContentSearch_UT.mm`）：同一棵临时树分别用 `SearchForFiles`+`SearchInFile`（C++）
+和 Rust 实现搜索 "needle"，逐条比较文件名与偏移，覆盖大小写敏感/不敏感、文件大小上限。
+
+基准（2,000 个 4 KB 文件，其中 200 个包含目标文本）：
+
+```
+[perf] rust_content cpp=381370us rust=31786us ratio=12.00
+```
+
+即约 12 倍。差距来自两处：C++ 侧每个文件都要走 VFS（建 file → FileWindow → CFString 搜索），
+Rust 侧直接 `read` + 字节比较。注意语义边界：Rust 版只覆盖 UTF-8/ASCII 与“首个命中”；
+非 UTF-8 编码、正则、二进制/十六进制搜索仍然由 C++ 的 `SearchInFile` 负责。
+
+尚未接线："查找文件"面板仍然只走 C++ 实现。把 `RustFileSearch`（文件名，21×）与
+`RustContentSearch`（内容，12×）按条件接进 `FindFilesSheetController` 是下一步。
+
