@@ -326,13 +326,37 @@ static void UpdateWithExisingVD(ItemVolatileData &_new_vd, const ItemVolatileDat
     }
 }
 
-void Model::ReLoad(const VFSListingPtr &_listing)
+Model::ReloadSnapshot Model::SnapshotForReload() const
 {
-    assert(dispatch_is_main_queue()); // STA api design
+    ReloadSnapshot snapshot;
+    snapshot.listing = m_Listing;
+    snapshot.volatile_data = m_VolatileData;
+    snapshot.entries_by_raw_name = m_EntriesByRawName;
+    snapshot.sort_mode = m_CustomSortMode;
+    snapshot.hard_filtering = m_HardFiltering;
+    snapshot.soft_filtering = m_SoftFiltering;
+    snapshot.type = m_Type;
+    return snapshot;
+}
 
-    Log::Info("ReLoading listing, {} entries, {}",
-              _listing->Count(),
-              _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
+Model::PreparedLoad Model::PrepareReload(const VFSListingPtr &_listing, ReloadSnapshot &&_snapshot)
+{
+    if( !_listing )
+        throw std::logic_error("PanelData::PrepareReload: listing can't be nullptr");
+
+    const auto perf_begin = std::chrono::steady_clock::now();
+
+    // A scratch model carries the previous state, so that the merging logic below can run as is.
+    Model scratch;
+    scratch.m_Listing = std::move(_snapshot.listing);
+    scratch.m_VolatileData = std::move(_snapshot.volatile_data);
+    scratch.m_EntriesByRawName = std::move(_snapshot.entries_by_raw_name);
+    scratch.m_CustomSortMode = _snapshot.sort_mode;
+    scratch.m_HardFiltering = std::move(_snapshot.hard_filtering);
+    scratch.m_SoftFiltering = std::move(_snapshot.soft_filtering);
+    scratch.m_Type = _snapshot.type;
+    if( !scratch.m_Listing )
+        throw std::logic_error("PanelData::PrepareReload: no previous listing");
 
     // sort new entries by raw c name for sync-swapping needs
     std::vector<unsigned> dirbyrawcname;
@@ -341,22 +365,22 @@ void Model::ReLoad(const VFSListingPtr &_listing)
     std::vector<ItemVolatileData> new_vd;
     InitVolatileDataWithListing(new_vd, *_listing);
 
-    if( _listing->IsUniform() && m_Listing->IsUniform() ) {
+    if( _listing->IsUniform() && scratch.m_Listing->IsUniform() ) {
         // transfer custom data to new array using sorted indeces arrays based in raw C filename.
         // assumes that there can't be more than one file with same filenamr
         unsigned dst_i = 0;
         const unsigned dst_e = _listing->Count();
         unsigned src_i = 0;
-        const unsigned src_e = m_Listing->Count();
+        const unsigned src_e = scratch.m_Listing->Count();
         for( ; src_i != src_e && dst_i != dst_e; ++src_i ) {
-            const int src = m_EntriesByRawName[src_i];
+            const int src = scratch.m_EntriesByRawName[src_i];
         check:
             const int dst = dirbyrawcname[dst_i];
-            const int cmp = m_Listing->Filename(src).compare(_listing->Filename(dst));
+            const int cmp = scratch.m_Listing->Filename(src).compare(_listing->Filename(dst));
             if( cmp == 0 ) {
 
                 //                new_vd[ dst ] = m_VolatileData[ src ];
-                UpdateWithExisingVD(new_vd[dst], m_VolatileData[src]);
+                UpdateWithExisingVD(new_vd[dst], scratch.m_VolatileData[src]);
 
                 ++dst_i; // check this! we assume that normal directory can't hold
                          // two files with a same name
@@ -369,8 +393,8 @@ void Model::ReLoad(const VFSListingPtr &_listing)
             }
         }
     }
-    else if( !_listing->IsUniform() && !m_Listing->IsUniform() ) {
-        auto src_keys = ProduceLongKeysForListing(*m_Listing);
+    else if( !_listing->IsUniform() && !scratch.m_Listing->IsUniform() ) {
+        auto src_keys = ProduceLongKeysForListing(*scratch.m_Listing);
         auto src_keys_ind = ProduceSortedIndirectIndecesForLongKeys(src_keys);
         auto dst_keys = ProduceLongKeysForListing(*_listing);
         auto dst_keys_ind = ProduceSortedIndirectIndecesForLongKeys(dst_keys);
@@ -387,7 +411,7 @@ void Model::ReLoad(const VFSListingPtr &_listing)
             const int cmp = src_keys[src].compare(dst_keys[dst]);
             if( cmp == 0 ) {
                 //                new_vd[ dst ] = m_VolatileData[ src ];
-                UpdateWithExisingVD(new_vd[dst], m_VolatileData[src]);
+                UpdateWithExisingVD(new_vd[dst], scratch.m_VolatileData[src]);
                 ++dst_i;
             }
             else if( cmp > 0 ) {
@@ -399,17 +423,53 @@ void Model::ReLoad(const VFSListingPtr &_listing)
         }
     }
     else
-        throw std::invalid_argument("PanelData::ReLoad: incompatible listing type!");
+        throw std::invalid_argument("PanelData::PrepareReload: incompatible listing type!");
 
     // put a new data in a place
-    m_Listing = _listing;
-    m_VolatileData = std::move(new_vd);
-    m_EntriesByRawName = std::move(dirbyrawcname);
+    scratch.m_Listing = _listing;
+    scratch.m_VolatileData = std::move(new_vd);
+    scratch.m_EntriesByRawName = std::move(dirbyrawcname);
 
     // now sort our new data with custom sortings
-    DoSortWithHardFiltering();
-    BuildSoftFilteringIndeces();
-    UpdateStatictics();
+    scratch.DoSortWithHardFiltering();
+    const auto perf_sorted = std::chrono::steady_clock::now();
+    scratch.BuildSoftFilteringIndeces();
+    scratch.UpdateStatictics();
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] prepare.reload n=%u sort+merge=%.1fms rest=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_sorted),
+                     ms(perf_sorted, steady_clock::now()));
+    }
+
+    PreparedLoad prepared;
+    prepared.listing = std::move(scratch.m_Listing);
+    prepared.type = scratch.m_Type;
+    prepared.hard_filtering = std::move(scratch.m_HardFiltering);
+    prepared.soft_filtering = std::move(scratch.m_SoftFiltering);
+    prepared.volatile_data = std::move(scratch.m_VolatileData);
+    prepared.entries_by_raw_name = std::move(scratch.m_EntriesByRawName);
+    prepared.entries_by_custom_sort = std::move(scratch.m_EntriesByCustomSort);
+    prepared.reverse_to_custom_sort = std::move(scratch.m_ReverseToCustomSort);
+    prepared.entries_by_soft_filtering = std::move(scratch.m_EntriesBySoftFiltering);
+    prepared.statistics = scratch.m_Stats;
+    return prepared;
+}
+
+void Model::ReLoad(const VFSListingPtr &_listing)
+{
+    assert(dispatch_is_main_queue()); // STA api design
+
+    Log::Info("ReLoading listing, {} entries, {}",
+              _listing->Count(),
+              _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
+
+    InstallLoad(PrepareReload(_listing, SnapshotForReload()));
 }
 
 const std::shared_ptr<VFSHost> &Model::Host() const

@@ -83,10 +83,35 @@ public:
                                                   TextualFilter _soft_filtering);
 
     /**
-     * Installs the outcome of PrepareLoad(), the cheap remainder of Load().
+     * Installs the outcome of PrepareLoad()/PrepareReload(), the cheap remainder of Load()/ReLoad().
      * Must be called on the main thread.
      */
     void InstallLoad(PreparedLoad &&_prepared);
+
+    /**
+     * A copy of the state ReLoad() needs from the previous listing, so that the heavy part can be
+     * done on another thread.
+     */
+    struct ReloadSnapshot {
+        VFSListingPtr listing;
+        std::vector<ItemVolatileData> volatile_data;
+        std::vector<unsigned> entries_by_raw_name;
+        SortMode sort_mode;
+        HardFilter hard_filtering;
+        TextualFilter soft_filtering;
+        PanelType type = PanelType::Directory;
+    };
+
+    /**
+     * Takes the snapshot above. Must be called on the main thread.
+     */
+    [[nodiscard]] ReloadSnapshot SnapshotForReload() const;
+
+    /**
+     * Same as ReLoad(), but works on a snapshot instead of the model itself, so it is safe to call
+     * from any thread. The result is installed with InstallLoad().
+     */
+    [[nodiscard]] static PreparedLoad PrepareReload(const VFSListingPtr &_listing, ReloadSnapshot &&_snapshot);
 
     /**
      * Applies a listing that was produced by patching the current one: the entries at

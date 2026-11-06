@@ -139,6 +139,7 @@ static void HeatUpConfigValues()
 - (void)applyPatchedListing:(const VFSListingPtr &)_listing
                     removed:(const std::vector<unsigned> &)_removed
                    appended:(unsigned)_appended;
+- (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
 @end
 
 namespace {
@@ -816,6 +817,25 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     }
 }
 
+- (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared
+{
+    assert(dispatch_is_main_queue());
+    [self CancelBackgroundOperations];
+    const auto pers = CursorBackup{m_View.curpos, m_Data};
+    m_Data.InstallLoad(std::move(_prepared));
+    m_DataGeneration++;
+    [m_View dataUpdated];
+    [m_QuickSearch dataUpdated];
+    if( [self checkAgainstRequestedFocusing] ) {
+        Log::Trace("Cursor position was changed by requested focusing, skipping RestoredCursorPosition()");
+    }
+    else {
+        m_View.curpos = pers.RestoredCursorPosition();
+    }
+    [self onCursorChanged];
+    [m_View setNeedsDisplay];
+}
+
 - (void)refreshPanelDiscardingCaches:(bool)_force
 {
     Log::Debug("refreshPanelDiscardingCaches:{} was called", _force);
@@ -847,6 +867,9 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0);
         const auto dirpath = m_Data.DirectoryPathWithTrailingSlash();
         const auto vfs = self.vfs;
+        // the model is main-thread-only, so its state is captured here and the heavy merging is
+        // done on the reloading queue
+        const auto snapshot = std::make_shared<data::Model::ReloadSnapshot>(m_Data.SnapshotForReload());
 
         m_DirectoryReLoadingQ.Run([=] {
             if( m_DirectoryReLoadingQ.IsStopped() ) {
@@ -859,6 +882,15 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
                 Log::Trace("[PanelController refreshPanelDiscardingCaches] cancelled the refresh");
                 return;
             }
+            std::shared_ptr<data::Model::PreparedLoad> prepared;
+            if( listing ) {
+                try {
+                    prepared = std::make_shared<data::Model::PreparedLoad>(
+                        data::Model::PrepareReload(*listing, std::move(*snapshot)));
+                } catch( ... ) {
+                    prepared.reset();
+                }
+            }
             dispatch_to_main_queue([=] {
                 if( self.currentDirectoryPath != dirpath ) {
                     Log::Debug(
@@ -867,7 +899,9 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
                     return;
                 }
 
-                if( listing )
+                if( prepared )
+                    [self installPreparedReload:std::move(*prepared)];
+                else if( listing )
                     [self reloadRefreshedListing:*listing];
                 else
                     [self recoverFromInvalidDirectory];
