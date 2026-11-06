@@ -8,6 +8,9 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
 #include <string_view>
 #include <thread>
@@ -106,8 +109,18 @@ void AppendDirectory(SharedState &_state,
         }
     };
 
+    const auto begin = std::chrono::steady_clock::now();
     std::ignore = native::Fetching::ReadDirAttributesBulk(fd, [](size_t) {}, on_entry, 0, with_times, with_sizes);
     ::close(fd);
+
+    // Cloud providers and device file systems answer very slowly - log the directories that
+    // stall so that a "hanging" flat view can be traced to the path that caused it.
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        const auto ms =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
+        if( ms > 200 )
+            std::fprintf(stderr, "[perf] flat slowdir %lldms %s\n", static_cast<long long>(ms), dir.c_str());
+    }
 
     if( !subdirs.empty() )
         _subdirs.insert(_subdirs.end(), subdirs.begin(), subdirs.end());
@@ -121,7 +134,8 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            const size_t _max_items,
                                            const size_t _max_directories,
-                                           const size_t _threads)
+                                           const size_t _threads,
+                                           const double _max_seconds)
 {
     ColumnarListingResult result;
     if( _host == nullptr || _root.empty() )
@@ -144,7 +158,21 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
     const size_t workers = std::max<size_t>(1, std::min<size_t>(_threads, 32));
     std::vector<std::string> level{_root};
 
+    // Some directories live on cloud providers and take seconds per enumeration - a flat view of
+    // a home directory that contains one must not turn into a half-hour scan. The budget is a
+    // wall-clock one and the caller reports the partial result as incomplete.
+    const auto started = std::chrono::steady_clock::now();
+    const auto out_of_time = [&] {
+        if( _max_seconds <= 0 )
+            return false;
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() > _max_seconds;
+    };
+
     while( !level.empty() && !state.truncated ) {
+        if( out_of_time() ) {
+            result.timed_out = true;
+            break;
+        }
         if( _cancel_checker && _cancel_checker() )
             return {};
         std::mutex next_mutex;
@@ -155,6 +183,8 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
         const auto worker = [&] {
             for( size_t i = index.fetch_add(1); i < level.size(); i = index.fetch_add(1) ) {
                 if( _cancel_checker && _cancel_checker() )
+                    return;
+                if( out_of_time() )
                     return;
                 std::vector<std::string> subdirs;
                 AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs);
@@ -186,9 +216,11 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
         level = std::move(next);
     }
 
+    if( out_of_time() )
+        result.timed_out = true;
     result.items = state.items;
     result.directories = state.directories;
-    result.truncated = state.truncated;
+    result.truncated = state.truncated || result.timed_out;
     if( state.input.filenames.empty() )
         return result;
 

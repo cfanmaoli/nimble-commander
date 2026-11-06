@@ -80,9 +80,9 @@ TEST_CASE(PREFIX "the columnar scan matches the composed one")
     const VFSCancelChecker no_cancel = nullptr;
 
     const auto composed =
-        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
+        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0);
     const auto columnar =
-        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0);
 
     REQUIRE(composed.listing);
     REQUIRE(columnar.listing);
@@ -126,7 +126,8 @@ TEST_CASE(PREFIX "the columnar scan honours the item budget")
     const auto &host = Env().host;
     const VFSCancelChecker no_cancel = nullptr;
 
-    const auto columnar = nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4);
+    const auto columnar =
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4, 0.0);
     REQUIRE(columnar.listing);
     CHECK(columnar.truncated);
     CHECK(columnar.scanned_items == 3);
@@ -139,7 +140,7 @@ TEST_CASE(PREFIX "the columnar scan falls back for non-native hosts")
     // BuildFlatListingColumnar forwards anything that is not a NativeHost to the composed implementation;
     // with a null host it simply reports nothing.
     const VFSCancelChecker no_cancel = nullptr;
-    const auto result = nc::core::BuildFlatListingColumnar(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1);
+    const auto result = nc::core::BuildFlatListingColumnar(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1, 0.0);
     CHECK(!result.listing);
     CHECK(result.scanned_items == 0);
 }

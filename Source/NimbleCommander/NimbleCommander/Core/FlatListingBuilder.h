@@ -15,6 +15,8 @@ struct FlatListingResult {
     size_t scanned_items = 0;
     size_t scanned_directories = 0;
     bool truncated = false;
+    // true when the scan stopped because of the time budget, not because of the size limits
+    bool timed_out = false;
     // timings in milliseconds
     long long scan_ms = 0;
     long long compose_ms = 0;
@@ -30,9 +32,10 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            size_t _max_items,
                                            size_t _max_directories,
-                                           size_t _threads);
+                                           size_t _threads,
+                                           double _max_seconds);
 
-// The same thing, but enumerated by the Rust core with getattrlistbulk(): the entries go
+// The same thing, enumerated natively with getattrlistbulk(): the entries go
 // straight into one ListingInput, so there are no intermediate listings at all. Only the native
 // filesystem is covered.
 FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
@@ -41,6 +44,7 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            size_t _max_items,
                                            size_t _max_directories,
-                                           size_t _threads);
+                                           size_t _threads,
+                                           double _max_seconds);
 
 } // namespace nc::core

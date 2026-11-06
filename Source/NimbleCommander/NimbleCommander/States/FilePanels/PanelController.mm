@@ -149,6 +149,11 @@ MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
 // something sensible for the machine".
 MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatScanThreads, "filePanel.general.flatScanThreads", 0);
 
+// Wall-clock budget for the flat scan. Directories on cloud providers answer in seconds, and a
+// flat view of a home directory that contains one must not turn into a half-hour scan; when the
+// budget runs out the partial result is shown and reported as incomplete. 0 = no limit.
+MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxSeconds, "filePanel.general.flatViewMaxSeconds", 30);
+
 // How the flat listing is enumerated: "columnar" (the default - the native bulk walk in
 // (built in Columnar.cpp), entries straight into one ListingInput) or "composed" (one VFS listing per
 // directory, composed at the end - the only option for archives and network hosts). The names
@@ -189,7 +194,9 @@ static void HeatUpConfigValues()
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
 - (void)fetchLazyDatesForTopEntries;
 - (void)fetchLazyDatesForSortedRange:(NSRange)_range;
-- (void)reportFlatViewTruncation:(size_t)_scanned_items directories:(size_t)_scanned_directories;
+- (void)reportFlatViewTruncation:(size_t)_scanned_items
+                     directories:(size_t)_scanned_directories
+                       timed_out:(bool)_timed_out;
 @end
 
 namespace {
@@ -207,13 +214,14 @@ nc::core::FlatListingResult BuildFlatListingForPanel(const VFSHostPtr &_host,
                                                      const VFSCancelChecker &_cancel_checker,
                                                      const size_t _max_items,
                                                      const size_t _max_directories,
-                                                     const size_t _threads)
+                                                     const size_t _threads,
+                                                     const double _max_seconds)
 {
     if( ConfigFlatScanStrategy() != "composed" )
         return nc::core::BuildFlatListingColumnar(
-            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
+            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
     return nc::core::BuildFlatListingComposed(
-        _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
+        _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
 }
 
 } // namespace
@@ -1818,13 +1826,17 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     [self GoToDirWithContext:request];
 }
 
-- (void)reportFlatViewTruncation:(size_t)_scanned_items directories:(size_t)_scanned_directories
+- (void)reportFlatViewTruncation:(size_t)_scanned_items
+                     directories:(size_t)_scanned_directories
+                       timed_out:(bool)_timed_out
 {
     assert(dispatch_is_main_queue());
-    Log::Warn("The flat view of '{}' was truncated: {} entries in {} directories, the limits are {} / {}",
+    Log::Warn("The flat view of '{}' was truncated: {} entries in {} directories, timed out: {}, the limits are "
+              "{} / {}",
               m_FlatViewRoot,
               _scanned_items,
               _scanned_directories,
+              _timed_out,
               ConfigFlatViewMaxItems(),
               ConfigFlatViewMaxDirectories());
     if( m_FlatTruncationReported )
@@ -1833,12 +1845,21 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     Alert *const alert = [[Alert alloc] init];
     alert.messageText = NSLocalizedString(@"The flat view is incomplete", "");
-    alert.informativeText = [NSString
-        stringWithFormat:NSLocalizedString(
-                             @"There are too many entries under this directory - only the first %ld are shown. The "
-                             @"limit can be raised with the filePanel.general.flatViewMaxItems setting.",
-                             ""),
-                         static_cast<long>(_scanned_items)];
+    alert.informativeText =
+        _timed_out
+            ? [NSString stringWithFormat:NSLocalizedString(
+                                             @"Scanning took too long, so only the first %ld entries are shown. "
+                                             @"Some directories (usually ones synced by a cloud provider) answer "
+                                             @"very slowly. The time limit can be raised with the "
+                                             @"filePanel.general.flatViewMaxSeconds setting.",
+                                             ""),
+                                         static_cast<long>(_scanned_items)]
+            : [NSString stringWithFormat:NSLocalizedString(
+                                             @"There are too many entries under this directory - only the first %ld "
+                                             @"are shown. The limit can be raised with the "
+                                             @"filePanel.general.flatViewMaxItems setting.",
+                                             ""),
+                                         static_cast<long>(_scanned_items)];
     [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
     if( NSWindow *const window = m_View.window )
         [alert beginSheetModalForWindow:window completionHandler:nil];
@@ -1860,6 +1881,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     const size_t max_items = static_cast<size_t>(ConfigFlatViewMaxItems());
     const size_t max_directories = static_cast<size_t>(ConfigFlatViewMaxDirectories());
+    const double max_seconds = static_cast<double>(ConfigFlatViewMaxSeconds());
     const size_t threads = [&]() -> size_t {
         const long configured = ConfigFlatScanThreads();
         if( configured > 0 )
@@ -1874,10 +1896,11 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                                        max_items,
                                        max_directories,
                                        threads,
+                                       max_seconds,
                                        weak_self](const std::function<bool()> &_is_cancelled) {
         const auto flat_begin = std::chrono::steady_clock::now();
-        const nc::core::FlatListingResult result =
-            BuildFlatListingForPanel(host, root, fetch_flags, _is_cancelled, max_items, max_directories, threads);
+        const nc::core::FlatListingResult result = BuildFlatListingForPanel(
+            host, root, fetch_flags, _is_cancelled, max_items, max_directories, threads, max_seconds);
         if( std::getenv("NC_PERF_LOG") != nullptr ) {
             using namespace std::chrono;
             const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
@@ -1905,7 +1928,9 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 return;
             [panel loadListing:result.listing];
             if( result.truncated )
-                [panel reportFlatViewTruncation:result.scanned_items directories:result.scanned_directories];
+                [panel reportFlatViewTruncation:result.scanned_items
+                                    directories:result.scanned_directories
+                                      timed_out:result.timed_out];
         });
     }];
 }

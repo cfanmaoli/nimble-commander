@@ -27,7 +27,8 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            const size_t _max_items,
                                            const size_t _max_directories,
-                                           const size_t _threads)
+                                           const size_t _threads,
+                                           const double _max_seconds)
 {
     FlatListingResult result;
     const size_t max_directories = _max_directories;
@@ -55,9 +56,19 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
         const size_t threads = std::max<size_t>(1, _threads);
         bool truncated = false;
 
+        const auto started = std::chrono::steady_clock::now();
+        const auto out_of_time = [&] {
+            if( _max_seconds <= 0 )
+                return false;
+            return std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() > _max_seconds;
+        };
         while( !frontier.empty() && !truncated ) {
             if( _cancel_checker && _cancel_checker() )
                 return {}; // cancelled - the caller discards the result anyway
+            if( out_of_time() ) {
+                result.timed_out = true;
+                break;
+            }
 
             const auto fetch_begin = std::chrono::steady_clock::now();
             std::vector<VFSListingPtr> fetched(frontier.size());
@@ -175,7 +186,8 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            const size_t _max_items,
                                            const size_t _max_directories,
-                                           const size_t _threads)
+                                           const size_t _threads,
+                                           const double _max_seconds)
 {
     FlatListingResult result;
     if( _host == nullptr || _root.empty() || _root.front() != '/' )
@@ -185,16 +197,17 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
     // go through the composed path.
     if( dynamic_cast<vfs::NativeHost *>(_host.get()) == nullptr )
         return BuildFlatListingComposed(
-            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
+            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
 
     const auto begin = std::chrono::steady_clock::now();
-    const vfs::ColumnarListingResult enumerated =
-        vfs::BuildColumnarListing(_host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
+    const vfs::ColumnarListingResult enumerated = vfs::BuildColumnarListing(
+        _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
     result.scan_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
     result.scanned_items = enumerated.items;
     result.scanned_directories = enumerated.directories;
     result.truncated = enumerated.truncated;
+    result.timed_out = enumerated.timed_out;
     result.listing = enumerated.listing;
     return result;
 }

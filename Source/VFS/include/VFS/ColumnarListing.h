@@ -14,6 +14,8 @@ struct ColumnarListingResult {
     size_t items = 0;
     size_t directories = 0;
     bool truncated = false;
+    // true when the scan stopped because it ran out of time rather than out of space
+    bool timed_out = false;
 };
 
 // Walks the tree under _root and builds a single flat listing out of everything it finds. The
@@ -26,6 +28,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const VFSCancelChecker &_cancel_checker,
                                            size_t _max_items,
                                            size_t _max_directories,
-                                           size_t _threads);
+                                           size_t _threads,
+                                           double _max_seconds);
 
 } // namespace nc::vfs

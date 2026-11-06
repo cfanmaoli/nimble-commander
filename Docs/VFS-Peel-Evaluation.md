@@ -241,3 +241,36 @@ C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
 实测（UI 手工验证）：在 `Source/` 下用掩码 `*PanelController*` 搜到 10 项、用内容
 `PanelController` 搜到 132 项，日志确认两种查询都走了并行引擎。
 
+
+## 9. 修：`/Users/lim` 平铺一直“加载中”
+
+现象：在 `/Users/lim` 上开平铺，面板一直卡在加载。
+
+排查（先给列式枚举加了 `[perf] flat slowdir`，超过 200 ms 的目录打一行）：
+
+```
+[perf] flat slowdir 1874ms /Users/lim/Library/CloudStorage/坚果云-.../实验/抗体 +药物/.../MetaData/
+[perf] flat slowdir 1814ms /Users/lim/Library/CloudStorage/坚果云-.../动物实验/第二批/...
+... 90 秒内 1380 个这样的目录 ...
+```
+
+结论：`~/Library/CloudStorage` 是 File Provider（坚果云）域，**每个目录的枚举 1.5–1.9 s**（网络往返）。
+`/Users/lim` 的平铺会走进去，几千个目录 × 1.7 s ÷ 8 线程 = 十几分钟起步；首次访问还要把占位符
+materialize，所以看起来就是“永远加载”。（composed 策略同样会卡——这是路径本身的性质，不是列式策略的回归。）
+
+修复：给平铺扫描加**墙钟预算** `filePanel.general.flatViewMaxSeconds`（默认 30 s，0 = 不限）：
+
+- 两种策略都在级别循环与单目录循环里检查预算，超时就把已有结果装上去并标记 `timed_out`；
+- 面板弹出专门的提示："扫描耗时过长，因此只显示了前 N 项……可以在 filePanel.general.flatViewMaxSeconds 中提高时间上限"
+  （en/ru/zh-Hans 三条）；
+- 日志里 `timed_out` 一并输出，便于诊断。
+
+验证：
+
+| 场景 | 结果 |
+|---|---|
+| 预算 1 s（`flatViewMaxSeconds=1`） | `items=8045 dirs=4545 truncated=1 took=1053ms`，显示部分结果并弹提示 |
+| 预算默认 30 s（元数据已被系统缓存后） | `items=342397 dirs=47925 took=2372ms`，与 `find /Users/lim -xdev` 的 342,400 一致 |
+
+也就是说：首次冷访问会被 30 s 预算截断并给出解释，之后的访问 2.4 s 就能扫完。
+

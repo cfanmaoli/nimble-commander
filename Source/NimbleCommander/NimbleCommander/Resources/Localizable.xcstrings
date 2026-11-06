@@ -3979,6 +3979,30 @@
           }
         }
       }
+    },
+    "Scanning took too long, so only the first %ld entries are shown. Some directories (usually ones synced by a cloud provider) answer very slowly. The time limit can be raised with the filePanel.general.flatViewMaxSeconds setting.": {
+      "comment": "Body of the alert shown when the flat scan hit its time budget; %ld is the number of entries that fit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning took too long, so only the first %ld entries are shown. Some directories (usually ones synced by a cloud provider) answer very slowly. The time limit can be raised with the filePanel.general.flatViewMaxSeconds setting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканирование заняло слишком много времени, поэтому показаны только первые %ld элементов. Некоторые каталоги (обычно синхронизируемые облачным сервисом) отвечают очень медленно. Лимит времени можно увеличить настройкой filePanel.general.flatViewMaxSeconds."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描耗时过长，因此只显示了前 %ld 项。有些目录（通常是云服务同步的目录）响应非常慢。可以在设置项 filePanel.general.flatViewMaxSeconds 中提高时间上限。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
