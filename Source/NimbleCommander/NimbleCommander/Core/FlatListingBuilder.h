@@ -24,23 +24,23 @@ struct FlatListingResult {
 
 // A flat listing built the classic way: one VFSListing per directory, composed at the end.
 // This is the reference implementation - archives, network hosts and remote panels all need it.
-FlatListingResult BuildFlatListingVFS(const VFSHostPtr &_host,
-                                      const std::string &_root,
-                                      unsigned long _fetch_flags,
-                                      const VFSCancelChecker &_cancel_checker,
-                                      size_t _max_items,
-                                      size_t _max_directories,
-                                      size_t _threads);
+FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
+                                           const std::string &_root,
+                                           unsigned long _fetch_flags,
+                                           const VFSCancelChecker &_cancel_checker,
+                                           size_t _max_items,
+                                           size_t _max_directories,
+                                           size_t _threads);
 
 // The same thing, but enumerated by the Rust core with getattrlistbulk(): the entries go
 // straight into one ListingInput, so there are no intermediate listings at all. Only the native
 // filesystem is covered.
-FlatListingResult BuildFlatListingRust(const VFSHostPtr &_host,
-                                       const std::string &_root,
-                                       unsigned long _fetch_flags,
-                                       const VFSCancelChecker &_cancel_checker,
-                                       size_t _max_items,
-                                       size_t _max_directories,
-                                       size_t _threads);
+FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
+                                           const std::string &_root,
+                                           unsigned long _fetch_flags,
+                                           const VFSCancelChecker &_cancel_checker,
+                                           size_t _max_items,
+                                           size_t _max_directories,
+                                           size_t _threads);
 
 } // namespace nc::core

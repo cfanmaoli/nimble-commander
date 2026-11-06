@@ -149,13 +149,23 @@ MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
 // something sensible for the machine".
 MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatScanThreads, "filePanel.general.flatScanThreads", 0);
 
-// "vfs" (the default) or "rust" - which implementation builds the flat listing. Read on every
-// call on purpose: a cached std::string would need an exit-time destructor.
-static std::string ConfigFlatScanEngine()
+// How the flat listing is enumerated: "columnar" (the default - the native bulk walk in
+// rust/nc_core, entries straight into one ListingInput) or "composed" (one VFS listing per
+// directory, composed at the end - the only option for archives and network hosts). The names
+// describe the strategy; the implementation language is an implementation detail.
+// Read on every call on purpose: a cached std::string would need an exit-time destructor.
+static std::string ConfigFlatScanStrategy()
 {
     const auto &config = GlobalConfig();
-    return config.Has("filePanel.general.flatScanEngine") ? config.GetString("filePanel.general.flatScanEngine")
-                                                          : std::string{"vfs"};
+    if( !config.Has("filePanel.general.flatScanStrategy") )
+        return std::string{"columnar"};
+    const std::string value = config.GetString("filePanel.general.flatScanStrategy");
+    // accept the names the setting had before it was renamed
+    if( value == "rust" )
+        return "columnar";
+    if( value == "vfs" )
+        return "composed";
+    return value;
 }
 
 static void HeatUpConfigValues()
@@ -199,10 +209,10 @@ nc::core::FlatListingResult BuildFlatListingForPanel(const VFSHostPtr &_host,
                                                      const size_t _max_directories,
                                                      const size_t _threads)
 {
-    if( ConfigFlatScanEngine() == "rust" )
-        return nc::core::BuildFlatListingRust(
+    if( ConfigFlatScanStrategy() != "composed" )
+        return nc::core::BuildFlatListingColumnar(
             _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
-    return nc::core::BuildFlatListingVFS(
+    return nc::core::BuildFlatListingComposed(
         _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
 }
 
@@ -1873,7 +1883,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
             std::fprintf(stderr,
                          "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d took=%lldms "
-                         "scan=%lldms compose=%lldms fetch=%lldms fold=%lldms threads=%zu\n",
+                         "scan=%lldms compose=%lldms fetch=%lldms fold=%lldms threads=%zu strategy=%s\n",
                          root.c_str(),
                          result.scanned_items,
                          result.scanned_directories,
@@ -1884,7 +1894,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                          result.compose_ms,
                          result.fetch_ms,
                          result.fold_ms,
-                         threads);
+                         threads,
+                         ConfigFlatScanStrategy().c_str());
         }
         if( !result.listing )
             return; // cancelled, or nothing could be fetched at all

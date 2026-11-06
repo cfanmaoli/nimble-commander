@@ -184,19 +184,19 @@ C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
 - Rust 版把批次直接写进一个 `ListingInput`，最后只调用一次 `VFSListing::Build`，中间没有任何
   `VFSListing`；
 - 非 native 主机（归档/网络）自动回落到 VFS 实现；
-- 配置 `filePanel.general.flatScanEngine`（`vfs` 默认 / `rust`）与 `flatScanThreads`。
+- 配置 `filePanel.general.flatScanStrategy`（`columnar` 默认 / `composed`）与 `flatScanThreads`。
 
 实测（同一棵树，1,638,003 条目 / 203,839 目录）：
 
-| 引擎 | 总耗时 | scan | compose |
+| 策略 | 总耗时 | scan | compose |
 |---|---:|---:|---:|
-| vfs（8 线程） | 9,987 ms | 8,886 ms | 1,077 ms |
-| rust（8 线程） | 5,755 ms | 5,599 ms | 156 ms |
+| composed（8 线程） | 9,987 ms | 8,886 ms | 1,077 ms |
+| columnar（8 线程） | 5,755 ms | 5,599 ms | 156 ms |
 
 即 1.73 倍，且两边条目数、目录数完全一致。compose 从 1.08 s 降到 0.16 s，因为它不再是
 “合成 20 万个 listing”，而是一次 Build。
 
-差分测试（`NimbleCommanderUT` / `FlatListingBuilder_UT.mm`）：同一棵临时树分别用两个引擎构建
+差分测试（`NimbleCommanderUT` / `FlatListingBuilder_UT.mm`）：同一棵临时树分别用两种策略构建
 平铺 listing，逐条比较（路径、类型、是否目录、大小、修改时间），并覆盖条目预算截断与非 native 主机
 的回落。写这个测试时发现并修掉了两个真实 bug：Rust 版一度把所有条目的父目录都写成最后扫描到的
 那个目录（`ListingInput::directories/hosts` 没有 reset 成 dense），以及目录大小语义与 VFS 不一致

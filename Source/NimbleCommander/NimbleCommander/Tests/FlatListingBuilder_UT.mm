@@ -73,23 +73,25 @@ std::vector<Entry> Snapshot(const VFSListingPtr &_listing)
 
 } // namespace
 
-TEST_CASE(PREFIX "the Rust scan matches the VFS scan")
+TEST_CASE(PREFIX "the columnar scan matches the composed one")
 {
     const auto root = MakeTree();
     const auto &host = Env().host;
     const VFSCancelChecker no_cancel = nullptr;
 
-    const auto vfs = nc::core::BuildFlatListingVFS(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
-    const auto rust = nc::core::BuildFlatListingRust(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
+    const auto composed =
+        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
+    const auto columnar =
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4);
 
-    REQUIRE(vfs.listing);
-    REQUIRE(rust.listing);
-    const auto vfs_snapshot = Snapshot(vfs.listing);
-    const auto rust_snapshot = Snapshot(rust.listing);
-    if( vfs_snapshot != rust_snapshot ) {
-        for( size_t i = 0; i != std::max(vfs_snapshot.size(), rust_snapshot.size()); ++i ) {
-            const bool same =
-                i < vfs_snapshot.size() && i < rust_snapshot.size() && vfs_snapshot[i] == rust_snapshot[i];
+    REQUIRE(composed.listing);
+    REQUIRE(columnar.listing);
+    const auto composed_snapshot = Snapshot(composed.listing);
+    const auto columnar_snapshot = Snapshot(columnar.listing);
+    if( composed_snapshot != columnar_snapshot ) {
+        for( size_t i = 0; i != std::max(composed_snapshot.size(), columnar_snapshot.size()); ++i ) {
+            const bool same = i < composed_snapshot.size() && i < columnar_snapshot.size() &&
+                              composed_snapshot[i] == columnar_snapshot[i];
             if( same )
                 continue;
             const auto dump = [](const std::vector<Entry> &_e, size_t _i) {
@@ -100,44 +102,44 @@ TEST_CASE(PREFIX "the Rust scan matches the VFS scan")
                        " size=" + std::to_string(size) + " mtime=" + std::to_string(mtime);
             };
             std::fprintf(stderr,
-                         "  [%zu] vfs: %s\n        rust: %s\n",
+                         "  [%zu] composed: %s\n        columnar: %s\n",
                          i,
-                         dump(vfs_snapshot, i).c_str(),
-                         dump(rust_snapshot, i).c_str());
+                         dump(composed_snapshot, i).c_str(),
+                         dump(columnar_snapshot, i).c_str());
         }
     }
-    CHECK(vfs_snapshot == rust_snapshot);
-    CHECK(vfs.scanned_items == rust.scanned_items);
-    CHECK(vfs.scanned_directories == rust.scanned_directories);
+    CHECK(composed_snapshot == columnar_snapshot);
+    CHECK(composed.scanned_items == columnar.scanned_items);
+    CHECK(composed.scanned_directories == columnar.scanned_directories);
 
     // seven files (a.txt, b.txt, c.md, notes.txt, sub/d.txt, sub/e.md, sub/deep/f.txt) plus four
     // directories (sub, sub/deep, empty, sub/empty2)
-    CHECK(vfs.scanned_items == 11);
-    CHECK(rust.scanned_items == 11);
+    CHECK(composed.scanned_items == 11);
+    CHECK(columnar.scanned_items == 11);
 
     std::filesystem::remove_all(root);
 }
 
-TEST_CASE(PREFIX "the Rust scan honours the item budget")
+TEST_CASE(PREFIX "the columnar scan honours the item budget")
 {
     const auto root = MakeTree();
     const auto &host = Env().host;
     const VFSCancelChecker no_cancel = nullptr;
 
-    const auto rust = nc::core::BuildFlatListingRust(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4);
-    REQUIRE(rust.listing);
-    CHECK(rust.truncated);
-    CHECK(rust.scanned_items == 3);
+    const auto columnar = nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4);
+    REQUIRE(columnar.listing);
+    CHECK(columnar.truncated);
+    CHECK(columnar.scanned_items == 3);
 
     std::filesystem::remove_all(root);
 }
 
-TEST_CASE(PREFIX "the Rust scan falls back for non-native hosts")
+TEST_CASE(PREFIX "the columnar scan falls back for non-native hosts")
 {
-    // BuildFlatListingRust forwards anything that is not a NativeHost to the VFS implementation;
+    // BuildFlatListingColumnar forwards anything that is not a NativeHost to the composed implementation;
     // with a null host it simply reports nothing.
     const VFSCancelChecker no_cancel = nullptr;
-    const auto result = nc::core::BuildFlatListingRust(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1);
+    const auto result = nc::core::BuildFlatListingColumnar(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1);
     CHECK(!result.listing);
     CHECK(result.scanned_items == 0);
 }

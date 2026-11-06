@@ -20,13 +20,13 @@
 
 namespace nc::core {
 
-FlatListingResult BuildFlatListingVFS(const VFSHostPtr &_host,
-                                      const std::string &_root,
-                                      unsigned long _fetch_flags,
-                                      const VFSCancelChecker &_cancel_checker,
-                                      const size_t _max_items,
-                                      const size_t _max_directories,
-                                      const size_t _threads)
+FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
+                                           const std::string &_root,
+                                           unsigned long _fetch_flags,
+                                           const VFSCancelChecker &_cancel_checker,
+                                           const size_t _max_items,
+                                           const size_t _max_directories,
+                                           const size_t _threads)
 {
     FlatListingResult result;
     const size_t max_directories = _max_directories;
@@ -242,13 +242,13 @@ void OnFlatBatch(void *_ctx, const nc_flat_batch *_batch)
 
 } // namespace
 
-FlatListingResult BuildFlatListingRust(const VFSHostPtr &_host,
-                                       const std::string &_root,
-                                       const unsigned long _fetch_flags,
-                                       const VFSCancelChecker &_cancel_checker,
-                                       const size_t _max_items,
-                                       const size_t _max_directories,
-                                       const size_t _threads)
+FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
+                                           const std::string &_root,
+                                           const unsigned long _fetch_flags,
+                                           const VFSCancelChecker &_cancel_checker,
+                                           const size_t _max_items,
+                                           const size_t _max_directories,
+                                           const size_t _threads)
 {
     FlatListingResult result;
     if( _host == nullptr || _root.empty() || _root.front() != '/' )
@@ -257,7 +257,8 @@ FlatListingResult BuildFlatListingRust(const VFSHostPtr &_host,
     // The Rust core enumerates the native filesystem only; everything else (archives, network
     // hosts) keeps using the VFS implementation.
     if( dynamic_cast<vfs::NativeHost *>(_host.get()) == nullptr )
-        return BuildFlatListingVFS(_host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
+        return BuildFlatListingComposed(
+            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads);
 
     const auto begin = std::chrono::steady_clock::now();
 
