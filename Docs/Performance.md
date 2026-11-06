@@ -1210,3 +1210,37 @@ heap All zones: 142.9 MB  （空转 20.4 MB）
 
 PanelUT 从 56 个用例 / 1359 断言增加到 58 / 1382，全部套件仍然全绿。
 
+
+---
+
+## 32. 修复：大目录无法滚动（预览 listing 之后表格高度没更新）
+
+**现象**：打开一个条目数超过 4096 的目录后，鼠标滚轮和滚动条都无法滚动，往下只能看到前几十行。
+
+**根因**：首屏预览（4096 行）装好之后，完整 listing 再把它替换掉，行数变化 >1000，而
+`PanelListView::onDataChanged` 当时用的是 `noteNumberOfRowsChanged`——它不会重新计算表格的
+文档高度，于是外层的 `NSScrollView` 认为内容只有 4096 行那么高，滚动条自然滚不动、滚轮也被吃掉。
+这是第一批性能改动（"避免对 1M 行调用 insertRows"）引入的回归，只有走预览路径的大目录才会命中。
+
+**修复**：大范围行数变化改用 `reloadData`（`insertRows` 仍然只用于小范围增量）：
+
+```objc
+const int row_delta = std::max(new_rows_count, old_rows_count) - std::min(new_rows_count, old_rows_count);
+if( row_delta > 1000 )
+    [m_TableView reloadData];
+```
+
+顺带修掉了惰性模式下同类的一个隐患：取数完成后不再调用整表 `dataUpdated`（Brief 视图会因此
+`reloadData` 并跳回开头），改为把"填充一行的所有列"抽成 `fillRowView:atRow:`，
+由 `volatileDataChanged` 只重绘可见行。
+
+**验证**（截图对比滚动前后 + 日志）：
+
+- 20000 项目录、完整属性模式：滚动后可见行从 l_000000 变为 l_000062 ✓
+- 20000 项目录、惰性日期+大小模式：同样滚动 ✓，并且滚动过程中触发了 286 次单条目 stat
+  （说明可见行补取在滚动时正常工作）；
+- 9 个单元测试套件全绿；增量刷新仍为 patch 7.4 ms + ui 31.5 ms。
+
+另：用户的 `Config.json` 里残留了压测脚本写入的 `lazyDates`/`lazySizes`（`true`），已清掉，
+恢复成出厂默认（这些键不写即等于 false）。
+

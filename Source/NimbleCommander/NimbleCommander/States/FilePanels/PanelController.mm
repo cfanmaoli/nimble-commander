@@ -968,9 +968,11 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
                 if( m_LazySizes && i.size != std::numeric_limits<uint64_t>::max() )
                     m_Data.SetFetchedSize(i.raw_index, i.size);
             }
-            // repaint the rows that are on screen
+            // Repaint only the rows that are on screen. A full dataUpdated() here would rebuild the
+            // view's contents (the brief view even reloads its collection view), which resets the
+            // scroll position - i.e. the view would refuse to scroll while the dates are being
+            // pulled in.
             [m_View volatileDataChanged];
-            [m_View dataUpdated];
         });
     });
 }
