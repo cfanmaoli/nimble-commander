@@ -28,6 +28,7 @@
 #include <NimbleCommander/Core/VFSInstanceManager.h>
 #include "Actions/OpenFile.h"
 #include "Actions/GoToFolder.h"
+#include <NimbleCommander/Core/Alert.h>
 #include <chrono>
 #include <cstdio>
 #include <ankerl/unordered_dense.h>
@@ -124,6 +125,24 @@ MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigEnableFinderTags, g_ConfigEnableFinde
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazyDates, "filePanel.general.lazyDates");
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazySizes, "filePanel.general.lazySizes");
 
+#define MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(_name, _path, _fallback)                                                   \
+    static long _name()                                                                                                \
+    {                                                                                                                  \
+        static const auto fetch = [] { return GlobalConfig().GetInt((_path)); };                                       \
+        static long value = [] {                                                                                       \
+            GlobalConfig().ObserveForever((_path), [] { value = fetch(); });                                           \
+            return fetch();                                                                                            \
+        }();                                                                                                           \
+        return value > 0 ? value : (_fallback);                                                                        \
+    }
+
+// A flat view of a whole subtree is inherently heavy - these are the safety limits. They are
+// generous on purpose: silently dropping a million of entries was far worse than the memory.
+MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxItems, "filePanel.general.flatViewMaxItems", 8'000'000);
+MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
+                                    "filePanel.general.flatViewMaxDirectories",
+                                    2'000'000);
+
 static void HeatUpConfigValues()
 {
     ConfigShowDotDotEntry();
@@ -145,19 +164,30 @@ static void HeatUpConfigValues()
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
 - (void)fetchLazyDatesForTopEntries;
 - (void)fetchLazyDatesForSortedRange:(NSRange)_range;
+- (void)reportFlatViewTruncation:(size_t)_scanned_items directories:(size_t)_scanned_directories;
 @end
 
 namespace {
 
 // Collects everything underneath the given directory into a single listing. Symbolic links to
 // directories are listed but not followed, so that a link loop cannot hang the traversal.
-VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
-                               const std::string &_root,
-                               unsigned long _fetch_flags,
-                               const VFSCancelChecker &_cancel_checker)
+struct FlatListingResult {
+    VFSListingPtr listing;
+    size_t scanned_items = 0;
+    size_t scanned_directories = 0;
+    bool truncated = false;
+};
+
+FlatListingResult BuildFlatListing(const VFSHostPtr &_host,
+                                   const std::string &_root,
+                                   unsigned long _fetch_flags,
+                                   const VFSCancelChecker &_cancel_checker,
+                                   const size_t _max_items,
+                                   const size_t _max_directories)
 {
-    constexpr size_t max_directories = size_t{64} * 1024;
-    constexpr int max_items = 1'000'000;
+    FlatListingResult result;
+    const size_t max_directories = _max_directories;
+    const size_t max_items = _max_items;
 
     try {
         std::vector<VFSListingPtr> listings;
@@ -168,7 +198,7 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
         size_t total_items = 0;
         for( size_t index = 0; index != directories.size() && listings.size() < max_directories; ++index ) {
             if( _cancel_checker && _cancel_checker() )
-                return {};
+                return {}; // cancelled - the caller discards the result anyway
 
             const std::string &directory = directories[index];
             std::expected<VFSListingPtr, Error> fetched =
@@ -190,20 +220,34 @@ VFSListingPtr BuildFlatListing(const VFSHostPtr &_host,
                     directories.emplace_back(item.Directory() + filename + "/");
             }
 
-            total_items += wanted.size();
-            if( total_items > max_items )
+            // take as many entries as the budget allows - dropping the *whole* directory just
+            // because it alone is bigger than the limit would leave the user with an empty panel
+            size_t take = wanted.size();
+            if( total_items + take > max_items ) {
+                take = max_items > total_items ? max_items - total_items : 0;
+                result.truncated = true;
+            }
+            total_items += take;
+            if( take == 0 )
                 break;
-            if( wanted.empty() )
-                continue;
+            wanted.resize(take);
             listings.emplace_back(listing);
             indices.emplace_back(std::move(wanted));
+            if( result.truncated )
+                break;
         }
 
+        result.scanned_items = total_items;
+        result.scanned_directories = directories.size();
+        if( directories.size() > max_directories && listings.size() >= max_directories )
+            result.truncated = true;
+
         if( listings.empty() )
-            return {}; // nothing underneath - keep the regular directory listing
-        return VFSListing::Build(VFSListing::Compose(listings, indices));
+            return result; // nothing underneath - keep the regular directory listing
+        result.listing = VFSListing::Build(VFSListing::Compose(listings, indices));
+        return result;
     } catch( ... ) {
-        return {};
+        return result;
     }
 }
 
@@ -378,6 +422,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_LazyDatesQ;
     bool m_LazyDates;
     bool m_LazySizes;
+    bool m_FlatTruncationReported;
     // raw indices whose attributes are being fetched right now - the scroll notifications can
     // fire many times before the first result lands, so this keeps the work bounded
     ankerl::unordered_dense::set<unsigned> m_LazyPending;
@@ -466,6 +511,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_PendingRefreshScheduled = false;
         m_LazyDates = false;
         m_LazySizes = false;
+        m_FlatTruncationReported = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
 
@@ -1781,6 +1827,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     m_FlatViewRoot = root;
     m_FlatView = true;
     ++m_FlatViewGeneration;
+    m_FlatTruncationReported = false;
     [self reloadFlatView];
 }
 
@@ -1804,6 +1851,34 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     [self GoToDirWithContext:request];
 }
 
+- (void)reportFlatViewTruncation:(size_t)_scanned_items directories:(size_t)_scanned_directories
+{
+    assert(dispatch_is_main_queue());
+    Log::Warn("The flat view of '{}' was truncated: {} entries in {} directories, the limits are {} / {}",
+              m_FlatViewRoot,
+              _scanned_items,
+              _scanned_directories,
+              ConfigFlatViewMaxItems(),
+              ConfigFlatViewMaxDirectories());
+    if( m_FlatTruncationReported )
+        return; // don't nag on every refresh
+    m_FlatTruncationReported = true;
+
+    Alert *const alert = [[Alert alloc] init];
+    alert.messageText = NSLocalizedString(@"The flat view is incomplete", "");
+    alert.informativeText = [NSString
+        stringWithFormat:NSLocalizedString(
+                             @"There are too many entries under this directory - only the first %ld are shown. The "
+                             @"limit can be raised with the filePanel.general.flatViewMaxItems setting.",
+                             ""),
+                         static_cast<long>(_scanned_items)];
+    [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
+    if( NSWindow *const window = m_View.window )
+        [alert beginSheetModalForWindow:window completionHandler:nil];
+    else
+        [alert runModal];
+}
+
 - (void)reloadFlatView
 {
     if( !m_FlatView )
@@ -1816,17 +1891,22 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     if( host == nullptr || root.empty() )
         return;
 
+    const size_t max_items = static_cast<size_t>(ConfigFlatViewMaxItems());
+    const size_t max_directories = static_cast<size_t>(ConfigFlatViewMaxDirectories());
     __weak PanelController *weak_self = self;
-    [self commitCancelableLoadingTask:[host, root, generation, fetch_flags, weak_self](
+    [self commitCancelableLoadingTask:[host, root, generation, fetch_flags, max_items, max_directories, weak_self](
                                           const std::function<bool()> &_is_cancelled) {
-        const VFSListingPtr listing = BuildFlatListing(host, root, fetch_flags, _is_cancelled);
-        if( !listing )
+        const FlatListingResult result =
+            BuildFlatListing(host, root, fetch_flags, _is_cancelled, max_items, max_directories);
+        if( !result.listing )
             return; // cancelled, or nothing could be fetched at all
-        dispatch_to_main_queue([weak_self, listing, generation] {
+        dispatch_to_main_queue([weak_self, result, generation] {
             PanelController *const panel = weak_self;
             if( panel == nil || !panel->m_FlatView || panel->m_FlatViewGeneration != generation )
                 return;
-            [panel loadListing:listing];
+            [panel loadListing:result.listing];
+            if( result.truncated )
+                [panel reportFlatViewTruncation:result.scanned_items directories:result.scanned_directories];
         });
     }];
 }

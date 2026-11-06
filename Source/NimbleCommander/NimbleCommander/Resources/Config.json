@@ -87,6 +87,13 @@
              * shows. Takes another 8MB off a million-entry listing.
              */
             "lazySizes": false,
+
+            /**
+             * Safety limits for the flat view, which lists the whole subtree of the current
+             * directory. Entries beyond these are not shown and the user is told about it.
+             */
+            "flatViewMaxItems": 8000000,
+            "flatViewMaxDirectories": 2000000,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

@@ -1,3937 +1,3985 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Nimble Commander-Fork needs Full Disk Access to work with the Trash." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork needs Full Disk Access to work with the Trash."
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ available": {
+      "comment": "Panels bottom volume bar, showing amount of bytes available",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ доступно"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork требуется полный доступ к диску для работы с Корзиной."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用 %@"
           }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork 需要「完全磁盘访问权限」才能操作废纸篓。"
-          }
-        }
-      }
-    },
-    "Grant access in System Settings → Privacy & Security → Full Disk Access and try again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grant access in System Settings → Privacy & Security → Full Disk Access and try again."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Предоставьте доступ в «Системные настройки → Конфиденциальность и безопасность → Полный доступ к диску» и повторите попытку."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中授予权限后重试。"
-          }
-        }
-      }
-    },
-    "Open System Settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open System Settings"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть системные настройки"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开系统设置"
-          }
-        }
-      }
-    },
-    "Failed to access the Trash." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to access the Trash."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось получить доступ к Корзине."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法访问废纸篓。"
-          }
-        }
-      }
-    },
-    "The Trash is empty." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Trash is empty."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Корзина пуста."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "废纸篓是空的。"
-          }
-        }
-      }
-    },
-    "Are you sure you want to permanently delete all items in the Trash?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to permanently delete all items in the Trash?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы уверены, что хотите безвозвратно удалить все элементы в Корзине?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要永久删除废纸篓中的所有项目吗？"
-          }
-        }
-      }
-    },
-    "Empty Trash" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty Trash"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить корзину"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空废纸篓"
-          }
-        }
-      }
-    },
-    "Failed to empty the Trash." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to empty the Trash."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось очистить Корзину."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空废纸篓失败。"
-          }
-        }
-      }
-    },
-    "Failed to put back an item." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to put back an item."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось вернуть элемент."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放回原处失败。"
-          }
-        }
-      }
-    },
-    "Failed to put back some of the items." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to put back some of the items."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось вернуть некоторые элементы."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "部分项目放回原处失败。"
-          }
         }
       }
     },
-    "__BYTECOUNTFORMATTER_BYTE_POSTFIX" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "B"
+    "__BYTECOUNTFORMATTER_BYTE_POSTFIX": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "B"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B"
           }
         }
       }
     },
-    "__BYTECOUNTFORMATTER_BYTES_WORD" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "bytes"
+    "__BYTECOUNTFORMATTER_BYTES_WORD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bytes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字节"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字节"
           }
         }
       }
     },
-    "__BYTECOUNTFORMATTER_SI_LETTERS_ARRAY" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " KMGTP"
+    "__BYTECOUNTFORMATTER_SI_LETTERS_ARRAY": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " KMGTP"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " KMGTP"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " KMGTP"
           }
         }
       }
     },
-    "__CLASSICPRESENTATION_FOLDER_WORD" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folder"
+    "__CLASSICPRESENTATION_FOLDER_WORD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹"
           }
         }
       }
     },
-    "__CLASSICPRESENTATION_UP_WORD" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "    Up"
+    "__CLASSICPRESENTATION_UP_WORD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "    Up"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "    向上"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "    向上"
           }
         }
       }
     },
-    "__MODERNPRESENTATION_FOLDER_WORD" : {
-      "comment" : "Folders dummy string when size is not available, for English is 'Folder'",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folder"
+    "__MODERNPRESENTATION_FOLDER_WORD": {
+      "comment": "Folders dummy string when size is not available, for English is 'Folder'",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Папка"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹"
           }
         }
       }
     },
-    "__MODERNPRESENTATION_UP_WORD" : {
-      "comment" : "Upper-level in directory, for English is 'Up'",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Up"
+    "__MODERNPRESENTATION_UP_WORD": {
+      "comment": "Upper-level in directory, for English is 'Up'",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Наверх"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наверх"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向上"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向上"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_ACCESSED" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date Accessed"
+    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_ACCESSED": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date Accessed"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата доступа"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата доступа"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "访问日期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "访问日期"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_ADDED" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date Added"
+    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_ADDED": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date Added"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата добавления"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата добавления"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加日期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加日期"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_CREATED" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date Created"
+    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_CREATED": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date Created"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата создания"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата создания"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建日期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建日期"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_MODIFIED" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date Modified"
+    "__PANELVIEW_LIST_COLUMN_TITLE_DATE_MODIFIED": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date Modified"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата изменения"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата изменения"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "修改日期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改日期"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_EXTENSION" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extension"
+    "__PANELVIEW_LIST_COLUMN_TITLE_EXTENSION": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расширение"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расширение"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩展名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展名"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_NAME" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "__PANELVIEW_LIST_COLUMN_TITLE_NAME": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_SIZE" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Size"
+    "__PANELVIEW_LIST_COLUMN_TITLE_SIZE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размер"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "大小"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大小"
           }
         }
       }
     },
-    "__PANELVIEW_LIST_COLUMN_TITLE_TAGS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tags"
+    "__PANELVIEW_LIST_COLUMN_TITLE_TAGS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Теги"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теги"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "标签"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签"
           }
         }
       }
     },
-    "__PANELVIEW_TEMPORARY_PANEL_WITH_TITLE" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Temporary Panel: %@"
+    "__PANELVIEW_TEMPORARY_PANEL_WITH_TITLE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary Panel: %@"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Временная панель: %@"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Временная панель: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "临时面板：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "临时面板：%@"
           }
         }
       }
     },
-    "__PANELVIEW_TEMPORARY_PANEL_WITHOUT_TITLE" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Temporary Panel"
+    "__PANELVIEW_TEMPORARY_PANEL_WITHOUT_TITLE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary Panel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Временная панель"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Временная панель"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "临时面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "临时面板"
           }
         }
       }
     },
-    "__THANKS_FOR_REGISTER_INFORMATIVE" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thank you for using a registered copy of Nimble Commander-Fork! Please restart it for the changes to take effect."
+    "__THANKS_FOR_REGISTER_INFORMATIVE": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thank you for using a registered copy of Nimble Commander-Fork! Please restart it for the changes to take effect."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спасибо за использование зарегистрированной копии Nimble Commander-Fork!"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спасибо за использование зарегистрированной копии Nimble Commander-Fork!"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "感谢你使用 Nimble Commander-Fork 的已注册副本！请重新启动以使更改生效。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "感谢你使用 Nimble Commander-Fork 的已注册副本！请重新启动以使更改生效。"
           }
         }
       }
     },
-    "__THANKS_FOR_REGISTER_MESSAGE" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activated successfully"
+    "__THANKS_FOR_REGISTER_MESSAGE": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activated successfully"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Успешная активация"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Успешная активация"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "激活成功"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "激活成功"
           }
         }
       }
     },
-    "__TRIAL_WINDOW_NOTE" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This is a trial version of Nimble Commander-Fork.\nTo continue using this software after the 30-day trial period, you have to either buy a license or install the paid version from Mac App Store.\nThis window appears only in the trial version."
+    "__TRIAL_WINDOW_NOTE": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a trial version of Nimble Commander-Fork.\nTo continue using this software after the 30-day trial period, you have to either buy a license or install the paid version from Mac App Store.\nThis window appears only in the trial version."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это пробная версия Nimble Commander-Fork.\nЧтобы продолжить использование этого продукта после окончания пробного периода в 30 дней, Вам нужно купить лицензию или установить платную версию из Mac App Store.\nЭто окно появляется только в пробной версии."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это пробная версия Nimble Commander-Fork.\nЧтобы продолжить использование этого продукта после окончания пробного периода в 30 дней, Вам нужно купить лицензию или установить платную версию из Mac App Store.\nЭто окно появляется только в пробной версии."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这是 Nimble Commander-Fork 的试用版。\n30 天试用期结束后若需继续使用本软件，你必须购买许可证或从 Mac App Store 安装付费版本。\n此窗口仅在试用版中显示。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是 Nimble Commander-Fork 的试用版。\n30 天试用期结束后若需继续使用本软件，你必须购买许可证或从 Mac App Store 安装付费版本。\n此窗口仅在试用版中显示。"
           }
         }
       }
     },
-    "“%@” is %@ in size.\nAre you sure you want to open it?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "“%1$@” is %2$@ in size.\nAre you sure you want to open it?"
+    "Allow Access": {
+      "comment": "Asking user for granting file system access for NC - button title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить доступ"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%1$@”的大小为 %2$@。\n确定要打开它吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许访问"
           }
         }
       }
     },
-    "%@ available" : {
-      "comment" : "Panels bottom volume bar, showing amount of bytes available",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ доступно"
+    "App:": {
+      "comment": "Brief System Information app label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приложения:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用 %@"
-          }
-        }
-      }
-    },
-    "⏎" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "⏎"
-          }
-        }
-      }
-    },
-    "␛" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "␛"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用程序："
           }
         }
       }
     },
-    "Allow Access" : {
-      "comment" : "Asking user for granting file system access for NC - button title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Разрешить доступ"
+    "Are you sure you want to delete this connection?": {
+      "comment": "Asking user if he really wants to delete information about a stored connection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите удалить это соединение?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允许访问"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除此连接吗？"
           }
         }
       }
     },
-    "App:" : {
-      "comment" : "Brief System Information app label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Приложения:"
+    "Are you sure you want to permanently delete all items in the Trash?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to permanently delete all items in the Trash?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用程序："
-          }
-        }
-      }
-    },
-    "Are you sure you want to delete this connection?" : {
-      "comment" : "Asking user if he really wants to delete information about a stored connection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите удалить это соединение?"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уверены, что хотите безвозвратно удалить все элементы в Корзине?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要删除此连接吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要永久删除废纸篓中的所有项目吗？"
           }
         }
       }
     },
-    "Are you sure you want to remove this editor?" : {
-      "comment" : "Asking the user for confirmation on deleting the external editor - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите убрать этот редактор?"
+    "Are you sure you want to remove this editor?": {
+      "comment": "Asking the user for confirmation on deleting the external editor - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите убрать этот редактор?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要移除此编辑器吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要移除此编辑器吗？"
           }
         }
       }
     },
-    "Are you sure you want to remove this theme?" : {
-      "comment" : "Asking user for confirmation on erasing custom theme - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите удалить эту тему?"
+    "Are you sure you want to remove this theme?": {
+      "comment": "Asking user for confirmation on erasing custom theme - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите удалить эту тему?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要移除此主题吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要移除此主题吗？"
           }
         }
       }
     },
-    "Are you sure you want to remove this tool?" : {
-      "comment" : "Asking the user for confirmation on deleting the external tool - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите удалить этот инструмент?"
+    "Are you sure you want to remove this tool?": {
+      "comment": "Asking the user for confirmation on deleting the external tool - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите удалить этот инструмент?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要移除此工具吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要移除此工具吗？"
           }
         }
       }
     },
-    "Are you sure you want to reset settings to defaults?" : {
-      "comment" : "Asking user for confirmation on erasing custom settings - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите сбросить настройки к стандартным?"
+    "Are you sure you want to reset settings to defaults?": {
+      "comment": "Asking user for confirmation on erasing custom settings - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите сбросить настройки к стандартным?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要将设置重置为默认值吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要将设置重置为默认值吗？"
           }
         }
       }
     },
-    "Are you sure you want to revert the changes of this theme?" : {
-      "comment" : "Asking user for confirmation on reverting a standard theme - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите сбросить изменения этой темы?"
+    "Are you sure you want to revert the changes of this theme?": {
+      "comment": "Asking user for confirmation on reverting a standard theme - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите сбросить изменения этой темы?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要还原此主题的更改吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要还原此主题的更改吗？"
           }
         }
       }
     },
-    "Blue" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Синий"
+    "Blue": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синий"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "蓝色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "蓝色"
           }
         }
       }
     },
-    "Brief System Information" : {
-      "comment" : "Brief System Information overlay title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Краткий обзор системы"
+    "Brief System Information": {
+      "comment": "Brief System Information overlay title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Краткий обзор системы"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统简要信息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统简要信息"
           }
         }
       }
     },
-    "Cache:" : {
-      "comment" : "Brief System Information cache label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кэш:"
+    "Cache:": {
+      "comment": "Brief System Information cache label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кэш:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缓存："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缓存："
           }
         }
       }
     },
-    "Cancel" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
+    "Cancel": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "Case Sensitive" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "C учетом регистра"
+    "Case Sensitive": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "C учетом регистра"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "区分大小写"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "区分大小写"
           }
         }
       }
     },
-    "Check for Updates..." : {
-      "comment" : "Menu item title for check if any Nimble Commander-Fork updates are available",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Проверить наличие обновлений..."
+    "Check for Updates...": {
+      "comment": "Menu item title for check if any Nimble Commander-Fork updates are available",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить наличие обновлений..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新…"
           }
         }
       }
     },
-    "Clear Recents" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить недавние поиски"
+    "Clear Recents": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить недавние поиски"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除最近记录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除最近记录"
           }
         }
       }
     },
-    "Click “Allow Access” to grant access to files in the selected directory" : {
-      "comment" : "Asking the user to grant filesystem access for NC",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нажмите “Разрешить доступ” чтобы позволить работать с файлами в выбранной директории"
+    "Click “Allow Access” to grant access to files in the selected directory": {
+      "comment": "Asking the user to grant filesystem access for NC",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите “Разрешить доступ” чтобы позволить работать с файлами в выбранной директории"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点按“允许访问”以授予对所选目录中文件的访问权限"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点按“允许访问”以授予对所选目录中文件的访问权限"
           }
         }
       }
     },
-    "Close" : {
-      "comment" : "User action to close a window",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
+    "Close": {
+      "comment": "User action to close a window",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
           }
         }
       }
     },
-    "Close Other Tabs" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть остальные вкладки"
+    "Close Other Tabs": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть остальные вкладки"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭其他标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭其他标签页"
           }
         }
       }
     },
-    "Close Tab" : {
-      "comment" : "Menu item title for closing current tab",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть вкладку"
+    "Close Tab": {
+      "comment": "Menu item title for closing current tab",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть вкладку"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭标签页"
           }
         }
       }
     },
-    "Close Viewer" : {
-      "comment" : "Menu item title for closing internal viewer state",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть просмотрщик"
+    "Close Viewer": {
+      "comment": "Menu item title for closing internal viewer state",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть просмотрщик"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭查看器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭查看器"
           }
         }
       }
     },
-    "Close Window" : {
-      "comment" : "Menu item title\nMenu item title for closing current window",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть окно"
+    "Close Window": {
+      "comment": "Menu item title\nMenu item title for closing current window",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть окно"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭窗口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭窗口"
           }
         }
       }
     },
-    "Closing this window will terminate the running processes: " : {
-      "comment" : "Informing when closing with running terminal processes",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрытие этого окна прервет следующие процессы: "
+    "Closing this window will terminate the running processes: ": {
+      "comment": "Informing when closing with running terminal processes",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрытие этого окна прервет следующие процессы: "
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭此窗口将终止正在运行的进程："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭此窗口将终止正在运行的进程："
           }
         }
       }
     },
-    "Compressed:" : {
-      "comment" : "Brief System Information compressed label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжато:"
+    "Compressed:": {
+      "comment": "Brief System Information compressed label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сжато:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "压缩后："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "压缩后："
           }
         }
       }
     },
-    "Computer Name:" : {
-      "comment" : "Brief System Information computer name label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя компьютера:"
+    "Computer Name:": {
+      "comment": "Brief System Information computer name label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя компьютера:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "电脑名称："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "电脑名称："
           }
         }
       }
     },
-    "Conflicts (%@)" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Конфликты (%@)"
+    "Conflicts (%@)": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Конфликты (%@)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "冲突 (%@)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "冲突 (%@)"
           }
         }
       }
     },
-    "Connections" : {
-      "comment" : "Connections popup menu title in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Соединения"
+    "Connections": {
+      "comment": "Connections popup menu title in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Соединения"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
           }
         }
       }
     },
-    "CPU" : {
-      "comment" : "Brief System Information cpu box title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ЦП"
+    "CPU": {
+      "comment": "Brief System Information cpu box title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЦП"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CPU"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
           }
         }
       }
     },
-    "Delete Tag" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить Тэг"
+    "Delete Tag": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить Тэг"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除标签"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除标签"
           }
         }
       }
     },
-    "Disable Admin Mode" : {
-      "comment" : "Menu item title for disabling an admin mode",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выключить режим администратора"
+    "Disable Admin Mode": {
+      "comment": "Menu item title for disabling an admin mode",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выключить режим администратора"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭管理员模式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭管理员模式"
           }
         }
       }
     },
-    "Display all items with the tag “%@”" : {
-      "comment" : "Tooltip for a quick list menu shown for each finder tag",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать все объекты с тегом “%@”"
+    "Display all items with the tag “%@”": {
+      "comment": "Tooltip for a quick list menu shown for each finder tag",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать все объекты с тегом “%@”"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示所有带有“%@”标签的项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示所有带有“%@”标签的项目"
           }
         }
       }
     },
-    "Do you want to close this window?" : {
-      "comment" : "Asking to close window with processes running",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы хотите закрыть это окно?"
+    "Do you want to close this window?": {
+      "comment": "Asking to close window with processes running",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы хотите закрыть это окно?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要关闭此窗口吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要关闭此窗口吗？"
           }
         }
       }
     },
-    "Do you want to delete tag “%@”?" : {
-      "comment" : "Alert shown when a user removes a tag",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы действительно хотите удалить тэг “%@”?"
+    "Do you want to delete tag “%@”?": {
+      "comment": "Alert shown when a user removes a tag",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы действительно хотите удалить тэг “%@”?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要删除标签“%@”吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要删除标签“%@”吗？"
           }
         }
       }
     },
-    "Dropbox connection error:" : {
-      "comment" : "Showing error when connecting to Dropbox service",
-      "extractionState" : "stale",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка подключения к Dropbox:"
+    "Dropbox connection error:": {
+      "comment": "Showing error when connecting to Dropbox service",
+      "extractionState": "stale",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ошибка подключения к Dropbox:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dropbox 连接错误："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropbox 连接错误："
           }
         }
       },
-      "shouldTranslate" : false
+      "shouldTranslate": false
     },
-    "Enable Admin Mode" : {
-      "comment" : "Menu item title for enabling an admin mode",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить режим администратора"
+    "Empty Trash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Trash"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开管理员模式"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить корзину"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空废纸篓"
+          }
+        }
+      }
+    },
+    "Enable Admin Mode": {
+      "comment": "Menu item title for enabling an admin mode",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить режим администратора"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开管理员模式"
+          }
+        }
+      }
+    },
+    "Encoding": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кодировка"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编码"
+          }
+        }
+      }
+    },
+    "Enter “%@”": {
+      "comment": "Enter a directory",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти в “%@”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "进入“%@”"
+          }
+        }
+      }
+    },
+    "Execute “%@”": {
+      "comment": "Execute a binary",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запустить “%@”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行“%@”"
+          }
+        }
+      }
+    },
+    "Failed to access the dragged item:": {
+      "comment": "Showing error when failed to access the dragged items",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось получить доступ к перетащенному объекту:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法访问拖入的项目："
+          }
+        }
+      }
+    },
+    "Failed to access the privileged helper.": {
+      "comment": "Information that toggling admin mode on has failed",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось связаться с привилегированным помощником."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法访问特权辅助程序。"
+          }
+        }
+      }
+    },
+    "Failed to access the Trash.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to access the Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось получить доступ к Корзине."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法访问废纸篓。"
+          }
+        }
+      }
+    },
+    "Failed to create an empty file:": {
+      "comment": "Showing error when trying to create an empty file",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось создать пустой файл:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法创建空文件："
+          }
+        }
+      }
+    },
+    "Failed to empty the Trash.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to empty the Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось очистить Корзину."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空废纸篓失败。"
+          }
         }
       }
     },
-    "Encoding" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кодировка"
+    "Failed to open extended attributes": {
+      "comment": "Alert message text when failed to open xattr vfs",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось открыть расширенные атрибуты"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法打开扩展属性"
           }
         }
       }
     },
-    "Enter “%@”" : {
-      "comment" : "Enter a directory",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Войти в “%@”"
+    "Failed to put back an item.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to put back an item."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "进入“%@”"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось вернуть элемент."
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放回原处失败。"
+          }
         }
       }
     },
-    "Execute “%@”" : {
-      "comment" : "Execute a binary",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запустить “%@”"
+    "Failed to put back some of the items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to put back some of the items."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось вернуть некоторые элементы."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "执行“%@”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分项目放回原处失败。"
           }
         }
       }
     },
-    "Failed to access the dragged item:" : {
-      "comment" : "Showing error when failed to access the dragged items",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось получить доступ к перетащенному объекту:"
+    "Failed to retreive Finder's Favorites": {
+      "comment": "Showing an error when NC isn't able to get Finder Favorites",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось получить Избранное Finder'а"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法访问拖入的项目："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取访达的收藏夹"
           }
         }
       }
     },
-    "Failed to access the privileged helper." : {
-      "comment" : "Information that toggling admin mode on has failed",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось связаться с привилегированным помощником."
+    "Favorites": {
+      "comment": "Favorites popup menu subtitle in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Избранное"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法访问特权辅助程序。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏夹"
           }
         }
       }
     },
-    "Failed to create an empty file:" : {
-      "comment" : "Showing error when trying to create an empty file",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось создать пустой файл:"
+    "File Panels ▶ Focus Left Panel": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Фокус на левую панель"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法创建空文件："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 聚焦左侧面板"
           }
         }
       }
     },
-    "Failed to open extended attributes" : {
-      "comment" : "Alert message text when failed to open xattr vfs",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось открыть расширенные атрибуты"
+    "File Panels ▶ Focus Right Panel": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Фокус на правую панель"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法打开扩展属性"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 聚焦右侧面板"
           }
         }
       }
     },
-    "Failed to retreive Finder's Favorites" : {
-      "comment" : "Showing an error when NC isn't able to get Finder Favorites",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось получить Избранное Finder'а"
+    "File Panels ▶ Go Into Folder": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Перейти в папку"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法获取访达的收藏夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 进入文件夹"
           }
         }
       }
     },
-    "Favorites" : {
-      "comment" : "Favorites popup menu subtitle in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранное"
+    "File Panels ▶ Go to Enclosing Folder": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Перейти на уровень выше"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收藏夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 前往上层文件夹"
           }
         }
       }
     },
-    "File Panels ▶ Focus Left Panel" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Фокус на левую панель"
+    "File Panels ▶ Go to Home ~ Directory": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Перейти в папку ~ Личное"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 聚焦左侧面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 前往个人文件夹 ~ 目录"
           }
         }
       }
     },
-    "File Panels ▶ Focus Right Panel" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Фокус на правую панель"
+    "File Panels ▶ Go to Root / Directory": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Перейти в папку / Корень"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 聚焦右侧面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 前往根目录 /"
           }
         }
       }
     },
-    "File Panels ▶ Go Into Folder" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Перейти в папку"
+    "File Panels ▶ Move Down": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться вниз"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 进入文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 下移"
           }
         }
       }
     },
-    "File Panels ▶ Go to Enclosing Folder" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Перейти на уровень выше"
+    "File Panels ▶ Move Left": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться влево"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 前往上层文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 左移"
           }
         }
       }
     },
-    "File Panels ▶ Go to Home ~ Directory" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Перейти в папку ~ Личное"
+    "File Panels ▶ Move Right": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться вправо"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 前往个人文件夹 ~ 目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 右移"
           }
         }
       }
     },
-    "File Panels ▶ Go to Root / Directory" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Перейти в папку / Корень"
+    "File Panels ▶ Move to the First Element": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться к первому элементу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 前往根目录 /"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 移到第一个项目"
           }
         }
       }
     },
-    "File Panels ▶ Move Down" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться вниз"
+    "File Panels ▶ Move to the Last Element": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться к последнему элементу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 下移"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 移到最后一个项目"
           }
         }
       }
     },
-    "File Panels ▶ Move Left" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться влево"
+    "File Panels ▶ Move to the Next Page": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться на следующую страницу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 左移"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 移到下一页"
           }
         }
       }
     },
-    "File Panels ▶ Move Right" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться вправо"
+    "File Panels ▶ Move to the Previous Page": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться на предыдущую страницу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 右移"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 移到上一页"
           }
         }
       }
     },
-    "File Panels ▶ Move to the First Element" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться к первому элементу"
+    "File Panels ▶ Move Up": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Переместиться вверх"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 移到第一个项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 上移"
           }
         }
       }
     },
-    "File Panels ▶ Move to the Last Element" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться к последнему элементу"
+    "File Panels ▶ Scroll to the First Element": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Прокрутить к первому элементу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 移到最后一个项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 滚动到第一个项目"
           }
         }
       }
     },
-    "File Panels ▶ Move to the Next Page" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться на следующую страницу"
+    "File Panels ▶ Scroll to the Last Element": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Прокрутить к последнему элементу"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 移到下一页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 滚动到最后一个项目"
           }
         }
       }
     },
-    "File Panels ▶ Move to the Previous Page" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться на предыдущую страницу"
+    "File Panels ▶ Scroll to the Next Page": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Прокрутить к следующуей странице"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 移到上一页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 滚动到下一页"
           }
         }
       }
     },
-    "File Panels ▶ Move Up" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Переместиться вверх"
+    "File Panels ▶ Scroll to the Previous Page": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Прокрутить к предыдущей странице"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 上移"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 滚动到上一页"
           }
         }
       }
     },
-    "File Panels ▶ Scroll to the First Element" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Прокрутить к первому элементу"
+    "File Panels ▶ Show Context Menu": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать контекстное меню"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 滚动到第一个项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示上下文菜单"
           }
         }
       }
     },
-    "File Panels ▶ Scroll to the Last Element" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Прокрутить к последнему элементу"
+    "File Panels ▶ Show Next Tab": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать предыдущую вкладку"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 滚动到最后一个项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示下一个标签页"
           }
         }
       }
     },
-    "File Panels ▶ Scroll to the Next Page" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Прокрутить к следующуей странице"
+    "File Panels ▶ Show Preview": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать быстрый просмотр"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 滚动到下一页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示预览"
           }
         }
       }
     },
-    "File Panels ▶ Scroll to the Previous Page" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Прокрутить к предыдущей странице"
+    "File Panels ▶ Show Previous Tab": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать закладку вкладку"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 滚动到上一页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示上一个标签页"
           }
         }
       }
     },
-    "File Panels ▶ Show Context Menu" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать контекстное меню"
+    "File Panels ▶ Show Tab №1": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №1"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示上下文菜单"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №1"
           }
         }
       }
     },
-    "File Panels ▶ Show Next Tab" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать предыдущую вкладку"
+    "File Panels ▶ Show Tab №10": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №10"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示下一个标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №10"
           }
         }
       }
     },
-    "File Panels ▶ Show Preview" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать быстрый просмотр"
+    "File Panels ▶ Show Tab №2": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №2"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №2"
           }
         }
       }
     },
-    "File Panels ▶ Show Previous Tab" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать закладку вкладку"
+    "File Panels ▶ Show Tab №3": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №3"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示上一个标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №3"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №1" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №1"
+    "File Panels ▶ Show Tab №4": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №4"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №1"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №4"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №2" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №2"
+    "File Panels ▶ Show Tab №5": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №5"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №2"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №5"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №3" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №3"
+    "File Panels ▶ Show Tab №6": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №6"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №3"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №6"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №4" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №4"
+    "File Panels ▶ Show Tab №7": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №7"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №4"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №7"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №5" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №5"
+    "File Panels ▶ Show Tab №8": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №8"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №5"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №8"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №6" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №6"
+    "File Panels ▶ Show Tab №9": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Показать вкладку №9"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №6"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 显示标签页 №9"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №7" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №7"
+    "File Panels ▶ Toggle Selection": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Изменить выделение"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №7"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 切换选择"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №8" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №8"
+    "File Panels ▶ Toggle Selection and Move Down": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловые панели ▶ Изменить выделение и переместиться вниз"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №8"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件面板 ▶ 切换选择并下移"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №9" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №9"
+    "Focus File Panels": {
+      "comment": "Menu item for focusing file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фокус на файловые панели"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №9"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦文件面板"
           }
         }
       }
     },
-    "File Panels ▶ Show Tab №10" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Показать вкладку №10"
+    "Focus Overlapped Terminal": {
+      "comment": "Menu item for focusing an overlapped terminal",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фокус на терминал"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 显示标签页 №10"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦重叠的终端"
           }
         }
       }
     },
-    "File Panels ▶ Toggle Selection" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Изменить выделение"
+    "Follow “%@”": {
+      "comment": "Follow a symlink",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Следовать за “%@”"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 切换选择"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随“%@”"
           }
         }
       }
     },
-    "File Panels ▶ Toggle Selection and Move Down" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые панели ▶ Изменить выделение и переместиться вниз"
+    "Free Bytes:": {
+      "comment": "Brief System Information free bytes label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободно байт:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件面板 ▶ 切换选择并下移"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲字节数："
           }
         }
       }
     },
-    "Focus File Panels" : {
-      "comment" : "Menu item for focusing file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фокус на файловые панели"
+    "Frequently Visited": {
+      "comment": "Frequently Visited popup menu subtitle in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часто посещаемое"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "聚焦文件面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常访问"
           }
         }
       }
     },
-    "Focus Overlapped Terminal" : {
-      "comment" : "Menu item for focusing an overlapped terminal",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фокус на терминал"
+    "FTP connection error:": {
+      "comment": "Showing error when connecting to FTP server",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ошибка подключения FTP:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "聚焦重叠的终端"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FTP 连接错误："
           }
         }
       }
     },
-    "Follow “%@”" : {
-      "comment" : "Follow a symlink",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Следовать за “%@”"
+    "General": {
+      "comment": "Brief System Information general box title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основное"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟随“%@”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         }
       }
     },
-    "Free Bytes:" : {
-      "comment" : "Brief System Information free bytes label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Свободно байт:"
+    "Go to": {
+      "comment": "Goto popup menu title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти к"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空闲字节数："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往"
           }
         }
       }
     },
-    "Frequently Visited" : {
-      "comment" : "Frequently Visited popup menu subtitle in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Часто посещаемое"
+    "Grant access in System Settings → Privacy & Security → Full Disk Access and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grant access in System Settings → Privacy & Security → Full Disk Access and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предоставьте доступ в «Системные настройки → Конфиденциальность и безопасность → Полный доступ к диску» и повторите попытку."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常访问"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中授予权限后重试。"
           }
         }
       }
     },
-    "FTP connection error:" : {
-      "comment" : "Showing error when connecting to FTP server",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка подключения FTP:"
+    "Gray": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Серый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FTP 连接错误："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "灰色"
           }
         }
       }
     },
-    "General" : {
-      "comment" : "Brief System Information general box title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Основное"
+    "Green": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зеленый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绿色"
           }
         }
       }
     },
-    "Go to" : {
-      "comment" : "Goto popup menu title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти к"
+    "Hide Panels": {
+      "comment": "Menu item for hiding panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скрыть панели"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "前往"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏面板"
           }
         }
       }
     },
-    "Gray" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Серый"
+    "Hide Tab Bar": {
+      "comment": "Menu item title for hiding tab bar",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скрыть панель вкладок"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "灰色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏标签页栏"
           }
         }
       }
     },
-    "Green" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Зеленый"
+    "Hide Terminal": {
+      "comment": "Menu item title for hiding terminal",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скрыть терминал"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "绿色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏终端"
           }
         }
       }
     },
-    "Hide Panels" : {
-      "comment" : "Menu item for hiding panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть панели"
+    "Hide Toolbar": {
+      "comment": "Menu item title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скрыть панель инструментов"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏工具栏"
           }
         }
       }
     },
-    "Hide Tab Bar" : {
-      "comment" : "Menu item title for hiding tab bar",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть панель вкладок"
+    "History": {
+      "comment": "History popup menu title in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏标签页栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史记录"
           }
         }
       }
     },
-    "Hide Terminal" : {
-      "comment" : "Menu item title for hiding terminal",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть терминал"
+    "Idle:": {
+      "comment": "Brief System Information idle label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободно:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏终端"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲："
           }
         }
       }
     },
-    "Hide Toolbar" : {
-      "comment" : "Menu item title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть панель инструментов"
+    "Layout #%d": {
+      "comment": "Fallback name for an unnamed layout",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Layout #%d"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏工具栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "布局 #%d"
           }
         }
       }
     },
-    "History" : {
-      "comment" : "History popup menu title in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "История"
+    "Left GoTo": {
+      "comment": "Toolbar palette",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Левый Переход"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史记录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左侧前往"
           }
         }
       }
     },
-    "Idle:" : {
-      "comment" : "Brief System Information idle label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Свободно:"
+    "Load:": {
+      "comment": "Brief System Information load label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空闲："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "负载："
           }
         }
       }
     },
-    "Layout #%d" : {
-      "comment" : "Fallback name for an unnamed layout",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Layout #%d"
+    "Mac Model:": {
+      "comment": "Brief System Information mac model label title",
+      "extractionState": "stale",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Модель Mac:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "布局 #%d"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac 型号："
           }
         }
       }
     },
-    "Left GoTo" : {
-      "comment" : "Toolbar palette",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Левый Переход"
+    "Mask “%@”": {
+      "comment": "Find file masks history - plain mask",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маска “%@”"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "左侧前往"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掩码“%@”"
           }
         }
       }
     },
-    "Load:" : {
-      "comment" : "Brief System Information load label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загрузка:"
+    "Mask: *, or *.t?t, or *.txt,*.jpg": {
+      "comment": "Placeholder prompt for a filemask",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маска: *, или *.t?t, или *.txt,*.jpg"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "负载："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掩码：*、或 *.t?t、或 *.txt,*.jpg"
           }
         }
       }
     },
-    "Mac Model:" : {
-      "comment" : "Brief System Information mac model label title",
-      "extractionState" : "stale",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Модель Mac:"
+    "N/A": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Н/Д"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mac 型号："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不适用"
           }
         }
       }
     },
-    "Mask “%@”" : {
-      "comment" : "Find file masks history - plain mask",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска “%@”"
+    "New Folder with Items": {
+      "comment": "Name for freshly created folder by hotkey with items",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая папка с объектами"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掩码“%@”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用项目新建文件夹"
           }
         }
       }
     },
-    "Mask: *, or *.t?t, or *.txt,*.jpg" : {
-      "comment" : "Placeholder prompt for a filemask",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска: *, или *.t?t, или *.txt,*.jpg"
+    "New Tab": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая вкладка"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掩码：*、或 *.t?t、或 *.txt,*.jpg"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建标签页"
           }
         }
       }
     },
-    "N/A" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Н/Д"
+    "Nimble Commander-Fork needs Full Disk Access to work with the Trash.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimble Commander-Fork needs Full Disk Access to work with the Trash."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不适用"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimble Commander-Fork требуется полный доступ к диску для работы с Корзиной."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimble Commander-Fork 需要「完全磁盘访问权限」才能操作废纸篓。"
+          }
+        }
+      }
+    },
+    "Nimble Commander-Fork will copy them to a temporary location before they can be opened.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimble Commander-Fork 会先将它们拷贝到临时位置，然后才能打开。"
+          }
+        }
+      }
+    },
+    "Nimble Commander-Fork will create a copy in a temporary location before it can be opened.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimble Commander-Fork 会先在临时位置创建副本，然后才能打开。"
           }
         }
       }
     },
-    "New Folder with Items" : {
-      "comment" : "Name for freshly created folder by hotkey with items",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая папка с объектами"
+    "No": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用项目新建文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
           }
         }
       }
     },
-    "New Tab" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая вкладка"
+    "No Colour": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без цвета"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新建标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无颜色"
           }
         }
       }
     },
-    "Nimble Commander-Fork will copy them to a temporary location before they can be opened." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork 会先将它们拷贝到临时位置，然后才能打开。"
+    "No new tags were found.": {
+      "comment": "Information shown when no new tags were found after searching the fs",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые тэги не найдены."
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到新标签。"
+          }
         }
       }
     },
-    "Nimble Commander-Fork will create a copy in a temporary location before it can be opened." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork 会先在临时位置创建副本，然后才能打开。"
+    "Not Containing": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не содержит"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不包含"
           }
         }
       }
     },
-    "No" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет"
+    "OK": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ОК"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
           }
         }
       }
     },
-    "No Colour" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Без цвета"
+    "Open System Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть системные настройки"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无颜色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
           }
         }
       }
     },
-    "No new tags were found." : {
-      "comment" : "Information shown when no new tags were found after searching the fs",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новые тэги не найдены."
+    "Open “%@”": {
+      "comment": "Open an item",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть “%@”"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到新标签。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“%@”"
           }
         }
       }
     },
-    "Not Containing" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не содержит"
+    "Operation is complete": {
+      "comment": "Notification text",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Операция завершена"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不包含"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作已完成"
           }
         }
       }
     },
-    "OK" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОК"
+    "Operations": {
+      "comment": "Toolbar palette",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Операции"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "好"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作"
           }
         }
       }
     },
-    "Open “%@”" : {
-      "comment" : "Open an item",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть “%@”"
+    "Options": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开“%@”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选项"
           }
         }
       }
     },
-    "Operation is complete" : {
-      "comment" : "Notification text",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Операция завершена"
+    "Orange": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оранжевый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作已完成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "橙色"
           }
         }
       }
     },
-    "Operations" : {
-      "comment" : "Toolbar palette",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Операции"
+    "Parameter #%d:": {
+      "comment": "Fallback parameter label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Parameter #%d:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参数 #%d："
           }
         }
       }
     },
-    "Options" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Настройки"
+    "Parent Folders": {
+      "comment": "Upper-dirs popup menu title in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Родительские папки"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选项"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "父文件夹"
           }
         }
       }
     },
-    "Orange" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Оранжевый"
+    "Please provide parameters to run \"%@\"": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пожалуйста введите параметры для запуска \"%@\""
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "橙色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请提供运行“%@”所需的参数"
           }
         }
       }
     },
-    "Parameter #%d:" : {
-      "comment" : "Fallback parameter label",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Parameter #%d:"
+    "Processes:": {
+      "comment": "Brief System Information processes label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Процессы:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "参数 #%d："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "进程："
           }
         }
       }
     },
-    "Parent Folders" : {
-      "comment" : "Upper-dirs popup menu title in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Родительские папки"
+    "Purple": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лиловый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "父文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紫色"
           }
         }
       }
     },
-    "Please provide parameters to run \"%@\"" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пожалуйста введите параметры для запуска \"%@\""
+    "RAM": {
+      "comment": "Brief System Information ram box title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Память"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请提供运行“%@”所需的参数"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内存"
           }
         }
       }
     },
-    "Processes:" : {
-      "comment" : "Brief System Information processes label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Процессы:"
+    "Recent Searches": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недавние поиски"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "进程："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近的搜索"
           }
         }
       }
     },
-    "Purple" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лиловый"
+    "Recently Closed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недавно закрытые"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "紫色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近关闭"
           }
         }
       }
     },
-    "RAM" : {
-      "comment" : "Brief System Information ram box title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Память"
+    "Red": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Красный"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "红色"
           }
         }
       }
     },
-    "Recent Searches" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавние поиски"
+    "RegEx “%@”": {
+      "comment": "Find file masks history - regex",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RegEx “%@”"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近的搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正则“%@”"
           }
         }
       }
     },
-    "Recently Closed" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавно закрытые"
+    "Regular expression": {
+      "comment": "Placeholder prompt for a regex",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярное выражение"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正则表达式"
           }
         }
       }
     },
-    "Red" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Красный"
+    "Regular Expression": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярное выражение"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "红色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正则表达式"
           }
         }
       }
     },
-    "RegEx “%@”" : {
-      "comment" : "Find file masks history - regex",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RegEx “%@”"
+    "Right GoTo": {
+      "comment": "Toolbar palette",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Правый Переход"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正则“%@”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右侧前往"
           }
         }
       }
     },
-    "Regular expression" : {
-      "comment" : "Placeholder prompt for a regex",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярное выражение"
+    "Selected %@ in %@ files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %1$@ в %2$@ файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正则表达式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %1$@，共 %2$@ 个文件"
           }
         }
       }
     },
-    "Regular Expression" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярное выражение"
+    "Selected %@ in 1 file": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 1 файле"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正则表达式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 1 个文件"
           }
         }
       }
     },
-    "Right GoTo" : {
-      "comment" : "Toolbar palette",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Правый Переход"
+    "Selected %@ in 2 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 2 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "右侧前往"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 2 个文件"
           }
         }
       }
     },
-    "Selected %@ in %@ files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %1$@ в %2$@ файлах"
+    "Selected %@ in 3 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 3 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %1$@，共 %2$@ 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 3 个文件"
           }
         }
       }
     },
-    "Selected %@ in 1 file" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 1 файле"
+    "Selected %@ in 4 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 4 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 1 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 4 个文件"
           }
         }
       }
     },
-    "Selected %@ in 2 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 2 файлах"
+    "Selected %@ in 5 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 5 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 2 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 5 个文件"
           }
         }
       }
     },
-    "Selected %@ in 3 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 3 файлах"
+    "Selected %@ in 6 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 6 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 3 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 6 个文件"
           }
         }
       }
     },
-    "Selected %@ in 4 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 4 файлах"
+    "Selected %@ in 7 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 7 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 4 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 7 个文件"
           }
         }
       }
     },
-    "Selected %@ in 5 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 5 файлах"
+    "Selected %@ in 8 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 8 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 5 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 8 个文件"
           }
         }
       }
     },
-    "Selected %@ in 6 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 6 файлах"
+    "Selected %@ in 9 files": {
+      "comment": "Informative text for a bottom information bar in panels, showing size of selection",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выделено %@ в 9 файлах"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 6 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %@，共 9 个文件"
           }
         }
       }
     },
-    "Selected %@ in 7 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 7 файлах"
+    "SFTP connection error:": {
+      "comment": "Showing error when connecting to SFTP server",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ошибка подключения SFTP:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 7 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SFTP 连接错误："
           }
         }
       }
     },
-    "Selected %@ in 8 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 8 файлах"
+    "Show Panels": {
+      "comment": "Menu item for showing panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать панели"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 8 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示面板"
           }
         }
       }
     },
-    "Selected %@ in 9 files" : {
-      "comment" : "Informative text for a bottom information bar in panels, showing size of selection",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделено %@ в 9 файлах"
+    "Show Tab Bar": {
+      "comment": "Menu item title for showing tab bar",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать панель вкладок"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择 %@，共 9 个文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示标签页栏"
           }
         }
       }
     },
-    "SFTP connection error:" : {
-      "comment" : "Showing error when connecting to SFTP server",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка подключения SFTP:"
+    "Show Terminal": {
+      "comment": "Menu item title for showing terminal",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать терминал"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SFTP 连接错误："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示终端"
           }
         }
       }
     },
-    "Show Panels" : {
-      "comment" : "Menu item for showing panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать панели"
+    "Show Toolbar": {
+      "comment": "Menu item title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать панель инструментов"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示工具栏"
           }
         }
       }
     },
-    "Show Tab Bar" : {
-      "comment" : "Menu item title for showing tab bar",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать панель вкладок"
+    "Specify a regular expression to match filenames with. (^M)": {
+      "comment": "Tooltip for a regex filename match",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Укажите регулярное выражения для поиска имен файлов. (^M)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示标签页栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指定用于匹配文件名的正则表达式。(^M)"
           }
         }
       }
     },
-    "Show Terminal" : {
-      "comment" : "Menu item title for showing terminal",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать терминал"
+    "Stop and Close": {
+      "comment": "User action to stop running actions and close window",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановить и закрыть"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示终端"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止并关闭"
           }
         }
       }
     },
-    "Show Toolbar" : {
-      "comment" : "Menu item title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать панель инструментов"
+    "Stop and Quit": {
+      "comment": "Asking user for quitting app with activity - confirmation",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановить и завершить"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示工具栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止并退出"
           }
         }
       }
     },
-    "Specify a regular expression to match filenames with. (^M)" : {
-      "comment" : "Tooltip for a regex filename match",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Укажите регулярное выражения для поиска имен файлов. (^M)"
+    "Storage": {
+      "comment": "Brief System Information storage box title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранилище"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "指定用于匹配文件名的正则表达式。(^M)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存储"
           }
         }
       }
     },
-    "Stop and Close" : {
-      "comment" : "User action to stop running actions and close window",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Остановить и закрыть"
+    "Swap:": {
+      "comment": "Brief System Information swap label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Своп:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止并关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交换空间："
           }
         }
       }
     },
-    "Stop and Quit" : {
-      "comment" : "Asking user for quitting app with activity - confirmation",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Остановить и завершить"
+    "System:": {
+      "comment": "Brief System Information system label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Система:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止并退出"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统："
           }
         }
       }
     },
-    "Storage" : {
-      "comment" : "Brief System Information storage box title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Хранилище"
+    "Tags": {
+      "comment": "Tags popup menu title in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теги"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "存储"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签"
           }
         }
       }
     },
-    "Swap:" : {
-      "comment" : "Brief System Information swap label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Своп:"
+    "Temporary Panel (%@)": {
+      "comment": "Temporary panel menu title with item count",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Temporary Panel (%@)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "交换空间："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "临时面板 (%@)"
           }
         }
       }
     },
-    "System:" : {
-      "comment" : "Brief System Information system label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Система:"
+    "Terminate and Close": {
+      "comment": "User confirmation on message box",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прервать и закрыть"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终止并关闭"
           }
         }
       }
     },
-    "Tags" : {
-      "comment" : "Tags popup menu title in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Теги"
+    "The application has running operations. Do you want to stop all operations and quit?": {
+      "comment": "Asking user for quitting app with activity",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имеются работающие операции. Прекратить все операции и завершить приложение?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "标签"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用程序有正在运行的操作。是否要停止所有操作并退出？"
           }
         }
       }
     },
-    "Temporary Panel (%@)" : {
-      "comment" : "Temporary panel menu title with item count",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Temporary Panel (%@)"
+    "The flat view is incomplete": {
+      "comment": "Title of the alert shown when the flat view had to drop entries because the subtree is too big",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The flat view is incomplete"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "临时面板 (%@)"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плоский список показан не полностью"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平铺视图显示不完整"
+          }
         }
       }
     },
-    "Terminate and Close" : {
-      "comment" : "User confirmation on message box",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прервать и закрыть"
+    "The following tags were added: %@.": {
+      "comment": "Information shown when new tags were found after searching the fs",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Следующие теги были добавлены: %@."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止并关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已添加以下标签：%@。"
           }
         }
       }
     },
-    "The application has running operations. Do you want to stop all operations and quit?" : {
-      "comment" : "Asking user for quitting app with activity",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имеются работающие операции. Прекратить все операции и завершить приложение?"
+    "The name “%@” can’t be used.": {
+      "comment": "Message text when user is entering an invalid filename",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя “%@” не может быть использовано."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用程序有正在运行的操作。是否要停止所有操作并退出？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法使用名称“%@”。"
           }
         }
       }
     },
-    "The following tags were added: %@." : {
-      "comment" : "Information shown when new tags were found after searching the fs",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Следующие теги были добавлены: %@."
+    "The name “%@” is already taken.\nPlease choose a different name.": {
+      "comment": "Alert shown when a user tries to enter a tag label that is already in use",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя “%@” уже используется использовано. Пожалуйста, выберите другое имя."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已添加以下标签：%@。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称“%@”已被使用。\n请选择其他名称。"
+          }
+        }
+      }
+    },
+    "The selected items are %@ in size.\nAre you sure you want to open them?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选内容的大小为 %@。\n确定要打开它们吗？"
           }
         }
       }
     },
-    "The name “%@” can’t be used." : {
-      "comment" : "Message text when user is entering an invalid filename",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя “%@” не может быть использовано."
+    "The Trash is empty.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Trash is empty."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина пуста."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法使用名称“%@”。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "废纸篓是空的。"
           }
         }
       }
     },
-    "The name “%@” is already taken.\nPlease choose a different name." : {
-      "comment" : "Alert shown when a user tries to enter a tag label that is already in use",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя “%@” уже используется использовано. Пожалуйста, выберите другое имя."
+    "The window has %@ tabs. Are you sure you want to close this window?": {
+      "comment": "Asking user to close window with additional tabs",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это окно содежит %@ вкладок. Вы действительно хотите закрыть его?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称“%@”已被使用。\n请选择其他名称。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此窗口有 %@ 个标签页。确定要关闭此窗口吗？"
           }
         }
       }
     },
-    "The selected items are %@ in size.\nAre you sure you want to open them?" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所选内容的大小为 %@。\n确定要打开它们吗？"
+    "The window has running operations. Do you want to stop them and close the window?": {
+      "comment": "Asking user to close window with some operations running",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В окне имеются выполняющиеся операции. Остановить их и закрыть окно?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此窗口有正在运行的操作。是否要停止它们并关闭窗口？"
           }
         }
       }
     },
-    "The window has %@ tabs. Are you sure you want to close this window?" : {
-      "comment" : "Asking user to close window with additional tabs",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это окно содежит %@ вкладок. Вы действительно хотите закрыть его?"
+    "Theme": {
+      "comment": "Preferences window themes list",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тема"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此窗口有 %@ 个标签页。确定要关闭此窗口吗？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题"
           }
         }
       }
     },
-    "The window has running operations. Do you want to stop them and close the window?" : {
-      "comment" : "Asking user to close window with some operations running",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В окне имеются выполняющиеся операции. Остановить их и закрыть окно?"
+    "There are too many entries under this directory - only the first %ld are shown. The limit can be raised with the filePanel.general.flatViewMaxItems setting.": {
+      "comment": "Body of the alert shown when the flat view had to drop entries; %ld is the number of entries that fit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are too many entries under this directory - only the first %ld are shown. The limit can be raised with the filePanel.general.flatViewMaxItems setting."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此窗口有正在运行的操作。是否要停止它们并关闭窗口？"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В этом каталоге слишком много элементов — показаны только первые %ld. Лимит можно увеличить настройкой filePanel.general.flatViewMaxItems."
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此目录下的条目过多——只显示了前 %ld 项。可以在设置项 filePanel.general.flatViewMaxItems 中提高上限。"
+          }
         }
       }
     },
-    "Theme" : {
-      "comment" : "Preferences window themes list",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Тема"
+    "This operation is not reversible.": {
+      "comment": "Asking the user for confirmation on deleting the external editor - informative text\nAsking the user for confirmation on deleting the external tool - message",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эта операция необратима."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此操作不可撤销。"
           }
         }
       }
     },
-    "This operation is not reversible." : {
-      "comment" : "Asking the user for confirmation on deleting the external editor - informative text\nAsking the user for confirmation on deleting the external tool - message",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Эта операция необратима."
+    "This will erase all your custom settings.": {
+      "comment": "Asking user for confirmation on erasing custom settings - informative text",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это удалит ваши собственные настройки."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此操作不可撤销。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这将清除你的所有自定义设置。"
           }
         }
       }
     },
-    "This will erase all your custom settings." : {
-      "comment" : "Asking user for confirmation on erasing custom settings - informative text",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это удалит ваши собственные настройки."
+    "Threads:": {
+      "comment": "Brief System Information threads label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потоки:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将清除你的所有自定义设置。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "线程："
           }
         }
       }
     },
-    "Threads:" : {
-      "comment" : "Brief System Information threads label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Потоки:"
+    "Toggle Dual-Pane Mode": {
+      "comment": "Menu item title for switching to dual-pane mode",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить двухпанельный режим"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "线程："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换到双窗格模式"
           }
         }
       }
     },
-    "Toggle Dual-Pane Mode" : {
-      "comment" : "Menu item title for switching to dual-pane mode",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить двухпанельный режим"
+    "Toggle Single-Pane Mode": {
+      "comment": "Menu item title for switching to single-pane mode",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить однопанельный режим"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切换到双窗格模式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换到单窗格模式"
           }
         }
       }
     },
-    "Toggle Single-Pane Mode" : {
-      "comment" : "Menu item title for switching to single-pane mode",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить однопанельный режим"
+    "Tool #%u": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Инструмент #%u"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切换到单窗格模式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具 #%u"
           }
         }
       }
     },
-    "Tool #%u" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инструмент #%u"
+    "Tools ▶ %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Инструменты ▶ %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具 #%u"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具 ▶ %@"
           }
         }
       }
     },
-    "Tools ▶ %@" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инструменты ▶ %@"
+    "Total Bytes:": {
+      "comment": "Brief System Information total bytes label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всего байт:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具 ▶ %@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "总字节数："
           }
         }
       }
     },
-    "Total Bytes:" : {
-      "comment" : "Brief System Information total bytes label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всего байт:"
+    "Total:": {
+      "comment": "Brief System Information total label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всего:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "总字节数："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "总计："
           }
         }
       }
     },
-    "Total:" : {
-      "comment" : "Brief System Information total label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всего:"
+    "Try using a name with fewer characters or without punctuation marks.": {
+      "comment": "Informative text when user is entering an invalid filename",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попытайтесь использовать имя с меньшим количеством символов или без знаков пунктуации."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "总计："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请尝试使用字符更少或不含标点符号的名称。"
           }
         }
       }
     },
-    "Try using a name with fewer characters or without punctuation marks." : {
-      "comment" : "Informative text when user is entering an invalid filename",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Попытайтесь использовать имя с меньшим количеством символов или без знаков пунктуации."
+    "Unable to connect to a network share": {
+      "comment": "Informing a user that NC can't connect to network share",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось подключиться к сетевой папке"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请尝试使用字符更少或不含标点符号的名称。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法连接到网络共享"
           }
         }
       }
     },
-    "Unable to connect to a network share" : {
-      "comment" : "Informing a user that NC can't connect to network share",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось подключиться к сетевой папке"
+    "Unable to run the external tool \"%s\"": {
+      "comment": "Message text alerting the inability to run an external tool",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Невозможно запустить внешний инструмент “%s”."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法连接到网络共享"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法运行外部工具“%s”"
           }
         }
       }
     },
-    "Unable to run the external tool \"%s\"" : {
-      "comment" : "Message text alerting the inability to run an external tool",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Невозможно запустить внешний инструмент “%s”."
+    "Unexpected exception was caught:": {
+      "comment": "Alert message for an unhandled exception",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Unexpected exception was caught:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法运行外部工具“%s”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕获到意外异常："
           }
         }
       }
     },
-    "Unexpected exception was caught:" : {
-      "comment" : "Alert message for an unhandled exception",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unexpected exception was caught:"
+    "Unknown exception": {
+      "comment": "Alert informative text when no exception details are available",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Unknown exception"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "捕获到意外异常："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知异常"
           }
         }
       }
     },
-    "Unknown exception" : {
-      "comment" : "Alert informative text when no exception details are available",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unknown exception"
+    "Untitled": {
+      "comment": "Name of a newly created tag",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知异常"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命名"
           }
         }
       }
     },
-    "Untitled" : {
-      "comment" : "Name of a newly created tag",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новый"
+    "untitled folder": {
+      "comment": "Name for freshly create folder by hotkey",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая папка"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未命名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命名文件夹"
           }
         }
       }
     },
-    "untitled folder" : {
-      "comment" : "Name for freshly create folder by hotkey",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая папка"
+    "untitled.txt": {
+      "comment": "Name for freshly created file by hotkey",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "новый файл.txt"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未命名文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命名.txt"
           }
         }
       }
     },
-    "untitled.txt" : {
-      "comment" : "Name for freshly created file by hotkey",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "новый файл.txt"
+    "Uptime:": {
+      "comment": "Brief System Information uptime label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Аптайм:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未命名.txt"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行时间："
           }
         }
       }
     },
-    "Uptime:" : {
-      "comment" : "Brief System Information uptime label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аптайм:"
+    "Use \"*\" for multiple-character wildcard, \"?\" for single-character wildcard and \",\" to specify more than one mask. (^M)": {
+      "comment": "Tooltip for mask filename match",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используйте \"*\" для подстановки нескольких символов, \"?\" для подстановки одного символа и \",\" чтобы указать больше одной маски. (^M)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "运行时间："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用“*”作为多字符通配符，“?”作为单字符通配符，并使用“,”指定多个掩码。(^M)"
           }
         }
       }
     },
-    "Use \"*\" for multiple-character wildcard, \"?\" for single-character wildcard and \",\" to specify more than one mask. (^M)" : {
-      "comment" : "Tooltip for mask filename match",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Используйте \"*\" для подстановки нескольких символов, \"?\" для подстановки одного символа и \",\" чтобы указать больше одной маски. (^M)"
+    "Used:": {
+      "comment": "Brief System Information used label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используемая:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用“*”作为多字符通配符，“?”作为单字符通配符，并使用“,”指定多个掩码。(^M)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已用："
           }
         }
       }
     },
-    "Used:" : {
-      "comment" : "Brief System Information used label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Используемая:"
+    "User Name:": {
+      "comment": "Brief System Information user name label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя пользователя:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已用："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户名："
           }
         }
       }
     },
-    "User Name:" : {
-      "comment" : "Brief System Information user name label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя пользователя:"
+    "User:": {
+      "comment": "Brief System Information user label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пользователь:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用户名："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户："
           }
         }
       }
     },
-    "User:" : {
-      "comment" : "Brief System Information user label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пользователь:"
+    "Viewer ▶ Refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Обновить"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用户："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 刷新"
           }
         }
       }
     },
-    "Viewer ▶ Refresh" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Обновить"
+    "Viewer ▶ Show GoTo": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Показать Переход"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 显示“前往”"
           }
         }
       }
     },
-    "Viewer ▶ Show GoTo" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Показать Переход"
+    "Viewer ▶ Show Settings": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Показать Настройки"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 显示“前往”"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 显示设置"
           }
         }
       }
     },
-    "Viewer ▶ Show Settings" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Показать Настройки"
+    "Viewer ▶ Toggle Hex": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Переключить на шестнадцатеричный вид"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 显示设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 切换十六进制"
           }
         }
       }
     },
-    "Viewer ▶ Toggle Hex" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Переключить на шестнадцатеричный вид"
+    "Viewer ▶ Toggle Preview": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Переключить на быстрый просмотр"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 切换十六进制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 切换预览"
           }
         }
       }
     },
-    "Viewer ▶ Toggle Preview" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Переключить на быстрый просмотр"
+    "Viewer ▶ Toggle Text": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик ▶ Переключить на текст"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 切换预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看器 ▶ 切换文本"
           }
         }
       }
     },
-    "Viewer ▶ Toggle Text" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотрщик ▶ Переключить на текст"
+    "Volume Name:": {
+      "comment": "Brief System Information volume name label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название тома:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看器 ▶ 切换文本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "宗卷名称："
           }
         }
       }
     },
-    "Volume Name:" : {
-      "comment" : "Brief System Information volume name label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название тома:"
+    "Volumes": {
+      "comment": "Volumes popup menu title in file panels",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тома"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "宗卷名称："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "宗卷"
           }
         }
       }
     },
-    "Volumes" : {
-      "comment" : "Volumes popup menu title in file panels",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Тома"
+    "WebDAV connection error:": {
+      "comment": "Showing error when connecting to WebDAV server",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ошибка подключения WebDAV:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "宗卷"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV 连接错误："
           }
         }
       }
     },
-    "WebDAV connection error:" : {
-      "comment" : "Showing error when connecting to WebDAV server",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка подключения WebDAV:"
+    "Whole Phrase": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фраза целиком"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WebDAV 连接错误："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "整个短语"
           }
         }
       }
     },
-    "Whole Phrase" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фраза целиком"
+    "Wired:": {
+      "comment": "Brief System Information wired label title",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зарезервировано:"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "整个短语"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联动："
           }
         }
       }
     },
-    "Wired:" : {
-      "comment" : "Brief System Information wired label title",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Зарезервировано:"
+    "Yellow": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Желтый"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "联动："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黄色"
           }
         }
       }
     },
-    "Yellow" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Желтый"
+    "Yes": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "黄色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
           }
         }
       }
     },
-    "Yes" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Да"
+    "You can’t undo this action.": {
+      "comment": "Alert shown when a user removes a tag - message\nAsking user for confirmation on erasing custom theme - informative text\nAsking user for confirmation on reverting a standard theme - informative text",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы не сможете отменить эту операцию."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你无法撤销此操作。"
           }
         }
       }
     },
-    "You can’t undo this action." : {
-      "comment" : "Alert shown when a user removes a tag - message\nAsking user for confirmation on erasing custom theme - informative text\nAsking user for confirmation on reverting a standard theme - informative text",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы не сможете отменить эту операцию."
+    "“%@” is %@ in size.\nAre you sure you want to open it?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "“%1$@” is %2$@ in size.\nAre you sure you want to open it?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你无法撤销此操作。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@”的大小为 %2$@。\n确定要打开它吗？"
+          }
+        }
+      }
+    },
+    "⏎": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⏎"
+          }
+        }
+      }
+    },
+    "␛": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "␛"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
