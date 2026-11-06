@@ -36,6 +36,7 @@ falls back to the isolated toolchain of the rewrite evaluation
 | C ABI + build integration + smoke test (`nc_core_ping`, `nc_core_abi_version`, startup check) | done |
 | `nc_core_search_native` — parallel native-filesystem filename search | done in Rust, **not wired into the app yet** (next step: `SearchForFiles` uses it for native hosts behind a config switch, with the C++ walker as the oracle) |
 | `nc_core_glob_match` — glob matcher used by the search | done, unit-tested |
+| `nc_core_scan_flat` — column-oriented tree enumeration with getattrlistbulk for the flat view | done, wired into the app behind `filePanel.general.flatScanEngine`, differential-tested against the VFS path |
 
 ## Rules of the boundary
 

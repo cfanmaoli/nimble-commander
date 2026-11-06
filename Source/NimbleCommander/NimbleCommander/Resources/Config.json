@@ -99,6 +99,12 @@
              * How many directories the flat view enumerates in parallel. 0 = automatic.
              */
             "flatScanThreads": 0,
+
+            /**
+             * Which implementation builds the flat listing: "vfs" (the classic one, the default)
+             * or "rust" (the column-oriented enumeration in rust/nc_core).
+             */
+            "flatScanEngine": "vfs",
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu
