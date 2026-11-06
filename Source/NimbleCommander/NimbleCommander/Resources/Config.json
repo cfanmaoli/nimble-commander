@@ -101,10 +101,12 @@
             "flatScanThreads": 0,
 
             /**
-             * Which implementation builds the flat listing: "vfs" (the classic one, the default)
-             * or "rust" (the column-oriented enumeration in rust/nc_core).
+             * Which implementation builds the flat listing: "vfs" (the classic one) or "rust"
+             * (the column-oriented enumeration in rust/nc_core). The Rust engine is the default:
+             * it is differentially tested against the VFS path and falls back to it for anything
+             * that is not a native filesystem.
              */
-            "flatScanEngine": "vfs",
+            "flatScanEngine": "rust",
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu
