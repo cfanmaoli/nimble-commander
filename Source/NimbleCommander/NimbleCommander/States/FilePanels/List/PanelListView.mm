@@ -511,6 +511,7 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
         }
         row_view.itemIndex = row;
         row_view.vd = vd;
+        row_view.qsHighlight = m_Data->HighlightForRawIndex(item.Index());
         row_view.panelActive = m_PanelView.active;
 
         return row_view;
@@ -639,6 +640,7 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
           auto &vd = data->VolatileDataAtSortPosition(row);
           row_view.item = item;
           row_view.vd = vd;
+          row_view.qsHighlight = data->HighlightForRawIndex(item.Index());
           for( NSView *v in row_view.subviews ) {
               NSString *identifier = v.identifier;
               if( identifier.length == 0 )
@@ -690,8 +692,11 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
 - (void)onVolatileDataChanged
 {
     [m_TableView enumerateAvailableRowViewsUsingBlock:^(PanelListViewRowView *rowView, NSInteger row) {
-      if( m_Data->IsValidSortPosition(static_cast<int>(row)) )
+      if( m_Data->IsValidSortPosition(static_cast<int>(row)) ) {
           rowView.vd = m_Data->VolatileDataAtSortPosition(static_cast<int>(row));
+          if( auto item = m_Data->EntryAtSortPosition(static_cast<int>(row)) )
+              rowView.qsHighlight = m_Data->HighlightForRawIndex(item.Index());
+      }
     }];
 }
 

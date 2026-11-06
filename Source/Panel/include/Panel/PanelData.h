@@ -187,6 +187,15 @@ public:
 
     void SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times);
 
+    // The highlighted segments of a filename during a quick search. Kept in a side array that only
+    // exists while there is something to highlight - a per-entry field would cost 8MB for a
+    // million-entry directory even when nothing is being searched.
+    [[nodiscard]] QuickSearchHighlight HighlightForRawIndex(unsigned _raw_index) const noexcept;
+    // Same, but addressed by the sorted position (what the views deal with).
+    [[nodiscard]] QuickSearchHighlight HighlightForSortPosition(int _sort_pos) const noexcept;
+    void SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight);
+    void ResetHighlights();
+
     // Fills in the size of an entry whose listing doesn't carry it (VFSFlags::F_NoSizes).
     void SetFetchedSize(unsigned _raw_index, uint64_t _size);
     [[nodiscard]] bool HasFetchedSize(unsigned _raw_index) const noexcept;
@@ -403,6 +412,9 @@ private:
 
     // Times fetched on demand for the of entries of a listing that doesn't carry them itself.
     ankerl::unordered_dense::map<unsigned, FetchedTimes> m_FetchedTimes;
+
+    // Allocated only while a quick search is highlighting something.
+    std::vector<QuickSearchHighlight> m_Highlights;
     struct SortMode m_CustomSortMode;
     HardFilter m_HardFiltering;
     TextualFilter m_SoftFiltering;

@@ -20,6 +20,7 @@ using namespace nc::panel;
 @implementation PanelListViewRowView {
     VFSListingItem m_Item;
     data::ItemVolatileData m_VD;
+    data::QuickSearchHighlight m_QsHighlight;
     NSColor *m_RowColor;
     NSColor *m_TextColor;
     NSColor *m_TextSecondaryColor;
@@ -104,6 +105,16 @@ using namespace nc::panel;
 - (data::ItemVolatileData)vd
 {
     return m_VD;
+}
+
+- (data::QuickSearchHighlight)qsHighlight
+{
+    return m_QsHighlight;
+}
+
+- (void)setQsHighlight:(data::QuickSearchHighlight)_qsHighlight
+{
+    m_QsHighlight = _qsHighlight;
 }
 
 - (void)setSelected:(BOOL)selected

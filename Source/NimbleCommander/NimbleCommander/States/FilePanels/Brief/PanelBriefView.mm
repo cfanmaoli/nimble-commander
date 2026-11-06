@@ -253,6 +253,8 @@ BuildItemsLayout(NSFont *_font, PanelBriefViewColumnsLayout _layout, NSUInteger 
                 [item setIcon:m_IconsRepository->AvailableIconForListingItem(vfs_item)];
             }
 
+            if( auto listing_item = m_Data->EntryAtSortPosition(index) )
+                item.qsHighlight = m_Data->HighlightForRawIndex(listing_item.Index());
             [item setVD:vd];
         }
         [item setPanelActive:m_PanelView.active];
@@ -558,8 +560,11 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
         if( NSIndexPath *index_path = [m_CollectionView indexPathForItem:i] ) {
             const auto index = static_cast<int>(index_path.item);
             // need to firstly check if we're still in sync with panel data
-            if( m_Data->IsValidSortPosition(index) )
+            if( m_Data->IsValidSortPosition(index) ) {
+                if( auto item = m_Data->EntryAtSortPosition(index) )
+                    i.qsHighlight = m_Data->HighlightForRawIndex(item.Index());
                 [i setVD:m_Data->VolatileDataAtSortPosition(index)];
+            }
         }
 }
 

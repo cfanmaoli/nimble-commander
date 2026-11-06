@@ -1092,3 +1092,40 @@ physical footprint: 107.6 MB ->  396.2 MB     (+288.6 MB)
 
 前两项合计 ~16 MB、风险低，是目前看来最划算的；第 3 项有功能代价；第 4 项收益最大但要动分配器，风险最高。
 
+
+---
+
+## 28. 第二十二轮：把快速搜索的高亮移出每项结构（活数据 -16 MB，footprint 不动）
+
+### 28.1 改动
+
+`ItemVolatileData` 从 24 B 降到 16 B：`QuickSearchHighlight`（8 B）不再是每项字段，改成模型里的
+侧挂数组 `m_Highlights`——**只在快速搜索真正要高亮时才分配**（`ResetHighlights()` 时释放并 `shrink_to_fit`）。
+
+牵连的读点都改成按行取：
+
+- `PanelListViewRowView` / `PanelBriefViewItem` / `NCPanelGalleryCollectionViewItem` 各加一个
+  `qsHighlight` 属性，由各自的视图在填数据时从模型取（`HighlightForRawIndex` / 新增的
+  `HighlightForSortPosition`）；
+- 30 处测试断言从 `VolatileDataAtSortPosition(n).highlight` 改为 `HighlightForSortPosition(n)`。
+
+### 28.2 实测：活数据降了，footprint 没降
+
+```
+默认模式：heap zones 195.0 MB -> 176.7 MB（-18.3 MB），footprint 396.2 -> 393.1 MB（噪声内）
+惰性模式：heap zones  -> 154.7 MB，footprint ~272 -> ~277 MB（噪声内）
+```
+
+这印证了上一轮的结论：**footprint 由 malloc 保留的空闲页主导（~114 MB），减少稳态活数据不会让它下降**；
+要压 footprint 只能压**峰值分配**（枚举期的中间容器、排序索引、裁容量时的拷贝本身也是峰值）。
+
+### 28.3 结论
+
+当前 footprint：默认 ~390 MB / 惰性 ~272 MB，距 250 MB 目标仍差 ~22 MB。
+后续要真正达标的路线只剩两条，都需要动架构：
+
+1. **枚举直接写进最终容器**（去掉 `ListingInput` 中间层与容量超调），把峰值从 ~150 MB 压到 ~60 MB；
+2. **大数组用 mmap 分配器**，释放即 `munmap`，把 malloc 保留的页真正还给系统。
+
+两者都要改 VFS 的枚举与存储层，属于多轮工作；在没确认值得之前不建议贸然动。
+

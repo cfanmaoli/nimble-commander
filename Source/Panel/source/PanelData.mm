@@ -1005,9 +1005,7 @@ bool Model::ClearTextFiltering()
     m_SoftFiltering.text = nil;
     m_HardFiltering.text.text = nil;
 
-    for( auto &vd : m_VolatileData ) {
-        vd.highlight = {};
-    }
+    ResetHighlights();
 
     DoSortWithHardFiltering();
     ClearSelectedFlagsFromHiddenElements(); // not sure if this is needed here
@@ -1045,10 +1043,9 @@ void Model::DoSortWithHardFiltering()
         return;
 
     m_EntriesByCustomSort.reserve(size);
-    for( auto &vd : m_VolatileData ) {
-        vd.highlight = {};
+    ResetHighlights();
+    for( auto &vd : m_VolatileData )
         vd.toggle_shown(true);
-    }
 
     if( m_HardFiltering.IsFiltering() ) {
         const auto filter = [&](const VFSListingItem &_item) -> std::optional<QuickSearchHighlight> {
@@ -1068,7 +1065,7 @@ void Model::DoSortWithHardFiltering()
             }
             else {
                 if( hightlight_results ) {
-                    m_VolatileData[i].highlight = *found_ranges[i];
+                    SetHighlightForRawIndex(i, *found_ranges[i]);
                 }
                 m_EntriesByCustomSort.push_back(i);
             }
@@ -1132,7 +1129,7 @@ void Model::BuildSoftFilteringIndeces()
                 m_EntriesBySoftFiltering.push_back(i);
 
             if( m_SoftFiltering.hightlight_results ) {
-                m_VolatileData[raw_index].highlight = found_range;
+                SetHighlightForRawIndex(static_cast<unsigned>(raw_index), found_range);
             }
         }
     }
@@ -1149,6 +1146,35 @@ void Model::SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times)
     if( _raw_index >= m_Listing->Count() )
         return;
     m_FetchedTimes[_raw_index] = _times;
+}
+
+QuickSearchHighlight Model::HighlightForRawIndex(unsigned _raw_index) const noexcept
+{
+    if( _raw_index >= m_Highlights.size() )
+        return {};
+    return m_Highlights[_raw_index];
+}
+
+QuickSearchHighlight Model::HighlightForSortPosition(int _sort_pos) const noexcept
+{
+    if( _sort_pos < 0 || static_cast<size_t>(_sort_pos) >= m_EntriesByCustomSort.size() )
+        return {};
+    return HighlightForRawIndex(m_EntriesByCustomSort[_sort_pos]);
+}
+
+void Model::SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight)
+{
+    if( _raw_index >= m_Listing->Count() )
+        return;
+    if( m_Highlights.size() != m_Listing->Count() )
+        m_Highlights.resize(m_Listing->Count());
+    m_Highlights[_raw_index] = _highlight;
+}
+
+void Model::ResetHighlights()
+{
+    m_Highlights.clear();
+    m_Highlights.shrink_to_fit();
 }
 
 void Model::SetFetchedSize(unsigned _raw_index, uint64_t _size)

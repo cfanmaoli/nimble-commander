@@ -10,6 +10,7 @@
 using namespace nc::panel::gallery;
 
 @implementation NCPanelGalleryCollectionViewItem {
+    nc::panel::data::QuickSearchHighlight m_QsHighlight;
     VFSListingItem m_Item;
     nc::panel::data::ItemVolatileData m_VD;
     bool m_PanelActive;
@@ -93,13 +94,23 @@ using namespace nc::panel::gallery;
 
     [self updateForegroundColor];
     [self updateBackgroundColor];
-    self.carrier.qsHighlight = _vd.highlight;
+    self.carrier.qsHighlight = m_QsHighlight;
     self.carrier.highlighted = _vd.is_highlighted();
 }
 
 - (nc::panel::data::ItemVolatileData)vd
 {
     return m_VD;
+}
+
+- (nc::panel::data::QuickSearchHighlight)qsHighlight
+{
+    return m_QsHighlight;
+}
+
+- (void)setQsHighlight:(nc::panel::data::QuickSearchHighlight)_qsHighlight
+{
+    m_QsHighlight = _qsHighlight;
 }
 
 - (NSColor *)deduceBackgroundColor

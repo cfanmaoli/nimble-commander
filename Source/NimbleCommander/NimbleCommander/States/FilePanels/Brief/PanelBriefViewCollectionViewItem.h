@@ -22,6 +22,9 @@
 - (VFSListingItem)item;
 - (void)setItem:(VFSListingItem)_item;
 - (void)setVD:(nc::panel::data::ItemVolatileData)_vd;
+
+// The highlighted segments during a quick search, kept next to (not inside) the volatile data.
+@property(nonatomic) nc::panel::data::QuickSearchHighlight qsHighlight;
 - (void)setIcon:(NSImage *)_icon;
 @property(nonatomic) bool panelActive;
 

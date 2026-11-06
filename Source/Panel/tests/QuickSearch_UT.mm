@@ -241,12 +241,12 @@ TEST_CASE("Underscoring")
     ctx.qsconfig.Set(g_ConfigWhereToFind, data::TextualFilter::Where::Anywhere);
     const auto qs = [[NCPanelQuickSearch alloc] initWithData:ctx.data delegate:ctx.delegate config:ctx.qsconfig];
     [qs setSearchCriteria:@"box"];
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().count == 1);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].offset == 4);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].length == 3);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().count == 1);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].offset == 7);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].length == 3);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().count == 1);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].offset == 4);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].length == 3);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().count == 1);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].offset == 7);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].length == 3);
 }
 
 TEST_CASE("Underscoring works in UTF16")
@@ -259,21 +259,21 @@ TEST_CASE("Underscoring works in UTF16")
     ctx.qsconfig.Set(g_ConfigWhereToFind, data::TextualFilter::Where::Anywhere);
     const auto qs = [[NCPanelQuickSearch alloc] initWithData:ctx.data delegate:ctx.delegate config:ctx.qsconfig];
     [qs setSearchCriteria:@"привет"];
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().count == 1);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].offset == 0);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].length == 6);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().count == 1);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].offset == 0);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].length == 6);
     [qs setSearchCriteria:@"txt"];
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().count == 1);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].offset == 7);
-    CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack().segments[0].length == 3);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().count == 1);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].offset == 3);
-    CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].length == 3);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().count == 1);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].offset == 7);
+    CHECK(ctx.data.HighlightForSortPosition(0).unpack().segments[0].length == 3);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().count == 1);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].offset == 3);
+    CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].length == 3);
     // Currently doesn't work:
     // [qs setSearchCriteria:@"🤩"];
-    // CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().count == 1);
-    // CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].offset == 0);
-    // CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack().segments[0].length == 2);
+    // CHECK(ctx.data.HighlightForSortPosition(1).unpack().count == 1);
+    // CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].offset == 0);
+    // CHECK(ctx.data.HighlightForSortPosition(1).unpack().segments[0].length == 2);
 }
 
 TEST_CASE("Different phrase locations")
@@ -294,15 +294,15 @@ TEST_CASE("Different phrase locations")
     {
         filter(@"box", Where::Anywhere);
         REQUIRE(ctx.data.SortedEntriesCount() == 2);
-        CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
+        CHECK(ctx.data.HighlightForSortPosition(0).unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
+        CHECK(ctx.data.HighlightForSortPosition(1).unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
     }
     SECTION("box, Fuzzy")
     {
         filter(@"box", Where::Fuzzy);
         REQUIRE(ctx.data.SortedEntriesCount() == 2);
-        CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
+        CHECK(ctx.data.HighlightForSortPosition(0).unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
+        CHECK(ctx.data.HighlightForSortPosition(1).unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
     }
     SECTION("box, Beginning")
     {
@@ -313,15 +313,15 @@ TEST_CASE("Different phrase locations")
     {
         filter(@"box", Where::Ending);
         REQUIRE(ctx.data.SortedEntriesCount() == 2);
-        CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
+        CHECK(ctx.data.HighlightForSortPosition(0).unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
+        CHECK(ctx.data.HighlightForSortPosition(1).unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
     }
     SECTION("box, BeginningOrEnding")
     {
         filter(@"box", Where::BeginningOrEnding);
         REQUIRE(ctx.data.SortedEntriesCount() == 2);
-        CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
+        CHECK(ctx.data.HighlightForSortPosition(0).unpack() == Ranges{{{4, 3}}, 1}); // "Dropbox.app"
+        CHECK(ctx.data.HighlightForSortPosition(1).unpack() == Ranges{{{7, 3}}, 1}); // "VirtualBox.app"
     }
 
     SECTION("calap, Anywhere")
@@ -333,13 +333,11 @@ TEST_CASE("Different phrase locations")
     {
         filter(@"calap", Where::Fuzzy);
         REQUIRE(ctx.data.SortedEntriesCount() == 4);
-        CHECK(ctx.data.VolatileDataAtSortPosition(0).highlight.unpack() ==
-              Ranges{{{0, 3}, {11, 2}}, 2}); // "Calculator.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(1).highlight.unpack() ==
-              Ranges{{{0, 3}, {9, 2}}, 2}); // "Calendar.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(2).highlight.unpack() ==
+        CHECK(ctx.data.HighlightForSortPosition(0).unpack() == Ranges{{{0, 3}, {11, 2}}, 2}); // "Calculator.app"
+        CHECK(ctx.data.HighlightForSortPosition(1).unpack() == Ranges{{{0, 3}, {9, 2}}, 2});  // "Calendar.app"
+        CHECK(ctx.data.HighlightForSortPosition(2).unpack() ==
               Ranges{{{0, 1}, {8, 1}, {13, 1}, {18, 2}}, 4}); // "Counterparts Lite.app"
-        CHECK(ctx.data.VolatileDataAtSortPosition(3).highlight.unpack() ==
+        CHECK(ctx.data.HighlightForSortPosition(3).unpack() ==
               Ranges{{{0, 1}, {2, 1}, {6, 2}, {11, 1}}, 4}); // "CrashPlan.app"
     }
     SECTION("calap, Beginning")
