@@ -197,14 +197,16 @@ private:
     time_t m_CreationTime;
     std::chrono::nanoseconds m_CreationTicks; // the kernel ticks stamp at which the Listing was created
     std::string m_Title;
-    std::unique_ptr<std::string[]> m_Filenames;
+    // these come straight from the ListingInput without a copy - the enumerator fills a vector and
+    // the listing takes it over
+    std::vector<std::string> m_Filenames;
     // Filenames are bridged into CFStrings lazily: most of the items of a huge listing are never
     // displayed, and sorting can compare plain strings (see IndirectListingComparator).
     mutable std::unique_ptr<std::atomic<CFStringRef>[]> m_FilenamesCF;
     mutable std::mutex m_FilenamesCFLock;
     std::unique_ptr<uint16_t[]> m_ExtensionOffsets;
-    std::unique_ptr<mode_t[]> m_UnixModes;
-    std::unique_ptr<uint8_t[]> m_UnixTypes;
+    std::vector<mode_t> m_UnixModes;
+    std::vector<uint8_t> m_UnixTypes;
     base::variable_container<VFSHostPtr> m_Hosts;
     base::variable_container<std::string> m_Directories;
     base::variable_container<uint64_t> m_Sizes;

@@ -120,26 +120,6 @@ Listing::~Listing()
             CFRelease(s);
 }
 
-template <class It>
-static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> CopyToUniquePtr(It first, It last)
-{
-    using T = typename std::iterator_traits<It>::value_type;
-    const auto count = std::distance(first, last);
-    auto ptr = std::make_unique<T[]>(count);
-    std::copy(first, last, ptr.get());
-    return ptr;
-}
-
-template <class It>
-static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> MoveToUniquePtr(It first, It last)
-{
-    using T = typename std::iterator_traits<It>::value_type;
-    const auto count = std::distance(first, last);
-    auto ptr = std::make_unique<T[]>(count);
-    std::move(first, last, ptr.get());
-    return ptr;
-}
-
 base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
 {
     using clock = std::chrono::steady_clock;
@@ -154,7 +134,7 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_Title = std::move(_input.title);
     l->m_Hosts = std::move(_input.hosts);
     l->m_Directories = std::move(_input.directories);
-    l->m_Filenames = MoveToUniquePtr(_input.filenames.begin(), _input.filenames.end());
+    l->m_Filenames = std::move(_input.filenames);
     l->m_DisplayFilenames = std::move(_input.display_filenames);
     l->m_Sizes = std::move(_input.sizes);
     l->m_Inodes = std::move(_input.inodes);
@@ -163,8 +143,8 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_CTimes = std::move(_input.ctimes);
     l->m_MTimes = std::move(_input.mtimes);
     l->m_AddTimes = std::move(_input.add_times);
-    l->m_UnixModes = CopyToUniquePtr(_input.unix_modes.begin(), _input.unix_modes.end());
-    l->m_UnixTypes = CopyToUniquePtr(_input.unix_types.begin(), _input.unix_types.end());
+    l->m_UnixModes = std::move(_input.unix_modes);
+    l->m_UnixTypes = std::move(_input.unix_types);
     l->m_UIDS = std::move(_input.uids);
     l->m_GIDS = std::move(_input.gids);
     l->m_UnixFlags = std::move(_input.unix_flags);
@@ -252,13 +232,13 @@ Listing::ProducePatchedListing(const Listing &_base,
     if( _base.m_AddTimes.size() == 0 )
         l->m_AddTimes = variable_container<time_t>(variable_container<>::type::sparse);
 
-    l->m_Filenames = std::make_unique<std::string[]>(new_count);
+    l->m_Filenames = std::vector<std::string>(new_count);
     l->m_FilenamesCF = std::make_unique<std::atomic<CFStringRef>[]>(new_count);
     for( unsigned i = 0; i != new_count; ++i )
         l->m_FilenamesCF[i].store(nullptr, std::memory_order_relaxed);
     l->m_ExtensionOffsets = std::make_unique<uint16_t[]>(new_count);
-    l->m_UnixModes = std::make_unique<mode_t[]>(new_count);
-    l->m_UnixTypes = std::make_unique<uint8_t[]>(new_count);
+    l->m_UnixModes = std::vector<mode_t>(new_count);
+    l->m_UnixTypes = std::vector<uint8_t>(new_count);
 
     // the entry arrays that are stored as plain arrays
     unsigned dst = 0;

@@ -616,3 +616,43 @@ after 1M (list):             373.4 MB
 原本压在主线程的 ~300–500 ms 合并现在在后台队列里花 ~185 ms，主线程只做最后的安装。
 剩下的大头仍是内核枚举（2.2 s）——那是全量刷新的固有成本，只有增量路径能绕开。
 
+
+---
+
+## 15. 第十轮：枚举结果直接移交给 listing + 内存测量注意事项
+
+### 15.1 少一次 100 万字符串的拷贝
+
+`Listing::Build` 原本把枚举器填好的 `std::vector<std::string>` 复制进 `unique_ptr<std::string[]>`，
+再销毁源 vector——100 万项就是 24 MB 的复制 + 一份 34 MB 的临时内存（vector 的容量会超调）。
+现在 listing 直接**接管**这些 vector（`m_Filenames`/`m_UnixModes`/`m_UnixTypes` 改为 `std::vector`）：
+
+```
+[perf] build n=1000002 validate=0.4ms compress=5.1ms move=0.0ms filenames=3.4ms total=8.9ms   (改前 11.1ms)
+```
+
+### 15.2 内存测量在这个环境里的坑（重要）
+
+记录一下我在做内存 A/B 时踩的坑，避免以后重复：
+
+1. **启动时可能自动打开上一次的目录**：即使删掉 `State/` 和 `~/Library/Saved Application State/...`，
+   应用仍可能在启动后导航到某个大目录——这是被 LaunchServices 排队投递的 `open` 事件造成的（压测脚本
+   大量使用 `open -a`）。所以“空转底噪”必须在一个从没被 `open` 过的会话里量，否则基线里已经躺着一份 listing。
+2. 因此 `ps`/`vmmap` 的绝对值在压测脚本之间不可比；可比的是**同一次进程内**“打开前 vs 打开后”的差值，
+   或者 `heap` 的 zone 总量（活对象）。
+3. 试过在 1M 载入后调用 `malloc_zone_pressure_relief()` 把临时页还给系统：A/B 测量（zone 与 footprint）
+   都没有可见收益，已回退，不留这段代码。
+
+### 15.3 当前内存账本（干净的 1M 会话）
+
+| 项 | 大小 |
+|---|---|
+| 应用空转（两个空 `/tmp` 面板，List 布局） | 154 MB footprint |
+| 1M 项的 listing + 模型 | ~214 MB（`heap` zone 总量），理论值 ~145 MB |
+| 其中 listing | ~105 MB |
+| 其中模型（volatile data 24 B + 4 个索引向量 16 B 每行） | ~40 MB |
+| 其余 | 分配器开销 + 载入期的临时/超调容量 |
+
+要达到整机 ≤250 MB，需要 listing+模型 ≤96 MB，即 **<45 B/行**——这需要动 `VFSListing` 的存储布局
+（name arena、时间戳压缩、属性按需），属于一次高风险的大改造；本轮先没有动。
+
