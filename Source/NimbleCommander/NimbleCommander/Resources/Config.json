@@ -111,6 +111,13 @@
              * Anything that is not a native filesystem always uses the composed path.
              */
             "flatScanStrategy": "columnar",
+
+            /**
+             * Use the parallel native engines for the find-files dialog when the host, the filters
+             * and the options allow it (local filesystem, no archives, UTF-8 content queries).
+             * Anything else keeps using the VFS implementation.
+             */
+            "parallelSearch": true,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

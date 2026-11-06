@@ -221,3 +221,23 @@ C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
 
 两者行为一致性仍由差分测试保证（`FlatListingBuilder_UT`、`ParallelFileSearch_UT`、
 `ParallelContentSearch_UT`），平铺策略开关保留：`filePanel.general.flatScanStrategy` = `columnar`（默认）/ `composed`。
+
+### 8.1 接进“查找文件”面板
+
+`FindFilesSheetController` 现在按条件在两个实现之间分派（`filePanel.general.parallelSearch`，默认开）：
+
+- 走并行引擎：本地文件系统、未勾选“在压缩包中查找”、内容查询是 UTF-8 且没有“不包含”，
+  且（有内容查询时）没有设大小过滤；
+- 其余全部回落 `SearchForFiles`（归档、网络主机、非 UTF-8 编码、大小+内容组合）。
+
+两条路径共用同一套 found / finish / “正在查找” 回调，表格、面板化、显示、往返导航都不变。
+分派时打印一行便于验证：
+
+```
+[perf] findfiles engine=parallel content=0 mask=*
+[perf] findfiles engine=parallel content=1 mask=*
+```
+
+实测（UI 手工验证）：在 `Source/` 下用掩码 `*PanelController*` 搜到 10 项、用内容
+`PanelController` 搜到 132 项，日志确认两种查询都走了并行引擎。
+

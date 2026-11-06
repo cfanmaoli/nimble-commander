@@ -16,6 +16,8 @@
 #include <Utility/SheetWithHotkeys.h>
 #include <Utility/StringExtras.h>
 #include <VFS/SearchForFiles.h>
+#include <NimbleCommander/Core/ParallelContentSearch.h>
+#include <NimbleCommander/Core/ParallelFileSearch.h>
 #include <algorithm>
 #include <fmt/format.h>
 #include <iostream>
@@ -219,6 +221,10 @@ private:
     std::shared_ptr<VFSHost> m_Host;
     std::string m_Path;
     std::unique_ptr<SearchForFiles> m_FileSearch;
+    // The native fast path: a parallel walk that bypasses the VFS abstraction. Only used when the
+    // host, the filters and the search options allow it - otherwise m_FileSearch does the work.
+    std::unique_ptr<nc::core::ParallelFileSearch> m_ParallelFileSearch;
+    std::unique_ptr<nc::core::ParallelContentSearch> m_ParallelContentSearch;
     NSDateFormatter *m_DateFormatter;
 
     bool m_UIChanged;
@@ -356,17 +362,44 @@ private:
 - (IBAction)OnClose:(id) [[maybe_unused]] _sender
 {
     if( NSEvent *ev = NSApp.currentEvent )
-        if( ev.type == NSEventTypeKeyDown && m_FileSearch->IsRunning() ) {
+        if( ev.type == NSEventTypeKeyDown && [self searchIsRunning] ) {
             // Close was triggered by Esc hotkey. just stop current search and don't close the
             // dialog
-            m_FileSearch->Stop();
+            [self stopSearch];
             return;
         }
 
-    m_FileSearch->Stop();
-    m_FileSearch->Wait();
+    [self stopSearch];
+    [self waitForSearch];
     m_OnPanelize = nullptr;
     [self endSheet:NSModalResponseOK];
+}
+
+- (bool)searchIsRunning
+{
+    if( m_ParallelFileSearch )
+        return m_ParallelFileSearch->IsRunning();
+    if( m_ParallelContentSearch )
+        return m_ParallelContentSearch->IsRunning();
+    return m_FileSearch->IsRunning();
+}
+
+- (void)stopSearch
+{
+    if( m_ParallelFileSearch )
+        m_ParallelFileSearch->Stop();
+    if( m_ParallelContentSearch )
+        m_ParallelContentSearch->Stop();
+    m_FileSearch->Stop();
+}
+
+- (void)waitForSearch
+{
+    if( m_ParallelFileSearch )
+        m_ParallelFileSearch->Wait();
+    if( m_ParallelContentSearch )
+        m_ParallelContentSearch->Wait();
+    m_FileSearch->Wait();
 }
 
 - (void)onSearchFinished
@@ -443,11 +476,91 @@ private:
     return filter_size;
 }
 
+// The parallel engines only cover the native filesystem and the filters they can express; every
+// other combination (archives, network hosts, non-UTF-8 text, "not containing", size filtering
+// together with a content query) stays with SearchForFiles.
+- (bool)canUseParallelSearchWithContent:(bool)_has_content
+{
+    if( !GlobalConfig().GetBool("filePanel.general.parallelSearch") )
+        return false;
+    if( !m_Host || !m_Host->IsNativeFS() )
+        return false;
+    const int options = [self searchOptionsFromUI];
+    if( (options & SearchForFiles::Options::LookInArchives) != 0 )
+        return false;
+    if( _has_content ) {
+        if( m_TextSearchEncoding != nc::utility::Encoding::ENCODING_UTF8 )
+            return false;
+        if( m_NotContainingTextSearch )
+            return false;
+        const SearchForFiles::FilterSize size = [self searchFilterSizeFromUI];
+        if( size.min != 0 || size.max != std::numeric_limits<uint64_t>::max() )
+            return false;
+    }
+    return true;
+}
+
+- (bool)startParallelSearchWithMask:(const std::string &)_mask
+                         hasContent:(bool)_has_content
+                             option:(int)_options
+                         foundBlock:
+                             (const std::function<void(std::string_view, const char *, VFSHost &, CFRange)> &)_found
+                        finishBlock:(const std::function<void()> &)_finish
+                     lookingInBlock:(const std::function<void(const char *, VFSHost &)> &)_looking_in
+{
+    const VFSHostPtr host = m_Host;
+    const bool go_into_subdirs = (_options & SearchForFiles::Options::GoIntoSubDirs) != 0;
+    nc::core::ParallelFileSearch::LookInCallback look_in;
+    if( _looking_in )
+        look_in = [host, _looking_in](const std::string &_dir) { _looking_in(_dir.c_str(), *host); };
+
+    if( _has_content ) {
+        const auto text_query = self.textSearchField.stringValue ? self.textSearchField.stringValue : @"";
+        nc::core::ParallelContentSearch::Filter filter;
+        filter.text = text_query.fileSystemRepresentationSafe;
+        filter.case_sensitive = m_CaseSensitiveTextSearch;
+        filter.whole_phrase = m_WholePhraseTextSearch;
+        filter.go_into_subdirs = go_into_subdirs;
+
+        nc::utility::FileMask name_mask;
+        if( !_mask.empty() )
+            name_mask = nc::utility::FileMask{_mask};
+
+        m_ParallelContentSearch = std::make_unique<nc::core::ParallelContentSearch>();
+        const auto found = [host, _found, name_mask](const nc::core::ParallelContentSearch::Hit &_hit) {
+            if( !name_mask.IsEmpty() && !name_mask.MatchName(_hit.name) )
+                return;
+            _found(_hit.name,
+                   _hit.dir_path.c_str(),
+                   *host,
+                   CFRangeMake(static_cast<CFIndex>(_hit.offset), static_cast<CFIndex>(_hit.bytes_len)));
+        };
+        return m_ParallelContentSearch->Go(m_Path, filter, found, _finish, look_in);
+    }
+
+    nc::core::ParallelFileSearch::Filter filter;
+    filter.mask = _mask;
+    filter.search_files = (_options & SearchForFiles::Options::SearchForFiles) != 0;
+    filter.search_dirs = (_options & SearchForFiles::Options::SearchForDirs) != 0;
+    filter.go_into_subdirs = go_into_subdirs;
+    const SearchForFiles::FilterSize size = [self searchFilterSizeFromUI];
+    if( size.min != 0 )
+        filter.min_size = size.min;
+    if( size.max != std::numeric_limits<uint64_t>::max() )
+        filter.max_size = size.max;
+
+    m_ParallelFileSearch = std::make_unique<nc::core::ParallelFileSearch>();
+    const auto found = [host, _found](const nc::core::ParallelFileSearch::Hit &_hit) {
+        _found(_hit.name, _hit.dir_path.c_str(), *host, CFRangeMake(-1, 0));
+    };
+    return m_ParallelFileSearch->Go(m_Path, filter, found, _finish, look_in);
+}
+
 - (IBAction)OnSearch:(id) [[maybe_unused]] _sender
 {
     using nc::utility::FileMask;
-    if( m_FileSearch->IsRunning() ) {
-        m_FileSearch->Stop();
+    if( [self searchIsRunning] ) {
+        [self stopSearch];
         return;
     }
 
@@ -514,7 +627,7 @@ private:
             m_StatQueue.Run(std::move(stat_block));
 
         if( m_FoundItems.count + m_FoundItemsBatch.count >= g_MaximumSearchResults )
-            m_FileSearch->Stop(); // gorshochek, ne vari!!!
+            [self stopSearch]; // gorshochek, ne vari!!!
     };
     auto finish_callback = [=] { [self onSearchFinished]; };
     auto lookin_in_callback = [=](const char *_path, VFSHost &_in_host) {
@@ -525,13 +638,33 @@ private:
     auto spawn_archive_callback = [=](const char *_for_path, VFSHost &_in_host) -> VFSHostPtr {
         return [self spawnArchiveFromPath:_for_path inVFS:_in_host.SharedPtr()];
     };
-    const bool started = m_FileSearch->Go(m_Path,
-                                          m_Host,
-                                          self.searchOptionsFromUI,
-                                          std::move(found_callback),
-                                          std::move(finish_callback),
-                                          std::move(lookin_in_callback),
-                                          std::move(spawn_archive_callback));
+    // The options, the filters and the host decide which implementation runs. Both feed the same
+    // found/finish/looking-in callbacks, so the rest of the dialog doesn't care.
+    const bool use_parallel = [self canUseParallelSearchWithContent:(text_query.length != 0)];
+    if( std::getenv("NC_PERF_LOG") != nullptr )
+        std::fprintf(stderr,
+                     "[perf] findfiles engine=%s content=%d mask=%s\n",
+                     use_parallel ? "parallel" : "vfs",
+                     text_query.length != 0 ? 1 : 0,
+                     filename_mask.empty() ? "<any>" : filename_mask.c_str());
+    bool started = false;
+    if( use_parallel ) {
+        started = [self startParallelSearchWithMask:(filename_mask.empty() ? std::string{} : std::string{filename_mask})
+                                         hasContent:(text_query.length != 0)
+                                             option:self.searchOptionsFromUI
+                                         foundBlock:found_callback
+                                        finishBlock:finish_callback
+                                     lookingInBlock:lookin_in_callback];
+    }
+    else {
+        started = m_FileSearch->Go(m_Path,
+                                   m_Host,
+                                   self.searchOptionsFromUI,
+                                   std::move(found_callback),
+                                   std::move(finish_callback),
+                                   std::move(lookin_in_callback),
+                                   std::move(spawn_archive_callback));
+    }
     self.searchingNow = started;
     if( started ) {
         self.didAnySearchStarted = true;

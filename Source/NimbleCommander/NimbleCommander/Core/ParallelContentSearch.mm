@@ -96,6 +96,8 @@ struct SearchContext {
     bool go_into_subdirs = true;
     ParallelContentSearch::FoundCallback found;
     std::function<void()> finish;
+    ParallelContentSearch::LookInCallback looking_in;
+    std::mutex look_in_mutex;
     std::mutex mutex; // the callbacks must stay serial
 };
 
@@ -192,6 +194,10 @@ void RunSearch(SearchContext &_ctx)
                 queue.pop_back();
             }
             working.fetch_add(1, std::memory_order_seq_cst);
+            if( _ctx.looking_in ) {
+                std::lock_guard lock{_ctx.look_in_mutex};
+                _ctx.looking_in(dir);
+            }
 
             if( DIR *const d = ::opendir(dir.c_str()) ) {
                 std::vector<std::string> subdirs;
@@ -248,7 +254,8 @@ ParallelContentSearch::~ParallelContentSearch()
 bool ParallelContentSearch::Go(const std::string &_root,
                                const Filter &_filter,
                                FoundCallback _found,
-                               std::function<void()> _finish)
+                               std::function<void()> _finish,
+                               LookInCallback _looking_in)
 {
     if( IsRunning() )
         return false;
@@ -270,7 +277,8 @@ bool ParallelContentSearch::Go(const std::string &_root,
                                         .max_file_size = _filter.max_file_size,
                                         .go_into_subdirs = _filter.go_into_subdirs,
                                         .found = std::move(_found),
-                                        .finish = std::move(_finish)};
+                                        .finish = std::move(_finish),
+                                        .looking_in = std::move(_looking_in)};
 
     m_Impl->running = true;
     m_Impl->worker = std::thread([ctx] {

@@ -32,13 +32,19 @@ public:
     };
 
     using FoundCallback = std::function<void(const Hit &)>;
+    // Reports every directory the walk enters, for the "looking in" label.
+    using LookInCallback = std::function<void(const std::string &)>;
 
     ParallelContentSearch();
     ~ParallelContentSearch();
     ParallelContentSearch(const ParallelContentSearch &) = delete;
     ParallelContentSearch &operator=(const ParallelContentSearch &) = delete;
 
-    bool Go(const std::string &_root, const Filter &_filter, FoundCallback _found, std::function<void()> _finish);
+    bool Go(const std::string &_root,
+            const Filter &_filter,
+            FoundCallback _found,
+            std::function<void()> _finish,
+            LookInCallback _looking_in = nullptr);
 
     void Stop();
     void Wait();
