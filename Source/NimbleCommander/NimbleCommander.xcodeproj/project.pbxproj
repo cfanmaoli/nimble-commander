@@ -39,6 +39,7 @@
 		CF0A47562BDD8F0F00833160 /* LocationFormatter.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA1715C20174C9A00F507D5 /* LocationFormatter.mm */; };
 		CF0A47582BDD8FB100833160 /* Pasteboard.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF818B701EA07A5B00BC28E6 /* Pasteboard.mm */; };
 		CF0A47E72BDD9E6D00833160 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2381DFBDEBA0039A104 /* AppDelegate.mm */; };
+		AB12CD34EF56000000000018 /* RustCore.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000019 /* RustCore.mm */; };
 		CF0A47F62BDD9E7200833160 /* AppDelegate+MainWindowCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA1716220196CB400F507D5 /* AppDelegate+MainWindowCreation.mm */; };
 		CF0A47F72BDD9E7A00833160 /* AppDelegate+Migration.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2F21DFD16540039A104 /* AppDelegate+Migration.mm */; };
 		CF0A47F82BDD9E8000833160 /* AppDelegate+ViewerCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFD799ED21F48F140043A26D /* AppDelegate+ViewerCreation.mm */; };
@@ -1320,6 +1321,7 @@
 		CFDAC2351DFBDE560039A104 /* Application.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Application.mm; path = NimbleCommander/Bootstrap/Application.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC2371DFBDEBA0039A104 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = NimbleCommander/Bootstrap/AppDelegate.h; sourceTree = SOURCE_ROOT; };
 		CFDAC2381DFBDEBA0039A104 /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = NimbleCommander/Bootstrap/AppDelegate.mm; sourceTree = SOURCE_ROOT; };
+		AB12CD34EF56000000000019 /* RustCore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RustCore.mm; path = NimbleCommander/Core/RustCore.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC2391DFBDEBA0039A104 /* AppDelegateCPP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegateCPP.h; path = NimbleCommander/Bootstrap/AppDelegateCPP.h; sourceTree = SOURCE_ROOT; };
 		CFDAC23A1DFBDEBA0039A104 /* AppDelegateCPP.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegateCPP.mm; path = NimbleCommander/Bootstrap/AppDelegateCPP.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC23F1DFBE18C0039A104 /* ActionsShortcutsManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ActionsShortcutsManager.h; path = NimbleCommander/Core/ActionsShortcutsManager.h; sourceTree = SOURCE_ROOT; };
@@ -1911,6 +1913,7 @@
 				CF12575A2CA97D87003906C6 /* NimbleCommanderCommon-Bridging-Header.h */,
 				CFDAC2371DFBDEBA0039A104 /* AppDelegate.h */,
 				CFDAC2381DFBDEBA0039A104 /* AppDelegate.mm */,
+				AB12CD34EF56000000000019 /* RustCore.mm */,
 				CFA1716420196CF600F507D5 /* AppDelegate.Private.h */,
 				CFA1716120196CB400F507D5 /* AppDelegate+MainWindowCreation.h */,
 				CFA1716220196CB400F507D5 /* AppDelegate+MainWindowCreation.mm */,
@@ -2364,6 +2367,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CF5DE0B6258414CA00604DEE /* Build configuration list for PBXNativeTarget "NimbleCommanderUT" */;
 			buildPhases = (
+				AB12CD34EF56000000000020 /* Build Rust core */,
 				CF5DE0AE258414CA00604DEE /* Sources */,
 				CF5DE0AF258414CA00604DEE /* Frameworks */,
 				CF5DE0B0258414CA00604DEE /* CopyFiles */,
@@ -2404,6 +2408,7 @@
 				CFA53A681D433E2A00C562A7 /* Copy Files */,
 				CFA53A661D433E2A00C562A7 /* CopyFiles */,
 				CF4AC4F52C11066200475EDC /* CopyFiles */,
+				AB12CD34EF56000000000017 /* Build Rust core */,
 				CFA5395C1D433E2A00C562A7 /* Sources */,
 				CFA53A181D433E2A00C562A7 /* Frameworks */,
 				CFA53A331D433E2A00C562A7 /* Resources */,
@@ -3041,6 +3046,34 @@
 			shellPath = /bin/sh;
 			shellScript = "#Update build number with number of git commits\nbuildNumber=$(git -C $PROJECT_DIR rev-list HEAD | wc -l | tr -d ' ') \n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n";
 		};
+		AB12CD34EF56000000000017 /* Build Rust core */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust core";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\"$SRCROOT/../../rust/build.sh\"\n";
+		};
+		AB12CD34EF56000000000020 /* Build Rust core */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust core";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\"$SRCROOT/../../rust/build.sh\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -3117,6 +3150,7 @@
 				CF0A484C2BDDA29F00833160 /* ShowSystemOverview.mm in Sources */,
 				CF0A486D2BDDA40E00833160 /* PanelViewDummyPresentation.mm in Sources */,
 				CF0A47E72BDD9E6D00833160 /* AppDelegate.mm in Sources */,
+				AB12CD34EF56000000000018 /* RustCore.mm in Sources */,
 				CF0A484A2BDDA29500833160 /* ShowGoToPopup.mm in Sources */,
 				CF0A47FD2BDD9EB800833160 /* VFSInit.mm in Sources */,
 				CF0A48322BDDA15300833160 /* CopyToPasteboard.mm in Sources */,
@@ -3715,6 +3749,10 @@
 		CF5DE0802583E73300604DEE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/include",
+				);
 				CLANG_ENABLE_MODULES = YES;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3727,6 +3765,10 @@
 		CF5DE0812583E73300604DEE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/include",
+				);
 				CLANG_ENABLE_MODULES = YES;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3739,6 +3781,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = CFA22D2B2B51BD7E00E71479 /* tests.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/target/release",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lnc_core",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3747,6 +3797,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = CFA22D2B2B51BD7E00E71479 /* tests.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/target/release",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lnc_core",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -3793,6 +3851,18 @@
 		CFA53A6B1D433E2A00C562A7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/target/debug",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lnc_core",
+				);
 				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)_Unsigned";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -3808,6 +3878,18 @@
 		CFA53A6C1D433E2A00C562A7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../rust/target/release",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lnc_core",
+				);
 				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)_Unsigned";
 				GCC_PREPROCESSOR_DEFINITIONS = (

@@ -14,7 +14,11 @@
 #include "NativeVFSHostInstance.h"
 #include "Actions.h"
 
+#include <NimbleCommander/Core/RustCore.h>
+
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include <magic_enum.hpp>
 #include <spdlog/sinks/stdout_sinks.h>
 
@@ -379,6 +383,16 @@ static NCAppDelegate *g_Me = nil;
 - (void)applicationDidFinishLaunching:(NSNotification *) [[maybe_unused]] _notification
 {
     m_FinishedLaunching.toggle();
+
+    // The Rust core is linked into the app; make sure it is reachable and that both sides agree
+    // on the ABI version. Cheap enough to run once at startup.
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        std::fprintf(stderr,
+                     "[rust] nc_core abi=%u ping=%d glob=%d\n",
+                     nc::core::RustCore::ABIversion(),
+                     nc::core::RustCore::Ping(41),
+                     nc::core::RustCore::GlobMatch("*.txt", "a.txt", false) ? 1 : 0);
+    }
 
     if( self.mainWindowControllers.empty() )
         [self applicationOpenUntitledFile:NSApp]; // if there's no restored windows - we'll create a
