@@ -138,7 +138,7 @@ MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazySizes, "filePanel.general.lazySiz
 
 // A flat view of a whole subtree is inherently heavy - these are the safety limits. They are
 // generous on purpose: silently dropping a million of entries was far worse than the memory.
-MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxItems, "filePanel.general.flatViewMaxItems", 8'000'000);
+MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxItems, "filePanel.general.flatViewMaxItems", 1'000'000);
 MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
                                     "filePanel.general.flatViewMaxDirectories",
                                     2'000'000);

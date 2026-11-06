@@ -92,7 +92,7 @@
              * Safety limits for the flat view, which lists the whole subtree of the current
              * directory. Entries beyond these are not shown and the user is told about it.
              */
-            "flatViewMaxItems": 8000000,
+            "flatViewMaxItems": 1000000,
             "flatViewMaxDirectories": 2000000,
   
             /**
