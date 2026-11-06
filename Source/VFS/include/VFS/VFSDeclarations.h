@@ -184,6 +184,12 @@ struct Flags {
      * time columns (20MB per million entries) at the cost of the not-yet-loaded date columns.
      */
     static constexpr uint64_t F_NoTimes = 0x400000000ull;
+
+    /**
+     * For listing. Same idea as F_NoTimes, but for the sizes: the panel then shows the sizes of the
+     * rows it has actually looked at, in exchange for not keeping the size column in memory.
+     */
+    static constexpr uint64_t F_NoSizes = 0x800000000ull;
 };
 
 class Listing;

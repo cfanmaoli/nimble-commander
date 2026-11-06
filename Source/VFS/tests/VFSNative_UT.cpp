@@ -347,6 +347,26 @@ TEST_CASE(PREFIX "F_NoTimes drops the time columns but keeps the rest")
         CHECK((*full)->HasSize(i));
     }
 }
+TEST_CASE(PREFIX "F_NoSizes drops the sizes but keeps the times")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_no_sizes_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 3; ++i ) {
+        std::ofstream out(root / ("s" + std::to_string(i)));
+        out << "0123456789";
+    }
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NoSizes);
+    REQUIRE(listing);
+    REQUIRE((*listing)->Count() == 3);
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK(!(*listing)->HasSize(i));
+        CHECK((*listing)->HasMTime(i));
+        CHECK((*listing)->HasInode(i));
+    }
+}
 } // namespace VFSNativeTests
 
 #undef PREFIX

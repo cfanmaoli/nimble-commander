@@ -81,6 +81,12 @@
              * Off by default - the date columns are then empty until a row is scrolled into view.
              */
             "lazyDates": false,
+
+            /**
+             * Same for the sizes: the enumeration then skips them and the panel fetches the ones it
+             * shows. Takes another 8MB off a million-entry listing.
+             */
+            "lazySizes": false,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

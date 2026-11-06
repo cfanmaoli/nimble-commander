@@ -121,6 +121,7 @@ MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowDotDotEntry, g_ConfigShowDotDotEn
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowLocalizedFilenames, g_ConfigShowLocalizedFilenames);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigEnableFinderTags, g_ConfigEnableFinderTags);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazyDates, "filePanel.general.lazyDates");
+MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazySizes, "filePanel.general.lazySizes");
 
 static void HeatUpConfigValues()
 {
@@ -375,6 +376,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_DirectoryReLoadingQ;
     nc::base::SerialQueue m_LazyDatesQ;
     bool m_LazyDates;
+    bool m_LazySizes;
 
     NCPanelQuickSearch *m_QuickSearch;
 
@@ -459,6 +461,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_IsAnythingWorksInBackground = false;
         m_PendingRefreshScheduled = false;
         m_LazyDates = false;
+        m_LazySizes = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
 
@@ -856,7 +859,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 - (void)fetchLazyDatesForSortedRange:(NSRange)_range
 {
     assert(dispatch_is_main_queue());
-    if( !m_LazyDates )
+    if( !m_LazyDates && !m_LazySizes )
         return;
     const VFSListingPtr listing = m_Data.ListingPtr();
     if( !listing || listing->Count() == 0 )
@@ -872,7 +875,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         const int raw_index = m_Data.RawIndexForSortIndex(i);
         if( raw_index < 0 )
             continue;
-        if( m_Data.FetchedTimesAtRawPos(raw_index) )
+        if( m_LazyDates && m_Data.FetchedTimesAtRawPos(raw_index) )
             continue;
         raw_indices.push_back(static_cast<unsigned>(raw_index));
     }
@@ -887,7 +890,12 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         paths.emplace_back(directory + listing->Filename(raw_index));
 
     m_LazyDatesQ.Run([self, paths = std::move(paths), raw_indices = std::move(raw_indices), host] {
-        std::vector<std::pair<unsigned, data::Model::FetchedTimes>> fetched;
+        struct FetchedEntry {
+            unsigned raw_index;
+            data::Model::FetchedTimes times;
+            uint64_t size;
+        };
+        std::vector<FetchedEntry> fetched;
         fetched.reserve(paths.size());
         for( size_t i = 0; i != paths.size(); ++i ) {
             if( m_LazyDatesQ.IsStopped() )
@@ -902,15 +910,20 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
             times.ctime = entry.HasCTime(0) ? entry.CTime(0) : 0;
             times.btime = entry.HasBTime(0) ? entry.BTime(0) : 0;
             times.addtime = entry.HasAddTime(0) ? entry.AddTime(0) : -1;
-            fetched.emplace_back(raw_indices[i], times);
+            const uint64_t size = entry.HasSize(0) ? entry.Size(0) : std::numeric_limits<uint64_t>::max();
+            fetched.emplace_back(raw_indices[i], times, size);
         }
         if( fetched.empty() )
             return;
         dispatch_to_main_queue([self, fetched = std::move(fetched)] {
-            if( !m_LazyDates )
+            if( !m_LazyDates && !m_LazySizes )
                 return;
-            for( const auto &i : fetched )
-                m_Data.SetFetchedTimes(i.first, i.second);
+            for( const auto &i : fetched ) {
+                if( m_LazyDates )
+                    m_Data.SetFetchedTimes(i.raw_index, i.times);
+                if( m_LazySizes && i.size != std::numeric_limits<uint64_t>::max() )
+                    m_Data.SetFetchedSize(i.raw_index, i.size);
+            }
             // repaint the rows that are on screen
             [m_View volatileDataChanged];
             [m_View dataUpdated];
@@ -965,8 +978,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     }
 
     if( self.isUniform ) {
-        const auto fetch_flags =
-            m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0) | (m_LazyDates ? VFSFlags::F_NoTimes : 0);
+        const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0) |
+                                 (m_LazyDates ? VFSFlags::F_NoTimes : 0) | (m_LazySizes ? VFSFlags::F_NoSizes : 0);
         const auto dirpath = m_Data.DirectoryPathWithTrailingSlash();
         const auto vfs = self.vfs;
         // the model is main-thread-only, so its state is captured here and the heavy merging is
@@ -1260,8 +1273,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 - (void)onCursorChanged
 {
     [self updateAttachedQuickLook];
-    if( m_LazyDates ) {
-        // the dates are fetched on demand - top up the area around the cursor, so that moving
+    if( m_LazyDates || m_LazySizes ) {
+        // the attributes are fetched on demand - top up the area around the cursor, so that moving
         // through the list with the keyboard or clicking does pull them in
         const int cursor = m_View.curpos;
         if( cursor >= 0 )
@@ -1535,7 +1548,9 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         // Only the huge directories benefit from lazy dates, and the preview has just told us
         // whether this one is big.
         const bool lazy_dates = big_directory && ConfigLazyDates();
-        const unsigned long fetch_flags = m_VFSFetchingFlags | (lazy_dates ? VFSFlags::F_NoTimes : 0);
+        const bool lazy_sizes = big_directory && ConfigLazySizes();
+        const unsigned long fetch_flags =
+            m_VFSFetchingFlags | (lazy_dates ? VFSFlags::F_NoTimes : 0) | (lazy_sizes ? VFSFlags::F_NoSizes : 0);
         const std::expected<VFSListingPtr, Error> listing =
             vfs.FetchDirectoryListing(directory, fetch_flags, canceller);
         if( _request->LoadingResultCallback ) {
@@ -1561,6 +1576,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_FlatViewRoot.clear();
             ++m_FlatViewGeneration;
             m_LazyDates = lazy_dates;
+            m_LazySizes = lazy_sizes;
             m_Data.InstallLoad(std::move(*prepared));
             const auto perf_loaded = std::chrono::steady_clock::now();
             for( const auto &i : _request->RequestSelectedEntries )

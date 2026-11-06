@@ -186,6 +186,9 @@ public:
     };
 
     void SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times);
+
+    // Fills in the size of an entry whose listing doesn't carry it (VFSFlags::F_NoSizes).
+    void SetFetchedSize(unsigned _raw_index, uint64_t _size);
     [[nodiscard]] std::optional<FetchedTimes> FetchedTimesAtRawPos(int _raw_pos) const;
     void ClearFetchedTimes();
 

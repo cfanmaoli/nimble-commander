@@ -193,7 +193,8 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     listing_source.unix_flags.reset(variable_container<>::type::dense);
     listing_source.uids.reset(variable_container<>::type::dense);
     listing_source.gids.reset(variable_container<>::type::dense);
-    listing_source.sizes.reset(variable_container<>::type::dense);
+    listing_source.sizes.reset((_flags & VFSFlags::F_NoSizes) ? variable_container<>::type::sparse
+                                                              : variable_container<>::type::dense);
     listing_source.symlinks.reset(variable_container<>::type::sparse);
     listing_source.display_filenames.reset(variable_container<>::type::sparse);
 
@@ -213,7 +214,8 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         listing_source.unix_flags.resize(_sz);
         listing_source.uids.resize(_sz);
         listing_source.gids.resize(_sz);
-        listing_source.sizes.resize(_sz);
+        if( (_flags & VFSFlags::F_NoSizes) == 0 )
+            listing_source.sizes.resize(_sz);
         ext_flags.resize(_sz);
         devs.resize(_sz);
         allocated_size = _sz;
@@ -223,6 +225,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     resize_dense(initial_prealloc_size);
 
     const bool no_times = (_flags & VFSFlags::F_NoTimes) != 0;
+    const bool no_sizes = (_flags & VFSFlags::F_NoSizes) != 0;
     auto fill = [&](size_t _n, const Fetching::CallbackParams &_params) {
         assert(_n < listing_source.filenames.size());
         listing_source.filenames[_n] = _params.filename;
@@ -240,7 +243,8 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         listing_source.unix_flags[_n] = _params.flags;
         listing_source.uids[_n] = _params.uid;
         listing_source.gids[_n] = _params.gid;
-        listing_source.sizes[_n] = _params.size;
+        if( !no_sizes )
+            listing_source.sizes[_n] = _params.size;
 
         ext_flags[_n] = _params.ext_flags;
         devs[_n] = _params.dev;

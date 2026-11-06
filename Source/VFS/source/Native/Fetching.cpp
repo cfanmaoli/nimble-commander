@@ -261,7 +261,8 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
                                     const std::function<void(size_t _fetched_now)> &_cb_fetch,
                                     const Callback &_cb_param,
                                     const size_t _max_entries,
-                                    const bool _with_times)
+                                    const bool _with_times,
+                                    const bool _with_sizes)
 {
     attrlist attr_list;
     memset(&attr_list, 0, sizeof(attr_list));
@@ -272,7 +273,8 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
     if( _with_times )
         attr_list.commonattr |=
             ATTR_CMN_CRTIME | ATTR_CMN_MODTIME | ATTR_CMN_CHGTIME | ATTR_CMN_ACCTIME | ATTR_CMN_ADDEDTIME;
-    attr_list.fileattr = ATTR_FILE_DATALENGTH;
+    if( _with_sizes )
+        attr_list.fileattr = ATTR_FILE_DATALENGTH;
     attr_list.forkattr = ATTR_CMNEXT_EXT_FLAGS;
 
     // TODO: handle ENOTSUP

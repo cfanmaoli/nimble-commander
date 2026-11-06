@@ -925,3 +925,44 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 实测（1M 目录、惰性日期模式）：首次补丁走快速路径（~20 ms），之后再产生稀疏时间列时仍会退回通用路径
 （~56 ms）——两者都在 100 ms 以内。
 
+
+---
+
+## 24. 第十八轮：`F_NoSizes` —— 完全惰性模式把数据面压到 ~98 MB
+
+### 24.1 改动
+
+新增 `VFSFlags::F_NoSizes` 与配置项 `filePanel.general.lazySizes`（默认关）：
+
+- `Fetching::ReadDirAttributesBulk()` 增加 `_with_sizes` 参数，为 false 时 attrlist 不再请求
+  `ATTR_FILE_DATALENGTH`（解析端本来就会把缺失的大小记为 -1，无需改动）；
+- `NativeHost` 在 `F_NoSizes` 下把 size 容器留成 sparse-empty、`fill()` 不写、`resize_dense()` 也不再增长它；
+- 面板取数时同时把大小写进 `ItemVolatileData::size`（`Model::SetFetchedSize`），
+  `PanelListViewSizeView` 在 `!item.HasSize()` 时读 vd，取不到就显示空；
+- 大小与日期的惰性取数共用一条队列和同一套“光标附近 + 首屏 200 行”的策略。
+
+### 24.2 实测（1M 目录）
+
+| 模式 | listing 数据 | 数据面（listing + 模型 ~36 MB）|
+|---|---|---|
+| 完整属性（默认） | 92.9 MB | ~129 MB |
+| 惰性日期 | 69.5 MB | ~105 MB |
+| **惰性日期 + 惰性大小** | **61.8 MB** | **~98 MB** |
+
+加上应用自身底噪（干净测量 ~154 MB），完全惰性模式整机约 **252 MB**，基本达到 250 MB 的目标；
+默认模式仍是 ~283 MB。两个开关都默认关闭，因为开启后大小/日期列要滚动到才会显示。
+
+### 24.3 增量路径（完全惰性模式）
+
+```
+[perf] incr k=1 removed=0 appended=1 mem=77.2MB fetch=0.1ms patch=57.7ms
+[perf] incr.ui n=1000005 model=12.0ms view=20.6ms total=32.6ms
+```
+
+合计 ~90 ms，仍在 100 ms 以内；首次补丁走快速路径（~20 ms），之后因为出现稀疏时间列退回通用路径。
+
+### 24.4 验证
+
+- 新增单元测试 `F_NoSizes drops the sizes but keeps the times`；
+- 9 个套件全绿（VFSUT 42714/69 等）；`clang-format --check` 通过；app 重编译/签名/安装。
+

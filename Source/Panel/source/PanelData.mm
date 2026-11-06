@@ -1151,6 +1151,13 @@ void Model::SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times)
     m_FetchedTimes[_raw_index] = _times;
 }
 
+void Model::SetFetchedSize(unsigned _raw_index, uint64_t _size)
+{
+    if( _raw_index >= m_VolatileData.size() )
+        return;
+    m_VolatileData[_raw_index].size = _size;
+}
+
 std::optional<Model::FetchedTimes> Model::FetchedTimesAtRawPos(int _raw_pos) const
 {
     if( _raw_pos < 0 || m_FetchedTimes.empty() )
