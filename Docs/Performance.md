@@ -768,3 +768,65 @@ materialize 的 CFString），并打进 `NC_PERF_LOG` 的 build 行：
 
 新增单元测试：`Names-only listing carries no attributes`（条目数/名字/类型正确，属性确实缺失）。
 
+
+---
+
+## 20. 阶段总结（截至现在）
+
+### 20.1 达成情况
+
+| 指标 | 起始 | 现在 | 目标 | 状态 |
+|---|---|---|---|---|
+| 1M 目录首屏 | ~2.2 s | **~34 ms**（预览）| <100 ms | ✅ |
+| 1M 目录全量就绪 | ~5.7 s CPU | **~2.35 s**（枚举 2.17 s 为主）| — | ✅ |
+| 目录变动响应（List 布局）| 5.1 s | **~40 ms** | <100 ms | ✅ |
+| 目录变动响应（Brief/默认）| 5.1 s | **~65 ms** | <100 ms | ✅ |
+| 主线程阻塞（打开/刷新）| 205–500 ms | **0 ms**（全部在后台队列）| — | ✅ |
+| Brief 1M footprint | 649.6 MB | **359 MB** | — | ✅ |
+| 1M listing 数据 | ~105 MB（8 字节时间戳）| **92.9 MB** | — | ✅ |
+| 整机常驻 | ~650 MB | **~283 MB** | ≤250 MB | ❌ 受功能语义限制 |
+
+最近一次实测：
+
+```
+[perf] preview n=4096 ready=34.2ms
+[perf] fetch   n=1000002 enum=2157.1ms build=12.4ms total=2169.7ms
+[perf] prepare n=1000002 vd=3.9ms sorts=173.2ms stats=5.3ms total=182.4ms
+[perf] ui      n=1000002 modelLoad=0.0ms dataUpdated=14.8ms total=15.0ms
+[perf] incr    k=1 removed=0 appended=1 fetch=0.3ms patch=17.5ms
+[perf] incr.ui n=1000004 model=19.0ms view=1.4ms total=20.4ms
+```
+
+### 20.2 为什么停在 283 MB
+
+要再降到 250 MB，唯一的办法是\“惰性元数据模式\”：只枚举名字（`F_NamesOnly` 已经实现，
+1M 项 0.6 s），表格里的大小/时间列只对可见行按需 `stat`。代价：
+
+- 表格里不再\“立刻\”看到大小/修改时间/创建时间（要滚动到才取）；
+- 按大小或时间排序需要先做一次全量 stat（2.2 s）。
+
+这是产品取舍，不是纯工程优化——代码里没有默认开启。地基（names-only 枚举）已经就位并有测试覆盖，
+要接成可用的可选模式还需要：视图占位符、可见行取属性的调度与缓存、排序列的全量回补。
+
+### 20.3 全部相关提交（evil 分支，均未推送）
+
+```
+f76eab139 第一轮：Brief 宽度测量封顶 / 显示名限流 / 1MB 枚举缓冲 / 表格批量更新
+e95e70c75 PrepareLoad：模型准备移出主线程
+82f0898df 惰性 CFString + ASCII 快排 + 并行 raw 排序
+9b2e5b249 首屏预览（F_NamesOnly 的前身：FetchDirectoryListingPreview）
+835440888 补丁容器预分配
+19f7ae8b1 Brief 布局属性按需（-290 MB footprint）
+8b8326392 FSEvents 路径级增量刷新
+5f2268d6e 变更合并（防抖）
+252540ce6 属性存在性快速检查 + 图标表清理节流
+7863b4ea2 PrepareReload：全量刷新也移出主线程
+3cb8fafc4 补丁式重建走 VFS 内部批量拷贝（变动 5.1s → 43ms）
+c0855bc7f 枚举 vector 直接移交
+a1b6ea6d8 内存基线修正
+150367eaa 时间列 32 位（-24.6 MB）
+aeacf91b4 listing 内存账本（mem=92.9MB）
+7a254cff8 软过滤索引空即恒等（-4 MB）
+544e5788b 名字-only 枚举（F_NamesOnly）
+```
+
