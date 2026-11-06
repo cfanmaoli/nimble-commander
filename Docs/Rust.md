@@ -62,3 +62,52 @@ it against the existing C++ walker (the filters and the callback contract are th
   same two build settings and the script phase.
 - `panic = "abort"` is *not* used: the `catch_unwind` guards require the unwinding runtime to stay
   in the picture.
+
+## The `RustFileSearch` adapter (app layer)
+
+`Source/NimbleCommander/NimbleCommander/Core/RustFileSearch.{h,mm}` wraps `nc_core_search_native`
+and mirrors the parts of `nc::vfs::SearchForFiles` the search UI uses (name/size filters,
+files-vs-dirs, recursion, a per-hit callback, a finish callback, cancellation). It lives in the app
+layer on purpose: the VFS library is used by many targets and should not grow a link-time dependency
+on the Rust archive; `SearchForFiles` stays the implementation for archives, network hosts, content
+filters and regular expressions.
+
+Two findings from writing it:
+
+1. **The callbacks arrive from many threads.** The Rust walker has N workers, so the C ABI callback
+   fires from all of them at once. Passing those straight through corrupts any ordinary
+   `std::vector` in the receiver (the first differential test aborted with SIGABRT in a worker
+   thread for exactly this reason). The adapter serialises them with a mutex, which restores the
+   contract `SearchForFiles` gives its callers.
+2. **The C ABI speaks paths relative to the root**, while the C++ callers work with the absolute
+   directory plus the file name - the adapter stitches those back together.
+
+## Differential test and benchmark
+
+`NimbleCommanderUT` now contains `RustFileSearch_UT.mm`:
+
+- `finds the same files as the C++ search` runs both implementations over a temporary tree for the
+  masks \`\` (everything), `*.txt`, `*.md` and `f*`, and compares the hit sets;
+- `respects the size filter`, `rejects masks it cannot handle` (`*.txt,*.md`, non-ASCII) and
+  `cancellation stops the walk` cover the rest of the adapter's contract;
+- `benchmark against the C++ walker` prints a comparable pair of numbers (and asserts that both
+  find the same 5000 files).
+
+Measured in that benchmark (5000 files in 20 directories, Debug build of the test bundle):
+
+```
+[perf] rust_search cpp=300728us rust=14319us ratio=21.00
+```
+
+i.e. the Rust walker is **~21x** faster than the C++ VFS walker for this workload. The C++ side
+walks through the VFS abstraction with per-entry virtual calls and a serial queue; the Rust side
+uses `read_dir` directly with N workers. Part of the gap is the abstraction, not the language - the
+honest framing is "a specialised native fast path" rather than "Rust is 21x faster".
+
+## Not done yet
+
+- The search UI (`FindFilesSheetController`) still always uses `SearchForFiles`. Wiring it to
+  `RustFileSearch` for native hosts (with a config switch and a fallback for everything else) is the
+  next step, and is the point where the user-visible speedup appears.
+- The MAS/NonMAS targets still need the two build settings and the script phase.
+
