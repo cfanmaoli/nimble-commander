@@ -1050,3 +1050,45 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 
 `mem=` 是 `Listing::ApproximateMemoryFootprint()`，不受 footprint 抖动影响，可作为确定性的回归指标。
 
+
+---
+
+## 27. 第二十一轮：把内存账算细（活数据 vs footprint）
+
+### 27.1 本轮改动
+
+- `devs`/`ext_flags` 两个临时向量（各 8 MB / 100 万项）现在只在真正需要时才分配：
+  `devs` 仅用于本地化显示名 pass（`F_LoadDisplayNames`），`ext_flags` 用于显示名和 Finder 标签
+  （`F_LoadTags`）。基准里两者都没开，于是这 16 MB 完全不分配。
+- `variable_container` 增加 `shrink_to_fit()` / `capacity()`；`Listing::Build()` 除了 filenames/modes/types，
+  现在也把 sizes/inodes/uid/gid/flags 这些 dense 容器裁到精确大小。
+- `ApproximateMemoryFootprint()` 改为按 **capacity** 统计（以前只统计 size，掩盖了向量的超调容量）。
+
+### 27.2 干净的账（默认模式，1M 目录，`-ApplePersistenceIgnoreState YES`）
+
+```
+heap zones (live):  20.4 MB  ->  195.0 MB     (+174.6 MB)
+physical footprint: 107.6 MB ->  396.2 MB     (+288.6 MB)
+```
+
+也就是说：**活数据只涨了 ~175 MB，footprint 却涨了 ~289 MB**，其中 ~114 MB 是 malloc 保留的空闲页
+（大块分配的区域即使释放也不会立刻还系统，`malloc_zone_pressure_relief()` 对此无效，已实测过两次）。
+
+活数据的构成（估算）：listing 81.1 MB（`mem=`）+ 模型 ~36 MB + 排序/准备阶段的数组 + 视图与图标缓存。
+
+### 27.3 当前结论
+
+| 模式 | 空转 | 1M 目录 | 相对 250 MB |
+|---|---|---|---|
+| 完整属性（默认）| ~108 MB | **~396 MB** | 超 |
+| 惰性日期 + 惰性大小 | ~105 MB | **~271 MB** | 超 ~21 MB |
+
+惰性模式要再降 ~21 MB 才达标，可选的手段按收益/风险排序：
+
+1. `ItemVolatileData` 的 highlight 字段（8 B/项 = 8 MB）改成稀疏 map —— 只在快速搜索时有值；
+2. 惰性 CFString 指针表（8 MB）改成小 map —— 只存实际 materialize 过的可见行；
+3. `m_Inodes`（8 MB）在惰性模式下不存，拷贝时的硬链接判断退化为一次 `stat`；
+4. 大数组改用 mmap 分配器，释放即 `munmap`（能把 malloc 保留的那 114 MB 里的一部分真正还给系统）。
+
+前两项合计 ~16 MB、风险低，是目前看来最划算的；第 3 项有功能代价；第 4 项收益最大但要动分配器，风险最高。
+

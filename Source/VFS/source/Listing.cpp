@@ -191,6 +191,12 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_UnixTypes = std::move(_input.unix_types);
     trim(l->m_UnixModes);
     trim(l->m_UnixTypes);
+    // the attribute containers are grown by the same geometric vector growth
+    l->m_Sizes.shrink_to_fit();
+    l->m_Inodes.shrink_to_fit();
+    l->m_UIDS.shrink_to_fit();
+    l->m_GIDS.shrink_to_fit();
+    l->m_UnixFlags.shrink_to_fit();
     l->m_UIDS = std::move(_input.uids);
     l->m_GIDS = std::move(_input.gids);
     l->m_UnixFlags = std::move(_input.unix_flags);
@@ -957,7 +963,8 @@ size_t Listing::ApproximateMemoryFootprint() const noexcept
     const auto container_bytes = [](const auto &_c, const size_t _element_size) -> size_t {
         switch( _c.mode() ) {
             case variable_container<>::type::dense:
-                return _c.dense_values().size() * _element_size;
+                // the capacity is what actually sits in memory
+                return std::max(_c.dense_values().size(), _c.capacity()) * _element_size;
             case variable_container<>::type::sparse:
                 return _c.size() * (_element_size + 32); // a rough per-node overhead of the map
             case variable_container<>::type::common:

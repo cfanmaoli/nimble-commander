@@ -198,6 +198,10 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     listing_source.symlinks.reset(variable_container<>::type::sparse);
     listing_source.display_filenames.reset(variable_container<>::type::sparse);
 
+    // Both of these are only needed by the optional passes below - a million entries would
+    // otherwise cost 8MB each just to be thrown away.
+    const bool want_display_names = (_flags & VFSFlags::F_LoadDisplayNames) != 0;
+    const bool want_ext_flags = want_display_names || ((_flags & VFSFlags::F_LoadTags) != 0);
     std::vector<uint64_t> ext_flags; // store EF_xxx here
     std::vector<dev_t> devs;         // store st_dev here, used by the display names pass
     constexpr size_t initial_prealloc_size = 64;
@@ -216,8 +220,10 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         listing_source.gids.resize(_sz);
         if( (_flags & VFSFlags::F_NoSizes) == 0 )
             listing_source.sizes.resize(_sz);
-        ext_flags.resize(_sz);
-        devs.resize(_sz);
+        if( want_ext_flags )
+            ext_flags.resize(_sz);
+        if( want_display_names )
+            devs.resize(_sz);
         allocated_size = _sz;
     };
 
@@ -246,8 +252,10 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         if( !no_sizes )
             listing_source.sizes[_n] = _params.size;
 
-        ext_flags[_n] = _params.ext_flags;
-        devs[_n] = _params.dev;
+        if( want_ext_flags )
+            ext_flags[_n] = _params.ext_flags;
+        if( want_display_names )
+            devs[_n] = _params.dev;
     };
 
     size_t next_entry_index = 0;
@@ -364,7 +372,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         // Tags are stored in xattrs and if we know in advance that there are no xattrs in this entry - there's no
         // point trying. Unfortunately, some filesystems (like SMB) don't report EF_NO_XATTRS, so this algorithm
         // has to check every single item...
-        if( tags_reading_enabled && !(ext_flags[n] & EF_NO_XATTRS) ) {
+        if( tags_reading_enabled && (ext_flags.empty() || !(ext_flags[n] & EF_NO_XATTRS)) ) {
             // TODO: is it worth routing the I/O here? guess not atm
             const int entry_fd = openat(fd, filename.c_str(), O_RDONLY | O_NONBLOCK);
             if( entry_fd >= 0 ) {

@@ -88,6 +88,13 @@ public:
     // Can be used only with Dense mode, ignored otherwise.
     void resize(size_t _new_size);
 
+    // Releases the unused capacity of the underlying storage.
+    // Can be used only with Dense mode, ignored otherwise.
+    void shrink_to_fit();
+
+    // Returns the capacity of the underlying storage for the dense mode, 0 otherwise.
+    [[nodiscard]] size_t capacity() const noexcept;
+
     // Inserts the value into the container at the specified index.
     // If mode is Dense and _at is above the current size the container will resize accordingly.
     // If mode is Common the _at index will be ignored and the common value will be set with _value.
@@ -303,6 +310,19 @@ void variable_container<T>::resize(size_t _new_size)
 {
     if( mode() == type::dense )
         Dense().resize(_new_size);
+}
+
+template <class T>
+void variable_container<T>::shrink_to_fit()
+{
+    if( mode() == type::dense )
+        Dense().shrink_to_fit();
+}
+
+template <class T>
+size_t variable_container<T>::capacity() const noexcept
+{
+    return mode() == type::dense ? Dense().capacity() : 0;
 }
 
 template <class T>
