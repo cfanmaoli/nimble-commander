@@ -1122,9 +1122,27 @@ void Model::BuildSoftFilteringIndeces()
         }
     }
     else {
-        m_EntriesBySoftFiltering.resize(m_EntriesByCustomSort.size());
-        std::ranges::iota(m_EntriesBySoftFiltering, 0);
+        // An empty array means "identity": every sorted entry is visible in its own position.
+        // Not materialising the whole iota saves 4MB on a million-entry listing.
+        m_EntriesBySoftFiltering.clear();
+        m_EntriesBySoftFiltering.shrink_to_fit();
     }
+}
+
+int Model::SoftFilteredCount() const noexcept
+{
+    if( !m_SoftFiltering.IsFiltering() )
+        return SortedEntriesCount();
+    return static_cast<int>(m_EntriesBySoftFiltering.size());
+}
+
+int Model::SortIndexForSoftFiltered(int _pos) const noexcept
+{
+    if( !m_SoftFiltering.IsFiltering() )
+        return _pos;
+    if( _pos < 0 || static_cast<size_t>(_pos) >= m_EntriesBySoftFiltering.size() )
+        return -1;
+    return static_cast<int>(m_EntriesBySoftFiltering[_pos]);
 }
 
 ExternalEntryKey Model::EntrySortKeysAtSortPosition(int _pos) const

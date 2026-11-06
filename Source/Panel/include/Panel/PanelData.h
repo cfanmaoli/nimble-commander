@@ -165,9 +165,17 @@ public:
     [[nodiscard]] const std::vector<unsigned> &SortedDirectoryEntries() const noexcept;
 
     /**
-     * EntriesBySoftFiltering return a vector of filtered indeces of sorted entries (not raw ones)
+     * EntriesBySoftFiltering return a vector of filtered indeces of sorted entries (not raw ones).
+     * It's empty when no soft filtering is active - in that case the soft-filtered positions map to
+     * the sorted ones one-to-one, see SortIndexForSoftFiltered().
      */
     [[nodiscard]] const std::vector<unsigned> &EntriesBySoftFiltering() const noexcept;
+
+    // The number of entries visible after the soft filtering.
+    [[nodiscard]] int SoftFilteredCount() const noexcept;
+
+    // Maps a soft-filtered position to the corresponding sorted position.
+    [[nodiscard]] int SortIndexForSoftFiltered(int _pos) const noexcept;
 
     // will return an "empty" item upon invalid index
     [[nodiscard]] VFSListingItem EntryAtRawPosition(int _pos) const noexcept;
