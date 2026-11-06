@@ -47,9 +47,7 @@ void FixedNumberLayoutEngine::PerformNormalLayout()
 
     m_ColumnsPositions.resize(m_ColumnsNumber);
     m_ColumnsWidths.resize(m_ColumnsNumber);
-    m_Attributes.resize(m_ItemsNumber);
 
-    const auto items_number = m_ItemsNumber;
     const auto item_height = m_ItemHeight;
     const auto columns_number = m_ColumnsNumber;
     const auto columns_per_screen = m_ColumnsPerScreen;
@@ -61,18 +59,6 @@ void FixedNumberLayoutEngine::PerformNormalLayout()
     for( int column_index = 0; column_index < columns_number; ++column_index ) {
         const auto index_in_chunk = column_index % columns_per_screen;
         const auto column_width = base_width + (index_in_chunk < screen_remainder ? 1 : 0);
-
-        for( int row_index = 0; row_index < rows_number; ++row_index ) {
-            const auto index = (column_index * rows_number) + row_index;
-            if( index == items_number )
-                break;
-
-            const auto origin = NSMakePoint(current_column_position, row_index * item_height);
-            const auto index_path = [NSIndexPath indexPathForItem:index inSection:0];
-            const auto attributes = [NSCollectionViewLayoutAttributes layoutAttributesForItemWithIndexPath:index_path];
-            attributes.frame = NSMakeRect(origin.x, origin.y, column_width, item_height);
-            m_Attributes[index] = attributes;
-        }
 
         m_ColumnsPositions[column_index] = current_column_position;
         m_ColumnsWidths[column_index] = column_width;
@@ -86,17 +72,6 @@ void FixedNumberLayoutEngine::PerformSingularLayout()
     assert(m_RowsNumber == 0);
     m_ColumnsPositions.resize(m_ColumnsNumber);
     m_ColumnsWidths.resize(m_ColumnsNumber);
-    m_Attributes.resize(m_ItemsNumber);
-
-    const auto items_number = m_ItemsNumber;
-    const auto frame = NSMakeRect(0.0, 0.0, m_BaseColumnWidth, m_ItemHeight);
-
-    for( int index = 0; index < items_number; ++index ) {
-        const auto index_path = [NSIndexPath indexPathForItem:index inSection:0];
-        const auto attributes = [NSCollectionViewLayoutAttributes layoutAttributesForItemWithIndexPath:index_path];
-        attributes.frame = frame;
-        m_Attributes[index] = attributes;
-    }
 
     std::ranges::fill(m_ColumnsPositions, 0);
     std::ranges::fill(m_ColumnsWidths, m_BaseColumnWidth);

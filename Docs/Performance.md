@@ -509,3 +509,41 @@ FSEvents 的回调可能一秒内来几十次（解压、批量拷贝）。回�
 注意：预览期间面板里是完整的 4096 条真实条目，不是占位符——对它们做复制/删除等操作是安全的；
 完整列表到达时会整体替换（行数变化走 `noteNumberOfRowsChanged`）。
 
+
+---
+
+## 12. 第七轮：Brief 布局不再为每个条目建布局属性（阶段 D 的内存部分）
+
+用 `heap` 看一个 100 万项目录的 Brief 视图（默认布局）时发现了真正的内存大户：
+
+```
+ 1000580  256148480  256.0   NSCollectionViewLayoutAttributes   ObjC  AppKit
+  991811   31737952   32.0   NSIndexPath                        ObjC  Foundation
+  991811   15868976   16.0   NSIndexPath._indexes (uint64_t[])   C     Foundation
+```
+
+三个 Brief 布局引擎（FixedWidth / FixedNumber / DynamicWidth）都在 `Layout()` 里为**每一个条目**
+预先创建 `NSCollectionViewLayoutAttributes` 和 `NSIndexPath`，100 万项就是 256 MB + 48 MB，
+而且每次重新布局都要重建一遍。
+
+实际上这些属性完全可以从网格参数推导出来：`m_ColumnsPositions[]` / `m_ColumnsWidths[]` /
+`m_RowsNumber` / `m_ItemHeight` 加起来只有几 KB。改动：
+
+- `LayoutEngineBase` 去掉 `m_Attributes`，`AttributesForItemNumber()` 改为按需计算
+  （列 = index / 行数，行 = index % 行数，frame 由两个数组给出）；
+- `LogarithmicSearchForItemsInRect()` 只对可见范围内的条目创建属性；
+- 三个引擎的 `Layout()` 只填列位置/宽度，不再碰条目级的属性对象。
+
+实测（1M 目录，Brief 布局，同一脚本 A/B）：
+
+| 指标 | 改前 | 改后 |
+|---|---|---|
+| Physical footprint | 649.6 MB | **359.1 MB** |
+| 首次载入 UI 阶段 | ~130 ms | **~35 ms** |
+| 单次目录变动的视图更新 | 133 ms | **17 ms** |
+| 单次目录变动合计 | ~305 ms | **~132 ms** |
+
+顺带说明：应用本身（只开两个 `/tmp` 面板、空目录）的 footprint 就有 ~340 MB（Swift 运行时 +
+AppKit + 各种框架），所以"绝对 250 MB"这个目标对整机 RSS 而言不可达；有意义的是**列表本身的开销**，
+本轮把它从 ~310 MB 降到了 ~20–60 MB（Brief 布局）。
+
