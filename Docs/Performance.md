@@ -1129,3 +1129,36 @@ physical footprint: 107.6 MB ->  396.2 MB     (+288.6 MB)
 
 两者都要改 VFS 的枚举与存储层，属于多轮工作；在没确认值得之前不建议贸然动。
 
+
+---
+
+## 29. 第二十三轮：把压测脚本收进仓库 + 活内存的进一步拆解
+
+### 29.1 `Scripts/perf/`
+
+之前的基准脚本散在仓库外的一个临时目录里，无法复现。现在收进仓库：
+
+- `Scripts/perf/gen.c` —— 生成 N 个小文件的测试目录；
+- `Scripts/perf/open_benchmark.sh` —— 首屏/载入耗时 + 载入前后的 footprint；
+- `Scripts/perf/change_benchmark.sh` —— 单次目录变动的响应；
+- `Scripts/perf/README.md` —— `NC_PERF_LOG` 各行含义、以及三条踩坑记录：
+  1. 必须用 `-ApplePersistenceIgnoreState YES` 启动，否则 AppKit 会恢复上次的 1M 目录，基线被污染；
+  2. footprint 由分配器保留的空闲页主导，稳态数据变小它不会动 —— 回归看 `mem=`，活内存看 `heap`；
+  3. 在应用退出过程中 `open -a` 会留下排队事件，下一次启动会被投递。
+
+冒烟测试（1M 目录）：`baseline 100.1M -> loaded 394.3M`，`preview ready=16.7ms`、`enum=2716ms`，
+与手工测量一致。
+
+### 29.2 惰性模式的活内存拆解
+
+```
+heap All zones: 142.9 MB  （空转 20.4 MB）
+  其中 non-object（裸 malloc 块）116.9 MB
+  我们自己的账：listing 54.4 + 模型 ~28 + 其他 ~85 MB 合计只能解释约 85 MB
+  最大的几块：30.2 MB、23.4 MB（filenames）、15.1 MB、7.8 MB×2、7.6 MB（inodes）…
+```
+
+也就是说还有一块 **~30 MB 的裸分配没有对上账**。下一步要在分配点埋点（或接 `malloc_history`）
+把这块定位出来——如果它是可避免的临时/重复容器，footprint 还有机会再降 ~30 MB，那才是真正能把
+惰性模式推近 250 MB 的路径。
+
