@@ -94,6 +94,11 @@
              */
             "flatViewMaxItems": 1000000,
             "flatViewMaxDirectories": 2000000,
+
+            /**
+             * How many directories the flat view enumerates in parallel. 0 = automatic.
+             */
+            "flatScanThreads": 0,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

@@ -31,6 +31,7 @@
 #include <NimbleCommander/Core/Alert.h>
 #include <chrono>
 #include <cstdio>
+#include <thread>
 #include <ankerl/unordered_dense.h>
 #include "Actions/Enter.h"
 #include <Operations/Copying.h>
@@ -143,6 +144,10 @@ MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxDirectories,
                                     "filePanel.general.flatViewMaxDirectories",
                                     2'000'000);
 
+// How many directories the flat scan enumerates in parallel. 0 (the default) means "pick
+// something sensible for the machine".
+MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatScanThreads, "filePanel.general.flatScanThreads", 0);
+
 static void HeatUpConfigValues()
 {
     ConfigShowDotDotEntry();
@@ -176,6 +181,11 @@ struct FlatListingResult {
     size_t scanned_items = 0;
     size_t scanned_directories = 0;
     bool truncated = false;
+    // where the time went, in milliseconds
+    long long scan_ms = 0;
+    long long compose_ms = 0;
+    long long fetch_ms = 0; // the parallel enumeration phase
+    long long fold_ms = 0;  // the sequential pass that builds the sub-listings
 };
 
 FlatListingResult BuildFlatListing(const VFSHostPtr &_host,
@@ -183,72 +193,143 @@ FlatListingResult BuildFlatListing(const VFSHostPtr &_host,
                                    unsigned long _fetch_flags,
                                    const VFSCancelChecker &_cancel_checker,
                                    const size_t _max_items,
-                                   const size_t _max_directories)
+                                   const size_t _max_directories,
+                                   const size_t _threads)
 {
     FlatListingResult result;
     const size_t max_directories = _max_directories;
     const size_t max_items = _max_items;
 
+    const auto flat_begin = std::chrono::steady_clock::now();
     try {
         std::vector<VFSListingPtr> listings;
         std::vector<std::vector<unsigned>> indices;
-        std::vector<std::string> directories;
-        directories.emplace_back(_root);
-
         size_t total_items = 0;
-        for( size_t index = 0; index != directories.size() && listings.size() < max_directories; ++index ) {
+
+        // The scan is level-synchronous: every directory of the current level is fetched in
+        // parallel (that's where the time goes - 200k directories on a big tree, one syscall
+        // stream each), and the entries are then folded in sequentially so that the budget
+        // accounting and the resulting listing stay deterministic.
+        std::vector<std::string> frontier;
+        frontier.emplace_back(_root);
+        size_t directories_seen = 1;
+
+        // The flat view never shows "." or "..", so don't ask the host to fetch the dot-dot
+        // entry - for a directory tree of a few hundred thousand directories that is one extra
+        // per-entry attribute pass each.
+        const unsigned long scan_flags = _fetch_flags | VFSFlags::F_NoDotDot;
+
+        const size_t threads = std::max<size_t>(1, _threads);
+        bool truncated = false;
+
+        while( !frontier.empty() && !truncated ) {
             if( _cancel_checker && _cancel_checker() )
                 return {}; // cancelled - the caller discards the result anyway
 
-            const std::string &directory = directories[index];
-            std::expected<VFSListingPtr, Error> fetched =
-                _host->FetchDirectoryListing(directory, _fetch_flags, _cancel_checker);
-            if( !fetched )
-                continue;
+            const auto fetch_begin = std::chrono::steady_clock::now();
+            std::vector<VFSListingPtr> fetched(frontier.size());
+            if( threads == 1 || frontier.size() == 1 ) {
+                for( size_t i = 0; i != frontier.size(); ++i ) {
+                    if( _cancel_checker && _cancel_checker() )
+                        return {};
+                    if( auto listing = _host->FetchDirectoryListing(frontier[i], scan_flags, _cancel_checker) )
+                        fetched[i] = *listing;
+                }
+            }
+            else {
+                std::atomic<size_t> next{0};
+                std::atomic<bool> cancelled{false};
+                const auto worker = [&] {
+                    for( size_t i = next.fetch_add(1); i < frontier.size(); i = next.fetch_add(1) ) {
+                        if( cancelled.load(std::memory_order_relaxed) )
+                            return;
+                        if( _cancel_checker && _cancel_checker() ) {
+                            cancelled.store(true, std::memory_order_relaxed);
+                            return;
+                        }
+                        if( auto listing = _host->FetchDirectoryListing(frontier[i], scan_flags, _cancel_checker) )
+                            fetched[i] = *listing;
+                    }
+                };
+                std::vector<std::thread> pool;
+                pool.reserve(std::min(threads, frontier.size()));
+                for( size_t t = 0; t != std::min(threads, frontier.size()); ++t )
+                    pool.emplace_back(worker);
+                for( auto &t : pool )
+                    t.join();
+                if( cancelled.load(std::memory_order_relaxed) )
+                    return {};
+            }
 
-            const VFSListingPtr &listing = *fetched;
-            std::vector<unsigned> wanted;
-            for( unsigned item_index = 0, items = listing->Count(); item_index != items; ++item_index ) {
-                const VFSListingItem item{listing, item_index};
-                const std::string &filename = item.Filename();
-                // '.' and '..' have no place in a flat view - the latter would also make the
-                // traversal walk towards the filesystem root endlessly.
-                if( filename == "." || filename == ".." )
+            result.fetch_ms +=
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fetch_begin)
+                    .count();
+            const auto fold_begin = std::chrono::steady_clock::now();
+            std::vector<std::string> next_frontier;
+            for( size_t i = 0; i != frontier.size(); ++i ) {
+                const VFSListingPtr &listing = fetched[i];
+                if( !listing )
                     continue;
-                wanted.emplace_back(item_index);
-                if( item.IsDir() && !item.IsSymlink() )
-                    directories.emplace_back(item.Directory() + filename + "/");
+
+                std::vector<unsigned> wanted;
+                for( unsigned item_index = 0, items = listing->Count(); item_index != items; ++item_index ) {
+                    const VFSListingItem item{listing, item_index};
+                    const std::string &filename = item.Filename();
+                    // '.' and '..' have no place in a flat view - the latter would also make the
+                    // traversal walk towards the filesystem root endlessly.
+                    if( filename == "." || filename == ".." )
+                        continue;
+                    wanted.emplace_back(item_index);
+                    if( item.IsDir() && !item.IsSymlink() ) {
+                        next_frontier.emplace_back(item.Directory() + filename + "/");
+                        ++directories_seen;
+                    }
+                }
+
+                // An empty directory (or one with nothing but the dot entries) is perfectly
+                // normal - skip it and keep walking. Stopping here would silently cut the
+                // traversal short at the first empty subdirectory of the tree.
+                if( wanted.empty() )
+                    continue;
+
+                // take as many entries as the budget allows - dropping the *whole* directory
+                // just because it alone is bigger than the limit would leave the user with an
+                // empty panel
+                size_t take = wanted.size();
+                if( total_items + take > max_items ) {
+                    take = max_items > total_items ? max_items - total_items : 0;
+                    truncated = true;
+                }
+                if( take == 0 )
+                    break; // the budget is gone
+                total_items += take;
+                wanted.resize(take);
+                listings.emplace_back(listing);
+                indices.emplace_back(std::move(wanted));
             }
 
-            // An empty directory (or one with nothing but the dot entries) is perfectly normal -
-            // skip it and keep walking. Stopping here would silently cut the traversal short at
-            // the first empty subdirectory of the tree.
-            if( wanted.empty() )
-                continue;
-
-            // take as many entries as the budget allows - dropping the *whole* directory just
-            // because it alone is bigger than the limit would leave the user with an empty panel
-            size_t take = wanted.size();
-            if( total_items + take > max_items ) {
-                take = max_items > total_items ? max_items - total_items : 0;
-                result.truncated = true;
+            result.fold_ms +=
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fold_begin)
+                    .count();
+            if( listings.size() >= max_directories ) {
+                truncated = true;
+                break;
             }
-            if( take == 0 )
-                break; // the budget is gone
-            total_items += take;
-            wanted.resize(take);
-            listings.emplace_back(listing);
-            indices.emplace_back(std::move(wanted));
+            frontier = std::move(next_frontier);
         }
 
         result.scanned_items = total_items;
-        result.scanned_directories = directories.size();
-        if( directories.size() > max_directories && listings.size() >= max_directories )
-            result.truncated = true;
+        result.scanned_directories = directories_seen;
+        result.truncated = truncated;
 
         if( listings.empty() )
             return result; // nothing underneath - keep the regular directory listing
+        const auto compose_begin = std::chrono::steady_clock::now();
         result.listing = VFSListing::Build(VFSListing::Compose(listings, indices));
+        result.scan_ms = std::chrono::duration_cast<std::chrono::milliseconds>(compose_begin - flat_begin).count();
+        result.compose_ms =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - compose_begin)
+                .count();
         return result;
     } catch( ... ) {
         return result;
@@ -1897,23 +1978,41 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     const size_t max_items = static_cast<size_t>(ConfigFlatViewMaxItems());
     const size_t max_directories = static_cast<size_t>(ConfigFlatViewMaxDirectories());
+    const size_t threads = [&]() -> size_t {
+        const long configured = ConfigFlatScanThreads();
+        if( configured > 0 )
+            return std::min<size_t>(static_cast<size_t>(configured), 32);
+        return std::min<size_t>(std::max(1u, std::thread::hardware_concurrency()), 8);
+    }();
     __weak PanelController *weak_self = self;
-    [self commitCancelableLoadingTask:[host, root, generation, fetch_flags, max_items, max_directories, weak_self](
-                                          const std::function<bool()> &_is_cancelled) {
+    [self commitCancelableLoadingTask:[host,
+                                       root,
+                                       generation,
+                                       fetch_flags,
+                                       max_items,
+                                       max_directories,
+                                       threads,
+                                       weak_self](const std::function<bool()> &_is_cancelled) {
         const auto flat_begin = std::chrono::steady_clock::now();
         const FlatListingResult result =
-            BuildFlatListing(host, root, fetch_flags, _is_cancelled, max_items, max_directories);
+            BuildFlatListing(host, root, fetch_flags, _is_cancelled, max_items, max_directories, threads);
         if( std::getenv("NC_PERF_LOG") != nullptr ) {
             using namespace std::chrono;
             const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
             std::fprintf(stderr,
-                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d took=%lldms\n",
+                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d took=%lldms "
+                         "scan=%lldms compose=%lldms fetch=%lldms fold=%lldms threads=%zu\n",
                          root.c_str(),
                          result.scanned_items,
                          result.scanned_directories,
                          result.truncated ? 1 : 0,
                          result.listing ? 1 : 0,
-                         static_cast<long long>(ms));
+                         static_cast<long long>(ms),
+                         result.scan_ms,
+                         result.compose_ms,
+                         result.fetch_ms,
+                         result.fold_ms,
+                         threads);
         }
         if( !result.listing )
             return; // cancelled, or nothing could be fetched at all

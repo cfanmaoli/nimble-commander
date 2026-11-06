@@ -285,11 +285,18 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
     // for directories with hundreds of thousands of entries (2809 calls for 1M items with 64 KiB
     // vs 176 calls with 1 MiB, measured ~5% faster end-to-end).
     constexpr size_t attr_buf_size = 1024 * 1024;
-    const std::unique_ptr<char[]> attr_buf = std::make_unique<char[]>(attr_buf_size);
+    // A per-thread scratch buffer: the flat view enumerates hundreds of thousands of small
+    // directories, and allocating (and zeroing) a megabyte for each of them dominated the scan.
+    // It is deliberately never freed - one buffer per worker thread for the lifetime of the
+    // process, and a thread-local pointer keeps the exit-time destructor out of the picture.
+    thread_local char *tls_attr_buf = nullptr;
+    if( tls_attr_buf == nullptr )
+        tls_attr_buf = new char[attr_buf_size];
+    char *const attr_buf = tls_attr_buf;
     size_t processed_entries = 0;
     CallbackParams params;
     while( true ) {
-        const int retcount = getattrlistbulk(_dir_fd, &attr_list, &attr_buf[0], attr_buf_size, options);
+        const int retcount = getattrlistbulk(_dir_fd, &attr_list, attr_buf, attr_buf_size, options);
         if( retcount < 0 )
             return errno;
 
@@ -298,7 +305,7 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
 
         _cb_fetch(retcount);
 
-        const char *entry_start = &attr_buf[0];
+        const char *entry_start = attr_buf;
         for( int index = 0; index < retcount; index++ ) {
             if( _max_entries != 0 && processed_entries >= _max_entries )
                 return 0;

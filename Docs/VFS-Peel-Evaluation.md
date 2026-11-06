@@ -135,3 +135,33 @@ scripts/perf/open_benchmark.sh <dir>     # 列表路径
 # 平铺扫描：Config.json 里把 flatViewMaxItems 调大后开平铺，看
 #   [perf] flat root=... items=... took=...ms
 ```
+
+## 6. 后续：把平铺扫描并行化之后（实测更新）
+
+按 §5 的建议先做了“不换语言、先并行”的版本，结果值得记录，因为它修正了 §2.3 的推断。
+
+改动内容：
+
+1. `BuildFlatListing` 改成按层同步的并行 BFS：每层里的目录用 N 个线程并行取（`flatScanThreads`，
+   默认 0 = 机器决定，封顶 8；可显式设到 32），条目回填仍然串行，保证预算记账与结果确定性；
+2. 平铺扫描请求 `F_NoDotDot`——平铺本来就不显示 `..`，但以前每个目录都多付一次 dot-dot 的属性遍历；
+3. `Fetching::ReadDirAttributesBulk` 的 1 MiB 枚举缓冲改成 thread_local 复用；以前 20 万个目录
+   就要分配/清零 20 万次 1 MiB，这一项在单线程下就值 2.6 s。
+
+实测（1,637,743 条目 / 203,839 目录，同一台机器）：
+
+```
+1 线程： took=12045ms scan=10976ms compose=1046ms fetch=10916ms fold=15ms
+8 线程： took=9655ms  scan=8598ms  compose=1033ms fetch=8535ms  fold=14ms
+```
+
+- 相比改动前的 14.5 s，单线程 12.0 s（-17%，来自缓冲复用与 dot-dot），8 线程 9.7 s（-33%）；
+- 并行只带来 1.25 倍，不是预期的 3–5 倍。原因从采样能看清：热点仍然在
+  `FetchDirectoryListingImpl` → `ListingInput` → `Listing::Build`，也就是每个目录都在构造一个
+  完整的 VFSListing（203,839 个），这部分是 CPU 与分配器的工作，而且每层还要 join/重新起线程；
+- `fold`（串行回填）只有 15 ms，`compose`（最后合成大 listing）约 1.05 s，都不是瓶颈。
+
+结论修正：平铺的瓶颈不是“目录枚举不并行”，而是“每个目录都构造一个中间 listing”。要真正把 9.7 s
+降到 2–3 s，需要一次列式批量枚举（Rust 或 C++ 都行）：遍历时直接产出最终的 `ListingInput`，
+不构造中间 `VFSListing`。这正好是 §3 方案 C 的前置条件，也是下一步该做的事。
+
