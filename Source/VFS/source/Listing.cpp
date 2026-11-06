@@ -224,6 +224,9 @@ Listing::ProducePatchedListing(const Listing &_base,
     const auto is_dense_or_common = [](const auto &_c) {
         return _c.mode() == variable_container<>::type::dense || _c.mode() == variable_container<>::type::common;
     };
+    // An empty container simply means "the listing doesn't carry this attribute" (lazy dates) -
+    // that's patchable, the result just stays empty.
+    const auto is_patchable = [&](const auto &_c) { return _c.size() == 0 || is_dense_or_common(_c); };
 
     const auto bail = [](const char *_why) -> base::intrusive_ptr<const Listing> {
         if( std::getenv("NC_PERF_LOG") != nullptr )
@@ -239,11 +242,9 @@ Listing::ProducePatchedListing(const Listing &_base,
     if( _base.m_Hosts.mode() != variable_container<>::type::common ||
         _base.m_Directories.mode() != variable_container<>::type::common )
         return bail("not uniform");
-    if( !is_dense_or_common(_base.m_Sizes) || !is_dense_or_common(_base.m_Inodes) ||
-        !is_dense_or_common(_base.m_ATimes) || !is_dense_or_common(_base.m_MTimes) ||
-        !is_dense_or_common(_base.m_CTimes) || !is_dense_or_common(_base.m_BTimes) ||
-        !is_dense_or_common(_base.m_UIDS) || !is_dense_or_common(_base.m_GIDS) ||
-        !is_dense_or_common(_base.m_UnixFlags) )
+    if( !is_patchable(_base.m_Sizes) || !is_patchable(_base.m_Inodes) || !is_patchable(_base.m_ATimes) ||
+        !is_patchable(_base.m_MTimes) || !is_patchable(_base.m_CTimes) || !is_patchable(_base.m_BTimes) ||
+        !is_patchable(_base.m_UIDS) || !is_patchable(_base.m_GIDS) || !is_patchable(_base.m_UnixFlags) )
         return bail("sparse attributes");
 
     unsigned appended_count = 0;
@@ -351,14 +352,18 @@ Listing::ProducePatchedListing(const Listing &_base,
                 l->m_Sizes[appended_dst] = al.HasSize(i) ? al.Size(i) : uint64_t(-1);
             if( l->m_Inodes.mode() == variable_container<>::type::dense )
                 l->m_Inodes[appended_dst] = al.HasInode(i) ? al.Inode(i) : 0;
-            if( l->m_ATimes.mode() == variable_container<>::type::dense )
-                l->m_ATimes[appended_dst] = ToCompactTime(al.HasATime(i) ? al.ATime(i) : 0);
-            if( l->m_MTimes.mode() == variable_container<>::type::dense )
-                l->m_MTimes[appended_dst] = ToCompactTime(al.HasMTime(i) ? al.MTime(i) : 0);
-            if( l->m_CTimes.mode() == variable_container<>::type::dense )
-                l->m_CTimes[appended_dst] = ToCompactTime(al.HasCTime(i) ? al.CTime(i) : 0);
-            if( l->m_BTimes.mode() == variable_container<>::type::dense )
-                l->m_BTimes[appended_dst] = ToCompactTime(al.HasBTime(i) ? al.BTime(i) : 0);
+            // the times may be absent from the base listing (lazy dates) - then only the ones the
+            // appended entry actually carries are stored, sparsely
+            const auto put_time = [&](auto &_dst, const bool _has, const auto _value) {
+                if( _dst.mode() == variable_container<>::type::dense )
+                    _dst[appended_dst] = ToCompactTime(_has ? _value : 0);
+                else if( _has && _dst.mode() == variable_container<>::type::sparse )
+                    _dst.insert(appended_dst, ToCompactTime(_value));
+            };
+            put_time(l->m_ATimes, al.HasATime(i), al.ATime(i));
+            put_time(l->m_MTimes, al.HasMTime(i), al.MTime(i));
+            put_time(l->m_CTimes, al.HasCTime(i), al.CTime(i));
+            put_time(l->m_BTimes, al.HasBTime(i), al.BTime(i));
             if( l->m_UIDS.mode() == variable_container<>::type::dense )
                 l->m_UIDS[appended_dst] = al.HasUID(i) ? al.UID(i) : 0;
             if( l->m_GIDS.mode() == variable_container<>::type::dense )
@@ -366,9 +371,10 @@ Listing::ProducePatchedListing(const Listing &_base,
             if( l->m_UnixFlags.mode() == variable_container<>::type::dense )
                 l->m_UnixFlags[appended_dst] = al.HasUnixFlags(i) ? al.UnixFlags(i) : 0;
             if( al.HasAddTime(i) ) {
-                if( _base.m_AddTimes.size() == 0 )
-                    return bail("added time without a container");
-                l->m_AddTimes[appended_dst] = ToCompactTime(al.AddTime(i));
+                if( l->m_AddTimes.mode() == variable_container<>::type::dense )
+                    l->m_AddTimes[appended_dst] = ToCompactTime(al.AddTime(i));
+                else if( l->m_AddTimes.mode() == variable_container<>::type::sparse )
+                    l->m_AddTimes.insert(appended_dst, ToCompactTime(al.AddTime(i)));
             }
             ++appended_dst;
         }

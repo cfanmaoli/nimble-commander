@@ -142,6 +142,7 @@ static void HeatUpConfigValues()
                    appended:(unsigned)_appended;
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
 - (void)fetchLazyDatesForTopEntries;
+- (void)fetchLazyDatesForSortedRange:(NSRange)_range;
 @end
 
 namespace {
@@ -849,6 +850,11 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 
 - (void)fetchLazyDatesForTopEntries
 {
+    [self fetchLazyDatesForSortedRange:NSMakeRange(0, 200)];
+}
+
+- (void)fetchLazyDatesForSortedRange:(NSRange)_range
+{
     assert(dispatch_is_main_queue());
     if( !m_LazyDates )
         return;
@@ -856,13 +862,13 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     if( !listing || listing->Count() == 0 )
         return;
 
-    // The rows the user sees right away; the scroll-driven fetching is done separately.
-    constexpr int amount = 200;
     std::vector<unsigned> raw_indices;
     const int total = m_Data.SortedEntriesCount();
-    const int count = std::min(total, amount);
-    raw_indices.reserve(static_cast<size_t>(count));
-    for( int i = 0; i != count; ++i ) {
+    const int begin = static_cast<int>(std::min<NSUInteger>(_range.location, static_cast<NSUInteger>(total)));
+    const int end =
+        static_cast<int>(std::min<NSUInteger>(_range.location + _range.length, static_cast<NSUInteger>(total)));
+    raw_indices.reserve(static_cast<size_t>(std::max(0, end - begin)));
+    for( int i = begin; i < end; ++i ) {
         const int raw_index = m_Data.RawIndexForSortIndex(i);
         if( raw_index < 0 )
             continue;
@@ -1254,6 +1260,13 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 - (void)onCursorChanged
 {
     [self updateAttachedQuickLook];
+    if( m_LazyDates ) {
+        // the dates are fetched on demand - top up the area around the cursor, so that moving
+        // through the list with the keyboard or clicking does pull them in
+        const int cursor = m_View.curpos;
+        if( cursor >= 0 )
+            [self fetchLazyDatesForSortedRange:NSMakeRange(std::max(0, cursor - 20), 220)];
+    }
 }
 
 - (void)updateAttachedQuickLook
