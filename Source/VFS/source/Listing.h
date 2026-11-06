@@ -156,6 +156,12 @@ public:
 
     // Cheap whole-listing queries: true if at least one entry carries the corresponding attribute.
     // Useful to skip per-item checks when a listing simply doesn't have them.
+    /**
+     * A rough sum of the memory held by the listing's arrays and containers, excluding the
+     * materialised CFStrings. Useful for tracking the footprint of big listings in the benchmarks.
+     */
+    [[nodiscard]] size_t ApproximateMemoryFootprint() const noexcept;
+
     [[nodiscard]] bool HasAnyDisplayFilenames() const noexcept;
     [[nodiscard]] bool HasAnyAddTimes() const noexcept;
     [[nodiscard]] bool HasAnySymlinks() const noexcept;

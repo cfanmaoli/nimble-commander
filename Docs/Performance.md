@@ -673,3 +673,41 @@ listing 里五个时间列（atime/mtime/ctime/btime/add_time）原本是 `time_
 
 取整机 footprint 依旧受"启动时可能被投递 open 事件"的干扰影响，所以这里用 zone 总量做验收指标。
 
+
+---
+
+## 17. 第十二轮：给 listing 加一个确定性的内存账本
+
+footprint 在压测环境里不可比（启动时可能被投递 `open` 事件，基线里多或少一份 listing），所以给
+`Listing` 加了一个 `ApproximateMemoryFootprint()`：把各个数组/容器的实际占用加起来（不含惰性
+materialize 的 CFString），并打进 `NC_PERF_LOG` 的 build 行：
+
+```
+[perf] build n=1000002 mem=92.9MB validate=0.4ms compress=5.4ms move=1.5ms filenames=3.7ms total=11.0ms
+```
+
+**100 万项的 listing 本体现在是 92.9 MB**（时间列压缩前是 ~113 MB）。组成大致是：
+
+| 部分 | 大小 |
+|---|---|
+| filenames（`std::string` × 1M）| 24 MB |
+| CFString 指针表（惰性） | 8 MB |
+| 5 个时间列（32 位） | 20 MB |
+| sizes + inodes | 16 MB |
+| uid/gid/unix_flags | 12 MB |
+| 扩展名偏移 + mode + type | 5 MB |
+| 其余（标题、hosts/directories 等） | ~8 MB |
+
+加上模型的 ~40 MB（volatile data 24 B/行 + 4 个索引向量），100 万项目录的**数据面**约 133 MB；
+再加应用底噪 ~154 MB，整机约 287 MB。
+
+离 250 MB 还差 ~37 MB，可选项（按风险从低到高）：
+
+1. CFString 指针表改成稀疏表（只存可见行的 materialize 结果）：-8 MB；
+2. 软过滤索引在无过滤时不预分配（空 == 恒等）：-4 MB；
+3. `inode`/`uid`/`gid`/`ctime` 不进 listing，改为按需 stat（影响 Get Info 与拷贝里的硬链接判断）：-20 MB；
+4. 名字 arena（`Filename()` 返回 `string_view`）：实测只省 ~6 MB，但要改几百处调用点——不划算，已否决；
+5. 时间/大小列按需（惰性元数据模式）：-30 MB 以上，但会改变"表格里直接看得到大小和时间"的行为。
+
+下一轮按 1+2+3 的顺序做（每步都跑测试、量 `mem=` 与 zone 总量），做到 3 时再评估是否值得。
+

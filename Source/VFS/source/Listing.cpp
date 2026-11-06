@@ -194,14 +194,16 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] build n=%u validate=%.1fms compress=%.1fms move=%.1fms filenames=%.1fms total=%.1fms\n",
-                     l->m_ItemsCount,
-                     ms(perf_begin, perf_validated),
-                     ms(perf_validated, perf_compressed),
-                     ms(perf_compressed, perf_moved),
-                     ms(perf_moved, perf_end),
-                     ms(perf_begin, perf_end));
+        std::fprintf(
+            stderr,
+            "[perf] build n=%u mem=%.1fMB validate=%.1fms compress=%.1fms move=%.1fms filenames=%.1fms total=%.1fms\n",
+            l->m_ItemsCount,
+            static_cast<double>(l->ApproximateMemoryFootprint()) / (1024.0 * 1024.0),
+            ms(perf_begin, perf_validated),
+            ms(perf_validated, perf_compressed),
+            ms(perf_compressed, perf_moved),
+            ms(perf_moved, perf_end),
+            ms(perf_begin, perf_end));
     }
 
     return l;
@@ -928,6 +930,46 @@ bool Listing::HasDisplayFilename(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
     return m_DisplayFilenames.has(_ind);
+}
+
+size_t Listing::ApproximateMemoryFootprint() const noexcept
+{
+    using nc::base::variable_container;
+    const auto container_bytes = [](const auto &_c, const size_t _element_size) -> size_t {
+        switch( _c.mode() ) {
+            case variable_container<>::type::dense:
+                return _c.dense_values().size() * _element_size;
+            case variable_container<>::type::sparse:
+                return _c.size() * (_element_size + 32); // a rough per-node overhead of the map
+            case variable_container<>::type::common:
+                return _element_size;
+        }
+        return 0;
+    };
+
+    size_t total = sizeof(Listing);
+    total += m_Title.capacity();
+    total += m_Filenames.capacity() * sizeof(std::string);
+    total += m_FilenamesCF ? static_cast<size_t>(m_ItemsCount) * sizeof(std::atomic<CFStringRef>) : 0;
+    total += m_ExtensionOffsets ? static_cast<size_t>(m_ItemsCount) * sizeof(uint16_t) : 0;
+    total += m_UnixModes.capacity() * sizeof(mode_t);
+    total += m_UnixTypes.capacity() * sizeof(uint8_t);
+    total += container_bytes(m_Hosts, sizeof(VFSHostPtr));
+    total += container_bytes(m_Directories, sizeof(std::string));
+    total += container_bytes(m_Sizes, sizeof(uint64_t));
+    total += container_bytes(m_Inodes, sizeof(uint64_t));
+    total += container_bytes(m_ATimes, sizeof(int32_t));
+    total += container_bytes(m_MTimes, sizeof(int32_t));
+    total += container_bytes(m_CTimes, sizeof(int32_t));
+    total += container_bytes(m_BTimes, sizeof(int32_t));
+    total += container_bytes(m_AddTimes, sizeof(int32_t));
+    total += container_bytes(m_UIDS, sizeof(uid_t));
+    total += container_bytes(m_GIDS, sizeof(gid_t));
+    total += container_bytes(m_UnixFlags, sizeof(uint32_t));
+    total += container_bytes(m_Symlinks, sizeof(std::string));
+    total += container_bytes(m_DisplayFilenames, sizeof(std::string));
+    total += container_bytes(m_DisplayFilenamesCF, sizeof(base::CFString));
+    return total;
 }
 
 bool Listing::HasAnyDisplayFilenames() const noexcept
