@@ -120,6 +120,39 @@ Listing::~Listing()
             CFRelease(s);
 }
 
+// Times are stored as 32-bit epoch seconds inside the listing - clamp whatever doesn't fit.
+static int32_t ToCompactTime(const time_t _t) noexcept
+{
+    return static_cast<int32_t>(
+        std::clamp<time_t>(_t, std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+}
+
+static variable_container<int32_t> CompactTimes(const variable_container<time_t> &_src, const unsigned _count)
+{
+    const auto clamp = [](time_t _t) { return ToCompactTime(_t); };
+    switch( _src.mode() ) {
+        case variable_container<>::type::common:
+            return variable_container<int32_t>(clamp(_src[0]));
+        case variable_container<>::type::dense: {
+            variable_container<int32_t> dst(variable_container<>::type::dense);
+            dst.resize(_count);
+            auto values = dst.dense_values();
+            const auto src = _src.dense_values();
+            for( size_t i = 0; i != values.size() && i != src.size(); ++i )
+                values[i] = clamp(src[i]);
+            return dst;
+        }
+        case variable_container<>::type::sparse: {
+            variable_container<int32_t> dst(variable_container<>::type::sparse);
+            for( size_t i = 0; i != _count; ++i )
+                if( _src.has(i) )
+                    dst.insert(i, clamp(_src[i]));
+            return dst;
+        }
+    }
+    return variable_container<int32_t>(variable_container<>::type::sparse);
+}
+
 base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
 {
     using clock = std::chrono::steady_clock;
@@ -138,11 +171,11 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_DisplayFilenames = std::move(_input.display_filenames);
     l->m_Sizes = std::move(_input.sizes);
     l->m_Inodes = std::move(_input.inodes);
-    l->m_ATimes = std::move(_input.atimes);
-    l->m_BTimes = std::move(_input.btimes);
-    l->m_CTimes = std::move(_input.ctimes);
-    l->m_MTimes = std::move(_input.mtimes);
-    l->m_AddTimes = std::move(_input.add_times);
+    l->m_ATimes = CompactTimes(_input.atimes, l->m_ItemsCount);
+    l->m_BTimes = CompactTimes(_input.btimes, l->m_ItemsCount);
+    l->m_CTimes = CompactTimes(_input.ctimes, l->m_ItemsCount);
+    l->m_MTimes = CompactTimes(_input.mtimes, l->m_ItemsCount);
+    l->m_AddTimes = CompactTimes(_input.add_times, l->m_ItemsCount);
     l->m_UnixModes = std::move(_input.unix_modes);
     l->m_UnixTypes = std::move(_input.unix_types);
     l->m_UIDS = std::move(_input.uids);
@@ -230,7 +263,7 @@ Listing::ProducePatchedListing(const Listing &_base,
     l->m_DisplayFilenames = variable_container<std::string>(variable_container<>::type::sparse);
     l->m_Symlinks = variable_container<std::string>(variable_container<>::type::sparse);
     if( _base.m_AddTimes.size() == 0 )
-        l->m_AddTimes = variable_container<time_t>(variable_container<>::type::sparse);
+        l->m_AddTimes = variable_container<int32_t>(variable_container<>::type::sparse);
 
     l->m_Filenames = std::vector<std::string>(new_count);
     l->m_FilenamesCF = std::make_unique<std::atomic<CFStringRef>[]>(new_count);
@@ -314,13 +347,13 @@ Listing::ProducePatchedListing(const Listing &_base,
             if( l->m_Inodes.mode() == variable_container<>::type::dense )
                 l->m_Inodes[appended_dst] = al.HasInode(i) ? al.Inode(i) : 0;
             if( l->m_ATimes.mode() == variable_container<>::type::dense )
-                l->m_ATimes[appended_dst] = al.HasATime(i) ? al.ATime(i) : 0;
+                l->m_ATimes[appended_dst] = ToCompactTime(al.HasATime(i) ? al.ATime(i) : 0);
             if( l->m_MTimes.mode() == variable_container<>::type::dense )
-                l->m_MTimes[appended_dst] = al.HasMTime(i) ? al.MTime(i) : 0;
+                l->m_MTimes[appended_dst] = ToCompactTime(al.HasMTime(i) ? al.MTime(i) : 0);
             if( l->m_CTimes.mode() == variable_container<>::type::dense )
-                l->m_CTimes[appended_dst] = al.HasCTime(i) ? al.CTime(i) : 0;
+                l->m_CTimes[appended_dst] = ToCompactTime(al.HasCTime(i) ? al.CTime(i) : 0);
             if( l->m_BTimes.mode() == variable_container<>::type::dense )
-                l->m_BTimes[appended_dst] = al.HasBTime(i) ? al.BTime(i) : 0;
+                l->m_BTimes[appended_dst] = ToCompactTime(al.HasBTime(i) ? al.BTime(i) : 0);
             if( l->m_UIDS.mode() == variable_container<>::type::dense )
                 l->m_UIDS[appended_dst] = al.HasUID(i) ? al.UID(i) : 0;
             if( l->m_GIDS.mode() == variable_container<>::type::dense )
@@ -330,7 +363,7 @@ Listing::ProducePatchedListing(const Listing &_base,
             if( al.HasAddTime(i) ) {
                 if( _base.m_AddTimes.size() == 0 )
                     return bail("added time without a container");
-                l->m_AddTimes[appended_dst] = al.AddTime(i);
+                l->m_AddTimes[appended_dst] = ToCompactTime(al.AddTime(i));
             }
             ++appended_dst;
         }
@@ -765,7 +798,7 @@ bool Listing::HasATime(unsigned _ind) const
 time_t Listing::ATime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_ATimes.has(_ind) ? m_ATimes[_ind] : m_CreationTime;
+    return m_ATimes.has(_ind) ? static_cast<time_t>(m_ATimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasMTime(unsigned _ind) const
@@ -777,7 +810,7 @@ bool Listing::HasMTime(unsigned _ind) const
 time_t Listing::MTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_MTimes.has(_ind) ? m_MTimes[_ind] : m_CreationTime;
+    return m_MTimes.has(_ind) ? static_cast<time_t>(m_MTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasCTime(unsigned _ind) const
@@ -789,7 +822,7 @@ bool Listing::HasCTime(unsigned _ind) const
 time_t Listing::CTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_CTimes.has(_ind) ? m_CTimes[_ind] : m_CreationTime;
+    return m_CTimes.has(_ind) ? static_cast<time_t>(m_CTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasBTime(unsigned _ind) const
@@ -801,7 +834,7 @@ bool Listing::HasBTime(unsigned _ind) const
 time_t Listing::BTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_BTimes.has(_ind) ? m_BTimes[_ind] : m_CreationTime;
+    return m_BTimes.has(_ind) ? static_cast<time_t>(m_BTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasAddTime(unsigned _ind) const
@@ -813,7 +846,7 @@ bool Listing::HasAddTime(unsigned _ind) const
 time_t Listing::AddTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_AddTimes.has(_ind) ? m_AddTimes[_ind] : BTime(_ind);
+    return m_AddTimes.has(_ind) ? static_cast<time_t>(m_AddTimes[_ind]) : BTime(_ind);
 }
 
 mode_t Listing::UnixMode(unsigned _ind) const

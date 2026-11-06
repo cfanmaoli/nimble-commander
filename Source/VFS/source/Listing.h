@@ -211,11 +211,14 @@ private:
     base::variable_container<std::string> m_Directories;
     base::variable_container<uint64_t> m_Sizes;
     base::variable_container<uint64_t> m_Inodes;
-    base::variable_container<time_t> m_ATimes;
-    base::variable_container<time_t> m_MTimes;
-    base::variable_container<time_t> m_CTimes;
-    base::variable_container<time_t> m_BTimes;
-    base::variable_container<time_t> m_AddTimes;
+    // Times are stored as 32-bit epoch seconds: this halves the footprint of the five time columns
+    // (20MB for a million entries) and 1901..2038 covers everything a file manager realistically
+    // deals with. Out-of-range values are clamped when they are stored in Build().
+    base::variable_container<int32_t> m_ATimes;
+    base::variable_container<int32_t> m_MTimes;
+    base::variable_container<int32_t> m_CTimes;
+    base::variable_container<int32_t> m_BTimes;
+    base::variable_container<int32_t> m_AddTimes;
     base::variable_container<uid_t> m_UIDS;
     base::variable_container<gid_t> m_GIDS;
     base::variable_container<uint32_t> m_UnixFlags;

@@ -656,3 +656,20 @@ after 1M (list):             373.4 MB
 要达到整机 ≤250 MB，需要 listing+模型 ≤96 MB，即 **<45 B/行**——这需要动 `VFSListing` 的存储布局
 （name arena、时间戳压缩、属性按需），属于一次高风险的大改造；本轮先没有动。
 
+
+---
+
+## 16. 第十一轮：时间列压到 32 位（紧凑存储第一步）
+
+listing 里五个时间列（atime/mtime/ctime/btime/add_time）原本是 `time_t`（8 字节），100 万项就是 40 MB。
+现在内部存 32 位纪元秒（覆盖 1901–2038），对外接口仍然返回 `time_t`：
+
+- `Listing::m_{A,M,C,B,Add}Times` 改成 `variable_container<int32_t>`；
+- `Build()` 里用 `CompactTimes()` 从 `ListingInput` 的 `time_t` 容器转换（common/dense/sparse 三种模式都处理，
+  超出范围的钳到 int32 边界）；
+- 补丁路径 `ProducePatchedListing()` 直接按 int32 拷贝，追加项写入时同样钳位。
+
+实测（`heap` 的 zone 总量，1M 目录）：214,264,977 → **189,614,497 字节（-24.6 MB）**。
+
+取整机 footprint 依旧受"启动时可能被投递 open 事件"的干扰影响，所以这里用 zone 总量做验收指标。
+
