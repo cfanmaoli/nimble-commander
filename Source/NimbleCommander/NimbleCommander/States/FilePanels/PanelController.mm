@@ -220,6 +220,12 @@ FlatListingResult BuildFlatListing(const VFSHostPtr &_host,
                     directories.emplace_back(item.Directory() + filename + "/");
             }
 
+            // An empty directory (or one with nothing but the dot entries) is perfectly normal -
+            // skip it and keep walking. Stopping here would silently cut the traversal short at
+            // the first empty subdirectory of the tree.
+            if( wanted.empty() )
+                continue;
+
             // take as many entries as the budget allows - dropping the *whole* directory just
             // because it alone is bigger than the limit would leave the user with an empty panel
             size_t take = wanted.size();
@@ -227,14 +233,12 @@ FlatListingResult BuildFlatListing(const VFSHostPtr &_host,
                 take = max_items > total_items ? max_items - total_items : 0;
                 result.truncated = true;
             }
-            total_items += take;
             if( take == 0 )
-                break;
+                break; // the budget is gone
+            total_items += take;
             wanted.resize(take);
             listings.emplace_back(listing);
             indices.emplace_back(std::move(wanted));
-            if( result.truncated )
-                break;
         }
 
         result.scanned_items = total_items;
@@ -1898,6 +1902,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                                           const std::function<bool()> &_is_cancelled) {
         const FlatListingResult result =
             BuildFlatListing(host, root, fetch_flags, _is_cancelled, max_items, max_directories);
+        if( std::getenv("NC_PERF_LOG") != nullptr )
+            std::fprintf(stderr,
+                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d\n",
+                         root.c_str(),
+                         result.scanned_items,
+                         result.scanned_directories,
+                         result.truncated ? 1 : 0,
+                         result.listing ? 1 : 0);
         if( !result.listing )
             return; // cancelled, or nothing could be fetched at all
         dispatch_to_main_queue([weak_self, result, generation] {

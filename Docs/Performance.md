@@ -1273,3 +1273,33 @@ if( row_delta > 1000 )
 
 代价：这种规模的平铺会在打开期间占用约 650 MB（1.6M 条目要物化成一个 listing），关闭平铺即释放。
 
+
+### 33.1 跟进：平铺遍历会在第一个空目录处中断（且不弹提示）
+
+上一版加"按预算截断"时把原来的
+
+```cpp
+if( wanted.empty() ) continue;   // 空目录：跳过继续走
+```
+
+改成了
+
+```cpp
+if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵树的遍历在这里结束
+```
+
+后果：平铺在遇到的**第一个空目录**处停下，列表只有前面几个目录的内容，而且因为不是"超限截断"、
+`truncated` 仍是 false，所以既不弹提示也没有日志——正是"文件没显示且没有弹窗"。
+
+修复：空目录仍然 `continue`，只有预算耗尽（`wanted` 非空但 `take == 0`）才 `break`。
+
+验证（`NC_PERF_LOG` 里新增的汇总行）：
+
+```
+[perf] flat root=/Volumes/TiPro9000/deepseek/ items=1637225 dirs=203817 truncated=0 listing=1
+[perf] ui n=1637225 loadListing=196.2ms dataUpdated=35.2ms
+```
+
+即扫描了 203,817 个目录、163 万个条目，全部进入平铺列表；把 `flatViewMaxItems` 手动调成 100 时
+仍然照旧弹"平铺视图显示不完整"的提示。
+
