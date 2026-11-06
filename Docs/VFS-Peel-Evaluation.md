@@ -165,3 +165,43 @@ scripts/perf/open_benchmark.sh <dir>     # 列表路径
 降到 2–3 s，需要一次列式批量枚举（Rust 或 C++ 都行）：遍历时直接产出最终的 `ListingInput`，
 不构造中间 `VFSListing`。这正好是 §3 方案 C 的前置条件，也是下一步该做的事。
 
+
+## 7. 列式批量枚举（Rust）——落地版
+
+§6 的结论是“每个目录构造一个中间 listing”才是平铺的瓶颈。这一步把枚举直接做成列式。
+
+Rust 侧（`rust/nc_core`，新增 `nc_core_scan_flat`）：
+
+- 直接调 `getattrlistbulk()`（FFI，属性集与 C++ 侧一致），按目录产出列式批次（`nc_flat_batch`：
+  名字、长度、类型、模式、大小、四个时间、inode、uid/gid/flags）；
+- 按层并行：每层的目录由 N 个线程取，回调从多个线程进入；
+- 统计 files / dirs / entries / directories_scanned，取消标志与现有 ABI 一致。
+
+C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
+
+- 平铺构建从 `PanelController` 抽出来，变成 `nc::core::BuildFlatListingVFS(...)`（原实现，作为
+  oracle 与回退）和 `nc::core::BuildFlatListingRust(...)`；
+- Rust 版把批次直接写进一个 `ListingInput`，最后只调用一次 `VFSListing::Build`，中间没有任何
+  `VFSListing`；
+- 非 native 主机（归档/网络）自动回落到 VFS 实现；
+- 配置 `filePanel.general.flatScanEngine`（`vfs` 默认 / `rust`）与 `flatScanThreads`。
+
+实测（同一棵树，1,638,003 条目 / 203,839 目录）：
+
+| 引擎 | 总耗时 | scan | compose |
+|---|---:|---:|---:|
+| vfs（8 线程） | 9,987 ms | 8,886 ms | 1,077 ms |
+| rust（8 线程） | 5,755 ms | 5,599 ms | 156 ms |
+
+即 1.73 倍，且两边条目数、目录数完全一致。compose 从 1.08 s 降到 0.16 s，因为它不再是
+“合成 20 万个 listing”，而是一次 Build。
+
+差分测试（`NimbleCommanderUT` / `FlatListingBuilder_UT.mm`）：同一棵临时树分别用两个引擎构建
+平铺 listing，逐条比较（路径、类型、是否目录、大小、修改时间），并覆盖条目预算截断与非 native 主机
+的回落。写这个测试时发现并修掉了两个真实 bug：Rust 版一度把所有条目的父目录都写成最后扫描到的
+那个目录（`ListingInput::directories/hosts` 没有 reset 成 dense），以及目录大小语义与 VFS 不一致
+（应为 UINT64_MAX 而不是“没有大小”）。
+
+仍未解决：5.6 s 的扫描里，`getattrlistbulk` 的属性抓取占大头（4 线程与 8 线程一样快，说明这块
+外置盘的元数据吞吐已经饱和）。要再往下压，只能减少每次请求的属性，那是下一步的取舍。
+
