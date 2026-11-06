@@ -28,7 +28,8 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                                            const size_t _max_items,
                                            const size_t _max_directories,
                                            const size_t _threads,
-                                           const double _max_seconds)
+                                           const double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes)
 {
     FlatListingResult result;
     const size_t max_directories = _max_directories;
@@ -125,8 +126,19 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                         continue;
                     wanted.emplace_back(item_index);
                     if( item.IsDir() && !item.IsSymlink() ) {
-                        next_frontier.emplace_back(item.Directory() + filename + "/");
-                        ++directories_seen;
+                        std::string subdir = item.Directory() + filename + "/";
+                        bool skipped = false;
+                        for( const std::string &prefix : _skip_prefixes )
+                            if( subdir.starts_with(prefix) ) {
+                                skipped = true;
+                                break;
+                            }
+                        if( skipped )
+                            ++result.skipped_cloud_directories;
+                        else {
+                            next_frontier.emplace_back(std::move(subdir));
+                            ++directories_seen;
+                        }
                     }
                 }
 
@@ -187,7 +199,8 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
                                            const size_t _max_items,
                                            const size_t _max_directories,
                                            const size_t _threads,
-                                           const double _max_seconds)
+                                           const double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes)
 {
     FlatListingResult result;
     if( _host == nullptr || _root.empty() || _root.front() != '/' )
@@ -196,18 +209,33 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
     // The columnar enumeration is native-only; everything else (archives, network hosts) has to
     // go through the composed path.
     if( dynamic_cast<vfs::NativeHost *>(_host.get()) == nullptr )
-        return BuildFlatListingComposed(
-            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
+        return BuildFlatListingComposed(_host,
+                                        _root,
+                                        _fetch_flags,
+                                        _cancel_checker,
+                                        _max_items,
+                                        _max_directories,
+                                        _threads,
+                                        _max_seconds,
+                                        _skip_prefixes);
 
     const auto begin = std::chrono::steady_clock::now();
-    const vfs::ColumnarListingResult enumerated = vfs::BuildColumnarListing(
-        _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
+    const vfs::ColumnarListingResult enumerated = vfs::BuildColumnarListing(_host,
+                                                                            _root,
+                                                                            _fetch_flags,
+                                                                            _cancel_checker,
+                                                                            _max_items,
+                                                                            _max_directories,
+                                                                            _threads,
+                                                                            _max_seconds,
+                                                                            _skip_prefixes);
     result.scan_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
     result.scanned_items = enumerated.items;
     result.scanned_directories = enumerated.directories;
     result.truncated = enumerated.truncated;
     result.timed_out = enumerated.timed_out;
+    result.skipped_cloud_directories = enumerated.skipped_directories;
     result.listing = enumerated.listing;
     return result;
 }

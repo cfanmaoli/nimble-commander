@@ -4,6 +4,7 @@
 #include "VFSDeclarations.h"
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace nc::vfs {
 
@@ -16,12 +17,17 @@ struct ColumnarListingResult {
     bool truncated = false;
     // true when the scan stopped because it ran out of time rather than out of space
     bool timed_out = false;
+    // number of directories that were skipped because they are cloud-synced (see below)
+    size_t skipped_directories = 0;
 };
 
 // Walks the tree under _root and builds a single flat listing out of everything it finds. The
 // directories of each level are enumerated in parallel by _threads workers through the native
 // backend's bulk attribute fetching; the entries go straight into one ListingInput.
 // Only the native filesystem is covered - the caller picks the composed path for anything else.
+// _skip_prefixes lists absolute directory prefixes (with a trailing slash) that are not
+// descended into - the flat view uses it for File Provider domains, where every enumeration
+// costs a network round trip.
 ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const std::string &_root,
                                            unsigned long _fetch_flags,
@@ -29,6 +35,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            size_t _max_items,
                                            size_t _max_directories,
                                            size_t _threads,
-                                           double _max_seconds);
+                                           double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes);
 
 } // namespace nc::vfs

@@ -154,6 +154,11 @@ MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatScanThreads, "filePanel.general.fl
 // budget runs out the partial result is shown and reported as incomplete. 0 = no limit.
 MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(ConfigFlatViewMaxSeconds, "filePanel.general.flatViewMaxSeconds", 30);
 
+// The flat view does not descend into cloud-synced directories: every enumeration there costs a
+// network round trip (1.5-2 s per directory for some providers), which turned a home-directory
+// scan into a many-minute one.
+MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigFlatViewSkipCloudStorage, "filePanel.general.flatViewSkipCloudStorage");
+
 // How the flat listing is enumerated: "columnar" (the default - the native bulk walk in
 // (built in Columnar.cpp), entries straight into one ListingInput) or "composed" (one VFS listing per
 // directory, composed at the end - the only option for archives and network hosts). The names
@@ -171,6 +176,27 @@ static std::string ConfigFlatScanStrategy()
     if( value == "vfs" )
         return "composed";
     return value;
+}
+
+// The cloud-synced directories the flat view leaves alone: enumerating them costs a network round
+// trip per directory (1.5-2s for some providers), which is what made a home-directory scan take
+// many minutes. A flat view opened *inside* one of them scans it as usual - the skip only applies
+// to trees that merely contain them.
+static std::vector<std::string> FlatViewCloudSkipPrefixes(const std::string &_root)
+{
+    std::vector<std::string> prefixes;
+    if( !ConfigFlatViewSkipCloudStorage() )
+        return prefixes;
+    const std::string home = NSHomeDirectory().fileSystemRepresentationSafe;
+    if( home.empty() )
+        return prefixes;
+    for( const char *const relative : {"/Library/CloudStorage/", "/Library/Mobile Documents/"} ) {
+        const std::string prefix = home + relative;
+        if( _root.starts_with(prefix) )
+            return {}; // the user asked for this subtree explicitly
+        prefixes.emplace_back(prefix);
+    }
+    return prefixes;
 }
 
 static void HeatUpConfigValues()
@@ -196,7 +222,9 @@ static void HeatUpConfigValues()
 - (void)fetchLazyDatesForSortedRange:(NSRange)_range;
 - (void)reportFlatViewTruncation:(size_t)_scanned_items
                      directories:(size_t)_scanned_directories
-                       timed_out:(bool)_timed_out;
+                       timed_out:(bool)_timed_out
+                         skipped:(size_t)_skipped
+                       truncated:(bool)_truncated;
 @end
 
 namespace {
@@ -215,13 +243,28 @@ nc::core::FlatListingResult BuildFlatListingForPanel(const VFSHostPtr &_host,
                                                      const size_t _max_items,
                                                      const size_t _max_directories,
                                                      const size_t _threads,
-                                                     const double _max_seconds)
+                                                     const double _max_seconds,
+                                                     const std::vector<std::string> &_skip_prefixes)
 {
     if( ConfigFlatScanStrategy() != "composed" )
-        return nc::core::BuildFlatListingColumnar(
-            _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
-    return nc::core::BuildFlatListingComposed(
-        _host, _root, _fetch_flags, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds);
+        return nc::core::BuildFlatListingColumnar(_host,
+                                                  _root,
+                                                  _fetch_flags,
+                                                  _cancel_checker,
+                                                  _max_items,
+                                                  _max_directories,
+                                                  _threads,
+                                                  _max_seconds,
+                                                  _skip_prefixes);
+    return nc::core::BuildFlatListingComposed(_host,
+                                              _root,
+                                              _fetch_flags,
+                                              _cancel_checker,
+                                              _max_items,
+                                              _max_directories,
+                                              _threads,
+                                              _max_seconds,
+                                              _skip_prefixes);
 }
 
 } // namespace
@@ -1829,6 +1872,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 - (void)reportFlatViewTruncation:(size_t)_scanned_items
                      directories:(size_t)_scanned_directories
                        timed_out:(bool)_timed_out
+                         skipped:(size_t)_skipped
+                       truncated:(bool)_truncated
 {
     assert(dispatch_is_main_queue());
     Log::Warn("The flat view of '{}' was truncated: {} entries in {} directories, timed out: {}, the limits are "
@@ -1839,6 +1884,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
               _timed_out,
               ConfigFlatViewMaxItems(),
               ConfigFlatViewMaxDirectories());
+    // Leaving cloud-synced directories out is deliberate, so it gets one explanation per launch
+    // rather than a dialog every time a flat view is opened.
+    static std::atomic<bool> s_cloud_skip_reported{false};
+    const bool cloud_skip_only = _skipped > 0 && !_timed_out && !_truncated;
+    if( cloud_skip_only && s_cloud_skip_reported.exchange(true) ) {
+        Log::Info("The flat view of '{}' skipped {} cloud-synced directories", m_FlatViewRoot, _skipped);
+        return;
+    }
     if( m_FlatTruncationReported )
         return; // don't nag on every refresh
     m_FlatTruncationReported = true;
@@ -1846,7 +1899,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     Alert *const alert = [[Alert alloc] init];
     alert.messageText = NSLocalizedString(@"The flat view is incomplete", "");
     alert.informativeText =
-        _timed_out
+        cloud_skip_only
+            ? [NSString stringWithFormat:NSLocalizedString(
+                                             @"Cloud-synced directories (Library/CloudStorage and "
+                                             @"Library/Mobile Documents) are skipped in the flat view, so their "
+                                             @"contents are not listed. That can be changed with the "
+                                             @"filePanel.general.flatViewSkipCloudStorage setting.",
+                                             "")]
+        : _timed_out
             ? [NSString stringWithFormat:NSLocalizedString(
                                              @"Scanning took too long, so only the first %ld entries are shown. "
                                              @"Some directories (usually ones synced by a cloud provider) answer "
@@ -1882,6 +1942,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     const size_t max_items = static_cast<size_t>(ConfigFlatViewMaxItems());
     const size_t max_directories = static_cast<size_t>(ConfigFlatViewMaxDirectories());
     const double max_seconds = static_cast<double>(ConfigFlatViewMaxSeconds());
+    const std::vector<std::string> skip_prefixes = FlatViewCloudSkipPrefixes(root);
     const size_t threads = [&]() -> size_t {
         const long configured = ConfigFlatScanThreads();
         if( configured > 0 )
@@ -1897,19 +1958,21 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                                        max_directories,
                                        threads,
                                        max_seconds,
+                                       skip_prefixes,
                                        weak_self](const std::function<bool()> &_is_cancelled) {
         const auto flat_begin = std::chrono::steady_clock::now();
         const nc::core::FlatListingResult result = BuildFlatListingForPanel(
-            host, root, fetch_flags, _is_cancelled, max_items, max_directories, threads, max_seconds);
+            host, root, fetch_flags, _is_cancelled, max_items, max_directories, threads, max_seconds, skip_prefixes);
         if( std::getenv("NC_PERF_LOG") != nullptr ) {
             using namespace std::chrono;
             const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
             std::fprintf(stderr,
-                         "[perf] flat root=%s items=%zu dirs=%zu truncated=%d listing=%d took=%lldms "
+                         "[perf] flat root=%s items=%zu dirs=%zu skipped=%zu truncated=%d listing=%d took=%lldms "
                          "scan=%lldms compose=%lldms fetch=%lldms fold=%lldms threads=%zu strategy=%s\n",
                          root.c_str(),
                          result.scanned_items,
                          result.scanned_directories,
+                         result.skipped_cloud_directories,
                          result.truncated ? 1 : 0,
                          result.listing ? 1 : 0,
                          static_cast<long long>(ms),
@@ -1927,10 +1990,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             if( panel == nil || !panel->m_FlatView || panel->m_FlatViewGeneration != generation )
                 return;
             [panel loadListing:result.listing];
-            if( result.truncated )
+            // report both an incomplete listing and a listing that silently left cloud-synced
+            // directories out
+            if( result.truncated || result.skipped_cloud_directories > 0 )
                 [panel reportFlatViewTruncation:result.scanned_items
                                     directories:result.scanned_directories
-                                      timed_out:result.timed_out];
+                                      timed_out:result.timed_out
+                                        skipped:result.skipped_cloud_directories
+                                      truncated:result.truncated];
         });
     }];
 }

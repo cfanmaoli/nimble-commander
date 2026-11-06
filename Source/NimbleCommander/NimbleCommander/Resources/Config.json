@@ -120,6 +120,13 @@
             "flatViewMaxSeconds": 30,
 
             /**
+             * The flat view does not descend into cloud-synced directories (Library/CloudStorage,
+             * Library/Mobile Documents): every enumeration there costs a network round trip.
+             * Opening the flat view inside one of them still scans it.
+             */
+            "flatViewSkipCloudStorage": true,
+
+            /**
              * Use the parallel native engines for the find-files dialog when the host, the filters
              * and the options allow it (local filesystem, no archives, UTF-8 content queries).
              * Anything else keeps using the VFS implementation.

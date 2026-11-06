@@ -274,3 +274,25 @@ materialize，所以看起来就是“永远加载”。（composed 策略同样
 
 也就是说：首次冷访问会被 30 s 预算截断并给出解释，之后的访问 2.4 s 就能扫完。
 
+
+### 9.1 改成跳过云目录
+
+时间预算只是兜底；真正该做的是**不进入云同步目录**。现在：
+
+- 开关 `filePanel.general.flatViewSkipCloudStorage`（默认 **true**）；
+- 跳过的两个前缀：`<home>/Library/CloudStorage/`（File Provider 域，如坚果云、OneDrive、Google Drive）
+  与 `<home>/Library/Mobile Documents/`（iCloud Drive）；
+- 跳过发生在**收集子目录**时，两种策略（columnar / composed）都生效，条目本身不进结果；
+- 如果平铺的根就在这两个前缀里（用户明确要看），则不跳过——此时只有 30 s 预算兜底；
+- 由于“跳过”是静默少内容，第一次跳过的那个启动会弹一次说明（en/ru/zh-Hans），之后只记日志，
+  不会每次开平铺都弹。
+
+实测 `/Users/lim`（默认配置，8 线程）：
+
+```
+[perf] flat root=/Users/lim/ items=280029 dirs=38873 skipped=2 truncated=0 listing=1 took=2211ms ... strategy=columnar
+```
+
+即：2 个云目录被跳过，62k 个云里的条目不再进入平铺，2.2 s 完成，且不再需要靠时间预算截断。
+测试 `FlatListingBuilder skips the requested cloud directories` 覆盖了跳过行为，并断言两种策略结果一致。
+

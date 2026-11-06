@@ -80,9 +80,9 @@ TEST_CASE(PREFIX "the columnar scan matches the composed one")
     const VFSCancelChecker no_cancel = nullptr;
 
     const auto composed =
-        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0);
+        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0, {});
     const auto columnar =
-        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0);
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0, {});
 
     REQUIRE(composed.listing);
     REQUIRE(columnar.listing);
@@ -127,7 +127,7 @@ TEST_CASE(PREFIX "the columnar scan honours the item budget")
     const VFSCancelChecker no_cancel = nullptr;
 
     const auto columnar =
-        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4, 0.0);
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 3, 1'000'000, 4, 0.0, {});
     REQUIRE(columnar.listing);
     CHECK(columnar.truncated);
     CHECK(columnar.scanned_items == 3);
@@ -140,7 +140,42 @@ TEST_CASE(PREFIX "the columnar scan falls back for non-native hosts")
     // BuildFlatListingColumnar forwards anything that is not a NativeHost to the composed implementation;
     // with a null host it simply reports nothing.
     const VFSCancelChecker no_cancel = nullptr;
-    const auto result = nc::core::BuildFlatListingColumnar(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1, 0.0);
+    const auto result = nc::core::BuildFlatListingColumnar(nullptr, "/tmp/", 0, no_cancel, 10, 10, 1, 0.0, {});
     CHECK(!result.listing);
     CHECK(result.scanned_items == 0);
+}
+
+TEST_CASE(PREFIX "skips the requested cloud directories")
+{
+    const auto root = std::filesystem::temp_directory_path() / ("nc_flat_skip_" + std::to_string(::getpid()));
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root / "Library" / "CloudStorage" / "provider");
+    std::filesystem::create_directories(root / "Library" / "Regular");
+    std::ofstream(root / "Library" / "CloudStorage" / "provider" / "cloud.txt") << "x";
+    std::ofstream(root / "Library" / "Regular" / "local.txt") << "x";
+
+    const auto &host = Env().host;
+    const VFSCancelChecker no_cancel = nullptr;
+    const std::vector<std::string> prefixes{root.string() + "/Library/CloudStorage/"};
+    const auto composed = nc::core::BuildFlatListingComposed(
+        host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0, prefixes);
+    const auto columnar = nc::core::BuildFlatListingColumnar(
+        host, root.string() + "/", 0, no_cancel, 1'000'000, 1'000'000, 4, 0.0, prefixes);
+
+    REQUIRE(composed.listing);
+    REQUIRE(columnar.listing);
+    const auto composed_snapshot = Snapshot(composed.listing);
+    const auto columnar_snapshot = Snapshot(columnar.listing);
+    CHECK(composed_snapshot == columnar_snapshot);
+    CHECK(composed.skipped_cloud_directories >= 1);
+    CHECK(columnar.skipped_cloud_directories >= 1);
+
+    for( const auto &entry : columnar_snapshot )
+        CHECK(std::get<0>(entry).find("/CloudStorage/") == std::string::npos);
+    bool saw_local = false;
+    for( const auto &entry : columnar_snapshot )
+        saw_local = saw_local || std::get<0>(entry).find("local.txt") != std::string::npos;
+    CHECK(saw_local);
+
+    std::filesystem::remove_all(root);
 }

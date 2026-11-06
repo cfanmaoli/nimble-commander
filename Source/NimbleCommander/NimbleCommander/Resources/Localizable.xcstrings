@@ -4003,6 +4003,30 @@
           }
         }
       }
+    },
+    "Cloud-synced directories (Library/CloudStorage and Library/Mobile Documents) are skipped in the flat view, so their contents are not listed. That can be changed with the filePanel.general.flatViewSkipCloudStorage setting.": {
+      "comment": "Body of the alert explaining that the flat view leaves cloud-synced directories out",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud-synced directories (Library/CloudStorage and Library/Mobile Documents) are skipped in the flat view, so their contents are not listed. That can be changed with the filePanel.general.flatViewSkipCloudStorage setting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каталоги, синхронизируемые облаком (Library/CloudStorage и Library/Mobile Documents), в плоском виде пропускаются, поэтому их содержимое не показано. Это можно изменить настройкой filePanel.general.flatViewSkipCloudStorage."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平铺视图会跳过云同步目录（Library/CloudStorage 与 Library/Mobile Documents），因此不显示其中的内容。可以在设置项 filePanel.general.flatViewSkipCloudStorage 中修改此行为。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

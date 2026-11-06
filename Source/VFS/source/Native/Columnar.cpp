@@ -26,10 +26,19 @@ namespace nc::vfs {
 
 namespace {
 
+bool IsSkipped(const std::string &_path, const std::vector<std::string> &_prefixes)
+{
+    for( const std::string &prefix : _prefixes )
+        if( _path.starts_with(prefix) )
+            return true;
+    return false;
+}
+
 struct SharedState {
     ListingInput input;
     size_t items = 0;
-    size_t directories = 1; // the root itself
+    size_t directories = 1;         // the root itself
+    size_t skipped_directories = 0; // cloud-synced subtrees the scan didn't enter
     std::atomic<bool> truncated{false};
     std::mutex mutex; // guards input, items and directories
 };
@@ -39,7 +48,8 @@ void AppendDirectory(SharedState &_state,
                      const std::string &_dir,
                      const unsigned long _fetch_flags,
                      const size_t _max_items,
-                     std::vector<std::string> &_subdirs)
+                     std::vector<std::string> &_subdirs,
+                     const std::vector<std::string> &_skip_prefixes)
 {
     std::string dir = _dir;
     if( dir.empty() || dir.back() != '/' )
@@ -105,7 +115,11 @@ void AppendDirectory(SharedState &_state,
         ++_state.items;
         if( is_dir ) {
             ++_state.directories;
-            subdirs.emplace_back(dir + std::string(name));
+            std::string subdir = dir + std::string(name);
+            if( IsSkipped(subdir + '/', _skip_prefixes) )
+                ++_state.skipped_directories;
+            else
+                subdirs.emplace_back(std::move(subdir));
         }
     };
 
@@ -135,7 +149,8 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const size_t _max_items,
                                            const size_t _max_directories,
                                            const size_t _threads,
-                                           const double _max_seconds)
+                                           const double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes)
 {
     ColumnarListingResult result;
     if( _host == nullptr || _root.empty() )
@@ -187,7 +202,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                 if( out_of_time() )
                     return;
                 std::vector<std::string> subdirs;
-                AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs);
+                AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs, _skip_prefixes);
                 if( state.truncated )
                     return;
                 if( !subdirs.empty() ) {
@@ -220,6 +235,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
         result.timed_out = true;
     result.items = state.items;
     result.directories = state.directories;
+    result.skipped_directories = state.skipped_directories;
     result.truncated = state.truncated || result.timed_out;
     if( state.input.filenames.empty() )
         return result;

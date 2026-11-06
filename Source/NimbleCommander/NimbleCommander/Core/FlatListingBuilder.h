@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace nc::core {
 
@@ -17,6 +18,8 @@ struct FlatListingResult {
     bool truncated = false;
     // true when the scan stopped because of the time budget, not because of the size limits
     bool timed_out = false;
+    // how many cloud-synced directories the scan deliberately did not enter
+    size_t skipped_cloud_directories = 0;
     // timings in milliseconds
     long long scan_ms = 0;
     long long compose_ms = 0;
@@ -33,7 +36,8 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                                            size_t _max_items,
                                            size_t _max_directories,
                                            size_t _threads,
-                                           double _max_seconds);
+                                           double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes);
 
 // The same thing, enumerated natively with getattrlistbulk(): the entries go
 // straight into one ListingInput, so there are no intermediate listings at all. Only the native
@@ -45,6 +49,7 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
                                            size_t _max_items,
                                            size_t _max_directories,
                                            size_t _threads,
-                                           double _max_seconds);
+                                           double _max_seconds,
+                                           const std::vector<std::string> &_skip_prefixes);
 
 } // namespace nc::core
