@@ -1320,3 +1320,11 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 面板底部显示 (1000000)，同时弹出「平铺视图显示不完整 / 此目录下的条目过多——只显示了前 1000000 项。
 可以在设置项 filePanel.general.flatViewMaxItems 中提高上限。」——截图已确认。
 
+
+
+## 附：平铺视图与搜索的后续工作
+
+平铺视图的列式枚举、文件名/内容并行搜索，以及“能不能剥掉 VFS 层”的评估，都在
+[Docs/VFS-Peel-Evaluation.md](VFS-Peel-Evaluation.md) 里。那里的结论是：这些加速来自算法与并行，
+与语言无关；因此三块实现都用 C++ 落在 `Source/VFS/source/Native/Columnar.cpp` 与
+`Source/NimbleCommander/NimbleCommander/Core/Parallel*.mm`，并由 `Scripts/perf/README.md` 里的开关控制。
