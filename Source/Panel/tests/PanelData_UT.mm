@@ -755,6 +755,156 @@ TEST_CASE(PREFIX "ReLoad a temporary listing")
     }
 }
 
+TEST_CASE("PrepareLoad and InstallLoad produce the same state as Load")
+{
+    const VFSListingPtr listing = ProduceDummyListing({"banana", "apple", "cherry", "date"});
+
+    Model directly;
+    directly.Load(listing, Model::PanelType::Directory);
+
+    Model prepared;
+    auto state = Model::PrepareLoad(
+        listing, Model::PanelType::Directory, directly.SortMode(), directly.HardFiltering(), directly.SoftFiltering());
+    prepared.InstallLoad(std::move(state));
+
+    REQUIRE(directly.RawEntriesCount() == prepared.RawEntriesCount());
+    REQUIRE(directly.SortedEntriesCount() == prepared.SortedEntriesCount());
+    CHECK(directly.Stats().total_entries_amount == prepared.Stats().total_entries_amount);
+
+    for( int i = 0; i != directly.SortedEntriesCount(); ++i ) {
+        CHECK(directly.EntryAtSortPosition(i).Filename() == prepared.EntryAtSortPosition(i).Filename());
+        CHECK(directly.RawIndexForSortIndex(i) == prepared.RawIndexForSortIndex(i));
+    }
+
+    // the lookups still work
+    CHECK(prepared.SortedIndexForName("apple") >= 0);
+    CHECK(prepared.SortedIndexForName("kiwi") == -1);
+}
+
+TEST_CASE(PREFIX "FetchedTimes and the lazy attributes")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    // nothing was fetched yet
+    CHECK(!data.FetchedTimesAtRawPos(0));
+    CHECK(!data.FetchedTimesAtRawPos(2));
+    CHECK(!data.HasFetchedSize(1));
+
+    Model::FetchedTimes times;
+    times.mtime = 12345;
+    times.atime = 54321;
+    times.addtime = -1;
+    data.SetFetchedTimes(1, times);
+    data.SetFetchedSize(1, 4242);
+
+    const auto fetched = data.FetchedTimesAtRawPos(1);
+    REQUIRE(fetched);
+    CHECK(fetched->mtime == 12345);
+    CHECK(fetched->atime == 54321);
+    CHECK(fetched->addtime == -1);
+    CHECK(data.HasFetchedSize(1));
+
+    // out of range requests are ignored, not crashed on
+    CHECK(!data.FetchedTimesAtRawPos(-1));
+    CHECK(!data.FetchedTimesAtRawPos(3));
+    data.SetFetchedTimes(100, times);
+    data.SetFetchedSize(100, 1);
+    CHECK(!data.FetchedTimesAtRawPos(100));
+    CHECK(!data.HasFetchedSize(100));
+
+    // a reload drops the fetched values - the raw indices change
+    data.Load(ProduceDummyListing({"a", "b", "c"}), Model::PanelType::Directory);
+    CHECK(!data.FetchedTimesAtRawPos(1));
+    CHECK(!data.HasFetchedSize(1));
+}
+
+TEST_CASE(PREFIX "Quick-search highlights live next to the volatile data")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"box.txt", "xbox.txt"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    CHECK(data.HighlightForSortPosition(0).empty());
+
+    const std::array<QuickSearchHighlight::Range, 1> ranges = {QuickSearchHighlight::Range{.offset = 0, .length = 3}};
+    const auto raw_indices = data.RawIndicesForName("box.txt");
+    REQUIRE(!raw_indices.empty());
+    const unsigned box_raw = raw_indices.front();
+    data.SetHighlightForRawIndex(box_raw, QuickSearchHighlight(ranges));
+
+    const auto hl = data.HighlightForSortPosition(data.SortedIndexForName("box.txt"));
+    CHECK(!hl.empty());
+    const auto unpacked = hl.unpack();
+    REQUIRE(unpacked.count == 1);
+    CHECK(unpacked.segments[0].offset == 0);
+    CHECK(unpacked.segments[0].length == 3);
+
+    // both lookups address the same entry
+    CHECK(data.HighlightForRawIndex(box_raw).unpack().count == 1);
+    CHECK(data.HighlightForRawIndex((box_raw + 1) % data.RawEntriesCount()).empty());
+    // and a re-sort without an active filter drops the highlights
+    data.SetSortMode(SortMode{.sort = SortMode::SortByNameRev});
+    CHECK(data.HighlightForSortPosition(data.SortedIndexForName("box.txt")).empty());
+}
+TEST_CASE("ApplyPatchedListing")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "b", "c", "d"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    // select 'c' so that we can check that the volatile data survives the patch
+    const int c_pos = data.SortedIndexForName("c");
+    REQUIRE(c_pos >= 0);
+    data.CustomFlagsSelectSorted(c_pos, true);
+
+    // the new listing drops 'b' (old raw index 1) and appends 'ab' at the end
+    const VFSListingPtr l2 = ProduceDummyListing({"a", "c", "d", "ab"});
+    const std::vector<unsigned> removed = {1};
+    data.ApplyPatchedListing(l2, removed, 1);
+
+    CHECK(data.RawEntriesCount() == 4);
+    CHECK(data.SortedEntriesCount() == 4);
+    CHECK(data.Stats().total_entries_amount == 4);
+
+    // the names are still all there and 'b' is gone
+    CHECK(data.SortedIndexForName("a") >= 0);
+    CHECK(data.SortedIndexForName("ab") >= 0);
+    CHECK(data.SortedIndexForName("c") >= 0);
+    CHECK(data.SortedIndexForName("d") >= 0);
+    CHECK(data.SortedIndexForName("b") == -1);
+
+    // the sort order is 'a', 'ab', 'c', 'd'
+    REQUIRE(data.SortedIndexForName("a") != -1);
+    CHECK(data.SortedIndexForName("a") < data.SortedIndexForName("ab"));
+    CHECK(data.SortedIndexForName("ab") < data.SortedIndexForName("c"));
+    CHECK(data.SortedIndexForName("c") < data.SortedIndexForName("d"));
+
+    // 'c' is still selected
+    const int new_c_pos = data.SortedIndexForName("c");
+    REQUIRE(new_c_pos >= 0);
+    CHECK(data.VolatileDataAtSortPosition(new_c_pos).is_selected());
+    // and the entry that has just appeared is not
+    const int ab_pos = data.SortedIndexForName("ab");
+    REQUIRE(ab_pos >= 0);
+    CHECK(!data.VolatileDataAtSortPosition(ab_pos).is_selected());
+}
+
+TEST_CASE("ApplyPatchedListing with an addition only")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"a", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    const VFSListingPtr l2 = ProduceDummyListing({"a", "c", "b"});
+    data.ApplyPatchedListing(l2, {}, 1);
+
+    CHECK(data.RawEntriesCount() == 3);
+    CHECK(data.SortedIndexForName("a") < data.SortedIndexForName("b"));
+    CHECK(data.SortedIndexForName("b") < data.SortedIndexForName("c"));
+}
+
 } // namespace
 
 #undef PREFIX

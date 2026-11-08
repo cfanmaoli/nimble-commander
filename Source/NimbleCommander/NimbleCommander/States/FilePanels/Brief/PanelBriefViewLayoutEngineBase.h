@@ -34,8 +34,10 @@ protected:
     int m_ColumnsNumber = 0;
     NSSize m_ContentSize = {.width = 0.0, .height = 0.0};
 
-    // inferred items layout:
-    std::vector<NSCollectionViewLayoutAttributes *> m_Attributes;
+    // inferred items layout.
+    // NB: the attributes themselves are NOT cached - a million items would mean a million
+    // NSCollectionViewLayoutAttributes objects (256 bytes each!) plus a million NSIndexPaths.
+    // The grid below is enough to compute an item's frame on demand.
     std::vector<int> m_ColumnsPositions;
     std::vector<int> m_ColumnsWidths;
 
@@ -65,12 +67,6 @@ inline int LayoutEngineBase::ColumnsNumber() const noexcept
 inline NSSize LayoutEngineBase::ContentSize() const noexcept
 {
     return m_ContentSize;
-}
-
-inline NSCollectionViewLayoutAttributes *LayoutEngineBase::AttributesForItemNumber(int _number) const noexcept
-{
-    assert(_number >= 0 && _number < m_ItemsNumber);
-    return m_Attributes[_number];
 }
 
 inline const std::vector<int> &LayoutEngineBase::ColumnsPositions() const noexcept

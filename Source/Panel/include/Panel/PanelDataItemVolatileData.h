@@ -66,9 +66,6 @@ struct ItemVolatileData {
     // size from listing.
     uint64_t size = invalid_size;
 
-    // contains highlighted segments of the filename if any
-    QuickSearchHighlight highlight;
-
     // custom icon ID. zero means invalid value. volatile - can be changed. saved upon directory reload.
     uint16_t icon = 0;
 

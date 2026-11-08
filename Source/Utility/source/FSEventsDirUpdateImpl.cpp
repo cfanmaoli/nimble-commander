@@ -93,9 +93,49 @@ void FSEventsDirUpdateImpl::FSEventsDirUpdateCallback([[maybe_unused]] ConstFSEv
                fmt::join(std::span<const char *>{reinterpret_cast<const char **>(_paths), _num}, ", "));
 
     const WatchData &watch = *static_cast<const WatchData *>(_user_data);
-    if( ShouldFire(watch.path, _num, reinterpret_cast<const char **>(_paths), _flags) ) {
-        for( auto &h : watch.handlers )
+    const char **const paths = reinterpret_cast<const char **>(_paths);
+    const bool dir_itself_changed = ShouldFire(watch.path, _num, paths, _flags);
+
+    // Collect the names of the entries that changed directly inside the watched directory - the
+    // clients can then patch their listings instead of reloading them from scratch.
+    std::vector<std::string> changed_names;
+    {
+        const std::string_view watched = watch.path;
+        assert(!watched.empty() && watched.back() == '/');
+        const std::string_view watched_without_slash = watched.substr(0, watched.length() - 1);
+        for( size_t i = 0; i < _num; ++i ) {
+            std::string_view path = paths[i];
+            if( path.empty() )
+                continue;
+            if( path.back() == '/' )
+                path.remove_suffix(1);
+            if( path == watched_without_slash )
+                continue; // the directory itself, not one of its children
+            const auto slash_pos = path.rfind('/');
+            if( slash_pos == std::string_view::npos )
+                continue;
+            if( path.substr(0, slash_pos) != watched_without_slash )
+                continue; // a change somewhere deeper in the hierarchy
+            const std::string_view name = path.substr(slash_pos + 1);
+            if( name.empty() || name == "." || name == ".." )
+                continue;
+            if( std::ranges::find(changed_names, name) == changed_names.end() )
+                changed_names.emplace_back(name);
+        }
+    }
+
+    if( !dir_itself_changed && changed_names.empty() )
+        return;
+
+    if( !watch.handlers.empty() ) {
+        const auto handlers = watch.handlers; // the handlers may mutate the container
+        for( auto &h : handlers )
             h.second();
+    }
+    if( !watch.path_handlers.empty() ) {
+        const auto handlers = watch.path_handlers;
+        for( auto &h : handlers )
+            h.second(changed_names);
     }
 }
 
@@ -111,7 +151,10 @@ FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &pat
     CFArrayRef pathsToWatch = CFArrayCreate(nullptr, reinterpret_cast<const void **>(&cf_path), 1, nullptr);
     FSEventStreamRef stream = nullptr;
     const auto create_stream = [&] {
-        const auto flags = kFSEventStreamCreateFlagNoDefer | kFSEventStreamCreateFlagWatchRoot;
+        // FileEvents is what gives us the names of the entries that changed - without it FSEvents
+        // only reports directory-level events and every change would require a full reload.
+        const auto flags =
+            kFSEventStreamCreateFlagNoDefer | kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents;
         auto context = FSEventStreamContext{
             .version = 0, .info = context_ptr, .retain = nullptr, .release = nullptr, .copyDescription = nullptr};
         stream = FSEventStreamCreate(nullptr,
@@ -170,9 +213,10 @@ static void StopStream(FSEventStreamRef _stream)
     });
 }
 
-uint64_t FSEventsDirUpdateImpl::AddWatchPath(std::string_view _path, std::function<void()> _handler)
+uint64_t FSEventsDirUpdateImpl::AddWatchPathImpl(std::string_view _path,
+                                                 const std::function<void(WatchData &, uint64_t)> &_attach)
 {
-    if( _path.empty() || !_handler )
+    if( _path.empty() || !_attach )
         return no_ticket;
 
     Log::Debug("FSEventsDirUpdate::Impl::AddWatchPath called for '{}'", _path);
@@ -192,7 +236,7 @@ uint64_t FSEventsDirUpdateImpl::AddWatchPath(std::string_view _path, std::functi
     // check if this path already presents in watched paths
     if( const auto it = m_Watches.find(dir_path); it != m_Watches.end() ) {
         Log::Trace("Using an already existing watcher for '{}'", _path);
-        it->second->handlers.emplace_back(ticket, std::move(_handler));
+        _attach(*it->second, ticket);
         return ticket;
     }
 
@@ -208,10 +252,28 @@ uint64_t FSEventsDirUpdateImpl::AddWatchPath(std::string_view _path, std::functi
         return no_ticket;
     }
     w.path = ep.first->first;
-    w.handlers.emplace_back(ticket, std::move(_handler));
+    _attach(w, ticket);
     StartStream(w.stream);
 
     return ticket;
+}
+
+uint64_t FSEventsDirUpdateImpl::AddWatchPath(std::string_view _path, std::function<void()> _handler)
+{
+    if( !_handler )
+        return no_ticket;
+    return AddWatchPathImpl(_path, [handler = std::move(_handler)](WatchData &_w, uint64_t _ticket) {
+        _w.handlers.emplace_back(_ticket, handler);
+    });
+}
+
+uint64_t FSEventsDirUpdateImpl::AddWatchPath(std::string_view _path, EventPathsHandler _handler)
+{
+    if( !_handler )
+        return no_ticket;
+    return AddWatchPathImpl(_path, [handler = std::move(_handler)](WatchData &_w, uint64_t _ticket) {
+        _w.path_handlers.emplace_back(_ticket, handler);
+    });
 }
 
 // Erases an element at '_i' from containers '_c' by swapping it with the last element and then removing the last

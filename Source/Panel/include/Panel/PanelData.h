@@ -2,6 +2,7 @@
 #pragma once
 
 #include <VFS/VFSListing.h>
+#include "PanelDataItemVolatileData.h"
 #include "PanelDataSortMode.h"
 #include "PanelDataStatistics.h"
 #include "PanelDataFilter.h"
@@ -9,6 +10,8 @@
 #include <vector>
 #include <string_view>
 #include <span>
+#include <optional>
+#include <ankerl/unordered_dense.h>
 
 namespace nc::panel::data {
 
@@ -54,6 +57,78 @@ public:
     void ReLoad(const VFSListingPtr &_listing);
 
     /**
+     * The outcome of the heavy part of Load(): the volatile data, the sort orders, the filtering
+     * indices and the statistics. Produced by PrepareLoad().
+     */
+    struct PreparedLoad {
+        VFSListingPtr listing;
+        PanelType type = PanelType::Directory;
+        HardFilter hard_filtering;
+        TextualFilter soft_filtering;
+        std::vector<ItemVolatileData> volatile_data;
+        std::vector<unsigned> entries_by_raw_name;
+        std::vector<unsigned> entries_by_custom_sort;
+        std::vector<unsigned> reverse_to_custom_sort;
+        std::vector<unsigned> entries_by_soft_filtering;
+        Statistics statistics;
+    };
+
+    /**
+     * Does everything Load() does apart from touching the Model object itself: allocates the
+     * volatile data, runs both sorts, builds the filtering indices and computes the statistics.
+     * Safe to call from any thread - the model instance is left untouched.
+     */
+    [[nodiscard]] static PreparedLoad PrepareLoad(const VFSListingPtr &_listing,
+                                                  PanelType _type,
+                                                  SortMode _sort_mode,
+                                                  HardFilter _hard_filtering,
+                                                  TextualFilter _soft_filtering);
+
+    /**
+     * Installs the outcome of PrepareLoad()/PrepareReload(), the cheap remainder of Load()/ReLoad().
+     * Must be called on the main thread.
+     */
+    void InstallLoad(PreparedLoad &&_prepared);
+
+    /**
+     * A copy of the state ReLoad() needs from the previous listing, so that the heavy part can be
+     * done on another thread.
+     */
+    struct ReloadSnapshot {
+        VFSListingPtr listing;
+        std::vector<ItemVolatileData> volatile_data;
+        std::vector<unsigned> entries_by_raw_name;
+        SortMode sort_mode;
+        HardFilter hard_filtering;
+        TextualFilter soft_filtering;
+        PanelType type = PanelType::Directory;
+    };
+
+    /**
+     * Takes the snapshot above. Must be called on the main thread.
+     */
+    [[nodiscard]] ReloadSnapshot SnapshotForReload() const;
+
+    /**
+     * Same as ReLoad(), but works on a snapshot instead of the model itself, so it is safe to call
+     * from any thread. The result is installed with InstallLoad().
+     */
+    [[nodiscard]] static PreparedLoad PrepareReload(const VFSListingPtr &_listing, ReloadSnapshot &&_snapshot);
+
+    /**
+     * Applies a listing that was produced by patching the current one: the entries at
+     * '_removed_old_indices' (sorted ascending, unique) are dropped and the last '_appended_count'
+     * entries of '_listing' are the freshly fetched ones.
+     * Retains the volatile data (selection, icons, calculated sizes) of all the other entries and
+     * the already established sort order, so applying a handful of changes to a million-entry
+     * listing costs O(n) with cheap operations instead of a full re-sort.
+     * Preconditions: no hard filtering is active, both listings are uniform.
+     */
+    void ApplyPatchedListing(const VFSListingPtr &_listing,
+                             std::span<const unsigned> _removed_old_indices,
+                             unsigned _appended_count);
+
+    /**
      * Tells whether Model was provided with a valid listing object.
      */
     [[nodiscard]] bool IsLoaded() const noexcept;
@@ -92,9 +167,46 @@ public:
     [[nodiscard]] const std::vector<unsigned> &SortedDirectoryEntries() const noexcept;
 
     /**
-     * EntriesBySoftFiltering return a vector of filtered indeces of sorted entries (not raw ones)
+     * EntriesBySoftFiltering return a vector of filtered indeces of sorted entries (not raw ones).
+     * It's empty when no soft filtering is active - in that case the soft-filtered positions map to
+     * the sorted ones one-to-one, see SortIndexForSoftFiltered().
      */
     [[nodiscard]] const std::vector<unsigned> &EntriesBySoftFiltering() const noexcept;
+
+    /**
+     * The times of an entry that were fetched on demand, for the listings that don't carry them
+     * (see VFSFlags::F_NoTimes).
+     */
+    struct FetchedTimes {
+        time_t atime = 0;
+        time_t mtime = 0;
+        time_t ctime = 0;
+        time_t btime = 0;
+        time_t addtime = -1;
+    };
+
+    void SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times);
+
+    // The highlighted segments of a filename during a quick search. Kept in a side array that only
+    // exists while there is something to highlight - a per-entry field would cost 8MB for a
+    // million-entry directory even when nothing is being searched.
+    [[nodiscard]] QuickSearchHighlight HighlightForRawIndex(unsigned _raw_index) const noexcept;
+    // Same, but addressed by the sorted position (what the views deal with).
+    [[nodiscard]] QuickSearchHighlight HighlightForSortPosition(int _sort_pos) const noexcept;
+    void SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight);
+    void ResetHighlights();
+
+    // Fills in the size of an entry whose listing doesn't carry it (VFSFlags::F_NoSizes).
+    void SetFetchedSize(unsigned _raw_index, uint64_t _size);
+    [[nodiscard]] bool HasFetchedSize(unsigned _raw_index) const noexcept;
+    [[nodiscard]] std::optional<FetchedTimes> FetchedTimesAtRawPos(int _raw_pos) const;
+    void ClearFetchedTimes();
+
+    // The number of entries visible after the soft filtering.
+    [[nodiscard]] int SoftFilteredCount() const noexcept;
+
+    // Maps a soft-filtered position to the corresponding sorted position.
+    [[nodiscard]] int SortIndexForSoftFiltered(int _pos) const noexcept;
 
     // will return an "empty" item upon invalid index
     [[nodiscard]] VFSListingItem EntryAtRawPosition(int _pos) const noexcept;
@@ -297,6 +409,12 @@ private:
 
     // sorted and filtered, points at m_EntriesByCustomSort indices, not the raw ones
     std::vector<unsigned> m_EntriesBySoftFiltering;
+
+    // Times fetched on demand for the of entries of a listing that doesn't carry them itself.
+    ankerl::unordered_dense::map<unsigned, FetchedTimes> m_FetchedTimes;
+
+    // Allocated only while a quick search is highlighting something.
+    std::vector<QuickSearchHighlight> m_Highlights;
     struct SortMode m_CustomSortMode;
     HardFilter m_HardFiltering;
     TextualFilter m_SoftFiltering;

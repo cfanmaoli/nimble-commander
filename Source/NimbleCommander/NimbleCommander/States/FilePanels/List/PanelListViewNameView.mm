@@ -175,10 +175,10 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
     };
     m_AttrString = [[NSMutableAttributedString alloc] initWithString:m_Filename attributes:attrs];
 
-    auto vd = row_view.vd;
-    if( !vd.highlight.empty() ) {
+    const auto highlight = row_view.qsHighlight;
+    if( !highlight.empty() ) {
         const auto fn_len = static_cast<size_t>(m_Filename.length);
-        const auto hl = vd.highlight.unpack();
+        const auto hl = highlight.unpack();
         for( size_t i = 0; i != hl.count; ++i ) {
             if( hl.segments[i].offset < fn_len && hl.segments[i].offset + hl.segments[i].length <= fn_len ) {
                 const auto range = NSMakeRange(hl.segments[i].offset, hl.segments[i].length);

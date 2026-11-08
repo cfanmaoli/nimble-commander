@@ -226,8 +226,11 @@ static constexpr auto g_SmoothScrolling = "filePanel.presentation.smoothScrollin
         if( NSIndexPath *index_path = [m_CollectionView indexPathForItem:item] ) {
             const auto index = static_cast<int>(index_path.item);
             // need to firstly check if we're still in sync with panel data
-            if( m_Data->IsValidSortPosition(index) )
+            if( m_Data->IsValidSortPosition(index) ) {
+                if( auto listing_item = m_Data->EntryAtSortPosition(index) )
+                    item.qsHighlight = m_Data->HighlightForRawIndex(listing_item.Index());
                 item.vd = m_Data->VolatileDataAtSortPosition(index);
+            }
         }
 }
 
@@ -314,6 +317,8 @@ static constexpr auto g_SmoothScrolling = "filePanel.presentation.smoothScrollin
             else {
                 item.icon = m_IconRepository->AvailableIconForListingItem(vfs_item);
             }
+            if( auto listing_item = m_Data->EntryAtSortPosition(index) )
+                item.qsHighlight = m_Data->HighlightForRawIndex(listing_item.Index());
             item.vd = vd;
         }
         [item setPanelActive:m_PanelView.active];

@@ -15,6 +15,9 @@
 
 @property(nonatomic) VFSListingItem item; // may be empty!
 @property(nonatomic) nc::panel::data::ItemVolatileData vd;
+// The highlighted segments of the filename during a quick search - kept out of the volatile data
+// so that a million-entry directory doesn't pay 8MB for it when nothing is being searched.
+@property(nonatomic) nc::panel::data::QuickSearchHighlight qsHighlight;
 @property(nonatomic, weak) NCPanelListView *listView;
 @property(nonatomic, readonly) NSColor *rowBackgroundColor;
 @property(nonatomic, readonly) NSColor *rowTextColor;

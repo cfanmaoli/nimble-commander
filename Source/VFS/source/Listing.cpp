@@ -5,6 +5,8 @@
 #include <sys/param.h>
 #include <Base/mach_time.h>
 #include <cassert>
+#include <chrono>
+#include <cstdio>
 
 namespace nc::vfs {
 
@@ -109,49 +111,92 @@ static void Compress(ListingInput &_input)
 
 Listing::Listing() = default;
 
-Listing::~Listing() = default;
-
-template <class It>
-static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> CopyToUniquePtr(It first, It last)
+Listing::~Listing()
 {
-    using T = typename std::iterator_traits<It>::value_type;
-    const auto count = std::distance(first, last);
-    auto ptr = std::make_unique<T[]>(count);
-    std::copy(first, last, ptr.get());
-    return ptr;
+    if( !m_FilenamesCF )
+        return;
+    for( size_t i = 0, e = m_ItemsCount; i != e; ++i )
+        if( const CFStringRef s = m_FilenamesCF[i].load(std::memory_order_relaxed); s != nullptr )
+            CFRelease(s);
 }
 
-template <class It>
-static std::unique_ptr<typename std::iterator_traits<It>::value_type[]> MoveToUniquePtr(It first, It last)
+// Times are stored as 32-bit epoch seconds inside the listing - clamp whatever doesn't fit.
+static int32_t ToCompactTime(const time_t _t) noexcept
 {
-    using T = typename std::iterator_traits<It>::value_type;
-    const auto count = std::distance(first, last);
-    auto ptr = std::make_unique<T[]>(count);
-    std::move(first, last, ptr.get());
-    return ptr;
+    return static_cast<int32_t>(
+        std::clamp<time_t>(_t, std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+}
+
+static variable_container<int32_t> CompactTimes(const variable_container<time_t> &_src, const unsigned _count)
+{
+    const auto clamp = [](time_t _t) { return ToCompactTime(_t); };
+    switch( _src.mode() ) {
+        case variable_container<>::type::common:
+            return variable_container<int32_t>(clamp(_src[0]));
+        case variable_container<>::type::dense: {
+            const auto src = _src.dense_values();
+            // an empty dense container means "no such attribute" (e.g. a names-only listing)
+            if( src.size() != _count )
+                return variable_container<int32_t>(variable_container<>::type::sparse);
+            variable_container<int32_t> dst(variable_container<>::type::dense);
+            dst.resize(_count);
+            auto values = dst.dense_values();
+            for( size_t i = 0; i != values.size(); ++i )
+                values[i] = clamp(src[i]);
+            return dst;
+        }
+        case variable_container<>::type::sparse: {
+            variable_container<int32_t> dst(variable_container<>::type::sparse);
+            for( size_t i = 0; i != _count; ++i )
+                if( _src.has(i) )
+                    dst.insert(i, clamp(_src[i]));
+            return dst;
+        }
+    }
+    return variable_container<int32_t>(variable_container<>::type::sparse);
 }
 
 base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
 {
+    using clock = std::chrono::steady_clock;
+    const auto perf_begin = clock::now();
     Validate(_input); // will throw an exception on error
+    const auto perf_validated = clock::now();
     Compress(_input);
+    const auto perf_compressed = clock::now();
 
     auto l = base::intrusive_ptr<Listing>{new Listing};
     l->m_ItemsCount = static_cast<unsigned>(_input.filenames.size());
     l->m_Title = std::move(_input.title);
     l->m_Hosts = std::move(_input.hosts);
     l->m_Directories = std::move(_input.directories);
-    l->m_Filenames = MoveToUniquePtr(_input.filenames.begin(), _input.filenames.end());
+    l->m_Filenames = std::move(_input.filenames);
+    // The enumerator grows its vectors geometrically, so a million-entry listing can carry tens of
+    // percent of dead capacity. Trim it now that the final size is known - one copy of the data in
+    // exchange for the resident memory.
+    const auto trim = [](auto &_v) {
+        if( _v.capacity() > _v.size() + _v.size() / 16 )
+            _v.shrink_to_fit();
+    };
+    trim(l->m_Filenames);
     l->m_DisplayFilenames = std::move(_input.display_filenames);
     l->m_Sizes = std::move(_input.sizes);
     l->m_Inodes = std::move(_input.inodes);
-    l->m_ATimes = std::move(_input.atimes);
-    l->m_BTimes = std::move(_input.btimes);
-    l->m_CTimes = std::move(_input.ctimes);
-    l->m_MTimes = std::move(_input.mtimes);
-    l->m_AddTimes = std::move(_input.add_times);
-    l->m_UnixModes = CopyToUniquePtr(_input.unix_modes.begin(), _input.unix_modes.end());
-    l->m_UnixTypes = CopyToUniquePtr(_input.unix_types.begin(), _input.unix_types.end());
+    l->m_ATimes = CompactTimes(_input.atimes, l->m_ItemsCount);
+    l->m_BTimes = CompactTimes(_input.btimes, l->m_ItemsCount);
+    l->m_CTimes = CompactTimes(_input.ctimes, l->m_ItemsCount);
+    l->m_MTimes = CompactTimes(_input.mtimes, l->m_ItemsCount);
+    l->m_AddTimes = CompactTimes(_input.add_times, l->m_ItemsCount);
+    l->m_UnixModes = std::move(_input.unix_modes);
+    l->m_UnixTypes = std::move(_input.unix_types);
+    trim(l->m_UnixModes);
+    trim(l->m_UnixTypes);
+    // the attribute containers are grown by the same geometric vector growth
+    l->m_Sizes.shrink_to_fit();
+    l->m_Inodes.shrink_to_fit();
+    l->m_UIDS.shrink_to_fit();
+    l->m_GIDS.shrink_to_fit();
+    l->m_UnixFlags.shrink_to_fit();
     l->m_UIDS = std::move(_input.uids);
     l->m_GIDS = std::move(_input.gids);
     l->m_UnixFlags = std::move(_input.unix_flags);
@@ -159,8 +204,197 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     l->m_Tags = std::move(_input.tags);
     l->m_CreationTime = time(nullptr);
     l->m_CreationTicks = base::machtime();
+    const auto perf_moved = clock::now();
     l->BuildFilenames();
 
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(
+            stderr,
+            "[perf] build n=%u mem=%.1fMB validate=%.1fms compress=%.1fms move=%.1fms filenames=%.1fms total=%.1fms\n",
+            l->m_ItemsCount,
+            static_cast<double>(l->ApproximateMemoryFootprint()) / (1024.0 * 1024.0),
+            ms(perf_begin, perf_validated),
+            ms(perf_validated, perf_compressed),
+            ms(perf_compressed, perf_moved),
+            ms(perf_moved, perf_end),
+            ms(perf_begin, perf_end));
+    }
+
+    return l;
+}
+
+base::intrusive_ptr<const Listing>
+Listing::ProducePatchedListing(const Listing &_base,
+                               std::span<const unsigned> _removed,
+                               const std::vector<base::intrusive_ptr<const Listing>> &_appended)
+{
+    using nc::base::variable_container;
+    const auto is_plain = [](const Listing &_l) {
+        return _l.m_Symlinks.size() == 0 && _l.m_DisplayFilenames.size() == 0 && _l.m_Tags.empty();
+    };
+    const auto is_dense_or_common = [](const auto &_c) {
+        return _c.mode() == variable_container<>::type::dense || _c.mode() == variable_container<>::type::common;
+    };
+    // An empty container simply means "the listing doesn't carry this attribute" (lazy dates) -
+    // that's patchable, the result just stays empty.
+    const auto is_patchable = [&](const auto &_c) { return _c.size() == 0 || is_dense_or_common(_c); };
+
+    const auto bail = [](const char *_why) -> base::intrusive_ptr<const Listing> {
+        if( std::getenv("NC_PERF_LOG") != nullptr )
+            std::fprintf(stderr, "[perf] patch.fallback %s\n", _why);
+        return nullptr;
+    };
+    if( !is_plain(_base) )
+        return bail("base has extras");
+    for( const auto &l : _appended )
+        if( !l || !is_plain(*l) )
+            return bail("appended has extras");
+    // the uniform shape is the one that is worth patching in bulk
+    if( _base.m_Hosts.mode() != variable_container<>::type::common ||
+        _base.m_Directories.mode() != variable_container<>::type::common )
+        return bail("not uniform");
+    if( !is_patchable(_base.m_Sizes) || !is_patchable(_base.m_Inodes) || !is_patchable(_base.m_ATimes) ||
+        !is_patchable(_base.m_MTimes) || !is_patchable(_base.m_CTimes) || !is_patchable(_base.m_BTimes) ||
+        !is_patchable(_base.m_UIDS) || !is_patchable(_base.m_GIDS) || !is_patchable(_base.m_UnixFlags) )
+        return bail("sparse attributes");
+
+    unsigned appended_count = 0;
+    for( const auto &l : _appended )
+        appended_count += l->m_ItemsCount;
+    const unsigned old_count = _base.m_ItemsCount;
+    if( _removed.size() > old_count )
+        return bail("removed more than there are");
+    const unsigned new_count = old_count - static_cast<unsigned>(_removed.size()) + appended_count;
+    const unsigned retained_count = new_count - appended_count;
+
+    auto l = base::intrusive_ptr<Listing>{new Listing};
+    l->m_ItemsCount = new_count;
+    l->m_Title = _base.m_Title;
+    l->m_CreationTime = _base.m_CreationTime;
+    l->m_CreationTicks = base::machtime();
+    l->m_Hosts = _base.m_Hosts;
+    l->m_Directories = _base.m_Directories;
+    l->m_DisplayFilenamesCF = variable_container<base::CFString>(variable_container<>::type::sparse);
+    // the default-constructed containers are in the "common" mode with a single value - mark the
+    // ones we don't fill as empty instead, so that the listing reports them as absent
+    l->m_DisplayFilenames = variable_container<std::string>(variable_container<>::type::sparse);
+    l->m_Symlinks = variable_container<std::string>(variable_container<>::type::sparse);
+    if( _base.m_AddTimes.size() == 0 )
+        l->m_AddTimes = variable_container<int32_t>(variable_container<>::type::sparse);
+
+    l->m_Filenames = std::vector<std::string>(new_count);
+    l->m_FilenamesCF = std::make_unique<std::atomic<CFStringRef>[]>(new_count);
+    for( unsigned i = 0; i != new_count; ++i )
+        l->m_FilenamesCF[i].store(nullptr, std::memory_order_relaxed);
+    l->m_ExtensionOffsets = std::make_unique<uint16_t[]>(new_count);
+    l->m_UnixModes = std::vector<mode_t>(new_count);
+    l->m_UnixTypes = std::vector<uint8_t>(new_count);
+
+    // the entry arrays that are stored as plain arrays
+    unsigned dst = 0;
+    size_t removed_pos = 0;
+    for( unsigned src = 0; src != old_count; ++src ) {
+        if( removed_pos < _removed.size() && _removed[removed_pos] == src ) {
+            ++removed_pos;
+            continue;
+        }
+        l->m_Filenames[dst] = _base.m_Filenames[src];
+        l->m_ExtensionOffsets[dst] = _base.m_ExtensionOffsets[src];
+        l->m_UnixModes[dst] = _base.m_UnixModes[src];
+        l->m_UnixTypes[dst] = _base.m_UnixTypes[src];
+        ++dst;
+    }
+
+    // the attribute containers are dense (or common) - copy them in bulk
+    const auto patch_dense = [&](auto &_dst, const auto &_src) {
+        using value_type = typename std::decay_t<decltype(_dst)>::value_type;
+        if( _src.mode() == variable_container<>::type::common ) {
+            _dst.reset(variable_container<>::type::dense);
+            _dst.resize(new_count);
+            std::ranges::fill(_dst.dense_values(), _src[0]);
+            return;
+        }
+        const auto src_values = _src.dense_values();
+        if( src_values.size() != old_count ) {
+            // the listing doesn't actually carry this attribute for the entries
+            _dst = variable_container<value_type>(variable_container<>::type::sparse);
+            return;
+        }
+        _dst.reset(variable_container<>::type::dense);
+        _dst.resize(new_count);
+        auto dst_values = _dst.dense_values();
+        unsigned d = 0;
+        size_t rp = 0;
+        for( unsigned s = 0; s != old_count; ++s ) {
+            if( rp < _removed.size() && _removed[rp] == s ) {
+                ++rp;
+                continue;
+            }
+            dst_values[d++] = src_values[s];
+        }
+    };
+    patch_dense(l->m_Sizes, _base.m_Sizes);
+    patch_dense(l->m_Inodes, _base.m_Inodes);
+    patch_dense(l->m_ATimes, _base.m_ATimes);
+    patch_dense(l->m_MTimes, _base.m_MTimes);
+    patch_dense(l->m_CTimes, _base.m_CTimes);
+    patch_dense(l->m_BTimes, _base.m_BTimes);
+    patch_dense(l->m_UIDS, _base.m_UIDS);
+    patch_dense(l->m_GIDS, _base.m_GIDS);
+    patch_dense(l->m_UnixFlags, _base.m_UnixFlags);
+    if( _base.m_AddTimes.size() != 0 ) {
+        if( !is_dense_or_common(_base.m_AddTimes) )
+            return bail("sparse add times");
+        patch_dense(l->m_AddTimes, _base.m_AddTimes);
+    }
+
+    // and now the appended entries - there are only a handful of them
+    unsigned appended_dst = retained_count;
+    for( const auto &app_listing : _appended ) {
+        const Listing &al = *app_listing;
+        for( unsigned i = 0; i != al.m_ItemsCount; ++i ) {
+            l->m_Filenames[appended_dst] = al.m_Filenames[i];
+            l->m_ExtensionOffsets[appended_dst] = al.m_ExtensionOffsets ? al.m_ExtensionOffsets[i] : 0;
+            l->m_UnixModes[appended_dst] = al.m_UnixModes[i];
+            l->m_UnixTypes[appended_dst] = al.m_UnixTypes[i];
+            // only the attributes that the listing actually carries get written, the absent ones
+            // stay absent
+            if( l->m_Sizes.mode() == variable_container<>::type::dense )
+                l->m_Sizes[appended_dst] = al.HasSize(i) ? al.Size(i) : uint64_t(-1);
+            if( l->m_Inodes.mode() == variable_container<>::type::dense )
+                l->m_Inodes[appended_dst] = al.HasInode(i) ? al.Inode(i) : 0;
+            // the times may be absent from the base listing (lazy dates) - then only the ones the
+            // appended entry actually carries are stored, sparsely
+            const auto put_time = [&](auto &_dst, const bool _has, const auto _value) {
+                if( _dst.mode() == variable_container<>::type::dense )
+                    _dst[appended_dst] = ToCompactTime(_has ? _value : 0);
+                else if( _has && _dst.mode() == variable_container<>::type::sparse )
+                    _dst.insert(appended_dst, ToCompactTime(_value));
+            };
+            put_time(l->m_ATimes, al.HasATime(i), al.ATime(i));
+            put_time(l->m_MTimes, al.HasMTime(i), al.MTime(i));
+            put_time(l->m_CTimes, al.HasCTime(i), al.CTime(i));
+            put_time(l->m_BTimes, al.HasBTime(i), al.BTime(i));
+            if( l->m_UIDS.mode() == variable_container<>::type::dense )
+                l->m_UIDS[appended_dst] = al.HasUID(i) ? al.UID(i) : 0;
+            if( l->m_GIDS.mode() == variable_container<>::type::dense )
+                l->m_GIDS[appended_dst] = al.HasGID(i) ? al.GID(i) : 0;
+            if( l->m_UnixFlags.mode() == variable_container<>::type::dense )
+                l->m_UnixFlags[appended_dst] = al.HasUnixFlags(i) ? al.UnixFlags(i) : 0;
+            if( al.HasAddTime(i) ) {
+                if( l->m_AddTimes.mode() == variable_container<>::type::dense )
+                    l->m_AddTimes[appended_dst] = ToCompactTime(al.AddTime(i));
+                else if( l->m_AddTimes.mode() == variable_container<>::type::sparse )
+                    l->m_AddTimes.insert(appended_dst, ToCompactTime(al.AddTime(i)));
+            }
+            ++appended_dst;
+        }
+    }
     return l;
 }
 
@@ -388,17 +622,18 @@ void Listing::BuildFilenames()
     size_t i = 0;
     const size_t e = m_ItemsCount;
 
-    m_FilenamesCF = std::make_unique<base::CFString[]>(e);
+    m_FilenamesCF = std::make_unique<std::atomic<CFStringRef>[]>(e);
+    for( size_t n = 0; n != e; ++n )
+        m_FilenamesCF[n].store(nullptr, std::memory_order_relaxed);
     m_ExtensionOffsets = std::make_unique<uint16_t[]>(e);
     m_DisplayFilenamesCF = variable_container<base::CFString>(variable_container<>::type::sparse);
 
     for( ; i != e; ++i ) {
         const auto &current = m_Filenames[i];
 
-        // build Cocoa strings for filenames.
-        // if filename is badly broken and UTF8 is invalid - treat it like MacRoman encoding
-        m_FilenamesCF[i] = UTF8WithFallback(current);
-
+        // NB: the filenames are not bridged into CFStrings here - that happens lazily in
+        // FilenameCF(), see the comment in the header. Display names are few, so they are built
+        // eagerly.
         if( m_DisplayFilenames.has(static_cast<unsigned>(i)) )
             m_DisplayFilenamesCF.insert(static_cast<unsigned>(i),
                                         UTF8WithFallback(m_DisplayFilenames[static_cast<unsigned>(i)]));
@@ -451,7 +686,24 @@ const std::string &Listing::Filename(unsigned _ind) const
 CFStringRef Listing::FilenameCF(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return *m_FilenamesCF[_ind];
+    if( const CFStringRef cached = m_FilenamesCF[_ind].load(std::memory_order_acquire); cached != nullptr )
+        return cached;
+    return MaterializeFilenameCF(_ind);
+}
+
+CFStringRef Listing::MaterializeFilenameCF(unsigned _ind) const
+{
+    const std::lock_guard<std::mutex> lock(m_FilenamesCFLock);
+    if( const CFStringRef cached = m_FilenamesCF[_ind].load(std::memory_order_relaxed); cached != nullptr )
+        return cached;
+    // if the filename is badly broken and UTF8 is invalid - treat it like MacRoman encoding
+    const base::CFString created = UTF8WithFallback(m_Filenames[_ind]);
+    if( !created )
+        return nullptr;
+    const CFStringRef raw = *created;
+    CFRetain(raw); // the array takes its own reference
+    m_FilenamesCF[_ind].store(raw, std::memory_order_release);
+    return raw;
 }
 
 std::string Listing::Path(unsigned _ind) const
@@ -573,7 +825,7 @@ bool Listing::HasATime(unsigned _ind) const
 time_t Listing::ATime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_ATimes.has(_ind) ? m_ATimes[_ind] : m_CreationTime;
+    return m_ATimes.has(_ind) ? static_cast<time_t>(m_ATimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasMTime(unsigned _ind) const
@@ -585,7 +837,7 @@ bool Listing::HasMTime(unsigned _ind) const
 time_t Listing::MTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_MTimes.has(_ind) ? m_MTimes[_ind] : m_CreationTime;
+    return m_MTimes.has(_ind) ? static_cast<time_t>(m_MTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasCTime(unsigned _ind) const
@@ -597,7 +849,7 @@ bool Listing::HasCTime(unsigned _ind) const
 time_t Listing::CTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_CTimes.has(_ind) ? m_CTimes[_ind] : m_CreationTime;
+    return m_CTimes.has(_ind) ? static_cast<time_t>(m_CTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasBTime(unsigned _ind) const
@@ -609,7 +861,7 @@ bool Listing::HasBTime(unsigned _ind) const
 time_t Listing::BTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_BTimes.has(_ind) ? m_BTimes[_ind] : m_CreationTime;
+    return m_BTimes.has(_ind) ? static_cast<time_t>(m_BTimes[_ind]) : m_CreationTime;
 }
 
 bool Listing::HasAddTime(unsigned _ind) const
@@ -621,7 +873,7 @@ bool Listing::HasAddTime(unsigned _ind) const
 time_t Listing::AddTime(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
-    return m_AddTimes.has(_ind) ? m_AddTimes[_ind] : BTime(_ind);
+    return m_AddTimes.has(_ind) ? static_cast<time_t>(m_AddTimes[_ind]) : BTime(_ind);
 }
 
 mode_t Listing::UnixMode(unsigned _ind) const
@@ -703,6 +955,72 @@ bool Listing::HasDisplayFilename(unsigned _ind) const
 {
     VFS_LISTING_CHECK_BOUNDS(_ind);
     return m_DisplayFilenames.has(_ind);
+}
+
+size_t Listing::ApproximateMemoryFootprint() const noexcept
+{
+    using nc::base::variable_container;
+    const auto container_bytes = [](const auto &_c, const size_t _element_size) -> size_t {
+        switch( _c.mode() ) {
+            case variable_container<>::type::dense:
+                // the capacity is what actually sits in memory
+                return std::max(_c.dense_values().size(), _c.capacity()) * _element_size;
+            case variable_container<>::type::sparse:
+                return _c.size() * (_element_size + 32); // a rough per-node overhead of the map
+            case variable_container<>::type::common:
+                return _element_size;
+        }
+        return 0;
+    };
+
+    size_t total = sizeof(Listing);
+    total += m_Title.capacity();
+    total += m_Filenames.capacity() * sizeof(std::string);
+    total += m_FilenamesCF ? static_cast<size_t>(m_ItemsCount) * sizeof(std::atomic<CFStringRef>) : 0;
+    total += m_ExtensionOffsets ? static_cast<size_t>(m_ItemsCount) * sizeof(uint16_t) : 0;
+    total += m_UnixModes.capacity() * sizeof(mode_t);
+    total += m_UnixTypes.capacity() * sizeof(uint8_t);
+    total += container_bytes(m_Hosts, sizeof(VFSHostPtr));
+    total += container_bytes(m_Directories, sizeof(std::string));
+    total += container_bytes(m_Sizes, sizeof(uint64_t));
+    total += container_bytes(m_Inodes, sizeof(uint64_t));
+    total += container_bytes(m_ATimes, sizeof(int32_t));
+    total += container_bytes(m_MTimes, sizeof(int32_t));
+    total += container_bytes(m_CTimes, sizeof(int32_t));
+    total += container_bytes(m_BTimes, sizeof(int32_t));
+    total += container_bytes(m_AddTimes, sizeof(int32_t));
+    total += container_bytes(m_UIDS, sizeof(uid_t));
+    total += container_bytes(m_GIDS, sizeof(gid_t));
+    total += container_bytes(m_UnixFlags, sizeof(uint32_t));
+    total += container_bytes(m_Symlinks, sizeof(std::string));
+    total += container_bytes(m_DisplayFilenames, sizeof(std::string));
+    total += container_bytes(m_DisplayFilenamesCF, sizeof(base::CFString));
+    return total;
+}
+
+bool Listing::HasAnyTimes() const noexcept
+{
+    return m_ATimes.size() != 0 || m_MTimes.size() != 0 || m_CTimes.size() != 0 || m_BTimes.size() != 0;
+}
+
+bool Listing::HasAnyDisplayFilenames() const noexcept
+{
+    return m_DisplayFilenames.size() != 0;
+}
+
+bool Listing::HasAnyAddTimes() const noexcept
+{
+    return m_AddTimes.size() != 0;
+}
+
+bool Listing::HasAnySymlinks() const noexcept
+{
+    return m_Symlinks.size() != 0;
+}
+
+bool Listing::HasAnyTags() const noexcept
+{
+    return !m_Tags.empty();
 }
 
 const std::string &Listing::DisplayFilename(unsigned _ind) const

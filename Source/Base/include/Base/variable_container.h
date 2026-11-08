@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cassert>
+#include <span>
 #include <vector>
 #include <variant>
 #include <ankerl/unordered_dense.h>
@@ -70,6 +71,11 @@ public:
     // For the sparse mode uses unordered_flat_map<>::find (precondition: the element must exist).
     const T &operator[](size_t _at) const noexcept;
 
+    // Returns a view of the underlying dense storage. Empty if the container is in another mode.
+    // Intended for the code that has to copy/move the data in bulk.
+    [[nodiscard]] std::span<const T> dense_values() const noexcept;
+    [[nodiscard]] std::span<T> dense_values() noexcept;
+
     // Returns the amount of elements inside the container.
     // For common mode always returns 1.
     // For other modes return the size of a corresponding container.
@@ -81,6 +87,13 @@ public:
     // Resizes the container to a new size.
     // Can be used only with Dense mode, ignored otherwise.
     void resize(size_t _new_size);
+
+    // Releases the unused capacity of the underlying storage.
+    // Can be used only with Dense mode, ignored otherwise.
+    void shrink_to_fit();
+
+    // Returns the capacity of the underlying storage for the dense mode, 0 otherwise.
+    [[nodiscard]] size_t capacity() const noexcept;
 
     // Inserts the value into the container at the specified index.
     // If mode is Dense and _at is above the current size the container will resize accordingly.
@@ -207,6 +220,22 @@ const typename variable_container<T>::dense_type &variable_container<T>::Dense()
 }
 
 template <class T>
+std::span<const T> variable_container<T>::dense_values() const noexcept
+{
+    if( mode() != type::dense )
+        return {};
+    return Dense();
+}
+
+template <class T>
+std::span<T> variable_container<T>::dense_values() noexcept
+{
+    if( mode() != type::dense )
+        return {};
+    return Dense();
+}
+
+template <class T>
 T &variable_container<T>::at(size_t _at)
 {
     switch( mode() ) {
@@ -281,6 +310,19 @@ void variable_container<T>::resize(size_t _new_size)
 {
     if( mode() == type::dense )
         Dense().resize(_new_size);
+}
+
+template <class T>
+void variable_container<T>::shrink_to_fit()
+{
+    if( mode() == type::dense )
+        Dense().shrink_to_fit();
+}
+
+template <class T>
+size_t variable_container<T>::capacity() const noexcept
+{
+    return mode() == type::dense ? Dense().capacity() : 0;
 }
 
 template <class T>

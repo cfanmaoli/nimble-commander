@@ -74,6 +74,64 @@
              * When loading directory listings for file panels, should "entry" be present
              */
             "showDotDotEntry": true,
+
+            /**
+             * Load the date columns lazily for the huge directories: the enumeration then skips the
+             * timestamps (20MB per million entries) and the panel fetches them for the rows it shows.
+             * Off by default - the date columns are then empty until a row is scrolled into view.
+             */
+            "lazyDates": false,
+
+            /**
+             * Same for the sizes: the enumeration then skips them and the panel fetches the ones it
+             * shows. Takes another 8MB off a million-entry listing.
+             */
+            "lazySizes": false,
+
+            /**
+             * Safety limits for the flat view, which lists the whole subtree of the current
+             * directory. Entries beyond these are not shown and the user is told about it.
+             */
+            "flatViewMaxItems": 1000000,
+            "flatViewMaxDirectories": 2000000,
+
+            /**
+             * How many directories the flat view enumerates in parallel. 0 = automatic.
+             */
+            "flatScanThreads": 0,
+
+            /**
+             * How the flat view enumerates the tree: "columnar" (default) or "composed".
+             *
+             * - columnar: walks the native filesystem directly and fills one listing input from
+             *   the batches; no VFS listing is built for the intermediate directories;
+             * - composed: builds one VFS listing per directory and composes them at the end -
+             *   slower on local disks, but the only way for archives and network hosts.
+             *
+             * Anything that is not a native filesystem always uses the composed path.
+             */
+            "flatScanStrategy": "columnar",
+
+            /**
+             * Wall-clock budget for the flat view, in seconds. Directories on cloud providers
+             * answer in seconds each, so a flat view of a home directory that contains one could
+             * otherwise scan for a very long time. 0 = no limit.
+             */
+            "flatViewMaxSeconds": 30,
+
+            /**
+             * The flat view does not descend into cloud-synced directories (Library/CloudStorage,
+             * Library/Mobile Documents): every enumeration there costs a network round trip.
+             * Opening the flat view inside one of them still scans it.
+             */
+            "flatViewSkipCloudStorage": true,
+
+            /**
+             * Use the parallel native engines for the find-files dialog when the host, the filters
+             * and the options allow it (local filesystem, no archives, UTF-8 content queries).
+             * Anything else keeps using the VFS implementation.
+             */
+            "parallelSearch": true,
   
             /**
              * Show current paths in other file panels in GoTo pop-up menu

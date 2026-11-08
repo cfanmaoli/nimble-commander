@@ -39,6 +39,9 @@
 		CF0A47562BDD8F0F00833160 /* LocationFormatter.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA1715C20174C9A00F507D5 /* LocationFormatter.mm */; };
 		CF0A47582BDD8FB100833160 /* Pasteboard.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF818B701EA07A5B00BC28E6 /* Pasteboard.mm */; };
 		CF0A47E72BDD9E6D00833160 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2381DFBDEBA0039A104 /* AppDelegate.mm */; };
+		AB12CD34EF56000000000021 /* ParallelFileSearch.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000022 /* ParallelFileSearch.mm */; };
+		AB12CD34EF56000000000025 /* FlatListingBuilder.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000026 /* FlatListingBuilder.mm */; };
+		AB12CD34EF56000000000029 /* ParallelContentSearch.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF5600000000002A /* ParallelContentSearch.mm */; };
 		CF0A47F62BDD9E7200833160 /* AppDelegate+MainWindowCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA1716220196CB400F507D5 /* AppDelegate+MainWindowCreation.mm */; };
 		CF0A47F72BDD9E7A00833160 /* AppDelegate+Migration.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2F21DFD16540039A104 /* AppDelegate+Migration.mm */; };
 		CF0A47F82BDD9E8000833160 /* AppDelegate+ViewerCreation.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFD799ED21F48F140043A26D /* AppDelegate+ViewerCreation.mm */; };
@@ -251,6 +254,9 @@
 		CF67F1B62952034200B92944 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = CF67F19A2952034200B92944 /* Icon.icns */; };
 		CF67F1B72952034200B92944 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = CF67F19A2952034200B92944 /* Icon.icns */; };
 		CF67F1BF2954689000B92944 /* Theme_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF67F1BE2954689000B92944 /* Theme_UT.mm */; };
+		AB12CD34EF56000000000023 /* ParallelFileSearch_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000024 /* ParallelFileSearch_UT.mm */; };
+		AB12CD34EF56000000000027 /* FlatListingBuilder_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */; };
+		AB12CD34EF5600000000002B /* ParallelContentSearch_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF5600000000002C /* ParallelContentSearch_UT.mm */; };
 		CF67F1C02954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
 		CF67F1C12954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
 		CF67F1C22954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = CF67F1C52954BF9400B92944 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.xib */; };
@@ -1080,6 +1086,9 @@
 		CF669D652EF01757001B7FA5 /* PanelGalleryCentralView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = PanelGalleryCentralView.mm; path = NimbleCommander/States/FilePanels/Gallery/PanelGalleryCentralView.mm; sourceTree = "<group>"; };
 		CF67F19A2952034200B92944 /* Icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Icon.icns; path = NimbleCommander/Resources/Icon.icns; sourceTree = "<group>"; };
 		CF67F1BE2954689000B92944 /* Theme_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Theme_UT.mm; path = NimbleCommander/Tests/Theme_UT.mm; sourceTree = "<group>"; };
+		AB12CD34EF56000000000024 /* ParallelFileSearch_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ParallelFileSearch_UT.mm; path = NimbleCommander/Tests/ParallelFileSearch_UT.mm; sourceTree = "<group>"; };
+		AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FlatListingBuilder_UT.mm; path = NimbleCommander/Tests/FlatListingBuilder_UT.mm; sourceTree = "<group>"; };
+		AB12CD34EF5600000000002C /* ParallelContentSearch_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ParallelContentSearch_UT.mm; path = NimbleCommander/Tests/ParallelContentSearch_UT.mm; sourceTree = "<group>"; };
 		CF67F1C42954BF9400B92944 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PreferencesWindowThemesTabAutomaticSwitchingSheet.xib; sourceTree = "<group>"; };
 		CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RoutedIO.xcodeproj; path = ../RoutedIO/RoutedIO.xcodeproj; sourceTree = "<group>"; };
 		CF69CFD61DA2250C00992B84 /* VFS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VFS.xcodeproj; path = ../VFS/VFS.xcodeproj; sourceTree = "<group>"; };
@@ -1320,6 +1329,9 @@
 		CFDAC2351DFBDE560039A104 /* Application.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = Application.mm; path = NimbleCommander/Bootstrap/Application.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC2371DFBDEBA0039A104 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = NimbleCommander/Bootstrap/AppDelegate.h; sourceTree = SOURCE_ROOT; };
 		CFDAC2381DFBDEBA0039A104 /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = NimbleCommander/Bootstrap/AppDelegate.mm; sourceTree = SOURCE_ROOT; };
+		AB12CD34EF56000000000022 /* ParallelFileSearch.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ParallelFileSearch.mm; path = NimbleCommander/Core/ParallelFileSearch.mm; sourceTree = SOURCE_ROOT; };
+		AB12CD34EF56000000000026 /* FlatListingBuilder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FlatListingBuilder.mm; path = NimbleCommander/Core/FlatListingBuilder.mm; sourceTree = SOURCE_ROOT; };
+		AB12CD34EF5600000000002A /* ParallelContentSearch.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ParallelContentSearch.mm; path = NimbleCommander/Core/ParallelContentSearch.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC2391DFBDEBA0039A104 /* AppDelegateCPP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegateCPP.h; path = NimbleCommander/Bootstrap/AppDelegateCPP.h; sourceTree = SOURCE_ROOT; };
 		CFDAC23A1DFBDEBA0039A104 /* AppDelegateCPP.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegateCPP.mm; path = NimbleCommander/Bootstrap/AppDelegateCPP.mm; sourceTree = SOURCE_ROOT; };
 		CFDAC23F1DFBE18C0039A104 /* ActionsShortcutsManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ActionsShortcutsManager.h; path = NimbleCommander/Core/ActionsShortcutsManager.h; sourceTree = SOURCE_ROOT; };
@@ -1747,6 +1759,9 @@
 				CF5DE0C02584157B00604DEE /* Tests.h */,
 				CF5DE0C12584157B00604DEE /* Tests.cpp */,
 				CF67F1BE2954689000B92944 /* Theme_UT.mm */,
+				AB12CD34EF56000000000024 /* ParallelFileSearch_UT.mm */,
+				AB12CD34EF56000000000028 /* FlatListingBuilder_UT.mm */,
+				AB12CD34EF5600000000002C /* ParallelContentSearch_UT.mm */,
 				CFD2D26028A03DC0003C18F9 /* ThemesManager_UT.mm */,
 			);
 			name = Tests;
@@ -3117,6 +3132,9 @@
 				CF0A484C2BDDA29F00833160 /* ShowSystemOverview.mm in Sources */,
 				CF0A486D2BDDA40E00833160 /* PanelViewDummyPresentation.mm in Sources */,
 				CF0A47E72BDD9E6D00833160 /* AppDelegate.mm in Sources */,
+				AB12CD34EF56000000000021 /* ParallelFileSearch.mm in Sources */,
+				AB12CD34EF56000000000025 /* FlatListingBuilder.mm in Sources */,
+				AB12CD34EF56000000000029 /* ParallelContentSearch.mm in Sources */,
 				CF0A484A2BDDA29500833160 /* ShowGoToPopup.mm in Sources */,
 				CF0A47FD2BDD9EB800833160 /* VFSInit.mm in Sources */,
 				CF0A48322BDDA15300833160 /* CopyToPasteboard.mm in Sources */,
@@ -3257,6 +3275,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				CF67F1BF2954689000B92944 /* Theme_UT.mm in Sources */,
+				AB12CD34EF56000000000023 /* ParallelFileSearch_UT.mm in Sources */,
+				AB12CD34EF56000000000027 /* FlatListingBuilder_UT.mm in Sources */,
+				AB12CD34EF5600000000002B /* ParallelContentSearch_UT.mm in Sources */,
 				CF764D572587875E00D7ED17 /* PanelBriefViewFixedWidthLayoutEngine_UT.mm in Sources */,
 				CF371DAA2D18472E0034EB3F /* ActionsShortcutsManager_UT.cpp in Sources */,
 				CF764D4F258785CC00D7ED17 /* PanelBriefViewFixedNumberLayoutEngine_UT.mm in Sources */,

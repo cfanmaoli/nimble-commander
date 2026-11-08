@@ -24,7 +24,6 @@ public:
 private:
     void CopyInputData(const Params &_params);
     void BuildGrid(const Params &_params);
-    void BuildItemsLayout();
 
     // input data:
     int m_ItemWidth = 100;

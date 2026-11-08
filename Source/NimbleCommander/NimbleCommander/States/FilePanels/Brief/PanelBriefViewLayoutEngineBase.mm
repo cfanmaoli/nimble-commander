@@ -13,6 +13,21 @@ int LayoutEngineBase::NumberOfRowsForViewHeight(double _view_height, int _item_h
         return 0;
 }
 
+NSCollectionViewLayoutAttributes *LayoutEngineBase::AttributesForItemNumber(int _number) const noexcept
+{
+    if( _number < 0 || _number >= m_ItemsNumber || m_ColumnsPositions.empty() || m_ColumnsWidths.empty() )
+        return nil;
+    const auto column = m_RowsNumber > 0 ? (_number / m_RowsNumber) : 0;
+    const auto row = m_RowsNumber > 0 ? (_number % m_RowsNumber) : 0;
+    if( column >= static_cast<int>(m_ColumnsPositions.size()) || column >= static_cast<int>(m_ColumnsWidths.size()) )
+        return nil;
+    const auto index_path = [NSIndexPath indexPathForItem:_number inSection:0];
+    const auto attributes = [NSCollectionViewLayoutAttributes layoutAttributesForItemWithIndexPath:index_path];
+    attributes.frame =
+        NSMakeRect(m_ColumnsPositions[column], row * m_ItemHeight, m_ColumnsWidths[column], m_ItemHeight);
+    return attributes;
+}
+
 template <typename It>
 static It FindFirstColumnPosForRect(It _first, It _last, NSRect _rect) noexcept
 {
@@ -52,7 +67,8 @@ LayoutEngineBase::LogarithmicSearchForItemsInRect(NSRect _rect) const noexcept
         for( int row = first_row_index; row < last_row_index; ++row ) {
             const auto index = (column * m_RowsNumber) + row;
             if( index >= 0 && index < m_ItemsNumber ) {
-                [array addObject:m_Attributes[index]];
+                if( NSCollectionViewLayoutAttributes *attributes = AttributesForItemNumber(index) )
+                    [array addObject:attributes];
             }
         }
     }

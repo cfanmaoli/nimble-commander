@@ -23,6 +23,8 @@
 #include <sys/mount.h>
 #include <pstld/pstld.h>
 #include <fmt/ranges.h>
+#include <chrono>
+#include <cstdio>
 #include <algorithm>
 
 namespace nc::vfs {
@@ -69,7 +71,49 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
                                                                       const unsigned long _flags,
                                                                       const VFSCancelChecker &_cancel_checker)
 {
-    Log::Trace("NativeHost::FetchDirectoryListing() called with path='{}',_flags: {}", _path, _flags);
+    return FetchDirectoryListingImpl(_path, _flags, _cancel_checker, 0);
+}
+
+std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingPreview(std::string_view _path,
+                                                                             size_t _max_items,
+                                                                             const unsigned long _flags,
+                                                                             const VFSCancelChecker &_cancel_checker)
+{
+    if( _max_items == 0 )
+        return std::unexpected(Error{Error::POSIX, EINVAL});
+    return FetchDirectoryListingImpl(_path, _flags | VFSFlags::F_NoDotDot, _cancel_checker, _max_items);
+}
+
+// Maps a readdir()-provided entry type to the corresponding file type bits of a unix mode.
+static mode_t DTypeToUnixMode(const uint8_t _type) noexcept
+{
+    switch( _type ) {
+        case DT_REG:
+            return S_IFREG;
+        case DT_DIR:
+            return S_IFDIR;
+        case DT_LNK:
+            return S_IFLNK;
+        case DT_BLK:
+            return S_IFBLK;
+        case DT_CHR:
+            return S_IFCHR;
+        case DT_FIFO:
+            return S_IFIFO;
+        case DT_SOCK:
+            return S_IFSOCK;
+        default:
+            return 0;
+    }
+}
+std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::string_view _path,
+                                                                          const unsigned long _flags,
+                                                                          const VFSCancelChecker &_cancel_checker,
+                                                                          const size_t _max_items)
+{
+    Log::Trace(
+        "NativeHost::FetchDirectoryListingImpl() called with path='{}',_flags: {}, max: {}", _path, _flags, _max_items);
+    const auto perf_begin = std::chrono::steady_clock::now();
 
     using namespace native;
     if( !_path.starts_with('/') )
@@ -86,24 +130,80 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         return std::unexpected(Error{Error::POSIX, errno});
     const auto close_fd = at_scope_end([fd] { close(fd); });
 
+    if( (_flags & VFSFlags::F_NamesOnly) && is_native_io ) {
+        // A fast names-only pass: readdir() instead of getattrlistbulk(), one syscall batch per
+        // chunk of entries. The attributes are simply not present - the client is expected to
+        // fetch them for the entries it actually shows.
+        using nc::base::variable_container;
+        ListingInput source;
+        source.hosts[0] = shared_from_this();
+        source.directories[0] = EnsureTrailingSlash(std::string(_path));
+        source.sizes.reset(variable_container<>::type::sparse);
+        source.inodes.reset(variable_container<>::type::sparse);
+        source.atimes.reset(variable_container<>::type::sparse);
+        source.mtimes.reset(variable_container<>::type::sparse);
+        source.ctimes.reset(variable_container<>::type::sparse);
+        source.btimes.reset(variable_container<>::type::sparse);
+        source.add_times.reset(variable_container<>::type::sparse);
+        source.uids.reset(variable_container<>::type::sparse);
+        source.gids.reset(variable_container<>::type::sparse);
+        source.unix_flags.reset(variable_container<>::type::sparse);
+
+        if( need_to_add_dot_dot ) {
+            source.filenames.emplace_back("..");
+            source.unix_modes.emplace_back(S_IFDIR);
+            source.unix_types.emplace_back(DT_DIR);
+        }
+
+        DIR *const dirp = fdopendir(dup(fd));
+        if( dirp == nullptr )
+            return std::unexpected(Error{Error::POSIX, errno});
+        const auto close_dir = at_scope_end([dirp] { closedir(dirp); });
+        while( const dirent *const entry = readdir(dirp) ) {
+            const std::string_view name = entry->d_name;
+            if( name == "." || name == ".." )
+                continue;
+            source.filenames.emplace_back(name);
+            source.unix_modes.emplace_back(DTypeToUnixMode(entry->d_type));
+            source.unix_types.emplace_back(entry->d_type);
+            if( _cancel_checker && _cancel_checker() )
+                return std::unexpected(Error{Error::POSIX, ECANCELED});
+        }
+        return VFSListing::Build(std::move(source));
+    }
     using nc::base::variable_container;
     ListingInput listing_source;
     listing_source.hosts[0] = shared_from_this();
     listing_source.directories[0] = EnsureTrailingSlash(std::string(_path));
     listing_source.inodes.reset(variable_container<>::type::dense);
-    listing_source.atimes.reset(variable_container<>::type::dense);
-    listing_source.mtimes.reset(variable_container<>::type::dense);
-    listing_source.ctimes.reset(variable_container<>::type::dense);
-    listing_source.btimes.reset(variable_container<>::type::dense);
-    listing_source.add_times.reset(variable_container<>::type::sparse);
+    if( _flags & VFSFlags::F_NoTimes ) {
+        listing_source.atimes.reset(variable_container<>::type::sparse);
+        listing_source.mtimes.reset(variable_container<>::type::sparse);
+        listing_source.ctimes.reset(variable_container<>::type::sparse);
+        listing_source.btimes.reset(variable_container<>::type::sparse);
+        listing_source.add_times.reset(variable_container<>::type::sparse);
+    }
+    else {
+        listing_source.atimes.reset(variable_container<>::type::dense);
+        listing_source.mtimes.reset(variable_container<>::type::dense);
+        listing_source.ctimes.reset(variable_container<>::type::dense);
+        listing_source.btimes.reset(variable_container<>::type::dense);
+        listing_source.add_times.reset(variable_container<>::type::sparse);
+    }
     listing_source.unix_flags.reset(variable_container<>::type::dense);
     listing_source.uids.reset(variable_container<>::type::dense);
     listing_source.gids.reset(variable_container<>::type::dense);
-    listing_source.sizes.reset(variable_container<>::type::dense);
+    listing_source.sizes.reset((_flags & VFSFlags::F_NoSizes) ? variable_container<>::type::sparse
+                                                              : variable_container<>::type::dense);
     listing_source.symlinks.reset(variable_container<>::type::sparse);
     listing_source.display_filenames.reset(variable_container<>::type::sparse);
 
+    // Both of these are only needed by the optional passes below - a million entries would
+    // otherwise cost 8MB each just to be thrown away.
+    const bool want_display_names = (_flags & VFSFlags::F_LoadDisplayNames) != 0;
+    const bool want_ext_flags = want_display_names || ((_flags & VFSFlags::F_LoadTags) != 0);
     std::vector<uint64_t> ext_flags; // store EF_xxx here
+    std::vector<dev_t> devs;         // store st_dev here, used by the display names pass
     constexpr size_t initial_prealloc_size = 64;
     size_t allocated_size = 0;
     auto resize_dense = [&](size_t _sz) {
@@ -118,41 +218,44 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         listing_source.unix_flags.resize(_sz);
         listing_source.uids.resize(_sz);
         listing_source.gids.resize(_sz);
-        listing_source.sizes.resize(_sz);
-        ext_flags.resize(_sz);
+        if( (_flags & VFSFlags::F_NoSizes) == 0 )
+            listing_source.sizes.resize(_sz);
+        if( want_ext_flags )
+            ext_flags.resize(_sz);
+        if( want_display_names )
+            devs.resize(_sz);
         allocated_size = _sz;
     };
 
     // allocate space for up to 64 items upfront
     resize_dense(initial_prealloc_size);
 
+    const bool no_times = (_flags & VFSFlags::F_NoTimes) != 0;
+    const bool no_sizes = (_flags & VFSFlags::F_NoSizes) != 0;
     auto fill = [&](size_t _n, const Fetching::CallbackParams &_params) {
         assert(_n < listing_source.filenames.size());
         listing_source.filenames[_n] = _params.filename;
         listing_source.inodes[_n] = _params.inode;
         listing_source.unix_types[_n] = IFTODT(_params.mode);
-        listing_source.atimes[_n] = _params.acc_time;
-        listing_source.mtimes[_n] = _params.mod_time;
-        listing_source.ctimes[_n] = _params.chg_time;
-        listing_source.btimes[_n] = _params.crt_time;
+        if( !no_times ) {
+            listing_source.atimes[_n] = _params.acc_time;
+            listing_source.mtimes[_n] = _params.mod_time;
+            listing_source.ctimes[_n] = _params.chg_time;
+            listing_source.btimes[_n] = _params.crt_time;
+            if( _params.add_time >= 0 )
+                listing_source.add_times.insert(_n, _params.add_time);
+        }
         listing_source.unix_modes[_n] = _params.mode;
         listing_source.unix_flags[_n] = _params.flags;
         listing_source.uids[_n] = _params.uid;
         listing_source.gids[_n] = _params.gid;
-        listing_source.sizes[_n] = _params.size;
-        if( _params.add_time >= 0 )
-            listing_source.add_times.insert(_n, _params.add_time);
+        if( !no_sizes )
+            listing_source.sizes[_n] = _params.size;
 
-        if( _flags & VFSFlags::F_LoadDisplayNames )
-            if( S_ISDIR(listing_source.unix_modes[_n]) && !listing_source.filenames[_n].empty() &&
-                listing_source.filenames[_n] != ".." ) {
-                static auto &dnc = DisplayNamesCache::Instance();
-                if( auto display_name = dnc.DisplayName(
-                        _params.inode, _params.dev, listing_source.directories[0] + listing_source.filenames[_n]) )
-                    listing_source.display_filenames.insert(_n, std::string(*display_name));
-            }
-
-        ext_flags[_n] = _params.ext_flags;
+        if( want_ext_flags )
+            ext_flags[_n] = _params.ext_flags;
+        if( want_display_names )
+            devs[_n] = _params.dev;
     };
 
     size_t next_entry_index = 0;
@@ -171,8 +274,9 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
 
     // when Admin Mode is on - we use different fetch route
     const int ret =
-        is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
-                     : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
+        is_native_io
+            ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items, (_flags & VFSFlags::F_NoTimes) == 0)
+            : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});
 
@@ -182,6 +286,36 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
     // check if final entries count is less than approximate
     if( next_entry_index < allocated_size )
         resize_dense(next_entry_index);
+
+    // Now fetch the localized display names, if requested. This is a rather expensive operation:
+    // for every directory it costs a stat() plus a LaunchServices-backed
+    // -[NSFileManager displayNameAtPath:] plus a Unicode normalisation - measured ~60us per entry,
+    // which makes a directory with 200k subdirectories take ~10 seconds to open. The overwhelming
+    // majority of the display names are identical to the plain filenames, so it only pays off on
+    // small/medium listings - for huge ones the feature is simply skipped.
+    if( _flags & VFSFlags::F_LoadDisplayNames ) {
+        static constexpr size_t max_items_for_display_names = 20'000;
+        if( next_entry_index <= max_items_for_display_names ) {
+            auto &dnc = DisplayNamesCache::Instance();
+            const std::string &directory = listing_source.directories[0];
+            for( size_t n = 0; n != next_entry_index; ++n ) {
+                if( !S_ISDIR(listing_source.unix_modes[n]) )
+                    continue;
+                const auto &filename = listing_source.filenames[n];
+                if( filename.empty() || filename == ".." )
+                    continue;
+                if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
+                    listing_source.display_filenames.insert(n, std::string(*display_name));
+            }
+        }
+        else {
+            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
+                       listing_source.directories[0],
+                       next_entry_index);
+        }
+    }
+
+    const auto perf_enumerated = std::chrono::steady_clock::now();
 
     // Now the main fetching is done there's a second pass to gather optional attributes per item:
     // - symlinks
@@ -238,7 +372,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         // Tags are stored in xattrs and if we know in advance that there are no xattrs in this entry - there's no
         // point trying. Unfortunately, some filesystems (like SMB) don't report EF_NO_XATTRS, so this algorithm
         // has to check every single item...
-        if( tags_reading_enabled && !(ext_flags[n] & EF_NO_XATTRS) ) {
+        if( tags_reading_enabled && (ext_flags.empty() || !(ext_flags[n] & EF_NO_XATTRS)) ) {
             // TODO: is it worth routing the I/O here? guess not atm
             const int entry_fd = openat(fd, filename.c_str(), O_RDONLY | O_NONBLOCK);
             if( entry_fd >= 0 ) {
@@ -261,8 +395,27 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListing(std::strin
         }
     });
 
+    const auto perf_epilogue = std::chrono::steady_clock::now();
+
     // And, finally, compose the listing source into a compact immutable listing object.
-    return VFSListing::Build(std::move(listing_source));
+    const VFSListingPtr listing = VFSListing::Build(std::move(listing_source));
+
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] fetch n=%zu enum=%.1fms epilogue=%.1fms build=%.1fms total=%.1fms dir=%s\n",
+                     static_cast<size_t>(next_entry_index),
+                     ms(perf_begin, perf_enumerated),
+                     ms(perf_enumerated, perf_epilogue),
+                     ms(perf_epilogue, perf_end),
+                     ms(perf_begin, perf_end),
+                     std::string(path).c_str());
+    }
+    return listing;
 }
 
 std::expected<VFSListingPtr, Error> NativeHost::FetchSingleItemListing(std::string_view _path,
@@ -510,6 +663,14 @@ bool NativeHost::IsDirectoryChangeObservationAvailable(std::string_view _path)
 }
 
 HostDirObservationTicket NativeHost::ObserveDirectoryChanges(std::string_view _path, std::function<void()> _handler)
+{
+    auto &inst = nc::utility::FSEventsDirUpdate::Instance();
+    const uint64_t t = inst.AddWatchPath(_path, std::move(_handler));
+    return t ? HostDirObservationTicket(t, shared_from_this()) : HostDirObservationTicket();
+}
+
+HostDirObservationTicket NativeHost::ObserveDirectoryChangesWithPaths(std::string_view _path,
+                                                                      DirectoryChangePathsHandler _handler)
 {
     auto &inst = nc::utility::FSEventsDirUpdate::Instance();
     const uint64_t t = inst.AddWatchPath(_path, std::move(_handler));

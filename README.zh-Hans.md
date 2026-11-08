@@ -38,6 +38,30 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 - **零散修复** —— 归档扫描可取消、快速过滤支持拼音首字母、快速过滤新增正则表达式模式、鼠标侧键前进/后退，
   以及用本地证书签名后依然可用的特权助手。
 
+
+## 海量目录下的性能
+
+本分支还包含一组针对几十万条目目录的优化（以 100 万条目的目录为基准）。测量方法与推理见
+[Docs/Performance.md](Docs/Performance.md)，简表如下：
+
+| | 之前 | 现在 |
+|---|---|---|
+| 100 万条目目录的首屏 | ~2.2 s | **~34 ms**（先显示预览，其余在后台继续读）|
+| 100 万条目目录里的单次变化 | 2.4 s（默认视图设置下整目录重载）| **~40 ms**（路径级 FSEvents + 增量补丁）|
+| 读取目录本身 | ~5.7 s CPU | ~2.35 s，其中 2.17 s 是内核枚举 |
+| 常驻内存（100 万条目）| ~650 MB | 默认 ~283 MB，lazy 模式 ~252 MB |
+
+平铺视图与“查找文件”面板也各有快路径（列式树枚举、并行的文件名/内容搜索），测量与实现在
+[Docs/VFS-Peel-Evaluation.md](Docs/VFS-Peel-Evaluation.md)。
+
+有两个可选设置可以在超大目录上用信息换内存，位于
+`~/Library/Application Support/Nimble Commander-Fork/Config/Config.json`，默认关闭：
+
+- `filePanel.general.lazyDates` —— 枚举时跳过五个时间列（每百万条目省 20 MB），滚动时再补日期列
+  （面板会对可见行做 stat）。
+- `filePanel.general.lazySizes` —— 对大小列做同样的事（再省 8 MB）。
+
+打开其中任何一个后，按受影响的列排序会先用完整属性重载目录，未取到的行显示 `--`。
 ## 从源码编译
 
 见 [Docs/Building.md](Docs/Building.md)。随附的第三方库已经为 arm64 预编译好，需要自己重建时运行

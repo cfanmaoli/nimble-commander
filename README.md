@@ -38,6 +38,33 @@ changed to avoid confusion with the original project.
   quick filter mode, mouse back/forward navigation, and a privileged helper that keeps working with
   locally signed builds.
 
+
+## Performance with huge directories
+
+The fork also carries a set of changes aimed at directories with hundreds of thousands of entries
+(a million-entry directory is the benchmark). See [Docs/Performance.md](Docs/Performance.md) for the
+measurements and the reasoning; the short version:
+
+| | before | now |
+|---|---|---|
+| first paint of a 1M-entry directory | ~2.2 s | **~34 ms** (a preview listing goes on screen while the rest is read) |
+| a single change in a 1M-entry directory | 2.4 s (a full reload with the default view options) | **~40 ms** (path-level FSEvents + an incremental listing patch) |
+| reading the directory itself | ~5.7 s of CPU | ~2.35 s, of which 2.17 s is the kernel enumeration |
+| resident memory, 1M entries | ~650 MB | ~283 MB by default, ~252 MB in the lazy mode |
+
+The flat view and the find-files dialog have their own fast paths (a column-oriented tree scan and
+parallel filename/content searches); they are described, with measurements, in
+[Docs/VFS-Peel-Evaluation.md](Docs/VFS-Peel-Evaluation.md).
+
+Two optional settings trade information for memory on very large directories. They live in
+`~/Library/Application Support/Nimble Commander-Fork/Config/Config.json` and are off by default:
+
+- `filePanel.general.lazyDates` - the enumeration skips the five timestamp columns (20 MB per
+  million entries); the date columns fill in as you scroll (the panel stats the visible rows).
+- `filePanel.general.lazySizes` - the same for the sizes (another 8 MB).
+
+With either of them on, sorting by the affected column reloads the directory with the full
+attributes first, and the columns show `--` until a row has been fetched.
 ## Building from source
 
 See [Docs/Building.md](Docs/Building.md). The bundled libraries are precompiled for arm64; run

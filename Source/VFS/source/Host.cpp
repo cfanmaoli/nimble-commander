@@ -224,6 +224,23 @@ HostDirObservationTicket Host::ObserveDirectoryChanges([[maybe_unused]] std::str
     return {};
 }
 
+std::expected<VFSListingPtr, Error>
+Host::FetchDirectoryListingPreview([[maybe_unused]] std::string_view _path,
+                                   [[maybe_unused]] size_t _max_items,
+                                   [[maybe_unused]] unsigned long _flags,
+                                   [[maybe_unused]] const VFSCancelChecker &_cancel_checker)
+{
+    return std::unexpected(Error{Error::POSIX, ENOTSUP});
+}
+
+HostDirObservationTicket Host::ObserveDirectoryChangesWithPaths([[maybe_unused]] std::string_view _path,
+                                                                DirectoryChangePathsHandler _handler)
+{
+    if( !_handler )
+        return {};
+    return ObserveDirectoryChanges(_path, [handler = std::move(_handler)] { handler({}); });
+}
+
 void Host::StopDirChangeObserving([[maybe_unused]] unsigned long _ticket)
 {
 }

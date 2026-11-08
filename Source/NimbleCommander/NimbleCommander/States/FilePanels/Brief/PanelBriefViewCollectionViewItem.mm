@@ -9,12 +9,14 @@
 using namespace nc::panel;
 
 @implementation PanelBriefViewItem {
+    data::QuickSearchHighlight m_QsHighlight;
     VFSListingItem m_Item;
     data::ItemVolatileData m_VD;
     bool m_PanelActive;
 }
 
 @synthesize panelActive = m_PanelActive;
+@synthesize qsHighlight = m_QsHighlight;
 
 - (void)prepareForReuse
 {
@@ -174,7 +176,7 @@ using namespace nc::panel;
     [self updateForegroundColor];
     [self updateBackgroundColor];
     [self updateAccentColor];
-    self.carrier.qsHighlight = _vd.highlight;
+    self.carrier.qsHighlight = self.qsHighlight;
     self.carrier.highlighted = _vd.is_highlighted();
 }
 

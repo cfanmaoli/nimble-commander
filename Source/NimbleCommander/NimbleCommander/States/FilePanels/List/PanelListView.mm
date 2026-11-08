@@ -82,6 +82,11 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 
     std::function<void(data::SortMode)> m_SortModeChangeCallback;
 
+    // Sweeping the icon repository means walking every raw entry, which is way too expensive to do
+    // on each update of a listing with hundreds of thousands of items - do it every so often
+    // instead, the number of the registered icons is bounded anyway.
+    int m_UpdatesSinceIconSweep;
+
     PanelListViewColumnsLayout m_AssignedLayout;
     ThemesManager::ObservationTicket m_ThemeObservation;
 }
@@ -91,12 +96,14 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 @synthesize dateModifiedFormattingStyle = m_DateModifiedFormattingStyle;
 @synthesize dateAccessedFormattingStyle = m_DateAccessedFormattingStyle;
 @synthesize sortModeChangeCallback = m_SortModeChangeCallback;
+@synthesize visibleRangeChangedCallback = m_VisibleRangeChangedCallback;
 
 - (id)initWithFrame:(NSRect)_frame iconRepository:(nc::vfsicon::IconRepository &)_ir
 {
     self = [super initWithFrame:_frame];
     if( self ) {
         m_IconRepository = &_ir;
+        m_UpdatesSinceIconSweep = 0;
 
         [self calculateItemLayout];
 
@@ -106,6 +113,11 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
         m_ScrollView.layer.drawsAsynchronously = false;
         m_ScrollView.hasVerticalScroller = true;
         m_ScrollView.hasHorizontalScroller = true;
+        m_ScrollView.contentView.postsBoundsChangedNotifications = true;
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(onScrollViewBoundsChanged:)
+                                                   name:NSViewBoundsDidChangeNotification
+                                                 object:m_ScrollView.contentView];
         m_ScrollView.borderType = NSNoBorder;
         m_ScrollView.drawsBackground = true;
         [self addSubview:m_ScrollView];
@@ -256,6 +268,16 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
     m_TagsColumn.headerCell.alignment = NSTextAlignmentLeft;
     m_TagsColumn.resizingMask = NSTableColumnUserResizingMask;
     [m_TagsColumn addObserver:self forKeyPath:@"width" options:0 context:nullptr];
+}
+
+- (void)onScrollViewBoundsChanged:(NSNotification *) [[maybe_unused]] _note
+{
+    if( !m_VisibleRangeChangedCallback || !m_TableView )
+        return;
+    const NSRange rows = [m_TableView rowsInRect:m_TableView.visibleRect];
+    if( rows.location == NSNotFound )
+        return;
+    m_VisibleRangeChangedCallback(rows);
 }
 
 - (void)dealloc
@@ -489,6 +511,7 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
         }
         row_view.itemIndex = row;
         row_view.vd = vd;
+        row_view.qsHighlight = m_Data->HighlightForRawIndex(item.Index());
         row_view.panelActive = m_PanelView.active;
 
         return row_view;
@@ -551,26 +574,46 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
 
 - (void)fillDataForDateCreatedView:(PanelListViewDateTimeView *)_view withItem:(const VFSListingItem &)_item
 {
-    _view.time = _item.BTime();
     _view.style = m_DateCreatedFormattingStyle;
+    if( _item.HasBTime() )
+        _view.time = _item.BTime();
+    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
+        _view.time = fetched->btime;
+    else
+        _view.time = -1; // not loaded yet
 }
 
 - (void)fillDataForDateAddedView:(PanelListViewDateTimeView *)_view withItem:(const VFSListingItem &)_item
 {
-    _view.time = _item.HasAddTime() ? _item.AddTime() : -1;
     _view.style = m_DateAddedFormattingStyle;
+    if( _item.HasAddTime() )
+        _view.time = _item.AddTime();
+    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
+        _view.time = fetched->addtime;
+    else
+        _view.time = -1;
 }
 
 - (void)fillDataForDateModifiedView:(PanelListViewDateTimeView *)_view withItem:(const VFSListingItem &)_item
 {
-    _view.time = _item.MTime();
     _view.style = m_DateModifiedFormattingStyle;
+    if( _item.HasMTime() )
+        _view.time = _item.MTime();
+    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
+        _view.time = fetched->mtime;
+    else
+        _view.time = -1;
 }
 
 - (void)fillDataForDateAccessedView:(PanelListViewDateTimeView *)_view withItem:(const VFSListingItem &)_item
 {
-    _view.time = _item.ATime();
     _view.style = m_DateAccessedFormattingStyle;
+    if( _item.HasATime() )
+        _view.time = _item.ATime();
+    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
+        _view.time = fetched->atime;
+    else
+        _view.time = -1;
 }
 
 - (void)onDataChanged
@@ -579,45 +622,29 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     const auto old_rows_count = static_cast<int>(m_TableView.numberOfRows);
     const auto new_rows_count = data->SortedEntriesCount();
 
-    IconRepositoryCleaner{*m_IconRepository, *m_Data}.SweepUnusedSlots();
+    // Sweeping walks every raw entry of the listing, so on a million-entry directory it is the most
+    // expensive part of a bulk update and plain pointless to do for every single patch. Do it once
+    // in a while instead - the number of the registered icons is bounded by the repository.
+    ++m_UpdatesSinceIconSweep;
+    if( new_rows_count < 20'000 || m_UpdatesSinceIconSweep >= 64 ) {
+        m_UpdatesSinceIconSweep = 0;
+        IconRepositoryCleaner{*m_IconRepository, *m_Data}.SweepUnusedSlots();
+    }
 
-    auto block = ^(PanelListViewRowView *row_view, NSInteger rowIndex) {
-      const int row = static_cast<int>(rowIndex);
-      if( row >= new_rows_count )
-          return;
+    [m_TableView enumerateAvailableRowViewsUsingBlock:^(PanelListViewRowView *row_view, NSInteger rowIndex) {
+      [self fillRowView:row_view atRow:static_cast<int>(rowIndex)];
+    }];
 
-      if( auto item = data->EntryAtSortPosition(row) ) {
-          auto &vd = data->VolatileDataAtSortPosition(row);
-          row_view.item = item;
-          row_view.vd = vd;
-          for( NSView *v in row_view.subviews ) {
-              NSString *identifier = v.identifier;
-              if( identifier.length == 0 )
-                  continue;
-              const auto col_id = [v.identifier characterAtIndex:0];
-              const auto col_type = IdentifierToKind(static_cast<char>(col_id));
-              if( col_type == PanelListViewColumns::Filename )
-                  [self fillDataForNameView:static_cast<PanelListViewNameView *>(v) withItem:item andVD:vd];
-              if( col_type == PanelListViewColumns::Extension )
-                  [self fillDataForExensionView:static_cast<NCPanelListViewExtensionView *>(v) withItem:item];
-              if( col_type == PanelListViewColumns::Size )
-                  [self fillDataForSizeView:static_cast<PanelListViewSizeView *>(v) withItem:item andVD:vd];
-              if( col_type == PanelListViewColumns::DateCreated )
-                  [self fillDataForDateCreatedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
-              if( col_type == PanelListViewColumns::DateAdded )
-                  [self fillDataForDateAddedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
-              if( col_type == PanelListViewColumns::DateModified )
-                  [self fillDataForDateModifiedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
-              if( col_type == PanelListViewColumns::DateAccessed )
-                  [self fillDataForDateAccessedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
-              if( col_type == PanelListViewColumns::Tags )
-                  [self fillDataForTagsView:static_cast<NCPanelListViewTagsView *>(v) withItem:item];
-          }
-      }
-    };
-    [m_TableView enumerateAvailableRowViewsUsingBlock:block];
-
-    if( old_rows_count < new_rows_count ) {
+    // Inserting/removing a huge range (e.g. all 1M rows when a listing of a whole directory gets
+    // replaced) makes AppKit update its row bookkeeping index by index, which is very expensive -
+    // for such wholesale changes just replace the contents. Note that it has to be reloadData()
+    // rather than noteNumberOfRowsChanged(): the latter leaves the table's document height at the
+    // old row count, which makes the surrounding scroll view refuse to scroll (the preview listing
+    // of 4096 entries gets replaced by the real one this way on every huge directory).
+    const int row_delta = std::max(new_rows_count, old_rows_count) - std::min(new_rows_count, old_rows_count);
+    if( row_delta > 1000 )
+        [m_TableView reloadData];
+    else if( old_rows_count < new_rows_count ) {
         const auto to_add = NSMakeRange(old_rows_count, new_rows_count - old_rows_count);
         [m_TableView insertRowsAtIndexes:[NSIndexSet indexSetWithIndexesInRange:to_add]
                            withAnimation:NSTableViewAnimationEffectNone];
@@ -628,11 +655,52 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
                            withAnimation:NSTableViewAnimationEffectNone];
     }
 }
+// Fills every column of a row from the model. Extracted so that both a full data update and a
+// volatile-data update (e.g. the attributes that the lazy modes pull in while scrolling) refresh
+// the same cells.
+- (void)fillRowView:(PanelListViewRowView *)_row_view atRow:(int)_row
+{
+    const int rows = m_Data->SortedEntriesCount();
+    if( _row < 0 || _row >= rows )
+        return;
+
+    auto item = m_Data->EntryAtSortPosition(_row);
+    if( !item )
+        return;
+
+    data::ItemVolatileData &vd = m_Data->VolatileDataAtSortPosition(_row);
+    _row_view.item = item;
+    _row_view.vd = vd;
+    _row_view.qsHighlight = m_Data->HighlightForRawIndex(item.Index());
+    for( NSView *v in _row_view.subviews ) {
+        NSString *identifier = v.identifier;
+        if( identifier.length == 0 )
+            continue;
+        const auto col_id = [v.identifier characterAtIndex:0];
+        const auto col_type = IdentifierToKind(static_cast<char>(col_id));
+        if( col_type == PanelListViewColumns::Filename )
+            [self fillDataForNameView:static_cast<PanelListViewNameView *>(v) withItem:item andVD:vd];
+        if( col_type == PanelListViewColumns::Extension )
+            [self fillDataForExensionView:static_cast<NCPanelListViewExtensionView *>(v) withItem:item];
+        if( col_type == PanelListViewColumns::Size )
+            [self fillDataForSizeView:static_cast<PanelListViewSizeView *>(v) withItem:item andVD:vd];
+        if( col_type == PanelListViewColumns::DateCreated )
+            [self fillDataForDateCreatedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
+        if( col_type == PanelListViewColumns::DateAdded )
+            [self fillDataForDateAddedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
+        if( col_type == PanelListViewColumns::DateModified )
+            [self fillDataForDateModifiedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
+        if( col_type == PanelListViewColumns::DateAccessed )
+            [self fillDataForDateAccessedView:static_cast<PanelListViewDateTimeView *>(v) withItem:item];
+        if( col_type == PanelListViewColumns::Tags )
+            [self fillDataForTagsView:static_cast<NCPanelListViewTagsView *>(v) withItem:item];
+    }
+}
+
 - (void)onVolatileDataChanged
 {
     [m_TableView enumerateAvailableRowViewsUsingBlock:^(PanelListViewRowView *rowView, NSInteger row) {
-      if( m_Data->IsValidSortPosition(static_cast<int>(row)) )
-          rowView.vd = m_Data->VolatileDataAtSortPosition(static_cast<int>(row));
+      [self fillRowView:rowView atRow:static_cast<int>(row)];
     }];
 }
 

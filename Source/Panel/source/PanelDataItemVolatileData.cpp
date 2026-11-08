@@ -4,7 +4,9 @@
 namespace nc::panel::data {
 
 static_assert(sizeof(QuickSearchHighlight) == 8);
-static_assert(sizeof(ItemVolatileData) == 24);
+// the highlight used to live here and cost 8 bytes for every entry - it's a side array in the
+// model now, so this is 16 bytes: one MILLION entries saves 8MB
+static_assert(sizeof(ItemVolatileData) == 16);
 
 QuickSearchHighlight::QuickSearchHighlight(std::span<const Range> _ranges) noexcept
 {

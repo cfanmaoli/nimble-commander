@@ -10,6 +10,8 @@
 #include <magic_enum.hpp>
 #include <numeric>
 #include <pstld/pstld.h>
+#include <chrono>
+#include <cstdio>
 
 namespace nc::panel::data {
 
@@ -96,10 +98,94 @@ static void InitVolatileDataWithListing(std::vector<ItemVolatileData> &_vd, cons
                     _vd[i].size = sz;
             }
         }
-        else {
+        else if( _listing.HasSize(i) ) {
+            // the listings built with F_NamesOnly simply don't have the sizes
             _vd[i].size = _listing.Size(i);
         }
     }
+}
+
+Model::PreparedLoad Model::PrepareLoad(const VFSListingPtr &_listing,
+                                       PanelType _type,
+                                       struct SortMode _sort_mode,
+                                       HardFilter _hard_filtering,
+                                       TextualFilter _soft_filtering)
+{
+    if( !_listing )
+        throw std::logic_error("PanelData::PrepareLoad: listing can't be nullptr");
+
+    const auto perf_begin = std::chrono::steady_clock::now();
+
+    // A scratch model lets us reuse the existing sorting/filtering machinery as is - none of these
+    // operations depend on the instance they are called on.
+    Model scratch;
+    scratch.m_Listing = _listing;
+    scratch.m_Type = _type;
+    scratch.m_CustomSortMode = _sort_mode;
+    scratch.m_HardFiltering = std::move(_hard_filtering);
+    scratch.m_SoftFiltering = std::move(_soft_filtering);
+
+    InitVolatileDataWithListing(scratch.m_VolatileData, *scratch.m_Listing);
+    const auto perf_vd = std::chrono::steady_clock::now();
+
+    scratch.m_HardFiltering.text.OnPanelDataLoad();
+    scratch.m_SoftFiltering.OnPanelDataLoad();
+
+    // Both sorts are independent - run them concurrently, exactly like Load() always did
+    {
+        const base::DispatchGroup exec_group{base::DispatchGroup::High};
+        exec_group.Run([&] { DoRawSort(*scratch.m_Listing, scratch.m_EntriesByRawName); });
+        exec_group.Run([&] { scratch.DoSortWithHardFiltering(); });
+        exec_group.Wait();
+    }
+    const auto perf_sorted = std::chrono::steady_clock::now();
+    scratch.BuildSoftFilteringIndeces();
+    const auto perf_filtered = std::chrono::steady_clock::now();
+    scratch.UpdateStatictics();
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto perf_end = steady_clock::now();
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] prepare n=%u vd=%.1fms sorts=%.1fms softfilter=%.1fms stats=%.1fms total=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_vd),
+                     ms(perf_vd, perf_sorted),
+                     ms(perf_sorted, perf_filtered),
+                     ms(perf_filtered, perf_end),
+                     ms(perf_begin, perf_end));
+    }
+
+    PreparedLoad prepared;
+    prepared.listing = std::move(scratch.m_Listing);
+    prepared.type = scratch.m_Type;
+    prepared.hard_filtering = std::move(scratch.m_HardFiltering);
+    prepared.soft_filtering = std::move(scratch.m_SoftFiltering);
+    prepared.volatile_data = std::move(scratch.m_VolatileData);
+    prepared.entries_by_raw_name = std::move(scratch.m_EntriesByRawName);
+    prepared.entries_by_custom_sort = std::move(scratch.m_EntriesByCustomSort);
+    prepared.reverse_to_custom_sort = std::move(scratch.m_ReverseToCustomSort);
+    prepared.entries_by_soft_filtering = std::move(scratch.m_EntriesBySoftFiltering);
+    prepared.statistics = scratch.m_Stats;
+    return prepared;
+}
+
+void Model::InstallLoad(PreparedLoad &&_prepared)
+{
+    assert(dispatch_is_main_queue()); // STA api design
+    m_Listing = std::move(_prepared.listing);
+    m_Type = _prepared.type;
+    m_HardFiltering = std::move(_prepared.hard_filtering);
+    m_SoftFiltering = std::move(_prepared.soft_filtering);
+    m_VolatileData = std::move(_prepared.volatile_data);
+    m_EntriesByRawName = std::move(_prepared.entries_by_raw_name);
+    m_EntriesByCustomSort = std::move(_prepared.entries_by_custom_sort);
+    m_ReverseToCustomSort = std::move(_prepared.reverse_to_custom_sort);
+    m_EntriesBySoftFiltering = std::move(_prepared.entries_by_soft_filtering);
+    m_Stats = _prepared.statistics;
+    m_FetchedTimes.clear();
 }
 
 void Model::Load(const VFSListingPtr &_listing, PanelType _type)
@@ -114,20 +200,132 @@ void Model::Load(const VFSListingPtr &_listing, PanelType _type)
               _listing->Count(),
               _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
 
+    InstallLoad(PrepareLoad(_listing, _type, m_CustomSortMode, m_HardFiltering, m_SoftFiltering));
+}
+
+void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
+                                std::span<const unsigned> _removed_old_indices,
+                                unsigned _appended_count)
+{
+    assert(dispatch_is_main_queue());
+    assert(_listing);
+    assert(_listing->IsUniform());
+    assert(m_Listing && m_Listing->IsUniform());
+
+    const unsigned old_count = m_Listing->Count();
+    const unsigned new_count = _listing->Count();
+    assert(new_count == old_count - static_cast<unsigned>(_removed_old_indices.size()) + _appended_count);
+    if( new_count != old_count - static_cast<unsigned>(_removed_old_indices.size()) + _appended_count )
+        throw std::logic_error("Model::ApplyPatchedListing: listing doesn't match the patch");
+
+    // old raw index -> new raw index, or 'invalid' for the dropped entries
+    constexpr unsigned invalid = std::numeric_limits<unsigned>::max();
+    std::vector<unsigned> old_to_new(old_count, invalid);
+    {
+        size_t removed_pos = 0;
+        unsigned new_index = 0;
+        for( unsigned old_index = 0; old_index != old_count; ++old_index ) {
+            if( removed_pos < _removed_old_indices.size() && _removed_old_indices[removed_pos] == old_index ) {
+                ++removed_pos;
+                continue;
+            }
+            old_to_new[old_index] = new_index++;
+        }
+        assert(new_index + _appended_count == new_count);
+    }
+
+    const auto init_volatile_data = [&](ItemVolatileData &_vd, unsigned _index) {
+        _vd = ItemVolatileData{};
+        if( _listing->IsDir(_index) ) {
+            if( _listing->HasSize(_index) ) {
+                const auto sz = _listing->Size(_index);
+                if( sz != std::numeric_limits<uint64_t>::max() )
+                    _vd.size = sz;
+            }
+        }
+        else {
+            _vd.size = _listing->Size(_index);
+        }
+    };
+
+    // volatile data: keep everything that survives and add fresh entries for the appended ones
+    std::vector<ItemVolatileData> new_vd(new_count);
+    for( unsigned old_index = 0; old_index != old_count; ++old_index ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_vd[new_index] = m_VolatileData[old_index];
+    }
+    for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+        init_volatile_data(new_vd[i], i);
+
+    // raw-name order: the retained entries keep their relative order, the appended ones are
+    // inserted at their alphabetical positions
+    std::vector<unsigned> new_by_raw_name;
+    new_by_raw_name.reserve(new_count);
+    for( const unsigned old_index : m_EntriesByRawName ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_by_raw_name.emplace_back(new_index);
+    }
+    const auto name_less = [&](unsigned _lhs, unsigned _rhs) {
+        return _listing->Filename(_lhs) < _listing->Filename(_rhs);
+    };
+    for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+        new_by_raw_name.insert(std::lower_bound(new_by_raw_name.begin(), new_by_raw_name.end(), i, name_less), i);
+
+    // custom sort order: same story - the retained entries are already ordered correctly, the
+    // appended ones have to be placed according to the current sort mode
+    std::vector<unsigned> new_by_custom_sort;
+    new_by_custom_sort.reserve(new_count);
+    for( const unsigned old_index : m_EntriesByCustomSort ) {
+        const unsigned new_index = old_to_new[old_index];
+        if( new_index != invalid )
+            new_by_custom_sort.emplace_back(new_index);
+    }
+
+    // The custom-sort array holds the *visible* entries only, so an appended entry that the hard
+    // filter rejects (e.g. a dotfile while the hidden ones are not shown) must not land there.
+    const auto visible = [&](unsigned _i) {
+        if( !m_HardFiltering.IsFiltering() )
+            return true;
+        QuickSearchHighlight unused_highlight;
+        return m_HardFiltering.IsValidItem(_listing->Item(_i), unused_highlight);
+    };
+
+    if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
+        const IndirectListingComparator cmp{*_listing, new_vd, m_CustomSortMode};
+        const auto first = std::next(new_by_custom_sort.begin(), _listing->IsDotDot(0) ? 1 : 0);
+        for( unsigned i = new_count - _appended_count; i != new_count; ++i ) {
+            if( !visible(i) )
+                continue;
+            const bool is_dotdot = _listing->IsDotDot(i);
+            auto pos =
+                is_dotdot ? new_by_custom_sort.begin() : std::lower_bound(first, new_by_custom_sort.end(), i, cmp);
+            new_by_custom_sort.insert(pos, i);
+        }
+    }
+    else {
+        for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+            if( visible(i) )
+                new_by_custom_sort.emplace_back(i);
+    }
+
     m_Listing = _listing;
-    m_Type = _type;
-    InitVolatileDataWithListing(m_VolatileData, *m_Listing);
+    m_VolatileData = std::move(new_vd);
+    m_EntriesByRawName = std::move(new_by_raw_name);
+    m_EntriesByCustomSort = std::move(new_by_custom_sort);
+    // the raw indices changed, the fetched times can't be mapped anymore
+    m_FetchedTimes.clear();
 
-    m_HardFiltering.text.OnPanelDataLoad();
-    m_SoftFiltering.OnPanelDataLoad();
+    m_ReverseToCustomSort.resize(new_count);
+    std::ranges::fill(m_ReverseToCustomSort, invalid);
+    for( unsigned i = 0, e = static_cast<unsigned>(m_EntriesByCustomSort.size()); i != e; ++i ) {
+        const unsigned raw_index = m_EntriesByCustomSort[i];
+        assert(raw_index < new_count);
+        m_ReverseToCustomSort[raw_index] = i;
+    }
 
-    // now sort our new data
-    const base::DispatchGroup exec_group{base::DispatchGroup::High};
-    exec_group.Run([this] { DoRawSort(*m_Listing, m_EntriesByRawName); });
-    exec_group.Run([this] { DoSortWithHardFiltering(); });
-    exec_group.Wait();
     BuildSoftFilteringIndeces();
-    // update stats
     UpdateStatictics();
 }
 
@@ -143,13 +341,37 @@ static void UpdateWithExisingVD(ItemVolatileData &_new_vd, const ItemVolatileDat
     }
 }
 
-void Model::ReLoad(const VFSListingPtr &_listing)
+Model::ReloadSnapshot Model::SnapshotForReload() const
 {
-    assert(dispatch_is_main_queue()); // STA api design
+    ReloadSnapshot snapshot;
+    snapshot.listing = m_Listing;
+    snapshot.volatile_data = m_VolatileData;
+    snapshot.entries_by_raw_name = m_EntriesByRawName;
+    snapshot.sort_mode = m_CustomSortMode;
+    snapshot.hard_filtering = m_HardFiltering;
+    snapshot.soft_filtering = m_SoftFiltering;
+    snapshot.type = m_Type;
+    return snapshot;
+}
 
-    Log::Info("ReLoading listing, {} entries, {}",
-              _listing->Count(),
-              _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
+Model::PreparedLoad Model::PrepareReload(const VFSListingPtr &_listing, ReloadSnapshot &&_snapshot)
+{
+    if( !_listing )
+        throw std::logic_error("PanelData::PrepareReload: listing can't be nullptr");
+
+    const auto perf_begin = std::chrono::steady_clock::now();
+
+    // A scratch model carries the previous state, so that the merging logic below can run as is.
+    Model scratch;
+    scratch.m_Listing = std::move(_snapshot.listing);
+    scratch.m_VolatileData = std::move(_snapshot.volatile_data);
+    scratch.m_EntriesByRawName = std::move(_snapshot.entries_by_raw_name);
+    scratch.m_CustomSortMode = _snapshot.sort_mode;
+    scratch.m_HardFiltering = std::move(_snapshot.hard_filtering);
+    scratch.m_SoftFiltering = std::move(_snapshot.soft_filtering);
+    scratch.m_Type = _snapshot.type;
+    if( !scratch.m_Listing )
+        throw std::logic_error("PanelData::PrepareReload: no previous listing");
 
     // sort new entries by raw c name for sync-swapping needs
     std::vector<unsigned> dirbyrawcname;
@@ -158,22 +380,22 @@ void Model::ReLoad(const VFSListingPtr &_listing)
     std::vector<ItemVolatileData> new_vd;
     InitVolatileDataWithListing(new_vd, *_listing);
 
-    if( _listing->IsUniform() && m_Listing->IsUniform() ) {
+    if( _listing->IsUniform() && scratch.m_Listing->IsUniform() ) {
         // transfer custom data to new array using sorted indeces arrays based in raw C filename.
         // assumes that there can't be more than one file with same filenamr
         unsigned dst_i = 0;
         const unsigned dst_e = _listing->Count();
         unsigned src_i = 0;
-        const unsigned src_e = m_Listing->Count();
+        const unsigned src_e = scratch.m_Listing->Count();
         for( ; src_i != src_e && dst_i != dst_e; ++src_i ) {
-            const int src = m_EntriesByRawName[src_i];
+            const int src = scratch.m_EntriesByRawName[src_i];
         check:
             const int dst = dirbyrawcname[dst_i];
-            const int cmp = m_Listing->Filename(src).compare(_listing->Filename(dst));
+            const int cmp = scratch.m_Listing->Filename(src).compare(_listing->Filename(dst));
             if( cmp == 0 ) {
 
                 //                new_vd[ dst ] = m_VolatileData[ src ];
-                UpdateWithExisingVD(new_vd[dst], m_VolatileData[src]);
+                UpdateWithExisingVD(new_vd[dst], scratch.m_VolatileData[src]);
 
                 ++dst_i; // check this! we assume that normal directory can't hold
                          // two files with a same name
@@ -186,8 +408,8 @@ void Model::ReLoad(const VFSListingPtr &_listing)
             }
         }
     }
-    else if( !_listing->IsUniform() && !m_Listing->IsUniform() ) {
-        auto src_keys = ProduceLongKeysForListing(*m_Listing);
+    else if( !_listing->IsUniform() && !scratch.m_Listing->IsUniform() ) {
+        auto src_keys = ProduceLongKeysForListing(*scratch.m_Listing);
         auto src_keys_ind = ProduceSortedIndirectIndecesForLongKeys(src_keys);
         auto dst_keys = ProduceLongKeysForListing(*_listing);
         auto dst_keys_ind = ProduceSortedIndirectIndecesForLongKeys(dst_keys);
@@ -204,7 +426,7 @@ void Model::ReLoad(const VFSListingPtr &_listing)
             const int cmp = src_keys[src].compare(dst_keys[dst]);
             if( cmp == 0 ) {
                 //                new_vd[ dst ] = m_VolatileData[ src ];
-                UpdateWithExisingVD(new_vd[dst], m_VolatileData[src]);
+                UpdateWithExisingVD(new_vd[dst], scratch.m_VolatileData[src]);
                 ++dst_i;
             }
             else if( cmp > 0 ) {
@@ -216,17 +438,53 @@ void Model::ReLoad(const VFSListingPtr &_listing)
         }
     }
     else
-        throw std::invalid_argument("PanelData::ReLoad: incompatible listing type!");
+        throw std::invalid_argument("PanelData::PrepareReload: incompatible listing type!");
 
     // put a new data in a place
-    m_Listing = _listing;
-    m_VolatileData = std::move(new_vd);
-    m_EntriesByRawName = std::move(dirbyrawcname);
+    scratch.m_Listing = _listing;
+    scratch.m_VolatileData = std::move(new_vd);
+    scratch.m_EntriesByRawName = std::move(dirbyrawcname);
 
     // now sort our new data with custom sortings
-    DoSortWithHardFiltering();
-    BuildSoftFilteringIndeces();
-    UpdateStatictics();
+    scratch.DoSortWithHardFiltering();
+    const auto perf_sorted = std::chrono::steady_clock::now();
+    scratch.BuildSoftFilteringIndeces();
+    scratch.UpdateStatictics();
+    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+        using namespace std::chrono;
+        const auto ms = [](auto _from, auto _to) {
+            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+        };
+        std::fprintf(stderr,
+                     "[perf] prepare.reload n=%u sort+merge=%.1fms rest=%.1fms\n",
+                     _listing->Count(),
+                     ms(perf_begin, perf_sorted),
+                     ms(perf_sorted, steady_clock::now()));
+    }
+
+    PreparedLoad prepared;
+    prepared.listing = std::move(scratch.m_Listing);
+    prepared.type = scratch.m_Type;
+    prepared.hard_filtering = std::move(scratch.m_HardFiltering);
+    prepared.soft_filtering = std::move(scratch.m_SoftFiltering);
+    prepared.volatile_data = std::move(scratch.m_VolatileData);
+    prepared.entries_by_raw_name = std::move(scratch.m_EntriesByRawName);
+    prepared.entries_by_custom_sort = std::move(scratch.m_EntriesByCustomSort);
+    prepared.reverse_to_custom_sort = std::move(scratch.m_ReverseToCustomSort);
+    prepared.entries_by_soft_filtering = std::move(scratch.m_EntriesBySoftFiltering);
+    prepared.statistics = scratch.m_Stats;
+    return prepared;
+}
+
+void Model::ReLoad(const VFSListingPtr &_listing)
+{
+    assert(dispatch_is_main_queue()); // STA api design
+
+    Log::Info("ReLoading listing, {} entries, {}",
+              _listing->Count(),
+              _listing->IsUniform() ? _listing->Directory().c_str() : "N/A");
+
+    InstallLoad(PrepareReload(_listing, SnapshotForReload()));
 }
 
 const std::shared_ptr<VFSHost> &Model::Host() const
@@ -401,7 +659,11 @@ static void DoRawSort(const VFSListing &_from, std::vector<unsigned> &_to)
 {
     _to.resize(_from.Count());
     std::ranges::iota(_to, 0);
-    std::ranges::sort(_to, [&_from](unsigned _1, unsigned _2) { return _from.Filename(_1) < _from.Filename(_2); });
+    const auto less = [&_from](unsigned _1, unsigned _2) { return _from.Filename(_1) < _from.Filename(_2); };
+    if( _to.size() < g_ParallelSortThresh )
+        std::sort(_to.begin(), _to.end(), less);
+    else
+        pstld::sort(_to.begin(), _to.end(), less);
 }
 
 void Model::SetSortMode(struct SortMode _mode)
@@ -743,9 +1005,7 @@ bool Model::ClearTextFiltering()
     m_SoftFiltering.text = nil;
     m_HardFiltering.text.text = nil;
 
-    for( auto &vd : m_VolatileData ) {
-        vd.highlight = {};
-    }
+    ResetHighlights();
 
     DoSortWithHardFiltering();
     ClearSelectedFlagsFromHiddenElements(); // not sure if this is needed here
@@ -783,10 +1043,9 @@ void Model::DoSortWithHardFiltering()
         return;
 
     m_EntriesByCustomSort.reserve(size);
-    for( auto &vd : m_VolatileData ) {
-        vd.highlight = {};
+    ResetHighlights();
+    for( auto &vd : m_VolatileData )
         vd.toggle_shown(true);
-    }
 
     if( m_HardFiltering.IsFiltering() ) {
         const auto filter = [&](const VFSListingItem &_item) -> std::optional<QuickSearchHighlight> {
@@ -806,7 +1065,7 @@ void Model::DoSortWithHardFiltering()
             }
             else {
                 if( hightlight_results ) {
-                    m_VolatileData[i].highlight = *found_ranges[i];
+                    SetHighlightForRawIndex(i, *found_ranges[i]);
                 }
                 m_EntriesByCustomSort.push_back(i);
             }
@@ -870,14 +1129,95 @@ void Model::BuildSoftFilteringIndeces()
                 m_EntriesBySoftFiltering.push_back(i);
 
             if( m_SoftFiltering.hightlight_results ) {
-                m_VolatileData[raw_index].highlight = found_range;
+                SetHighlightForRawIndex(static_cast<unsigned>(raw_index), found_range);
             }
         }
     }
     else {
-        m_EntriesBySoftFiltering.resize(m_EntriesByCustomSort.size());
-        std::ranges::iota(m_EntriesBySoftFiltering, 0);
+        // An empty array means "identity": every sorted entry is visible in its own position.
+        // Not materialising the whole iota saves 4MB on a million-entry listing.
+        m_EntriesBySoftFiltering.clear();
+        m_EntriesBySoftFiltering.shrink_to_fit();
     }
+}
+
+void Model::SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times)
+{
+    if( _raw_index >= m_Listing->Count() )
+        return;
+    m_FetchedTimes[_raw_index] = _times;
+}
+
+QuickSearchHighlight Model::HighlightForRawIndex(unsigned _raw_index) const noexcept
+{
+    if( _raw_index >= m_Highlights.size() )
+        return {};
+    return m_Highlights[_raw_index];
+}
+
+QuickSearchHighlight Model::HighlightForSortPosition(int _sort_pos) const noexcept
+{
+    if( _sort_pos < 0 || static_cast<size_t>(_sort_pos) >= m_EntriesByCustomSort.size() )
+        return {};
+    return HighlightForRawIndex(m_EntriesByCustomSort[_sort_pos]);
+}
+
+void Model::SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight)
+{
+    if( _raw_index >= m_Listing->Count() )
+        return;
+    if( m_Highlights.size() != m_Listing->Count() )
+        m_Highlights.resize(m_Listing->Count());
+    m_Highlights[_raw_index] = _highlight;
+}
+
+void Model::ResetHighlights()
+{
+    m_Highlights.clear();
+    m_Highlights.shrink_to_fit();
+}
+
+void Model::SetFetchedSize(unsigned _raw_index, uint64_t _size)
+{
+    if( _raw_index >= m_VolatileData.size() )
+        return;
+    m_VolatileData[_raw_index].size = _size;
+}
+
+bool Model::HasFetchedSize(unsigned _raw_index) const noexcept
+{
+    return _raw_index < m_VolatileData.size() && m_VolatileData[_raw_index].is_size_calculated();
+}
+
+std::optional<Model::FetchedTimes> Model::FetchedTimesAtRawPos(int _raw_pos) const
+{
+    if( _raw_pos < 0 || m_FetchedTimes.empty() )
+        return std::nullopt;
+    const auto it = m_FetchedTimes.find(static_cast<unsigned>(_raw_pos));
+    if( it == m_FetchedTimes.end() )
+        return std::nullopt;
+    return it->second;
+}
+
+void Model::ClearFetchedTimes()
+{
+    m_FetchedTimes.clear();
+}
+
+int Model::SoftFilteredCount() const noexcept
+{
+    if( !m_SoftFiltering.IsFiltering() )
+        return SortedEntriesCount();
+    return static_cast<int>(m_EntriesBySoftFiltering.size());
+}
+
+int Model::SortIndexForSoftFiltered(int _pos) const noexcept
+{
+    if( !m_SoftFiltering.IsFiltering() )
+        return _pos;
+    if( _pos < 0 || static_cast<size_t>(_pos) >= m_EntriesBySoftFiltering.size() )
+        return -1;
+    return static_cast<int>(m_EntriesBySoftFiltering[_pos]);
 }
 
 ExternalEntryKey Model::EntrySortKeysAtSortPosition(int _pos) const

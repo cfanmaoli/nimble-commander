@@ -19,6 +19,9 @@
 
 @property(nonatomic) nc::panel::data::ItemVolatileData vd;
 
+// The highlighted segments during a quick search, kept next to (not inside) the volatile data.
+@property(nonatomic) nc::panel::data::QuickSearchHighlight qsHighlight;
+
 @property(nonatomic) nc::panel::gallery::ItemLayout itemLayout;
 
 @property(nonatomic) bool panelActive;

@@ -256,6 +256,117 @@ TEST_CASE(PREFIX "FetchDirectoryListing reads symlink value and resolves target 
     }
 }
 
+TEST_CASE(PREFIX "FetchDirectoryListingPreview stops at the requested amount")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_preview_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 20; ++i )
+        std::ofstream(root / ("f" + std::to_string(i)));
+
+    const auto full = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot);
+    REQUIRE(full);
+    CHECK((*full)->Count() == 20);
+
+    const auto preview = host().FetchDirectoryListingPreview(root.c_str(), 8, Flags::F_NoDotDot, {});
+    REQUIRE(preview);
+    CHECK((*preview)->Count() == 8);
+    for( const auto &item : **preview )
+        CHECK(std::filesystem::exists(root / item.Filename()));
+
+    // a limit bigger than the directory itself returns everything
+    const auto all = host().FetchDirectoryListingPreview(root.c_str(), 100, Flags::F_NoDotDot, {});
+    REQUIRE(all);
+    CHECK((*all)->Count() == 20);
+
+    // zero means "no limit is not allowed", the caller has to ask for a real number
+    const auto zero = host().FetchDirectoryListingPreview(root.c_str(), 0, Flags::F_NoDotDot, {});
+    CHECK(!zero);
+}
+
+TEST_CASE(PREFIX "Names-only listing carries no attributes")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_names_only_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 5; ++i )
+        std::ofstream(root / ("n" + std::to_string(i)));
+    std::filesystem::create_directories(root / "subdir");
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NamesOnly);
+    REQUIRE(listing);
+    CHECK((*listing)->Count() == 6);
+    CHECK(ListingHas(*listing, "n0"));
+    CHECK(ListingHas(*listing, "subdir"));
+
+    // no attributes at all
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK(!(*listing)->HasSize(i));
+        CHECK(!(*listing)->HasMTime(i));
+        CHECK(!(*listing)->HasATime(i));
+        CHECK(!(*listing)->HasInode(i));
+        CHECK(!(*listing)->HasUID(i));
+    }
+    // but the entry types are known
+    CHECK((*listing)->IsDir(static_cast<unsigned>(std::distance(
+        (*listing)->begin(), std::ranges::find_if(**listing, [](auto &it) { return it.Filename() == "subdir"; })))));
+}
+TEST_CASE(PREFIX "F_NoTimes drops the time columns but keeps the rest")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_no_times_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 3; ++i ) {
+        std::ofstream out(root / ("t" + std::to_string(i)));
+        out << "hello world";
+    }
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NoTimes);
+    REQUIRE(listing);
+    REQUIRE((*listing)->Count() == 3);
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK((*listing)->HasSize(i));
+        CHECK((*listing)->Size(i) == 11);
+        CHECK((*listing)->HasInode(i));
+        CHECK(!(*listing)->HasMTime(i));
+        CHECK(!(*listing)->HasATime(i));
+        CHECK(!(*listing)->HasBTime(i));
+        CHECK(!(*listing)->HasCTime(i));
+        CHECK(!(*listing)->HasAddTime(i));
+    }
+
+    // and the usual fetch still has them
+    const auto full = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot);
+    REQUIRE(full);
+    REQUIRE((*full)->Count() == 3);
+    for( unsigned i = 0; i != (*full)->Count(); ++i ) {
+        CHECK((*full)->HasMTime(i));
+        CHECK((*full)->HasSize(i));
+    }
+}
+TEST_CASE(PREFIX "F_NoSizes drops the sizes but keeps the times")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_no_sizes_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 3; ++i ) {
+        std::ofstream out(root / ("s" + std::to_string(i)));
+        out << "0123456789";
+    }
+
+    const auto listing = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot | Flags::F_NoSizes);
+    REQUIRE(listing);
+    REQUIRE((*listing)->Count() == 3);
+    for( unsigned i = 0; i != (*listing)->Count(); ++i ) {
+        CHECK(!(*listing)->HasSize(i));
+        CHECK((*listing)->HasMTime(i));
+        CHECK((*listing)->HasInode(i));
+    }
+}
 } // namespace VFSNativeTests
 
 #undef PREFIX

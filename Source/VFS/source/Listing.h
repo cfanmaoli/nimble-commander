@@ -8,6 +8,8 @@
 #include <Utility/Tags.h>
 #include <chrono>
 #include <span>
+#include <atomic>
+#include <mutex>
 #include <ankerl/unordered_dense.h>
 
 /**
@@ -36,6 +38,20 @@ public:
 
     static const base::intrusive_ptr<const Listing> &EmptyListing() noexcept;
     static base::intrusive_ptr<const Listing> Build(ListingInput &&_input);
+
+    /**
+     * Produces a new listing out of '_base' by dropping the entries at '_removed' (sorted
+     * ascending, unique) and appending everything from '_appended' (typically single-item listings
+     * of the freshly fetched entries). Unlike a rebuild through Compose(), the arrays are copied in
+     * bulk, which is an order of magnitude faster for a listing with a million entries.
+     * Only the plain shape is supported - a listing (or any of the appended ones) that carries
+     * display names, symlinks, tags or added-times makes this return nullptr, the caller then has
+     * to fall back to a generic implementation.
+     */
+    static base::intrusive_ptr<const Listing>
+    ProducePatchedListing(const Listing &_base,
+                          std::span<const unsigned> _removed,
+                          const std::vector<base::intrusive_ptr<const Listing>> &_appended);
 
     /**
      * compose many listings into a new ListingInput.
@@ -137,6 +153,22 @@ public:
     std::span<const utility::Tags::Tag> Tags(unsigned _ind) const; // will return {} if there are no tags
 
     bool HasDisplayFilename(unsigned _ind) const;
+
+    // Cheap whole-listing queries: true if at least one entry carries the corresponding attribute.
+    // Useful to skip per-item checks when a listing simply doesn't have them.
+    /**
+     * A rough sum of the memory held by the listing's arrays and containers, excluding the
+     * materialised CFStrings. Useful for tracking the footprint of big listings in the benchmarks.
+     */
+    [[nodiscard]] size_t ApproximateMemoryFootprint() const noexcept;
+
+    /** True when the listing carries at least one of the time columns. */
+    [[nodiscard]] bool HasAnyTimes() const noexcept;
+
+    [[nodiscard]] bool HasAnyDisplayFilenames() const noexcept;
+    [[nodiscard]] bool HasAnyAddTimes() const noexcept;
+    [[nodiscard]] bool HasAnySymlinks() const noexcept;
+    [[nodiscard]] bool HasAnyTags() const noexcept;
     const std::string &DisplayFilename(unsigned _ind) const;
     CFStringRef DisplayFilenameCF(unsigned _ind) const;
 #ifdef __OBJC__
@@ -168,25 +200,34 @@ private:
     Listing();
 
     void BuildFilenames();
+    CFStringRef MaterializeFilenameCF(unsigned _ind) const;
 
     unsigned m_ItemsCount;
     time_t m_CreationTime;
     std::chrono::nanoseconds m_CreationTicks; // the kernel ticks stamp at which the Listing was created
     std::string m_Title;
-    std::unique_ptr<std::string[]> m_Filenames;
-    std::unique_ptr<base::CFString[]> m_FilenamesCF;
+    // these come straight from the ListingInput without a copy - the enumerator fills a vector and
+    // the listing takes it over
+    std::vector<std::string> m_Filenames;
+    // Filenames are bridged into CFStrings lazily: most of the items of a huge listing are never
+    // displayed, and sorting can compare plain strings (see IndirectListingComparator).
+    mutable std::unique_ptr<std::atomic<CFStringRef>[]> m_FilenamesCF;
+    mutable std::mutex m_FilenamesCFLock;
     std::unique_ptr<uint16_t[]> m_ExtensionOffsets;
-    std::unique_ptr<mode_t[]> m_UnixModes;
-    std::unique_ptr<uint8_t[]> m_UnixTypes;
+    std::vector<mode_t> m_UnixModes;
+    std::vector<uint8_t> m_UnixTypes;
     base::variable_container<VFSHostPtr> m_Hosts;
     base::variable_container<std::string> m_Directories;
     base::variable_container<uint64_t> m_Sizes;
     base::variable_container<uint64_t> m_Inodes;
-    base::variable_container<time_t> m_ATimes;
-    base::variable_container<time_t> m_MTimes;
-    base::variable_container<time_t> m_CTimes;
-    base::variable_container<time_t> m_BTimes;
-    base::variable_container<time_t> m_AddTimes;
+    // Times are stored as 32-bit epoch seconds: this halves the footprint of the five time columns
+    // (20MB for a million entries) and 1901..2038 covers everything a file manager realistically
+    // deals with. Out-of-range values are clamped when they are stored in Build().
+    base::variable_container<int32_t> m_ATimes;
+    base::variable_container<int32_t> m_MTimes;
+    base::variable_container<int32_t> m_CTimes;
+    base::variable_container<int32_t> m_BTimes;
+    base::variable_container<int32_t> m_AddTimes;
     base::variable_container<uid_t> m_UIDS;
     base::variable_container<gid_t> m_GIDS;
     base::variable_container<uint32_t> m_UnixFlags;

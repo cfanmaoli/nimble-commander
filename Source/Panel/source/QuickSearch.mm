@@ -267,12 +267,12 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
 
     m_SoftFilteringLastAction = current_time;
 
-    const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+    const auto filtered_amount = m_Data->SoftFilteredCount();
 
     if( filtered_amount != 0 ) {
         if( m_SoftFilteringOffset >= filtered_amount )
             m_SoftFilteringOffset = filtered_amount - 1;
-        const auto new_cur_pos = m_Data->EntriesBySoftFiltering()[m_SoftFilteringOffset];
+        const auto new_cur_pos = m_Data->SortIndexForSoftFiltered(m_SoftFilteringOffset);
         [m_Delegate quickSearch:self wantsToSetCursorPosition:new_cur_pos];
     }
 
@@ -286,10 +286,10 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
 
 - (void)moveToFirstSoftFilteredItem
 {
-    const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+    const auto filtered_amount = m_Data->SoftFilteredCount();
     if( filtered_amount != 0 ) {
         m_SoftFilteringOffset = 0;
-        const auto new_cur_pos = m_Data->EntriesBySoftFiltering()[m_SoftFilteringOffset];
+        const auto new_cur_pos = m_Data->SortIndexForSoftFiltered(m_SoftFilteringOffset);
         [m_Delegate quickSearch:self wantsToSetCursorPosition:new_cur_pos];
         m_SoftFilteringLastAction = nc::base::machtime();
         [self scheduleSoftFilteringCleanup];
@@ -298,10 +298,10 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
 
 - (void)moveToLastSoftFilteredItem
 {
-    const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+    const auto filtered_amount = m_Data->SoftFilteredCount();
     if( filtered_amount != 0 ) {
         m_SoftFilteringOffset = filtered_amount - 1;
-        const auto new_cur_pos = m_Data->EntriesBySoftFiltering()[m_SoftFilteringOffset];
+        const auto new_cur_pos = m_Data->SortIndexForSoftFiltered(m_SoftFilteringOffset);
         [m_Delegate quickSearch:self wantsToSetCursorPosition:new_cur_pos];
         m_SoftFilteringLastAction = nc::base::machtime();
         [self scheduleSoftFilteringCleanup];
@@ -310,10 +310,10 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
 
 - (void)moveToPreviousSoftFilteredItem
 {
-    const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+    const auto filtered_amount = m_Data->SoftFilteredCount();
     if( filtered_amount != 0 ) {
         m_SoftFilteringOffset = std::max(0, m_SoftFilteringOffset - 1);
-        const auto new_cur_pos = m_Data->EntriesBySoftFiltering()[m_SoftFilteringOffset];
+        const auto new_cur_pos = m_Data->SortIndexForSoftFiltered(m_SoftFilteringOffset);
         [m_Delegate quickSearch:self wantsToSetCursorPosition:new_cur_pos];
         m_SoftFilteringLastAction = nc::base::machtime();
         [self scheduleSoftFilteringCleanup];
@@ -322,10 +322,10 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
 
 - (void)moveToNextSoftFilteredItem
 {
-    const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+    const auto filtered_amount = m_Data->SoftFilteredCount();
     if( filtered_amount != 0 ) {
         m_SoftFilteringOffset = std::min(filtered_amount - 1, m_SoftFilteringOffset + 1);
-        const auto new_cur_pos = m_Data->EntriesBySoftFiltering()[m_SoftFilteringOffset];
+        const auto new_cur_pos = m_Data->SortIndexForSoftFiltered(m_SoftFilteringOffset);
         [m_Delegate quickSearch:self wantsToSetCursorPosition:new_cur_pos];
         m_SoftFilteringLastAction = nc::base::machtime();
         [self scheduleSoftFilteringCleanup];
@@ -364,7 +364,7 @@ static NSString *ModifyStringByKeyDownString(NSString *_str, NSString *_key);
     if( m_IsSoftFiltering ) {
         const auto filtering = m_Data->SoftFiltering();
         if( filtering.text ) {
-            const auto filtered_amount = static_cast<int>(m_Data->EntriesBySoftFiltering().size());
+            const auto filtered_amount = m_Data->SoftFilteredCount();
             [self setPanelHeaderPrompt:filtering.text withMatchesCount:filtered_amount];
         }
         else {

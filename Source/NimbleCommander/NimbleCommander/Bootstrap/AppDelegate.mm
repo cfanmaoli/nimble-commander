@@ -15,6 +15,8 @@
 #include "Actions.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include <magic_enum.hpp>
 #include <spdlog/sinks/stdout_sinks.h>
 
@@ -379,6 +381,7 @@ static NCAppDelegate *g_Me = nil;
 - (void)applicationDidFinishLaunching:(NSNotification *) [[maybe_unused]] _notification
 {
     m_FinishedLaunching.toggle();
+
 
     if( self.mainWindowControllers.empty() )
         [self applicationOpenUntitledFile:NSApp]; // if there's no restored windows - we'll create a

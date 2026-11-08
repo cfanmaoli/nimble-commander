@@ -2,8 +2,43 @@
 #include "PanelDataEntriesComparator.h"
 #include "PanelDataItemVolatileData.h"
 #include "PanelDataExternalEntryKey.h"
+#include <algorithm>
+#include <cctype>
+#include <string_view>
 
 namespace nc::panel::data {
+
+namespace {
+
+bool IsAsciiOnly(const std::string_view _s) noexcept
+{
+    for( const char c : _s )
+        if( static_cast<unsigned char>(c) >= 0x80 )
+            return false;
+    return true;
+}
+
+// For pure-ASCII strings this is exactly what CFStringCompare(kCFCompareCaseInsensitive) and
+// CFStringCompare(0) do, but it doesn't require bridging the strings into CFStrings first.
+int CompareAscii(const std::string_view _lhs, const std::string_view _rhs, const bool _case_sensitive) noexcept
+{
+    const size_t common = std::min(_lhs.size(), _rhs.size());
+    for( size_t i = 0; i != common; ++i ) {
+        unsigned char lhs = static_cast<unsigned char>(_lhs[i]);
+        unsigned char rhs = static_cast<unsigned char>(_rhs[i]);
+        if( !_case_sensitive ) {
+            lhs = static_cast<unsigned char>(std::tolower(lhs));
+            rhs = static_cast<unsigned char>(std::tolower(rhs));
+        }
+        if( lhs != rhs )
+            return lhs < rhs ? -1 : 1;
+    }
+    if( _lhs.size() == _rhs.size() )
+        return 0;
+    return _lhs.size() < _rhs.size() ? -1 : 1;
+}
+
+} // namespace
 
 ListingComparatorBase::ListingComparatorBase(const VFSListing &_items,
                                              std::span<const ItemVolatileData> _vd,
@@ -267,6 +302,15 @@ bool IndirectListingComparator::IsLessByNameReversed(unsigned _1, unsigned _2) c
 
 int IndirectListingComparator::CompareNames(unsigned _1, unsigned _2) const
 {
+    // Fast path: comparing plain strings avoids materialising 1M CFStrings on a big listing.
+    // The natural collation is a black box (localizedStandardCompare), so it always goes through
+    // CFString, and any non-ASCII name falls back as well.
+    if( sort_mode.collation != SortMode::Collation::Natural ) {
+        const std::string &name1 = l.HasDisplayFilename(_1) ? l.DisplayFilename(_1) : l.Filename(_1);
+        const std::string &name2 = l.HasDisplayFilename(_2) ? l.DisplayFilename(_2) : l.Filename(_2);
+        if( IsAsciiOnly(name1) && IsAsciiOnly(name2) )
+            return CompareAscii(name1, name2, sort_mode.collation == SortMode::Collation::CaseSensitive);
+    }
     return Compare(l.DisplayFilenameCF(_1), l.DisplayFilenameCF(_2));
 }
 
