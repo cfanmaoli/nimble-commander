@@ -19,27 +19,47 @@
 
 Nimble Commander-Fork is a community-maintained fork of
 [Nimble Commander](https://github.com/mikekazakov/nimble-commander) — a free dual-pane file manager
-for macOS focused on speed, keyboard-driven navigation and flexibility. Upstream development stopped
-after the 1.9.0 release, so the fork continues from that point.
+for macOS focused on speed, keyboard-driven navigation and flexibility.
 
-## What this branch adds on top of `main`
+Upstream development stopped after the 1.9.0 release, so this fork continues from that point. The
+user interface, documentation and file formats are inherited from upstream; the application name was
+changed to avoid confusion with the original project.
 
-Everything from the `main` branch, plus:
+![](Docs/nc.png)
 
-- **RAR via UnRAR** — archives are listed and extracted with the official UnRAR 7.3.2 library
-  instead of libarchive, giving correct behaviour for solid archives and a much faster listing of
-  large ones.
-- **Password-protected RARs** — the password prompt works for encrypted headers and payloads.
-- **Multi-volume RARs** — `.part1.rar` / `.r00` sets are followed automatically.
+## What this fork changes
 
-Everything else (Apple Silicon only builds, language packs, extra themes, Trash support, fixes) is
-shared with `main`.
+- **Simplified Chinese out of the box** — the fork ships a thorough zh-Hans localization (menus,
+  preferences, file-operation dialogs, error messages, permission requests; about 1,460 strings). A
+  Chinese system starts in Chinese, with no language pack to download; see
+  [README.zh-Hans.md](README.zh-Hans.md).
+- **Apple Silicon only** — the app and all bundled libraries are built for arm64; Intel support was
+  dropped.
+- **Language packs** — *Preferences → Language* can export the interface strings of the current
+  language as JSON, import a translation back, and switch between the built-in languages and any
+  imported pack without Xcode, a rebuild or a re-sign. See
+  [Tools/language-packs.md](Tools/language-packs.md).
+- **More bundled themes** — Solarized (light/dark), Nord, Dracula, Gruvbox (light/dark), One Dark,
+  Tokyo Night, Catppuccin (Mocha/Latte), GitHub Dark and Monokai, next to the original Light, Dark
+  and Classic themes.
+- **Flat view** — `View > Flat View` (`Option + Command + B`) lists the entire subtree of the
+  current directory in one panel, so a deep folder tree can be worked with without navigating in
+  and out. On this branch it enumerates the tree with the column-oriented scan described below.
+- **Trash support** — browse `~/.Trash` and the per-volume trashes (`/Volumes/*/.Trashes/<uid>`),
+  empty all of them at once and put items back to their original locations.
+- **RAR via UnRAR** — the one thing this branch adds on top of `main`: archives are listed and
+  extracted with the official UnRAR 7.3.2 library instead of libarchive, giving correct behaviour
+  for solid archives, a much faster listing of large ones, working passwords for encrypted headers
+  and payloads, and automatic following of multi-volume sets (`.part1.rar`, `.r00`, ...).
+- **Smaller fixes** — cancellable archive scans, pinyin-initial quick filtering, a regular-expression
+  quick filter mode, mouse back/forward navigation, and a privileged helper that keeps working with
+  locally signed builds.
 
 ## Performance with huge directories
 
-The fork carries a set of changes aimed at directories with hundreds of thousands of entries
-(a million-entry directory is the benchmark). See [Docs/Performance.md](Docs/Performance.md) for
-the measurements and the reasoning; the short version:
+The fork also carries a set of changes aimed at directories with hundreds of thousands of entries
+(a million-entry directory is the benchmark). See [Docs/Performance.md](Docs/Performance.md) for the
+measurements and the reasoning; the short version:
 
 | | before | now |
 |---|---|---|
@@ -47,6 +67,10 @@ the measurements and the reasoning; the short version:
 | a single change in a 1M-entry directory | 2.4 s (a full reload with the default view options) | **~40 ms** (path-level FSEvents + an incremental listing patch) |
 | reading the directory itself | ~5.7 s of CPU | ~2.35 s, of which 2.17 s is the kernel enumeration |
 | resident memory, 1M entries | ~650 MB | ~283 MB by default, ~252 MB in the lazy mode |
+
+The flat view and the find-files dialog have their own fast paths (a column-oriented tree scan and
+parallel filename/content searches); they are described, with measurements, in
+[Docs/VFS-Peel-Evaluation.md](Docs/VFS-Peel-Evaluation.md).
 
 Two optional settings trade information for memory on very large directories. They live in
 `~/Library/Application Support/Nimble Commander-Fork/Config/Config.json` and are off by default:
@@ -63,6 +87,19 @@ attributes first, and the columns show `--` until a row has been fetched.
 See [Docs/Building.md](Docs/Building.md). The bundled libraries are precompiled for arm64; run
 `3rd_Party/bootstrap.sh` to rebuild them from their sources. Remember that you are building a
 binary that includes UnRAR and therefore must not be published.
+
+## Documentation
+
+The user guide lives in [Docs/Help.md](Docs/Help.md).
+
+## Changelog
+
+Details about each released version can be found in [WHATS_NEW.md](WHATS_NEW.md).
+
+## Contributing
+
+Contributions, bug reports and translations are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+The fork itself is written by DeepSeek under continuous human supervision and review.
 
 ## License
 
