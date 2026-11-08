@@ -1,6 +1,8 @@
 # What's New in Nimble Commander-Fork
 
-## Version 1.9.1 (Nimble Commander-Fork)
+## Version 1.9.1 (8 Nov 2026)
+
+### Fork
 - Forked from Nimble Commander 1.9.0, the last release made by the original author.
 - The application is now called Nimble Commander-Fork and is built for Apple Silicon (arm64) only.
 - Added language packs: export/import interface strings as JSON and switch languages without rebuilding.
@@ -8,6 +10,26 @@
 - Added Trash support: browse the trash of every mounted volume, empty all of them and put items back.
 - RAR archives are read through libarchive; no proprietary RAR code is bundled.
 - Fixed cancellation of archive scans, added pinyin-initial search and a regular-expression quick filter, and made the privileged helper work with locally signed builds.
+
+### Flat view
+- New `View > Flat View` (`Option + Command + B`): lists the whole subtree of the current directory in one panel, so a deep tree can be worked with without navigating in and out.
+- The tree is enumerated with a column-oriented scan: the directories of each level are read in parallel and the entries go straight into one listing, without building a listing per directory.
+- The flat view is bounded: `filePanel.general.flatViewMaxItems` (default 1,000,000), `flatViewMaxDirectories`, and a wall-clock budget `flatViewMaxSeconds` (default 30). When a limit is hit the panel says so instead of silently dropping entries.
+- Cloud-synced directories (`Library/CloudStorage`, `Library/Mobile Documents`) are skipped by default (`flatViewSkipCloudStorage`), because every enumeration there costs a network round trip; opening the flat view inside one of them still scans it.
+- `filePanel.general.flatScanStrategy` picks the enumeration strategy (`columnar`, the default, or `composed`); anything that is not a native filesystem always uses the composed path.
+
+### Performance with huge directories
+- The first screen of a large directory now appears while the rest is still being read (a 1,000,000-entry directory paints in ~34 ms instead of ~2.2 s).
+- A single change in a directory of that size is applied as an incremental listing patch driven by path-level FSEvents: ~40 ms instead of a full 2.4 s reload.
+- Enumeration itself dropped from ~5.7 s of CPU to ~2.4 s, of which the kernel enumeration is ~2.2 s.
+- Resident memory for a million entries went from ~650 MB to ~283 MB, or ~252 MB with the optional lazy modes (`filePanel.general.lazyDates`, `filePanel.general.lazySizes`), which skip the timestamp and size columns and fill them in for the rows as you scroll.
+- The find-files dialog uses parallel search engines for local directories when the filters allow it: ~20x faster filename search and ~9x faster content search than the previous per-entry VFS walk.
+- Scrolling a directory that was opened through the preview listing works again.
+
+### Under the hood
+- Removed the boost and nlohmann dependencies (56 MB and 936 KB of third-party code) in favour of the standard library, `popen`, `abi::__cxa_demangle` and the already-bundled rapidjson.
+- The app no longer links the unit-test frameworks (googletest, gmock); they are linked only into the test bundles that use them.
+- Added benchmark scripts in `Scripts/perf/` and the performance notes in `Docs/Performance.md` and `Docs/VFS-Peel-Evaluation.md`.
 
 ## Version 1.9.0 (1 Nov 2026)
 - Updated for macOS Golden Gate.
