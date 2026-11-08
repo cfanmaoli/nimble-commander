@@ -3,7 +3,9 @@
 #include <Viewer/Log.h>
 #include <Utility/FSEventsDirUpdate.h>
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#include <iterator>
 #include <ranges>
 #include <fmt/format.h>
 
@@ -62,49 +64,59 @@ std::vector<FileSettingsStorage::Lang> FileSettingsStorage::LoadLangs(const std:
         throw std::invalid_argument(fmt::format("Unable to open the file '{}'", _path.native()));
     }
 
-    nlohmann::json data;
-    try {
-        data = nlohmann::json::parse(f);
-    } catch( std::exception &ex ) {
-        Log::Error("Unable to parse '{}': {}", _path.native(), ex.what());
-        throw std::invalid_argument(fmt::format("Unable to parse '{}': {}", _path.native(), ex.what()));
+    const std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    rapidjson::Document data;
+    data.Parse<rapidjson::kParseCommentsFlag>(content.data(), content.size());
+    if( data.HasParseError() ) {
+        const std::string message = fmt::format("Unable to parse '{}': {} at offset {}",
+                                                _path.native(),
+                                                rapidjson::GetParseError_En(data.GetParseError()),
+                                                static_cast<size_t>(data.GetErrorOffset()));
+        Log::Error("{}", message);
+        throw std::invalid_argument(message);
     }
 
-    if( !data.contains("langs") ) {
+    if( !data.IsObject() || !data.HasMember("langs") || !data["langs"].IsArray() ) {
         Log::Error("Invalid JSON format '{}': no 'langs' array", _path.native());
         throw std::invalid_argument(fmt::format("Invalid JSON format '{}': no 'langs' array", _path.native()));
     }
 
+    const auto fail = [&](std::string_view _reason) -> void {
+        const std::string message = fmt::format("Parse error in '{}': {}", _path.native(), _reason);
+        Log::Error("{}", message);
+        throw std::invalid_argument(message);
+    };
+
     std::vector<FileSettingsStorage::Lang> output;
-    try {
-        auto &langs = data.at("langs");
-        for( auto it = langs.begin(); it != langs.end(); ++it ) {
-            std::string name = it->at("name");
-            if( name.empty() ) {
-                throw std::invalid_argument("empty name is not allowed");
-            }
-
-            std::string settings = it->at("settings");
-            if( settings.empty() ) {
-                throw std::invalid_argument("empty settings is not allowed");
-            }
-
-            const std::string filemask = it->at("filemask");
-            if( filemask.empty() ) {
-                throw std::invalid_argument("empty filemask is not allowed");
-            }
-
-            Lang lang;
-            lang.name = std::move(name);
-            lang.settings_filename = std::move(settings);
-            lang.mask = utility::FileMask(filemask, utility::FileMask::Type::Mask);
-            output.push_back(std::move(lang));
+    for( const auto &entry : data["langs"].GetArray() ) {
+        if( !entry.IsObject() )
+            fail("an entry is not an object");
+        const auto name_it = entry.FindMember("name");
+        const auto settings_it = entry.FindMember("settings");
+        const auto filemask_it = entry.FindMember("filemask");
+        if( name_it == entry.MemberEnd() || settings_it == entry.MemberEnd() ||
+            filemask_it == entry.MemberEnd() ) {
+            fail("an entry is missing one of name/settings/filemask");
         }
+        if( !name_it->value.IsString() || !settings_it->value.IsString() || !filemask_it->value.IsString() )
+            fail("name/settings/filemask must be strings");
+        const std::string name = name_it->value.GetString();
+        const std::string settings = settings_it->value.GetString();
+        const std::string filemask = filemask_it->value.GetString();
+        if( name.empty() )
+            fail("empty name is not allowed");
+        if( settings.empty() )
+            fail("empty settings is not allowed");
+        if( filemask.empty() )
+            fail("empty filemask is not allowed");
 
-    } catch( std::exception &ex ) {
-        Log::Error("Parse error in '{}': {}", _path.native(), ex.what());
-        throw std::invalid_argument(fmt::format("Parse error in '{}': {}", _path.native(), ex.what()));
+        Lang lang;
+        lang.name = name;
+        lang.settings_filename = settings;
+        lang.mask = utility::FileMask(filemask, utility::FileMask::Type::Mask);
+        output.push_back(std::move(lang));
     }
+
 
     ankerl::unordered_dense::set<std::string_view, UnorderedStringHashEqual, UnorderedStringHashEqual> set;
     set.reserve(output.size());

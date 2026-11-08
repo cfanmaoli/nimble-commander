@@ -14,7 +14,6 @@ set -e
 ./libssh2/bootstrap.sh
 ./libcurl/bootstrap.sh
 ./pugixml/bootstrap.sh
-./boost/bootstrap.sh
 ./libarchive/bootstrap.sh
 ./fmt/bootstrap.sh
 ./spdlog/bootstrap.sh
@@ -27,7 +26,6 @@ set -e
 ./re2/bootstrap.sh
 ./libcxxbackport/bootstrap.sh
 ./lexilla/bootstrap.sh
-./nlohmann/bootstrap.sh
 ./unordered_dense/bootstrap.sh
 ./Catch2/bootstrap.sh
 ./rapidjson/bootstrap.sh

@@ -12,7 +12,7 @@
 #include <VFS/PS.h>
 #include <VFS/XAttr.h>
 #include <algorithm>
-#include <boost/container/static_vector.hpp>
+#include <vector>
 
 // THIS IS TEMPORARY!!!
 #include <NimbleCommander/Bootstrap/NativeVFSHostInstance.h>
@@ -131,7 +131,7 @@ std::optional<PersistentLocation> PanelDataPersistency::EncodeLocation(const VFS
 
     // in case of native vfs we simply omit mentioning is - simply path is enough
     if( !_vfs.IsNativeFS() ) {
-        boost::container::static_vector<const VFSHost *, 32> hosts;
+        std::vector<const VFSHost *> hosts;
         auto host_rec = &_vfs;
         while( host_rec ) {
             hosts.emplace_back(host_rec);

@@ -1,7 +1,9 @@
 // Copyright (C) 2017-2023 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "../include/Operations/Job.h"
 #include <Base/IdleSleepPreventer.h>
-#include <boost/core/demangle.hpp>
+#include <cxxabi.h>
+#include <cstdlib>
+#include <string>
 #include <thread>
 #include <cassert>
 #include <iostream>
@@ -27,9 +29,21 @@ void Job::Run()
     std::thread{[this] { Execute(); }}.detach();
 }
 
+namespace {
+// Small stand-in for boost::core::demangle - the whole reason that library was pulled in.
+std::string Demangle(const char *_name)
+{
+    int status = 0;
+    char *const demangled = abi::__cxa_demangle(_name, nullptr, nullptr, &status);
+    std::string result = status == 0 && demangled != nullptr ? demangled : _name;
+    std::free(demangled);
+    return result;
+}
+} // namespace
+
 void Job::Execute()
 {
-    const auto thread_title = "com.magnumbytes.nimblecommander." + boost::core::demangle(typeid(*this).name());
+    const auto thread_title = "com.magnumbytes.nimblecommander." + Demangle(typeid(*this).name());
     pthread_setname_np(thread_title.c_str());
 
     const auto sleep_preventer = base::IdleSleepPreventer::GetPromise();

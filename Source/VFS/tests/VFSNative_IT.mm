@@ -6,7 +6,7 @@
 #include <Base/algo.h>
 #include <Base/dispatch_cpp.h>
 #include <algorithm>
-#include <boost/process/v1.hpp>
+#include <sys/wait.h>
 #include <fmt/core.h>
 #include <fstream>
 #include <unistd.h>
@@ -251,26 +251,25 @@ TEST_CASE(PREFIX "Fetching")
 
 static int Execute(const std::string &_command)
 {
-    using namespace boost::process::v1;
-    ipstream pipe_stream;
-    child c(_command, std_out > pipe_stream);
-    std::string line;
-    while( c.running() && pipe_stream && std::getline(pipe_stream, line) && !line.empty() )
+    FILE *const pipe = ::popen(_command.c_str(), "r");
+    if( pipe == nullptr )
+        return -1;
+    char buffer[1024];
+    while( std::fgets(buffer, sizeof buffer, pipe) != nullptr )
         ;
-    c.wait();
-    return c.exit_code();
+    const int status = ::pclose(pipe);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 static int Execute(const std::string &_binary, const std::vector<std::string> &_args)
 {
-    using namespace boost::process::v1;
-    ipstream pipe_stream;
-    child c(_binary, _args, std_out > pipe_stream);
-    std::string line;
-    while( c.running() && pipe_stream && std::getline(pipe_stream, line) && !line.empty() )
-        ;
-    c.wait();
-    return c.exit_code();
+    std::string command = _binary;
+    for( const std::string &arg : _args ) {
+        command += " '";
+        command += arg; // test-controlled paths, no single quotes in them
+        command += '\'';
+    }
+    return Execute(command);
 }
 
 static bool RunMainLoopUntilExpectationOrTimeout(std::chrono::nanoseconds _timeout, std::function<bool()> _expectation)

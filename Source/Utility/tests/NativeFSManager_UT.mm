@@ -4,7 +4,7 @@
 #include <Base/dispatch_cpp.h>
 #include <NativeFSManagerImpl.h>
 #include <algorithm>
-#include <boost/process/v1.hpp>
+#include <sys/wait.h>
 #include <filesystem>
 
 #define PREFIX "nc::utility::NativeFSManager "
@@ -165,14 +165,14 @@ bool runMainLoopUntilExpectationOrTimeout(std::chrono::nanoseconds _timeout, std
 
 int Execute(const std::string &_command)
 {
-    using namespace boost::process::v1;
-    ipstream pipe_stream;
-    child c(_command, std_out > pipe_stream);
-    std::string line;
-    while( c.running() && pipe_stream && std::getline(pipe_stream, line) && !line.empty() )
+    FILE *const pipe = ::popen(_command.c_str(), "r");
+    if( pipe == nullptr )
+        return -1;
+    char buffer[1024];
+    while( std::fgets(buffer, sizeof buffer, pipe) != nullptr )
         ;
-    c.wait();
-    return c.exit_code();
+    const int status = ::pclose(pipe);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 } // namespace

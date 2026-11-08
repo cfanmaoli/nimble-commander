@@ -15,7 +15,7 @@
 #include "TestEnv.h"
 #include <Base/CommonPaths.h>
 #include <Base/dispatch_cpp.h>
-#include <boost/process/v1.hpp>
+#include <sys/wait.h>
 
 #include <spdlog/sinks/stdout_sinks.h>
 #include <VFS/Log.h>
@@ -104,14 +104,14 @@ TempTestDmg::~TempTestDmg()
 
 static int Execute(const std::string &_command)
 {
-    using namespace boost::process::v1;
-    ipstream pipe_stream;
-    child c(_command, std_out > pipe_stream);
-    std::string line;
-    while( c.running() && pipe_stream && std::getline(pipe_stream, line) && !line.empty() )
+    FILE *const pipe = ::popen(_command.c_str(), "r");
+    if( pipe == nullptr )
+        return -1;
+    char buffer[1024];
+    while( std::fgets(buffer, sizeof buffer, pipe) != nullptr )
         ;
-    c.wait();
-    const int rc = c.exit_code();
+    const int status = ::pclose(pipe);
+    const int rc = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
     if( rc != 0 )
         std::cerr << "Command failed with code " << rc << ": " << _command << '\n';
     return rc;

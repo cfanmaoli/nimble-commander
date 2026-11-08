@@ -39,7 +39,6 @@ already built `.a` files.
 | Library         | Version    | Released   | Source Code
 | --------------- | ---------- | ---------- | -----------------------------------------
 | abseil          | 2026.08.17 | 2026.08.17 | https://github.com/abseil/abseil-cpp.git
-| boost           | 1.92.0     | 2026.08.12 | https://boostorg.jfrog.io/artifactory/main/release/1.92.0/source/boost_1_92_0.tar.gz
 | bz2             | 1.0.8      | 2019.07.13 | https://sourceware.org/git/bzip2.git
 | Catch2          | 3.15.1     | 2026.06.14 | https://github.com/catchorg/Catch2
 | curl            | 8.23.0     | 2026.10.14 | https://github.com/curl/curl.git
@@ -54,7 +53,6 @@ already built `.a` files.
 | lz4             | 1.10.0     | 2024.07.22 | https://github.com/lz4/lz4.git
 | lzma(xz)        | 5.8.4      | 2026.09.09 | https://github.com/tukaani-project/xz.git
 | lzo             | 2.10       | 2017.03.01 | http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
-| nlohmann        | 3.12.0     | 2025.04.11 | https://github.com/nlohmann/json.git
 | magic_enum      | 0.9.8      | 2026.05.03 | https://github.com/Neargye/magic_enum
 | openssl         | 3.6.5      | 2026.09.29 | https://github.com/openssl/openssl.git
 | pstld           | head       | 2024.06.21 | https://github.com/mikekazakov/pstld

@@ -10,7 +10,6 @@
 #include <Base/CFPtr.h>
 #include <Base/dispatch_cpp.h>
 #include <Utility/FontCache.h>
-#include <boost/container/static_vector.hpp> // TODO: switch to std::inplace_vector once available
 
 #include <fmt/format.h>
 #include <CoreText/CoreText.h>
@@ -63,7 +62,7 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
     NSString *m_Filename;
     NSColor *m_BackgroundColor;
     NSColor *m_FilenameColor;
-    boost::container::static_vector<NSMutableAttributedString *, 4> m_AttrStrings;
+    std::vector<NSMutableAttributedString *> m_AttrStrings;
     ItemLayout m_ItemLayout;
     nc::panel::data::QuickSearchHighlight m_QSHighlight;
     bool m_PermitFieldRenaming;
@@ -215,7 +214,7 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
     return NSMakeRect(origin_x, origin_y, width, height);
 }
 
-static boost::container::static_vector<NSRange, 4>
+static std::vector<NSRange>
 CutFilenameIntoWrappedAndTailSubstrings(NSAttributedString *_attr_string, double _width, size_t _max_lines)
 {
     assert(_max_lines > 0 && _max_lines <= 4);
@@ -226,7 +225,7 @@ CutFilenameIntoWrappedAndTailSubstrings(NSAttributedString *_attr_string, double
     const nc::base::CFPtr<CTTypesetterRef> typesetter = nc::base::CFPtr<CTTypesetterRef>::adopt(
         CTTypesetterCreateWithAttributedString((__bridge CFAttributedStringRef)(_attr_string)));
 
-    boost::container::static_vector<NSRange, 4> result;
+    std::vector<NSRange> result;
     long start = 0;
     for( size_t line_idx = 0; line_idx < _max_lines - 1; ++line_idx ) {
         const long count = CTTypesetterSuggestLineBreak(typesetter.get(), start, _width);
@@ -288,7 +287,7 @@ CutFilenameIntoWrappedAndTailSubstrings(NSAttributedString *_attr_string, double
     NSMutableAttributedString *typesetting_attr_string =
         [[NSMutableAttributedString alloc] initWithString:m_Filename attributes:typesetting_attrs];
     const NSRect text_rect = [self calculateTextSegmentFromBounds:self.bounds];
-    const boost::container::static_vector<NSRange, 4> substrings =
+    const std::vector<NSRange> substrings =
         CutFilenameIntoWrappedAndTailSubstrings(typesetting_attr_string, text_rect.size.width, m_ItemLayout.text_lines);
 
     // Build the final text attributes for rendering

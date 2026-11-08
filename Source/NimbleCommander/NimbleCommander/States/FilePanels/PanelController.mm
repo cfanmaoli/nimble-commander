@@ -478,7 +478,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 
     __weak MainWindowFilePanelState *m_FilePanelState;
 
-    boost::container::static_vector<nc::config::Token, 3> m_ConfigObservers;
+    std::vector<nc::config::Token> m_ConfigObservers;
     nc::core::VFSInstanceManager *m_VFSInstanceManager;
     nc::panel::DirectoryAccessProvider *m_DirectoryAccessProvider;
     std::shared_ptr<PanelViewLayoutsStorage> m_Layouts;

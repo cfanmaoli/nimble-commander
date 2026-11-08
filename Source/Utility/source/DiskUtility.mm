@@ -2,8 +2,10 @@
 #include "DiskUtility.h"
 #include "ObjCpp.h"
 #include <algorithm>
-#include <boost/process/v1.hpp>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <string_view>
 
 static const auto g_APFSListCommand = "/usr/sbin/diskutil apfs list -plist";
 
@@ -260,21 +262,25 @@ NSDictionary *DiskUtility::DiskUtilityOutputToDictionary(std::string_view _text)
 
 static std::string Execute(const std::string &_command)
 {
-    using namespace boost::process::v1;
-
-    ipstream pipe_stream;
-    child c(_command, std_out > pipe_stream);
+    // The command is a fixed string built by this translation unit, so a shell pipe is enough
+    // here - no need to pull in a whole process-spawning library for one call.
+    FILE *const pipe = ::popen(_command.c_str(), "r");
+    if( pipe == nullptr )
+        return {};
 
     std::string buffer;
-    std::string line;
-    while( c.running() && pipe_stream ) {
-        while( std::getline(pipe_stream, line) && !line.empty() ) {
-            buffer += line;
-            buffer += '\n';
-        }
+    char *line = nullptr;
+    size_t capacity = 0;
+    for( ssize_t length = 0; (length = ::getline(&line, &capacity, pipe)) != -1; ) {
+        if( length > 0 && line[length - 1] == '\n' )
+            --length;
+        if( length == 0 )
+            continue; // keep the output byte-identical to the previous implementation
+        buffer.append(line, static_cast<size_t>(length));
+        buffer.push_back('\n');
     }
-
-    c.wait();
+    std::free(line);
+    ::pclose(pipe);
     return buffer;
 }
 
