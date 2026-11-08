@@ -68,7 +68,7 @@
 
 ### 2.3 平铺扫描：1.6M 条目的真实成本
 
-`/Volumes/TiPro9000/deepseek`：203,839 个目录、1,637,730 个条目。
+`/Volumes/Data/bench`：203,839 个目录、1,637,730 个条目。
 
 | 实现 | 时间 | 备注 |
 |---|---:|---|
@@ -124,10 +124,10 @@
 
 ```bash
 # 裸枚举基线
-cc -O2 -o /tmp/bulk2 ncbench/bulk2.c && /tmp/bulk2 <dir> full 1048576
-cc -O2 -o /tmp/rd    ncbench/rd.c    && /tmp/rd <dir>
+cc -O2 -o /tmp/nc_enum Scripts/perf/enum_baseline.c && /tmp/nc_enum <dir> full
+/tmp/nc_enum <dir> nameonly
 # Rust walker（两模式）
-clang -O2 -I rust/include -o /tmp/walkbench ncbench/walkbench.c rust/target/release/libnc_core.a
+# （早先还有一个 Rust 版的 walker 基线，Rust 分支已删除，见第 8 节）
 /tmp/walkbench <dir>        # 带每条目 metadata
 /tmp/walkbench <dir> n      # 纯枚举（无回调）
 # App 侧
@@ -242,20 +242,20 @@ C++ 侧（`Core/FlatListingBuilder.{h,mm}`）：
 `PanelController` 搜到 132 项，日志确认两种查询都走了并行引擎。
 
 
-## 9. 修：`/Users/lim` 平铺一直“加载中”
+## 9. 修：家目录平铺一直“加载中”
 
-现象：在 `/Users/lim` 上开平铺，面板一直卡在加载。
+现象：在 `/Users/me` 上开平铺，面板一直卡在加载。
 
 排查（先给列式枚举加了 `[perf] flat slowdir`，超过 200 ms 的目录打一行）：
 
 ```
-[perf] flat slowdir 1874ms /Users/lim/Library/CloudStorage/坚果云-.../实验/抗体 +药物/.../MetaData/
-[perf] flat slowdir 1814ms /Users/lim/Library/CloudStorage/坚果云-.../动物实验/第二批/...
+[perf] flat slowdir 1874ms /Users/me/Library/CloudStorage/<provider>/.../MetaData/
+[perf] flat slowdir 1814ms /Users/me/Library/CloudStorage/<provider>/.../batch-2/...
 ... 90 秒内 1380 个这样的目录 ...
 ```
 
-结论：`~/Library/CloudStorage` 是 File Provider（坚果云）域，**每个目录的枚举 1.5–1.9 s**（网络往返）。
-`/Users/lim` 的平铺会走进去，几千个目录 × 1.7 s ÷ 8 线程 = 十几分钟起步；首次访问还要把占位符
+结论：`~/Library/CloudStorage` 下是 File Provider 域（第三方云盘），**每个目录的枚举 1.5–1.9 s**（网络往返）。
+`/Users/me` 的平铺会走进去，几千个目录 × 1.7 s ÷ 8 线程 = 十几分钟起步；首次访问还要把占位符
 materialize，所以看起来就是“永远加载”。（composed 策略同样会卡——这是路径本身的性质，不是列式策略的回归。）
 
 修复：给平铺扫描加**墙钟预算** `filePanel.general.flatViewMaxSeconds`（默认 30 s，0 = 不限）：
@@ -270,7 +270,7 @@ materialize，所以看起来就是“永远加载”。（composed 策略同样
 | 场景 | 结果 |
 |---|---|
 | 预算 1 s（`flatViewMaxSeconds=1`） | `items=8045 dirs=4545 truncated=1 took=1053ms`，显示部分结果并弹提示 |
-| 预算默认 30 s（元数据已被系统缓存后） | `items=342397 dirs=47925 took=2372ms`，与 `find /Users/lim -xdev` 的 342,400 一致 |
+| 预算默认 30 s（元数据已被系统缓存后） | `items=342397 dirs=47925 took=2372ms`，与 `find /Users/me -xdev` 的 342,400 一致 |
 
 也就是说：首次冷访问会被 30 s 预算截断并给出解释，之后的访问 2.4 s 就能扫完。
 
@@ -280,17 +280,17 @@ materialize，所以看起来就是“永远加载”。（composed 策略同样
 时间预算只是兜底；真正该做的是**不进入云同步目录**。现在：
 
 - 开关 `filePanel.general.flatViewSkipCloudStorage`（默认 **true**）；
-- 跳过的两个前缀：`<home>/Library/CloudStorage/`（File Provider 域，如坚果云、OneDrive、Google Drive）
+- 跳过的两个前缀：`<home>/Library/CloudStorage/`（File Provider 域，如 iCloud Drive、OneDrive、Google Drive）
   与 `<home>/Library/Mobile Documents/`（iCloud Drive）；
 - 跳过发生在**收集子目录**时，两种策略（columnar / composed）都生效，条目本身不进结果；
 - 如果平铺的根就在这两个前缀里（用户明确要看），则不跳过——此时只有 30 s 预算兜底；
 - 由于“跳过”是静默少内容，第一次跳过的那个启动会弹一次说明（en/ru/zh-Hans），之后只记日志，
   不会每次开平铺都弹。
 
-实测 `/Users/lim`（默认配置，8 线程）：
+实测 `/Users/me`（默认配置，8 线程）：
 
 ```
-[perf] flat root=/Users/lim/ items=280029 dirs=38873 skipped=2 truncated=0 listing=1 took=2211ms ... strategy=columnar
+[perf] flat root=/Users/me/ items=280029 dirs=38873 skipped=2 truncated=0 listing=1 took=2211ms ... strategy=columnar
 ```
 
 即：2 个云目录被跳过，62k 个云里的条目不再进入平铺，2.2 s 完成，且不再需要靠时间预算截断。

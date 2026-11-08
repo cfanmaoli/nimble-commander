@@ -2,7 +2,7 @@
 
 > 评估对象：Nimble Commander-Fork（branch `evil`，commit 9669c1a74）
 > 评估日期：2026-11-06
-> 环境：macOS 27.2，30 核 Apple Silicon，外置 NVMe（APFS，TiPro9000），1.5 TB 空闲
+> 环境：macOS 27.2，30 核 Apple Silicon，外置 NVMe（APFS），1.5 TB 空闲
 
 ## 0. 结论速览
 
@@ -42,12 +42,12 @@
 
 ## 1. 测试方法与数据
 
-- 数据集：`/Volumes/TiPro9000/deepseek/ncbench/m1`，100 万个 13 字符名小文件
+- 数据集：`/Volumes/Data/bench/m1`，100 万个 13 字符名小文件
   （`f_0000000.txt` …），无扩展属性；另一组为 20 万个空子目录。
 - 计时：`ps -o time=` 读进程累计 CPU，0.2 s 采样一次直到累计值 10 次不变（settle）；
   RSS 同一循环采集；`sample 1ms` 做函数级归因；`heap` 看分配构成。
-- 内核底线用独立 C 程序测（`ncbench/rd.c`、`bulk2.c`），属性集与应用一致。
-- 排序微基准用独立 ObjC++ 程序（`ncbench/sortcheck.mm`），1M 个 CFString、随机顺序。
+- 内核底线用 `Scripts/perf/enum_baseline.c` 测（`readdir` 与 `getattrlistbulk` 两种属性集）。
+- 排序微基准用一个临时的 ObjC++ 程序，1M 个 CFString、随机顺序（未入库）。
 
 微基准（单线程，1M 项，随机序）：
 
@@ -262,12 +262,12 @@ raw-name 排序 + O(n) 合并，再串行重排一次（`PanelData.mm:151-229`�
 
 ## 5. 复现
 
-基准脚本与数据都在 `/Volumes/TiPro9000/deepseek/ncbench/`：
+基准脚本在 `Scripts/perf/`（数据用 `gen.c` 现场生成）：
 
-- `gen.c` / `gen2.c`：生成 N 个文件 / 子目录 / 带 xattr 的文件
-- `rd.c`：纯 `readdir` 基线
-- `bulk2.c`：`getattrlistbulk` 各种属性集/缓冲的基线
-- `sortcheck.mm`：1M 项三种 comparator 的排序微基准
+- `gen.c`：生成 N 个文件 / 子目录
+- `enum_baseline.c`：`readdir` 与 `getattrlistbulk` 的裸基线
+- `open_benchmark.sh` / `change_benchmark.sh`：首屏与变化响应的端到端测量
+
 - `measure*.sh`：应用级计时（CPU/RSS/settle），`sample*.txt`：函数级归因
 
 注意：应用启动会恢复上一次的窗口状态，做 A/B 时要先删除
@@ -1019,7 +1019,7 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 /Applications/Nimble Commander-Fork.app/Contents/MacOS/Nimble Commander-Fork -ApplePersistenceIgnoreState YES
 ```
 
-加了这个参数之后，启动日志里就只剩 `default content left=/Users/lim/ ...` + 一次 `goto request=...`，
+加了这个参数之后，启动日志里就只剩 `default content left=/Users/me/ ...` + 一次 `goto request=...`，
 不再出现莫名其妙的大目录。临时的 `[perf] goto` / `[perf] default content` 埋点已经移除。
 
 顺带把**目录路径**加进了 `[perf] fetch` 行（`dir=/...`），以后排查“谁在读这个目录”会快很多。
@@ -1266,7 +1266,7 @@ if( row_delta > 1000 )
 **验证**：
 
 ```
-平铺 /Volumes/TiPro9000/deepseek（1,637,209 个条目）：
+平铺 `/Volumes/Data/bench`（1,637,209 个条目）：
 [perf] ui n=1637210 loadListing=221.9ms dataUpdated=34.1ms   → 全部条目都在
 把 flatViewMaxItems 临时设成 100：列表恰好 100 项 + 弹出「平铺视图显示不完整」提示
 ```
@@ -1296,7 +1296,7 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 验证（`NC_PERF_LOG` 里新增的汇总行）：
 
 ```
-[perf] flat root=/Volumes/TiPro9000/deepseek/ items=1637225 dirs=203817 truncated=0 listing=1
+[perf] flat root=/Volumes/Data/bench/ items=1637225 dirs=203817 truncated=0 listing=1
 [perf] ui n=1637225 loadListing=196.2ms dataUpdated=35.2ms
 ```
 
@@ -1310,10 +1310,10 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 理由是：这个规模内存可控（约 100 MB 的 listing），而且现在超限时**一定会弹提示**并告诉用户改哪个键，
 不再是静默丢数据。
 
-实测（默认配置，平铺 `/Volumes/TiPro9000/deepseek`）：
+实测（默认配置，平铺 `/Volumes/Data/bench`）：
 
 ```
-[perf] flat root=/Volumes/TiPro9000/deepseek/ items=1000000 dirs=82 truncated=1 listing=1
+[perf] flat root=/Volumes/Data/bench/ items=1000000 dirs=82 truncated=1 listing=1
 [perf] ui n=1000000 loadListing=154.1ms dataUpdated=42.1ms
 ```
 

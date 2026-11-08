@@ -46,6 +46,22 @@ Nimble Commander is currently available in two languages—the languages that th
 ## Documentation
 The [user guide](Docs/Help.md) for Nimble Commander is in its early stages, and any help expanding this documentation would greatly benefit the project. If you notice something missing from the documentation or think an explanation could be clearer, your contributions to improve these areas would be highly appreciated.
 
+When writing documentation, benchmarks or issue reports for this repository, keep machine-specific
+details out of it - the documents are published and the measurements are useful without them:
+
+- use `~/` or `/Users/me` instead of a real home directory, and `/Volumes/Data` (or `<volume>`)
+  instead of the name of a disk you happen to own;
+- replace the account or organisation part of a cloud-provider path with `<provider>` and refer to
+  it by its kind ("a File Provider domain"), not by the service the author happens to use;
+- generated test data lives in a scratch directory such as `/Volumes/Data/bench` or `/tmp/ncbench`,
+  not in a personal folder;
+- keep the numbers, timings, `[perf]` lines and hardware descriptions - those are the point of the
+  document. Only the identifying paths and account names are dropped, and quoted log lines are
+  edited the same way (e.g. `[perf] flat root=/Users/me/`).
+
+If an older revision of a document still contains such a path, a fix is welcome as a normal pull
+request.
+
 ## Sharing
 A single tweet from you can go a long way. You can support this project by sharing information about it. Whether it's mentioning Nimble Commander on forums, submitting reviews, or talking about your experience, every bit of exposure helps.
 
