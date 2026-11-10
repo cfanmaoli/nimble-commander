@@ -1689,13 +1689,49 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         // never sees a second, different listing.
         const unsigned long stream_id = m_StreamingLoadId.fetch_add(1) + 1;
         auto is_first_chunk = std::make_shared<bool>(true);
+        // The chunks are applied to the panel in batches: a patch costs a bulk copy of the whole
+        // listing plus a linear pass over it, so applying one per 64 KiB chunk would keep the main
+        // thread busy half of the time. Batching bounds that to a handful of short stalls.
         auto pending_chunks = std::make_shared<std::vector<VFSListingPtr>>();
         auto pending_mutex = std::make_shared<std::mutex>();
+        auto pending_count = std::make_shared<size_t>(0);
+        auto last_flush = std::make_shared<std::chrono::steady_clock::time_point>(std::chrono::steady_clock::now());
+        const auto flush_pending = [self, stream_id, pending_chunks, pending_mutex, pending_count] {
+            auto batch = std::make_shared<std::vector<VFSListingPtr>>();
+            {
+                const std::lock_guard<std::mutex> lock(*pending_mutex);
+                batch->swap(*pending_chunks);
+                *pending_count = 0;
+            }
+            if( batch->empty() )
+                return;
+            dispatch_to_main_queue([self, stream_id, batch] {
+                if( m_StreamingLoadId.load() != stream_id )
+                    return;
+                const VFSListingPtr base = m_Data.ListingPtr();
+                if( !base )
+                    return;
+                unsigned appended = 0;
+                for( const VFSListingPtr &chunk : *batch )
+                    appended += chunk->Count();
+                VFSListingPtr patched = VFSListing::ProducePatchedListing(*base, {}, *batch);
+                if( patched == nullptr )
+                    patched = ProducePatchedListingGeneric(*base, {}, *batch);
+                if( patched == nullptr )
+                    return;
+                [self applyPatchedListing:patched removed:{} appended:appended cancelBackgroundOperations:false];
+                if( std::getenv("NC_PERF_LOG") != nullptr )
+                    fmt::println(stderr, "[perf] stream n={} chunk={}", patched->Count(), appended);
+            });
+        };
         const auto on_chunk = [self,
                                stream_id,
                                is_first_chunk,
                                pending_chunks,
                                pending_mutex,
+                               pending_count,
+                               last_flush,
+                               flush_pending,
                                lazy_dates,
                                lazy_sizes,
                                _request,
@@ -1749,41 +1785,27 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 });
             }
             else {
-                // Keep the rest until the enumeration is over. The model-side patch is linear in the
-                // size of the whole listing, so applying every chunk would cost seconds of
-                // main-thread stalls; one patch at the end costs a single pass and still extends
-                // the very same listing that is already on screen.
-                const std::lock_guard<std::mutex> lock(*pending_mutex);
-                pending_chunks->emplace_back(std::move(_chunk));
+                // Accumulate; the budget below decides when the panel gets them.
+                bool should_flush = false;
+                {
+                    const std::lock_guard<std::mutex> lock(*pending_mutex);
+                    *pending_count += _chunk->Count();
+                    pending_chunks->emplace_back(std::move(_chunk));
+                    const auto now = std::chrono::steady_clock::now();
+                    should_flush =
+                        *pending_count >= size_t{256} * 1024 || (now - *last_flush) >= std::chrono::milliseconds(400);
+                    if( should_flush )
+                        *last_flush = now;
+                }
+                if( should_flush )
+                    flush_pending();
             }
             return true;
         };
 
         const std::expected<void, Error> stream_result =
             vfs.FetchDirectoryListingIncremental(directory, fetch_flags, canceller, on_chunk);
-        if( stream_result ) {
-            // Hand the tail over to the main queue - the first chunk may still be on its way
-            // there, so the patch has to be built from whatever listing is current at that point.
-            dispatch_to_main_queue([self, stream_id, pending_chunks] {
-                if( m_StreamingLoadId.load() != stream_id || pending_chunks->empty() )
-                    return;
-                const VFSListingPtr base = m_Data.ListingPtr();
-                if( !base )
-                    return;
-                unsigned appended = 0;
-                for( const VFSListingPtr &chunk : *pending_chunks )
-                    appended += chunk->Count();
-                VFSListingPtr patched = VFSListing::ProducePatchedListing(*base, {}, *pending_chunks);
-                if( patched == nullptr )
-                    patched = ProducePatchedListingGeneric(*base, {}, *pending_chunks);
-                if( patched == nullptr )
-                    return;
-                pending_chunks->clear();
-                [self applyPatchedListing:patched removed:{} appended:appended cancelBackgroundOperations:false];
-                if( std::getenv("NC_PERF_LOG") != nullptr )
-                    fmt::println(stderr, "[perf] stream n={} tail={}", patched->Count(), appended);
-            });
-        }
+        flush_pending();
         if( _request->LoadingResultCallback )
             _request->LoadingResultCallback(stream_result);
         if( !stream_result )

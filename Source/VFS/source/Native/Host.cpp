@@ -361,9 +361,10 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     // ones are big - each one costs a listing build plus a patch on the panel side.
     const bool streaming = _on_chunk != nullptr;
     constexpr size_t streaming_first_chunk = 4096;
-    // Each chunk costs a listing build plus a model patch on the panel side, and the patch is
-    // linear in the size of the whole listing - so deliver big ones and keep their number small.
-    constexpr size_t streaming_chunk = size_t{256} * 1024;
+    // Each chunk costs a listing build plus a model patch on the panel side; the patch is linear in
+    // the size of the whole listing but with cheap bulk copies, so a chunk of this size keeps a
+    // single main-thread stall in the tens of milliseconds.
+    constexpr size_t streaming_chunk = size_t{64} * 1024;
     size_t chunk_begin = 0;
     size_t chunk_size = streaming_first_chunk;
     bool stream_cancelled = false;

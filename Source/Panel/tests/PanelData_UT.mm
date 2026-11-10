@@ -905,6 +905,42 @@ TEST_CASE("ApplyPatchedListing with an addition only")
     CHECK(data.SortedIndexForName("b") < data.SortedIndexForName("c"));
 }
 
+TEST_CASE("ApplyAppendedListing keeps the order, the selection and the statistics")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"b", "d", "f"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+    data.SetSortMode(SortMode{.sort = SortMode::SortByNameRev});
+
+    const int d_pos = data.SortedIndexForName("d");
+    REQUIRE(d_pos >= 0);
+    data.CustomFlagsSelectSorted(d_pos, true);
+
+    const VFSListingPtr l2 = ProduceDummyListing({"b", "d", "f", "a", "c", "e", "g"});
+    data.ApplyPatchedListing(l2, {}, 4);
+
+    CHECK(data.RawEntriesCount() == 7);
+    CHECK(data.SortedEntriesCount() == 7);
+    CHECK(data.Stats().total_entries_amount == 7);
+
+    // the custom sort order is reverse-alphabetical and the appended entries are merged into it
+    std::vector<std::string> order;
+    for( int i = 0; i != data.SortedEntriesCount(); ++i )
+        order.emplace_back(data.EntryAtSortPosition(i).Filename());
+    CHECK(order == std::vector<std::string>{"g", "f", "e", "d", "c", "b", "a"});
+
+    // the selection survives the append, the new entries are not selected
+    const int new_d_pos = data.SortedIndexForName("d");
+    REQUIRE(new_d_pos >= 0);
+    CHECK(data.VolatileDataAtSortPosition(new_d_pos).is_selected());
+    for( const char *name : {"a", "c", "e", "g"} ) {
+        const int pos = data.SortedIndexForName(name);
+        REQUIRE(pos >= 0);
+        CHECK(!data.VolatileDataAtSortPosition(pos).is_selected());
+    }
+    for( const char *name : {"a", "b", "c", "d", "e", "f", "g"} )
+        CHECK(data.RawIndexForName(name) >= 0);
+}
 } // namespace
 
 #undef PREFIX

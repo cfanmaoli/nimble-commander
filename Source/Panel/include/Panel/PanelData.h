@@ -127,6 +127,9 @@ public:
     void ApplyPatchedListing(const VFSListingPtr &_listing,
                              std::span<const unsigned> _removed_old_indices,
                              unsigned _appended_count);
+    // A specialised path for the patches that only append entries - linear in the patch size instead
+    // of in the whole listing. Used by the incremental directory load.
+    void ApplyAppendedListing(const VFSListingPtr &_listing, unsigned _appended_count);
 
     /**
      * Tells whether Model was provided with a valid listing object.

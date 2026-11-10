@@ -220,6 +220,13 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
     if( new_count != old_count - static_cast<unsigned>(_removed_old_indices.size()) + _appended_count )
         throw std::logic_error("Model::ApplyPatchedListing: listing doesn't match the patch");
 
+    if( _removed_old_indices.empty() ) {
+        // An append-only patch keeps every retained entry at its old raw index, so it can be applied
+        // in linear time instead of rebuilding all the mappings.
+        ApplyAppendedListing(_listing, _appended_count);
+        return;
+    }
+
     // old raw index -> new raw index, or 'invalid' for the dropped entries
     constexpr unsigned invalid = std::numeric_limits<unsigned>::max();
     std::vector<unsigned> old_to_new(old_count, invalid);
@@ -1209,6 +1216,110 @@ QuickSearchHighlight Model::HighlightForSortPosition(int _sort_pos) const noexce
     return HighlightForRawIndex(m_EntriesByCustomSort[_sort_pos]);
 }
 
+void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _appended_count)
+{
+    assert(dispatch_is_main_queue());
+    assert(_listing);
+    assert(_listing->IsUniform());
+    assert(m_Listing && m_Listing->IsUniform());
+
+    const unsigned old_count = m_Listing->Count();
+    const unsigned new_count = _listing->Count();
+    if( new_count != old_count + _appended_count )
+        throw std::logic_error("Model::ApplyAppendedListing: listing doesn't match the patch");
+
+    constexpr unsigned invalid = std::numeric_limits<unsigned>::max();
+    const auto init_volatile_data = [&](ItemVolatileData &_vd, unsigned _index) {
+        _vd = ItemVolatileData{};
+        if( _listing->IsDir(_index) ) {
+            if( _listing->HasSize(_index) ) {
+                const auto sz = _listing->Size(_index);
+                if( sz != std::numeric_limits<uint64_t>::max() )
+                    _vd.size = sz;
+            }
+        }
+        else {
+            _vd.size = _listing->Size(_index);
+        }
+    };
+
+    // The retained entries keep their raw indices, so the volatile data only grows.
+    m_VolatileData.resize(new_count);
+    for( unsigned i = old_count; i != new_count; ++i )
+        init_volatile_data(m_VolatileData[i], i);
+
+    // By-name order: the retained prefix keeps its order and the appended ones are merged in.
+    const auto name_less = [&](unsigned _lhs, unsigned _rhs) {
+        return _listing->Filename(_lhs) < _listing->Filename(_rhs);
+    };
+    std::vector<unsigned> appended_by_name;
+    appended_by_name.reserve(_appended_count);
+    for( unsigned i = old_count; i != new_count; ++i )
+        appended_by_name.emplace_back(i);
+    if( appended_by_name.size() >= g_ParallelSortThresh )
+        pstld::sort(appended_by_name.begin(), appended_by_name.end(), name_less);
+    else
+        std::ranges::sort(appended_by_name, name_less);
+    m_EntriesByRawName.insert(m_EntriesByRawName.end(), appended_by_name.begin(), appended_by_name.end());
+    std::ranges::inplace_merge(
+        m_EntriesByRawName.begin(), m_EntriesByRawName.begin() + old_count, m_EntriesByRawName.end(), name_less);
+
+    // Custom sort order: same idea, except that only the entries passing the hard filter go in.
+    const auto visible = [&](unsigned _i) {
+        if( !m_HardFiltering.IsFiltering() )
+            return true;
+        QuickSearchHighlight unused_highlight;
+        return m_HardFiltering.IsValidItem(_listing->Item(_i), unused_highlight);
+    };
+    const size_t dotdot_prefix = _listing->IsDotDot(0) ? 1 : 0;
+    const size_t old_visible = m_EntriesByCustomSort.size();
+    if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
+        const IndirectListingComparator cmp{*_listing, m_VolatileData, m_CustomSortMode};
+        const auto appended_less = [&](unsigned _lhs, unsigned _rhs) { return cmp(_lhs, _rhs); };
+        std::vector<unsigned> appended_sorted;
+        appended_sorted.reserve(_appended_count);
+        for( unsigned i = old_count; i != new_count; ++i )
+            if( visible(i) )
+                appended_sorted.emplace_back(i);
+        if( appended_sorted.size() >= g_ParallelSortThresh )
+            pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
+        else
+            std::ranges::sort(appended_sorted, appended_less);
+        m_EntriesByCustomSort.insert(m_EntriesByCustomSort.end(), appended_sorted.begin(), appended_sorted.end());
+        std::ranges::inplace_merge(m_EntriesByCustomSort.begin() + dotdot_prefix,
+                                   m_EntriesByCustomSort.begin() + old_visible + dotdot_prefix,
+                                   m_EntriesByCustomSort.end(),
+                                   appended_less);
+    }
+    else {
+        for( unsigned i = old_count; i != new_count; ++i )
+            if( visible(i) )
+                m_EntriesByCustomSort.emplace_back(i);
+    }
+
+    m_Listing = _listing;
+
+    // The positions inside the custom sort order do change, so this map has to be rebuilt.
+    m_ReverseToCustomSort.resize(new_count);
+    std::ranges::fill(m_ReverseToCustomSort, invalid);
+    for( unsigned i = 0, e = static_cast<unsigned>(m_EntriesByCustomSort.size()); i != e; ++i ) {
+        const unsigned raw_index = m_EntriesByCustomSort[i];
+        assert(raw_index < new_count);
+        m_ReverseToCustomSort[raw_index] = i;
+    }
+
+    BuildSoftFilteringIndeces();
+
+    // Statistics: only the totals change, the selection is untouched by an append.
+    m_Stats.total_entries_amount = m_Listing->Count();
+    if( !m_Listing->Empty() && m_Listing->IsDotDot(0) )
+        m_Stats.total_entries_amount--;
+    for( unsigned i = old_count; i != new_count; ++i )
+        if( m_Listing->IsReg(i) ) {
+            m_Stats.bytes_in_raw_reg_files += m_Listing->Size(i);
+            m_Stats.raw_reg_files_amount++;
+        }
+}
 void Model::SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight)
 {
     if( _raw_index >= m_Listing->Count() )
