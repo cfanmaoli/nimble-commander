@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <fmt/core.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -112,9 +113,9 @@ TEST_CASE(PREFIX "finds the same files as the C++ content search")
         const auto par = RunParallel(root_str, "needle", case_sensitive);
         if( cpp != par ) {
             for( const auto &e : cpp )
-                std::fprintf(stderr, "  cpp: %s @ %llu\n", e.first.c_str(), static_cast<unsigned long long>(e.second));
+                fmt::println(stderr, "  cpp: {} @ {}", e.first, e.second);
             for( const auto &e : par )
-                std::fprintf(stderr, "  par: %s @ %llu\n", e.first.c_str(), static_cast<unsigned long long>(e.second));
+                fmt::println(stderr, "  par: {} @ {}", e.first, e.second);
         }
         CHECK(cpp == par);
     }
@@ -163,8 +164,8 @@ TEST_CASE(PREFIX "benchmark against the C++ content search")
     const auto [rust_n, rust_us] = time([&] { return RunParallel(root_str, "needle", false).size(); });
     CHECK(cpp_n == rust_n);
     CHECK(cpp_n == 200);
-    std::fprintf(stderr,
-                 "[perf] parallel_content cpp=%lldus rust=%lldus ratio=%.2f\n",
+    fmt::println(stderr,
+                 "[perf] parallel_content cpp={}us rust={}us ratio={:.2f}",
                  cpp_us,
                  rust_us,
                  rust_us ? static_cast<double>(cpp_us) / static_cast<double>(rust_us) : 0.0);

@@ -7,6 +7,7 @@
 #include <Base/DispatchGroup.h>
 #include <VFS/VFS.h>
 #include <algorithm>
+#include <fmt/core.h>
 #include <magic_enum.hpp>
 #include <numeric>
 #include <pstld/pstld.h>
@@ -148,8 +149,9 @@ Model::PreparedLoad Model::PrepareLoad(const VFSListingPtr &_listing,
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] prepare n=%u vd=%.1fms sorts=%.1fms softfilter=%.1fms stats=%.1fms total=%.1fms\n",
+        fmt::println(stderr,
+                     "[perf] prepare n={} vd={:.1f}ms sorts={:.1f}ms softfilter={:.1f}ms stats={:.1f}ms "
+                     "total={:.1f}ms",
                      _listing->Count(),
                      ms(perf_begin, perf_vd),
                      ms(perf_vd, perf_sorted),
@@ -271,7 +273,7 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
         return _listing->Filename(_lhs) < _listing->Filename(_rhs);
     };
     for( unsigned i = new_count - _appended_count; i != new_count; ++i )
-        new_by_raw_name.insert(std::lower_bound(new_by_raw_name.begin(), new_by_raw_name.end(), i, name_less), i);
+        new_by_raw_name.insert(std::ranges::lower_bound(new_by_raw_name, i, name_less), i);
 
     // custom sort order: same story - the retained entries are already ordered correctly, the
     // appended ones have to be placed according to the current sort mode
@@ -455,8 +457,8 @@ Model::PreparedLoad Model::PrepareReload(const VFSListingPtr &_listing, ReloadSn
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] prepare.reload n=%u sort+merge=%.1fms rest=%.1fms\n",
+        fmt::println(stderr,
+                     "[perf] prepare.reload n={} sort+merge={:.1f}ms rest={:.1f}ms",
                      _listing->Count(),
                      ms(perf_begin, perf_sorted),
                      ms(perf_sorted, steady_clock::now()));
@@ -661,7 +663,7 @@ static void DoRawSort(const VFSListing &_from, std::vector<unsigned> &_to)
     std::ranges::iota(_to, 0);
     const auto less = [&_from](unsigned _1, unsigned _2) { return _from.Filename(_1) < _from.Filename(_2); };
     if( _to.size() < g_ParallelSortThresh )
-        std::sort(_to.begin(), _to.end(), less);
+        std::ranges::sort(_to, less);
     else
         pstld::sort(_to.begin(), _to.end(), less);
 }

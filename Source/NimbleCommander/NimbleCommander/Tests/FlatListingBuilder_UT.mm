@@ -1,5 +1,6 @@
 // Copyright (C) 2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "Tests.h"
+#include <fmt/core.h>
 #include <NimbleCommander/Core/FlatListingBuilder.h>
 #include <VFS/Native.h>
 #include <Utility/FSEventsFileUpdateImpl.h>
@@ -101,11 +102,11 @@ TEST_CASE(PREFIX "the columnar scan matches the composed one")
                 return path + " type=" + std::to_string(type) + " dir=" + std::to_string(is_dir) +
                        " size=" + std::to_string(size) + " mtime=" + std::to_string(mtime);
             };
-            std::fprintf(stderr,
-                         "  [%zu] composed: %s\n        columnar: %s\n",
+            fmt::println(stderr,
+                         "  [{}] composed: {}\n        columnar: {}",
                          i,
-                         dump(composed_snapshot, i).c_str(),
-                         dump(columnar_snapshot, i).c_str());
+                         dump(composed_snapshot, i),
+                         dump(columnar_snapshot, i));
         }
     }
     CHECK(composed_snapshot == columnar_snapshot);
@@ -171,10 +172,10 @@ TEST_CASE(PREFIX "skips the requested cloud directories")
     CHECK(columnar.skipped_cloud_directories >= 1);
 
     for( const auto &entry : columnar_snapshot )
-        CHECK(std::get<0>(entry).find("/CloudStorage/") == std::string::npos);
+        CHECK(!std::get<0>(entry).contains("/CloudStorage/"));
     bool saw_local = false;
     for( const auto &entry : columnar_snapshot )
-        saw_local = saw_local || std::get<0>(entry).find("local.txt") != std::string::npos;
+        saw_local = saw_local || std::get<0>(entry).contains("local.txt");
     CHECK(saw_local);
 
     std::filesystem::remove_all(root);

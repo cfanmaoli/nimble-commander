@@ -7,6 +7,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdio>
+#include <fmt/core.h>
 
 namespace nc::vfs {
 
@@ -132,12 +133,12 @@ static variable_container<int32_t> CompactTimes(const variable_container<time_t>
     const auto clamp = [](time_t _t) { return ToCompactTime(_t); };
     switch( _src.mode() ) {
         case variable_container<>::type::common:
-            return variable_container<int32_t>(clamp(_src[0]));
+            return {clamp(_src[0])};
         case variable_container<>::type::dense: {
             const auto src = _src.dense_values();
             // an empty dense container means "no such attribute" (e.g. a names-only listing)
             if( src.size() != _count )
-                return variable_container<int32_t>(variable_container<>::type::sparse);
+                return {variable_container<>::type::sparse};
             variable_container<int32_t> dst(variable_container<>::type::dense);
             dst.resize(_count);
             auto values = dst.dense_values();
@@ -153,7 +154,7 @@ static variable_container<int32_t> CompactTimes(const variable_container<time_t>
             return dst;
         }
     }
-    return variable_container<int32_t>(variable_container<>::type::sparse);
+    return {variable_container<>::type::sparse};
 }
 
 base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
@@ -175,7 +176,7 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
     // percent of dead capacity. Trim it now that the final size is known - one copy of the data in
     // exchange for the resident memory.
     const auto trim = [](auto &_v) {
-        if( _v.capacity() > _v.size() + _v.size() / 16 )
+        if( _v.capacity() > _v.size() + (_v.size() / 16) )
             _v.shrink_to_fit();
     };
     trim(l->m_Filenames);
@@ -213,16 +214,16 @@ base::intrusive_ptr<const Listing> Listing::Build(ListingInput &&_input)
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(
-            stderr,
-            "[perf] build n=%u mem=%.1fMB validate=%.1fms compress=%.1fms move=%.1fms filenames=%.1fms total=%.1fms\n",
-            l->m_ItemsCount,
-            static_cast<double>(l->ApproximateMemoryFootprint()) / (1024.0 * 1024.0),
-            ms(perf_begin, perf_validated),
-            ms(perf_validated, perf_compressed),
-            ms(perf_compressed, perf_moved),
-            ms(perf_moved, perf_end),
-            ms(perf_begin, perf_end));
+        fmt::println(stderr,
+                     "[perf] build n={} mem={:.1f}MB validate={:.1f}ms compress={:.1f}ms move={:.1f}ms "
+                     "filenames={:.1f}ms total={:.1f}ms",
+                     l->m_ItemsCount,
+                     static_cast<double>(l->ApproximateMemoryFootprint()) / (1024.0 * 1024.0),
+                     ms(perf_begin, perf_validated),
+                     ms(perf_validated, perf_compressed),
+                     ms(perf_compressed, perf_moved),
+                     ms(perf_moved, perf_end),
+                     ms(perf_begin, perf_end));
     }
 
     return l;
@@ -235,18 +236,18 @@ Listing::ProducePatchedListing(const Listing &_base,
 {
     using nc::base::variable_container;
     const auto is_plain = [](const Listing &_l) {
-        return _l.m_Symlinks.size() == 0 && _l.m_DisplayFilenames.size() == 0 && _l.m_Tags.empty();
+        return _l.m_Symlinks.empty() && _l.m_DisplayFilenames.empty() && _l.m_Tags.empty();
     };
     const auto is_dense_or_common = [](const auto &_c) {
         return _c.mode() == variable_container<>::type::dense || _c.mode() == variable_container<>::type::common;
     };
     // An empty container simply means "the listing doesn't carry this attribute" (lazy dates) -
     // that's patchable, the result just stays empty.
-    const auto is_patchable = [&](const auto &_c) { return _c.size() == 0 || is_dense_or_common(_c); };
+    const auto is_patchable = [&](const auto &_c) { return _c.empty() || is_dense_or_common(_c); };
 
     const auto bail = [](const char *_why) -> base::intrusive_ptr<const Listing> {
         if( std::getenv("NC_PERF_LOG") != nullptr )
-            std::fprintf(stderr, "[perf] patch.fallback %s\n", _why);
+            fmt::println(stderr, "[perf] patch.fallback {}", _why);
         return nullptr;
     };
     if( !is_plain(_base) )
@@ -284,7 +285,7 @@ Listing::ProducePatchedListing(const Listing &_base,
     // ones we don't fill as empty instead, so that the listing reports them as absent
     l->m_DisplayFilenames = variable_container<std::string>(variable_container<>::type::sparse);
     l->m_Symlinks = variable_container<std::string>(variable_container<>::type::sparse);
-    if( _base.m_AddTimes.size() == 0 )
+    if( _base.m_AddTimes.empty() )
         l->m_AddTimes = variable_container<int32_t>(variable_container<>::type::sparse);
 
     l->m_Filenames = std::vector<std::string>(new_count);
@@ -347,7 +348,7 @@ Listing::ProducePatchedListing(const Listing &_base,
     patch_dense(l->m_UIDS, _base.m_UIDS);
     patch_dense(l->m_GIDS, _base.m_GIDS);
     patch_dense(l->m_UnixFlags, _base.m_UnixFlags);
-    if( _base.m_AddTimes.size() != 0 ) {
+    if( !_base.m_AddTimes.empty() ) {
         if( !is_dense_or_common(_base.m_AddTimes) )
             return bail("sparse add times");
         patch_dense(l->m_AddTimes, _base.m_AddTimes);
@@ -1000,22 +1001,22 @@ size_t Listing::ApproximateMemoryFootprint() const noexcept
 
 bool Listing::HasAnyTimes() const noexcept
 {
-    return m_ATimes.size() != 0 || m_MTimes.size() != 0 || m_CTimes.size() != 0 || m_BTimes.size() != 0;
+    return !m_ATimes.empty() || !m_MTimes.empty() || !m_CTimes.empty() || !m_BTimes.empty();
 }
 
 bool Listing::HasAnyDisplayFilenames() const noexcept
 {
-    return m_DisplayFilenames.size() != 0;
+    return !m_DisplayFilenames.empty();
 }
 
 bool Listing::HasAnyAddTimes() const noexcept
 {
-    return m_AddTimes.size() != 0;
+    return !m_AddTimes.empty();
 }
 
 bool Listing::HasAnySymlinks() const noexcept
 {
-    return m_Symlinks.size() != 0;
+    return !m_Symlinks.empty();
 }
 
 bool Listing::HasAnyTags() const noexcept

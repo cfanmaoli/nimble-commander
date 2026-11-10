@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <fmt/core.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -165,15 +166,16 @@ TEST_CASE(PREFIX "benchmark against the C++ walker")
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - begin).count();
     };
 
-    size_t cpp_count = 0, parallel_count = 0;
+    size_t cpp_count = 0;
+    size_t parallel_count = 0;
     const auto cpp_us = time([&] { cpp_count = RunCppSearch(root_str, "*.txt").size(); });
     const auto parallel_us = time([&] { parallel_count = RunParallelSearch(root_str, "*.txt").size(); });
     CHECK(cpp_count == parallel_count);
     CHECK(cpp_count == 5000);
-    std::fprintf(stderr,
-                 "[perf] parallel_search cpp=%lldus parallel=%lldus ratio=%.2f\n",
-                 static_cast<long long>(cpp_us),
-                 static_cast<long long>(parallel_us),
+    fmt::println(stderr,
+                 "[perf] parallel_search cpp={}us parallel={}us ratio={:.2f}",
+                 cpp_us,
+                 parallel_us,
                  parallel_us ? static_cast<double>(cpp_us) / static_cast<double>(parallel_us) : 0.0);
     std::filesystem::remove_all(root);
 }

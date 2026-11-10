@@ -642,11 +642,11 @@ private:
     // found/finish/looking-in callbacks, so the rest of the dialog doesn't care.
     const bool use_parallel = [self canUseParallelSearchWithContent:(text_query.length != 0)];
     if( std::getenv("NC_PERF_LOG") != nullptr )
-        std::fprintf(stderr,
-                     "[perf] findfiles engine=%s content=%d mask=%s\n",
+        fmt::println(stderr,
+                     "[perf] findfiles engine={} content={} mask={}",
                      use_parallel ? "parallel" : "vfs",
-                     text_query.length != 0 ? 1 : 0,
-                     filename_mask.empty() ? "<any>" : filename_mask.c_str());
+                     text_query.length != 0,
+                     filename_mask.empty() ? std::string_view{"<any>"} : std::string_view{filename_mask});
     bool started = false;
     if( use_parallel ) {
         started = [self startParallelSearchWithMask:(filename_mask.empty() ? std::string{} : std::string{filename_mask})

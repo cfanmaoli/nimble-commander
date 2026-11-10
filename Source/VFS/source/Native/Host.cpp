@@ -406,14 +406,14 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] fetch n=%zu enum=%.1fms epilogue=%.1fms build=%.1fms total=%.1fms dir=%s\n",
-                     static_cast<size_t>(next_entry_index),
+        fmt::println(stderr,
+                     "[perf] fetch n={} enum={:.1f}ms epilogue={:.1f}ms build={:.1f}ms total={:.1f}ms dir={}",
+                     next_entry_index,
                      ms(perf_begin, perf_enumerated),
                      ms(perf_enumerated, perf_epilogue),
                      ms(perf_epilogue, perf_end),
                      ms(perf_begin, perf_end),
-                     std::string(path).c_str());
+                     path);
     }
     return listing;
 }

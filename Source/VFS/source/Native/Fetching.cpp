@@ -284,7 +284,7 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
     // A larger buffer means fewer getattrlistbulk() calls - the per-call overhead is non-trivial
     // for directories with hundreds of thousands of entries (2809 calls for 1M items with 64 KiB
     // vs 176 calls with 1 MiB, measured ~5% faster end-to-end).
-    constexpr size_t attr_buf_size = 1024 * 1024;
+    constexpr size_t attr_buf_size = size_t{1024} * 1024;
     // A per-thread scratch buffer: the flat view enumerates hundreds of thousands of small
     // directories, and allocating (and zeroing) a megabyte for each of them dominated the scan.
     // It is deliberately never freed - one buffer per worker thread for the lifetime of the

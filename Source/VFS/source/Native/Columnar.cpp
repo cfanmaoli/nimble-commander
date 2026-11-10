@@ -10,6 +10,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdio>
+#include <fmt/core.h>
 #include <cstdlib>
 #include <mutex>
 #include <string_view>
@@ -133,7 +134,7 @@ void AppendDirectory(SharedState &_state,
         const auto ms =
             std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
         if( ms > 200 )
-            std::fprintf(stderr, "[perf] flat slowdir %lldms %s\n", static_cast<long long>(ms), dir.c_str());
+            fmt::println(stderr, "[perf] flat slowdir {}ms {}", ms, dir);
     }
 
     if( !subdirs.empty() )

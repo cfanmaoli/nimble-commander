@@ -10,7 +10,6 @@
 #include "MainWindowFilePanelState.h"
 #include "Views/BriefSystemOverview.h"
 #include <NimbleCommander/Core/FlatListingBuilder.h>
-#include <NimbleCommander/Core/Alert.h>
 #include <NimbleCommander/Core/ActionsShortcutsManager.h>
 #include <NimbleCommander/Bootstrap/Config.h>
 #include "PanelViewLayoutSupport.h"
@@ -32,6 +31,7 @@
 #include <NimbleCommander/Core/Alert.h>
 #include <chrono>
 #include <cstdio>
+#include <fmt/core.h>
 #include <thread>
 #include <ankerl/unordered_dense.h>
 #include "Actions/Enter.h"
@@ -169,7 +169,7 @@ static std::string ConfigFlatScanStrategy()
     const auto &config = GlobalConfig();
     if( !config.Has("filePanel.general.flatScanStrategy") )
         return std::string{"columnar"};
-    const std::string value = config.GetString("filePanel.general.flatScanStrategy");
+    std::string value = config.GetString("filePanel.general.flatScanStrategy");
     // accept the names the setting had before it was renamed
     if( value == "rust" )
         return "columnar";
@@ -331,7 +331,10 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         bool tags;
     };
     const auto attrs_of = [](const VFSListing &_l) {
-        return Attrs{_l.HasAnyDisplayFilenames(), _l.HasAnyAddTimes(), _l.HasAnySymlinks(), _l.HasAnyTags()};
+        return Attrs{.display_filenames = _l.HasAnyDisplayFilenames(),
+                     .add_times = _l.HasAnyAddTimes(),
+                     .symlinks = _l.HasAnySymlinks(),
+                     .tags = _l.HasAnyTags()};
     };
 
     unsigned n = 0;
@@ -400,8 +403,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] patchcopy n=%zu copy=%.1fms build=%.1fms\n",
+        fmt::println(stderr,
+                     "[perf] patchcopy n={} copy={:.1f}ms build={:.1f}ms",
                      total,
                      ms(perf_copy_begin, perf_copied),
                      ms(perf_copied, perf_end));
@@ -815,7 +818,7 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     for( const auto &name : _names ) {
         // m_Data is a main-thread-only object, so resolve the names against the listing here
         const auto indices = m_Data.RawIndicesForName(name);
-        changes.push_back(Change{name, indices.empty() ? -1 : static_cast<int>(indices.front())});
+        changes.push_back(Change{.name = name, .old_index = indices.empty() ? -1 : static_cast<int>(indices.front())});
     }
 
     const unsigned long fetch_flags = m_VFSFetchingFlags;
@@ -844,11 +847,11 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
             else {
                 // something unusual, e.g. a permission problem - let the slow path deal with it
                 if( std::getenv("NC_PERF_LOG") != nullptr )
-                    std::fprintf(stderr,
-                                 "[perf] incr.fetch-failed domain=%s code=%lld name=%s\n",
-                                 fetched.error().Domain().c_str(),
-                                 static_cast<long long>(fetched.error().Code()),
-                                 change.name.c_str());
+                    fmt::println(stderr,
+                                 "[perf] incr.fetch-failed domain={} code={} name={}",
+                                 fetched.error().Domain(),
+                                 fetched.error().Code(),
+                                 change.name);
                 need_full_reload = true;
                 break;
             }
@@ -880,8 +883,8 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
             const auto ms = [](auto _from, auto _to) {
                 return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
             };
-            std::fprintf(stderr,
-                         "[perf] incr k=%zu removed=%zu appended=%u mem=%.1fMB fetch=%.1fms patch=%.1fms\n",
+            fmt::println(stderr,
+                         "[perf] incr k={} removed={} appended={} mem={:.1f}MB fetch={:.1f}ms patch={:.1f}ms",
                          changes.size(),
                          removed.size(),
                          appended_count,
@@ -940,8 +943,8 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
         const auto ms = [](auto _from, auto _to) {
             return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
         };
-        std::fprintf(stderr,
-                     "[perf] incr.ui n=%u model=%.1fms view=%.1fms qs=%.1fms rest=%.1fms total=%.1fms\n",
+        fmt::println(stderr,
+                     "[perf] incr.ui n={} model={:.1f}ms view={:.1f}ms qs={:.1f}ms rest={:.1f}ms total={:.1f}ms",
                      _listing->Count(),
                      ms(perf_begin, perf_patched),
                      ms(perf_view_begin, perf_view_done),
@@ -1021,7 +1024,7 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
         }
         if( fetched.empty() )
             return;
-        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = std::move(raw_indices)] {
+        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = raw_indices] {
             for( const unsigned raw_index : raw_indices )
                 m_LazyPending.erase(raw_index);
             if( !m_LazyDates && !m_LazySizes )
@@ -1349,12 +1352,12 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
                 }
                 if( !changed_names.empty() ) {
                     if( std::getenv("NC_PERF_LOG") != nullptr )
-                        std::fprintf(stderr, "[perf] change.paths n=%zu\n", changed_names.size());
+                        fmt::println(stderr, "[perf] change.paths n={}", changed_names.size());
                     [pc accumulateChangedNames:changed_names];
                 }
                 else {
                     if( std::getenv("NC_PERF_LOG") != nullptr )
-                        std::fprintf(stderr, "[perf] change.no_paths -> full refresh\n");
+                        fmt::println(stderr, "[perf] change.no_paths -> full refresh");
                     [pc refreshPanel];
                 }
             });
@@ -1387,7 +1390,7 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     // pull in a bit more than what's visible, so that a small scroll doesn't need a round trip
     const NSUInteger margin = 100;
     const NSUInteger begin = _range.location > margin ? _range.location - margin : 0;
-    [self fetchLazyDatesForSortedRange:NSMakeRange(begin, _range.length + 2 * margin)];
+    [self fetchLazyDatesForSortedRange:NSMakeRange(begin, _range.length + (2 * margin))];
 }
 
 - (void)onCursorChanged
@@ -1649,8 +1652,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 if( std::getenv("NC_PERF_LOG") != nullptr ) {
                     using namespace std::chrono;
                     const auto ms = duration_cast<microseconds>(steady_clock::now() - perf_preview_begin).count();
-                    std::fprintf(stderr,
-                                 "[perf] preview n=%u ready=%.1fms\n",
+                    fmt::println(stderr,
+                                 "[perf] preview n={} ready={:.1f}ms",
                                  (*preview)->Count(),
                                  static_cast<double>(ms) / 1000.0);
                 }
@@ -1714,8 +1717,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 const auto ms = [](auto _from, auto _to) {
                     return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
                 };
-                std::fprintf(stderr,
-                             "[perf] ui n=%u modelLoad=%.1fms dataUpdated=%.1fms tail=%.1fms total=%.1fms\n",
+                fmt::println(stderr,
+                             "[perf] ui n={} modelLoad={:.1f}ms dataUpdated={:.1f}ms tail={:.1f}ms total={:.1f}ms",
                              (*listing)->Count(),
                              ms(perf_begin, perf_loaded),
                              ms(perf_loaded, perf_updated),
@@ -1800,8 +1803,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             const auto ms = [](auto _from, auto _to) {
                 return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
             };
-            std::fprintf(stderr,
-                         "[perf] ui n=%u loadListing=%.1fms dataUpdated=%.1fms pathChanged=%.1fms total=%.1fms\n",
+            fmt::println(stderr,
+                         "[perf] ui n={} loadListing={:.1f}ms dataUpdated={:.1f}ms pathChanged={:.1f}ms total={:.1f}ms",
                          _listing->Count(),
                          ms(perf_begin, perf_loaded),
                          ms(perf_loaded, perf_updated),
@@ -1898,28 +1901,29 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     Alert *const alert = [[Alert alloc] init];
     alert.messageText = NSLocalizedString(@"The flat view is incomplete", "");
-    alert.informativeText =
-        cloud_skip_only
-            ? [NSString stringWithFormat:NSLocalizedString(
-                                             @"Cloud-synced directories (Library/CloudStorage and "
-                                             @"Library/Mobile Documents) are skipped in the flat view, so their "
-                                             @"contents are not listed. That can be changed with the "
-                                             @"filePanel.general.flatViewSkipCloudStorage setting.",
-                                             "")]
-        : _timed_out
-            ? [NSString stringWithFormat:NSLocalizedString(
-                                             @"Scanning took too long, so only the first %ld entries are shown. "
-                                             @"Some directories (usually ones synced by a cloud provider) answer "
-                                             @"very slowly. The time limit can be raised with the "
-                                             @"filePanel.general.flatViewMaxSeconds setting.",
-                                             ""),
-                                         static_cast<long>(_scanned_items)]
-            : [NSString stringWithFormat:NSLocalizedString(
-                                             @"There are too many entries under this directory - only the first %ld "
-                                             @"are shown. The limit can be raised with the "
-                                             @"filePanel.general.flatViewMaxItems setting.",
-                                             ""),
-                                         static_cast<long>(_scanned_items)];
+    NSString *const reason = [&] {
+        if( cloud_skip_only )
+            return NSLocalizedString(
+                @"Cloud-synced directories (Library/CloudStorage and Library/Mobile Documents) are skipped in the "
+                @"flat view, so their contents are not listed. That can be changed with the "
+                @"filePanel.general.flatViewSkipCloudStorage setting.",
+                "");
+        if( _timed_out )
+            return [NSString
+                stringWithFormat:NSLocalizedString(@"Scanning took too long, so only the first %ld entries are shown. "
+                                                   @"Some directories (usually ones synced by a cloud provider) answer "
+                                                   @"very slowly. The time limit can be raised with the "
+                                                   @"filePanel.general.flatViewMaxSeconds setting.",
+                                                   ""),
+                                 static_cast<long>(_scanned_items)];
+        return [NSString
+            stringWithFormat:NSLocalizedString(@"There are too many entries under this directory - only the first %ld "
+                                               @"are shown. The limit can be raised with the "
+                                               @"filePanel.general.flatViewMaxItems setting.",
+                                               ""),
+                             static_cast<long>(_scanned_items)];
+    }();
+    alert.informativeText = reason;
     [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
     if( NSWindow *const window = m_View.window )
         [alert beginSheetModalForWindow:window completionHandler:nil];
@@ -1966,10 +1970,10 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         if( std::getenv("NC_PERF_LOG") != nullptr ) {
             using namespace std::chrono;
             const auto ms = duration_cast<milliseconds>(steady_clock::now() - flat_begin).count();
-            std::fprintf(stderr,
-                         "[perf] flat root=%s items=%zu dirs=%zu skipped=%zu truncated=%d listing=%d took=%lldms "
-                         "scan=%lldms compose=%lldms fetch=%lldms fold=%lldms threads=%zu strategy=%s\n",
-                         root.c_str(),
+            fmt::println(stderr,
+                         "[perf] flat root={} items={} dirs={} skipped={} truncated={} listing={} took={}ms "
+                         "scan={}ms compose={}ms fetch={}ms fold={}ms threads={} strategy={}",
+                         root,
                          result.scanned_items,
                          result.scanned_directories,
                          result.skipped_cloud_directories,
