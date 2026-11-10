@@ -5,8 +5,9 @@ on:
   # fires on each push only burns the shared macOS runner pool. Run it manually when needed, or let
   # the nightly do it.
   schedule:
-    # Nightly, 18:00 UTC
-    - cron: '0 18 * * *'
+    # Nightly, 18:17 UTC. The minute is deliberately not :00 - GitHub's scheduler is heavily
+    # congested at the top of the hour, and in practice these runs used to start hours late.
+    - cron: '17 18 * * *'
   workflow_dispatch:
     inputs:
       full:
