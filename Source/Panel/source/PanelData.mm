@@ -1278,13 +1278,27 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
         const auto appended_less = [&](unsigned _lhs, unsigned _rhs) { return cmp(_lhs, _rhs); };
         std::vector<unsigned> appended_sorted;
         appended_sorted.reserve(_appended_count);
-        for( unsigned i = old_count; i != new_count; ++i )
-            if( visible(i) )
-                appended_sorted.emplace_back(i);
-        if( appended_sorted.size() >= g_ParallelSortThresh )
-            pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
-        else
-            std::ranges::sort(appended_sorted, appended_less);
+        if( m_CustomSortMode.sort == SortMode::SortByName ) {
+            // The display order is the very same name order that has just been built for the
+            // lookups - no need to sort the appended entries a second time.
+            for( const unsigned i : appended_by_name )
+                if( visible(i) )
+                    appended_sorted.emplace_back(i);
+        }
+        else if( m_CustomSortMode.sort == SortMode::SortByNameRev ) {
+            for( auto it = appended_by_name.rbegin(); it != appended_by_name.rend(); ++it )
+                if( visible(*it) )
+                    appended_sorted.emplace_back(*it);
+        }
+        else {
+            for( unsigned i = old_count; i != new_count; ++i )
+                if( visible(i) )
+                    appended_sorted.emplace_back(i);
+            if( appended_sorted.size() >= g_ParallelSortThresh )
+                pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
+            else
+                std::ranges::sort(appended_sorted, appended_less);
+        }
         m_EntriesByCustomSort.insert(m_EntriesByCustomSort.end(), appended_sorted.begin(), appended_sorted.end());
         std::ranges::inplace_merge(m_EntriesByCustomSort.begin() + dotdot_prefix,
                                    m_EntriesByCustomSort.begin() + old_visible + dotdot_prefix,
@@ -1320,6 +1334,7 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
             m_Stats.raw_reg_files_amount++;
         }
 }
+
 void Model::SetHighlightForRawIndex(unsigned _raw_index, const QuickSearchHighlight &_highlight)
 {
     if( _raw_index >= m_Listing->Count() )
