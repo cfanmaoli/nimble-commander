@@ -382,7 +382,6 @@ static NCAppDelegate *g_Me = nil;
 {
     m_FinishedLaunching.toggle();
 
-
     if( self.mainWindowControllers.empty() )
         [self applicationOpenUntitledFile:NSApp]; // if there's no restored windows - we'll create a
                                                   // freshly new one

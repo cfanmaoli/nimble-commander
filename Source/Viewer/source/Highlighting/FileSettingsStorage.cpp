@@ -94,8 +94,7 @@ std::vector<FileSettingsStorage::Lang> FileSettingsStorage::LoadLangs(const std:
         const auto name_it = entry.FindMember("name");
         const auto settings_it = entry.FindMember("settings");
         const auto filemask_it = entry.FindMember("filemask");
-        if( name_it == entry.MemberEnd() || settings_it == entry.MemberEnd() ||
-            filemask_it == entry.MemberEnd() ) {
+        if( name_it == entry.MemberEnd() || settings_it == entry.MemberEnd() || filemask_it == entry.MemberEnd() ) {
             fail("an entry is missing one of name/settings/filemask");
         }
         if( !name_it->value.IsString() || !settings_it->value.IsString() || !filemask_it->value.IsString() )
@@ -116,7 +115,6 @@ std::vector<FileSettingsStorage::Lang> FileSettingsStorage::LoadLangs(const std:
         lang.mask = utility::FileMask(filemask, utility::FileMask::Type::Mask);
         output.push_back(std::move(lang));
     }
-
 
     ankerl::unordered_dense::set<std::string_view, UnorderedStringHashEqual, UnorderedStringHashEqual> set;
     set.reserve(output.size());

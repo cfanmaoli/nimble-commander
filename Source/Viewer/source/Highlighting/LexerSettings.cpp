@@ -51,7 +51,8 @@ std::expected<LexerSettings, std::string> ParseLexerSettings(std::string_view _j
     LexerSettings sets;
     sets.name = lexer->value.GetString();
 
-    if( const auto wordlists = doc.FindMember("wordlists"); wordlists != doc.MemberEnd() && !wordlists->value.IsNull() ) {
+    if( const auto wordlists = doc.FindMember("wordlists");
+        wordlists != doc.MemberEnd() && !wordlists->value.IsNull() ) {
         if( !wordlists->value.IsArray() )
             return std::unexpected{std::string{"Failed to parse JSON: 'wordlists' is not an array"}};
         for( const auto &entry : wordlists->value.GetArray() ) {
