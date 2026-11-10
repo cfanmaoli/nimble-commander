@@ -246,6 +246,33 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         allocated_size = _sz;
     };
 
+    // Localized display names are expensive (~60us per entry: stat + LaunchServices + a Unicode
+    // normalisation), so they are only worth it for small/medium listings. With the incremental
+    // delivery the pass runs per chunk, which keeps the single-chunk (that is, small directory)
+    // case identical to what it used to be.
+    const auto apply_display_names = [&](const size_t _begin, const size_t _end) {
+        if( (_flags & VFSFlags::F_LoadDisplayNames) == 0 || _begin == _end )
+            return;
+        static constexpr size_t max_items_for_display_names = 20'000;
+        if( _end > max_items_for_display_names ) {
+            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
+                       listing_source.directories[0],
+                       _end);
+            return;
+        }
+        auto &dnc = DisplayNamesCache::Instance();
+        const std::string &directory = listing_source.directories[0];
+        for( size_t n = _begin; n != _end; ++n ) {
+            if( !S_ISDIR(listing_source.unix_modes[n]) )
+                continue;
+            const auto &filename = listing_source.filenames[n];
+            if( filename.empty() || filename == ".." )
+                continue;
+            if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
+                listing_source.display_filenames.insert(n, std::string(*display_name));
+        }
+    };
+
     // A second pass over the enumerated entries: it resolves symlinks (readlink + stat of the
     // target) and reads the Finder tags. With the incremental delivery it runs per chunk, so that
     // every delivered listing carries complete per-item data.
@@ -343,6 +370,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     const auto flush_chunk = [&](const size_t _end) {
         if( !streaming || _end == chunk_begin )
             return;
+        apply_display_names(chunk_begin, _end);
         run_epilogue(chunk_begin, _end);
         VFSListingPtr chunk = VFSListing::Build(MakeListingInputRange(listing_source, chunk_begin, _end));
         chunk_begin = _end;
@@ -417,33 +445,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     if( next_entry_index < allocated_size )
         resize_dense(next_entry_index);
 
-    // Now fetch the localized display names, if requested. This is a rather expensive operation:
-    // for every directory it costs a stat() plus a LaunchServices-backed
-    // -[NSFileManager displayNameAtPath:] plus a Unicode normalisation - measured ~60us per entry,
-    // which makes a directory with 200k subdirectories take ~10 seconds to open. The overwhelming
-    // majority of the display names are identical to the plain filenames, so it only pays off on
-    // small/medium listings - for huge ones the feature is simply skipped.
-    if( (_flags & VFSFlags::F_LoadDisplayNames) && !streaming ) {
-        static constexpr size_t max_items_for_display_names = 20'000;
-        if( next_entry_index <= max_items_for_display_names ) {
-            auto &dnc = DisplayNamesCache::Instance();
-            const std::string &directory = listing_source.directories[0];
-            for( size_t n = 0; n != next_entry_index; ++n ) {
-                if( !S_ISDIR(listing_source.unix_modes[n]) )
-                    continue;
-                const auto &filename = listing_source.filenames[n];
-                if( filename.empty() || filename == ".." )
-                    continue;
-                if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
-                    listing_source.display_filenames.insert(n, std::string(*display_name));
-            }
-        }
-        else {
-            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
-                       listing_source.directories[0],
-                       next_entry_index);
-        }
-    }
+    apply_display_names(0, next_entry_index);
 
     const auto perf_enumerated = std::chrono::steady_clock::now();
 
