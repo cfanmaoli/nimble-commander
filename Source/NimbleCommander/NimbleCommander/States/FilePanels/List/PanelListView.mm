@@ -741,8 +741,11 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
 {
     if( m_Data == nullptr )
         return std::nullopt;
+    // The visible rect can start slightly above the content (the scroll view's content insets, or
+    // an elastic overscroll), so clamp the probe point to the first row.
     const NSRect visible_rect = m_ScrollView.documentVisibleRect;
-    const NSInteger row = [m_TableView rowAtPoint:NSMakePoint(0, NSMinY(visible_rect) + 1)];
+    const CGFloat top = std::max<CGFloat>(NSMinY(visible_rect), 0.0);
+    const NSInteger row = [m_TableView rowAtPoint:NSMakePoint(0, top + 1)];
     if( row < 0 || row >= static_cast<NSInteger>(m_Data->SortedEntriesCount()) )
         return std::nullopt;
     return m_Data->EntryAtSortPosition(static_cast<int>(row)).Filename();

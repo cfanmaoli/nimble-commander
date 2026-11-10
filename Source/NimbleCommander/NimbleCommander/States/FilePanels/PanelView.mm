@@ -874,12 +874,15 @@ struct StateStorage {
 
 - (std::optional<std::string>)topVisibleItemName
 {
+    if( [m_ItemsView respondsToSelector:@selector(topVisibleItemName)] )
+        return [m_ItemsView topVisibleItemName];
     return std::nullopt;
 }
 
 - (void)scrollToTopItemNamed:(std::string_view)_filename
 {
-    (void)_filename;
+    if( [m_ItemsView respondsToSelector:@selector(scrollToTopItemNamed:)] )
+        [m_ItemsView scrollToTopItemNamed:_filename];
 }
 
 - (void)savePathState

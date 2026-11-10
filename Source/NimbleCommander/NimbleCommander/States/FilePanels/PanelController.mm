@@ -939,6 +939,8 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     // The table reloads its rows wholesale when the count changes by more than a thousand - keep
     // the item the user is looking at in place instead of dropping the viewport to the top.
     const std::optional<std::string> top_item = [m_View topVisibleItemName];
+    if( std::getenv("NC_PERF_LOG") != nullptr )
+        fmt::println(stderr, "[perf] anchor {}", top_item ? *top_item : std::string{"<none>"});
     const auto perf_begin = std::chrono::steady_clock::now();
     const auto pers = CursorBackup{m_View.curpos, m_Data};
     m_Data.ApplyPatchedListing(_listing, _removed, _appended);

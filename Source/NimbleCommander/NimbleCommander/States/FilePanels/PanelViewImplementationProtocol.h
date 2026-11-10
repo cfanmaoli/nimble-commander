@@ -3,6 +3,8 @@
 
 #include "PanelViewTypes.h"
 #include <optional>
+#include <string>
+#include <string_view>
 #include <Cocoa/Cocoa.h>
 
 namespace nc::panel::data {
@@ -45,6 +47,13 @@ class Model;
 - (std::optional<NSRect>)frameOfItemAtIndex:(int)_sorted_item_index;
 
 @optional
+
+// The name of the item at the top of the viewport, if the presentation can tell. Used to keep the
+// scroll position stable when the listing under the view is extended in place.
+- (std::optional<std::string>)topVisibleItemName;
+
+// Scrolls the view so that the item with the given name sits at the top of the viewport.
+- (void)scrollToTopItemNamed:(std::string_view)_filename;
 
 // Called by the owning PanelView when the existing Panel Data has its sorting mode changed.
 // This notification will not be set when the data is replaced entirely, the presentation implementation should

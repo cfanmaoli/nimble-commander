@@ -682,6 +682,45 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
         [m_CollectionView.backgroundView setNeedsDisplay:true];
 }
 
+- (std::optional<std::string>)topVisibleItemName
+{
+    if( m_Data == nullptr )
+        return std::nullopt;
+    const NSRect visible_rect = m_ScrollView.documentVisibleRect;
+    PanelBriefViewItem *top_item = nil;
+    for( PanelBriefViewItem *item in m_CollectionView.visibleItems ) {
+        if( !NSIntersectsRect(item.view.frame, visible_rect) )
+            continue;
+        if( top_item == nil || item.view.frame.origin.y < top_item.view.frame.origin.y ||
+            (item.view.frame.origin.y == top_item.view.frame.origin.y &&
+             item.view.frame.origin.x < top_item.view.frame.origin.x) )
+            top_item = item;
+    }
+    if( top_item == nil )
+        return std::nullopt;
+    const NSIndexPath *const index_path = [m_CollectionView indexPathForItem:top_item];
+    if( index_path == nil )
+        return std::nullopt;
+    const auto index = static_cast<int>(index_path.item);
+    if( index < 0 || index >= m_Data->SortedEntriesCount() )
+        return std::nullopt;
+    return m_Data->EntryAtSortPosition(index).Filename();
+}
+
+- (void)scrollToTopItemNamed:(std::string_view)_filename
+{
+    if( m_Data == nullptr )
+        return;
+    const int index = m_Data->SortedIndexForName(_filename);
+    if( index < 0 )
+        return;
+    const auto index_path = [NSIndexPath indexPathForItem:index inSection:0];
+    NSCollectionViewLayoutAttributes *const attrs = [m_CollectionView layoutAttributesForItemAtIndexPath:index_path];
+    if( attrs == nil )
+        return;
+    [m_ScrollView.contentView scrollPoint:NSMakePoint(m_ScrollView.contentView.bounds.origin.x, attrs.frame.origin.y)];
+}
+
 - (std::optional<NSRect>)frameOfItemAtIndex:(int)_sorted_item_index
 {
     const auto index_path = [NSIndexPath indexPathForItem:_sorted_item_index inSection:0];
