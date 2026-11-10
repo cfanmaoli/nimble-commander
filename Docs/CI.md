@@ -55,6 +55,14 @@ Then:
 cd Scripts
 ./run_clang_format.sh --check
 
+# clang-tidy exactly as CI runs it - builds the compilation database on the first run and
+# reuses it afterwards, so a re-check after editing sources takes a few minutes
+./check_tidy_local.sh
+
+# the same, but only for the files touched by the branch
+git diff --name-only origin/main...HEAD -- Source > /tmp/tidy-files.txt
+./check_tidy_local.sh --files /tmp/tidy-files.txt
+
 # unit tests, plus a compilation database for clang-tidy
 EMIT_COMPILE_DB=1 ./run_all_unit_tests.sh Debug
 
