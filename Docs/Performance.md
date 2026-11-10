@@ -1350,18 +1350,22 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 ```
 [perf] fetch n=4096 enum=16.4ms epilogue=0.1ms build=0.1ms total=16.6ms dir=/tmp/ncperf/million
 [perf] ui n=4096 modelLoad=0.0ms dataUpdated=1.8ms tail=1.2ms total=3.1ms
-[perf] incr.ui n=397312 model=59.9ms view=6.0ms total=66.2ms   [perf] stream n=397312 chunk=196608
-[perf] incr.ui n=593920 model=74.9ms view=6.2ms total=81.4ms   [perf] stream n=593920 chunk=196608
-[perf] incr.ui n=790528 model=89.7ms view=6.3ms total=96.3ms   [perf] stream n=790528 chunk=196608
-[perf] incr.ui n=987136 model=109.3ms view=6.0ms total=115.6ms [perf] stream n=987136 chunk=196608
+[perf] incr.ui n=724992 model=60.4ms view=2.1ms total=62.6ms  [perf] stream n=724992 chunk=196608
+[perf] incr.ui n=921600 model=82.1ms view=2.2ms total=84.4ms  [perf] stream n=921600 chunk=196608
+[perf] incr.ui n=1000001 model=72.5ms view=2.1ms total=74.7ms [perf] stream n=1000001 chunk=78401
 ```
 
-首屏 3 ms 上屏；之后每 256 KB 左右追加一批（百万条目约 5 批，每批 66~116 ms），列表在枚举过程中
+首屏 3 ms 上屏；之后每 256 KB 左右追加一批（百万条目约 5 批，每批 60~85 ms），列表在枚举过程中
 持续变长，视口位置按条目名恢复。与之前相比：少了一次完整枚举，也去掉了「跳回首行」和 2.4 s 的整表重装。
 
 `Model::ApplyAppendedListing()` 是这一批能落地的前提：追加补丁不改变已有条目的 raw index，于是
 volatile data 原地增长、名字序与自定义排序用 `ranges::inplace_merge` 归并，统计量只累加新条目，
-整体从 O(n) 重建降到 O(k log k) 排序 + O(n) 廉价搬运。
+整体从 O(n) 重建降到 O(k log k) 排序 + O(n) 廉价搬运。另外，默认的按名字排序下两套顺序是同一个
+键，显示序直接复用已经排好的名字数组（逆序时反向遍历），每批的自定义排序从 ~30 ms 降到 ~8 ms。
+
+单批成本（百万条目、196k 条目一批）：`ProducePatchedListing` 拷贝 11~18 ms、名字序归并 25~70 ms、
+显示序 8~9 ms、其余 ~2 ms、视图重载 ~2 ms。剩下的名字序归并是「同时维护按名索引」的固有成本；
+再往下压需要把 listing 改成可原地追加的分块存储，那是架构级改动。
 
 ### 15.4 已知限制
 
