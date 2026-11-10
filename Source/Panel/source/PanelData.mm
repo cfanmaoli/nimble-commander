@@ -272,8 +272,35 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
     const auto name_less = [&](unsigned _lhs, unsigned _rhs) {
         return _listing->Filename(_lhs) < _listing->Filename(_rhs);
     };
+    // Merge the appended entries into the existing order instead of inserting them one by one: an
+    // incremental directory load can append tens of thousands of entries at once, and a per-entry
+    // vector insertion is quadratic. Equal names keep the order that the insertion used to give -
+    // the newly appended one goes first.
+    std::vector<unsigned> appended_by_name;
+    appended_by_name.reserve(_appended_count);
     for( unsigned i = new_count - _appended_count; i != new_count; ++i )
-        new_by_raw_name.insert(std::ranges::lower_bound(new_by_raw_name, i, name_less), i);
+        appended_by_name.emplace_back(i);
+    if( appended_by_name.size() < g_ParallelSortThresh )
+        std::ranges::sort(appended_by_name, name_less);
+    else
+        pstld::sort(appended_by_name.begin(), appended_by_name.end(), name_less);
+    {
+        std::vector<unsigned> merged;
+        merged.reserve(new_count);
+        size_t existing_pos = 0;
+        size_t appended_pos = 0;
+        while( existing_pos < new_by_raw_name.size() && appended_pos < appended_by_name.size() ) {
+            const unsigned existing = new_by_raw_name[existing_pos];
+            const unsigned appended = appended_by_name[appended_pos];
+            if( name_less(existing, appended) )
+                merged.emplace_back(new_by_raw_name[existing_pos++]);
+            else
+                merged.emplace_back(appended_by_name[appended_pos++]);
+        }
+        merged.insert(merged.end(), new_by_raw_name.begin() + existing_pos, new_by_raw_name.end());
+        merged.insert(merged.end(), appended_by_name.begin() + appended_pos, appended_by_name.end());
+        new_by_raw_name = std::move(merged);
+    }
 
     // custom sort order: same story - the retained entries are already ordered correctly, the
     // appended ones have to be placed according to the current sort mode
@@ -296,15 +323,33 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
 
     if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
         const IndirectListingComparator cmp{*_listing, new_vd, m_CustomSortMode};
-        const auto first = std::next(new_by_custom_sort.begin(), _listing->IsDotDot(0) ? 1 : 0);
-        for( unsigned i = new_count - _appended_count; i != new_count; ++i ) {
-            if( !visible(i) )
-                continue;
-            const bool is_dotdot = _listing->IsDotDot(i);
-            auto pos =
-                is_dotdot ? new_by_custom_sort.begin() : std::lower_bound(first, new_by_custom_sort.end(), i, cmp);
-            new_by_custom_sort.insert(pos, i);
+        const size_t dotdot_prefix = _listing->IsDotDot(0) ? 1 : 0;
+        std::vector<unsigned> appended_sorted;
+        appended_sorted.reserve(_appended_count);
+        for( unsigned i = new_count - _appended_count; i != new_count; ++i )
+            if( visible(i) )
+                appended_sorted.emplace_back(i);
+        const auto appended_less = [&](unsigned _lhs, unsigned _rhs) { return cmp(_lhs, _rhs); };
+        if( appended_sorted.size() < g_ParallelSortThresh )
+            std::ranges::sort(appended_sorted, appended_less);
+        else
+            pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
+        std::vector<unsigned> merged;
+        merged.reserve(new_by_custom_sort.size() + appended_sorted.size());
+        merged.insert(merged.end(), new_by_custom_sort.begin(), new_by_custom_sort.begin() + dotdot_prefix);
+        size_t existing_pos = dotdot_prefix;
+        size_t appended_pos = 0;
+        while( existing_pos < new_by_custom_sort.size() && appended_pos < appended_sorted.size() ) {
+            const unsigned existing = new_by_custom_sort[existing_pos];
+            const unsigned appended = appended_sorted[appended_pos];
+            if( cmp(existing, appended) )
+                merged.emplace_back(new_by_custom_sort[existing_pos++]);
+            else
+                merged.emplace_back(appended_sorted[appended_pos++]);
         }
+        merged.insert(merged.end(), new_by_custom_sort.begin() + existing_pos, new_by_custom_sort.end());
+        merged.insert(merged.end(), appended_sorted.begin() + appended_pos, appended_sorted.end());
+        new_by_custom_sort = std::move(merged);
     }
     else {
         for( unsigned i = new_count - _appended_count; i != new_count; ++i )

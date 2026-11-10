@@ -104,6 +104,15 @@ struct PresentationFactory {
 // Will return std::nullopt if the position is invalid.
 - (std::optional<NSRect>)frameOfItemAtSortPos:(int)_sorted_position;
 
+// The name of the item currently shown at the top of the viewport, if there is one. Views that
+// cannot answer return std::nullopt. Used to keep the scroll position stable when the listing
+// under the view is extended or replaced.
+- (std::optional<std::string>)topVisibleItemName;
+
+// Scrolls the view so that the item with the given name sits at the top of the viewport. Does
+// nothing if the item is not there anymore.
+- (void)scrollToTopItemNamed:(std::string_view)_filename;
+
 /*
  * PanelView implementation hooks.
  * Later: add hit-test info flags here.

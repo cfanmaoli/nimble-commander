@@ -101,4 +101,9 @@ struct ListingInput {
     ankerl::unordered_dense::map<size_t, std::vector<utility::Tags::Tag>> tags;
 };
 
+// Produces a standalone input that carries only the entries [_begin, _end) of '_src', with the
+// per-item data shifted accordingly. Used by the incremental enumeration, which delivers the
+// entries in chunks while the rest of the directory is still being read.
+[[nodiscard]] ListingInput MakeListingInputRange(const ListingInput &_src, size_t _begin, size_t _end);
+
 } // namespace nc::vfs

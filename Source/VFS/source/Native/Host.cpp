@@ -84,6 +84,24 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingPreview(std
     return FetchDirectoryListingImpl(_path, _flags | VFSFlags::F_NoDotDot, _cancel_checker, _max_items);
 }
 
+std::expected<void, Error> NativeHost::FetchDirectoryListingIncremental(std::string_view _path,
+                                                                        const unsigned long _flags,
+                                                                        const VFSCancelChecker &_cancel_checker,
+                                                                        const DirectoryListingChunkHandler &_on_chunk)
+{
+    if( !_on_chunk )
+        return std::unexpected(Error{Error::POSIX, EINVAL});
+    // The names-only route is a single bulk readdir() pass; deliver it as one chunk.
+    if( _flags & VFSFlags::F_NamesOnly )
+        return Host::FetchDirectoryListingIncremental(_path, _flags, _cancel_checker, _on_chunk);
+
+    const std::expected<VFSListingPtr, Error> result =
+        FetchDirectoryListingImpl(_path, _flags, _cancel_checker, 0, &_on_chunk);
+    if( !result )
+        return std::unexpected(result.error());
+    return {};
+}
+
 // Maps a readdir()-provided entry type to the corresponding file type bits of a unix mode.
 static mode_t DTypeToUnixMode(const uint8_t _type) noexcept
 {
@@ -109,7 +127,8 @@ static mode_t DTypeToUnixMode(const uint8_t _type) noexcept
 std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::string_view _path,
                                                                           const unsigned long _flags,
                                                                           const VFSCancelChecker &_cancel_checker,
-                                                                          const size_t _max_items)
+                                                                          const size_t _max_items,
+                                                                          const DirectoryListingChunkHandler *_on_chunk)
 {
     Log::Trace(
         "NativeHost::FetchDirectoryListingImpl() called with path='{}',_flags: {}, max: {}", _path, _flags, _max_items);
@@ -227,100 +246,9 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         allocated_size = _sz;
     };
 
-    // allocate space for up to 64 items upfront
-    resize_dense(initial_prealloc_size);
-
-    const bool no_times = (_flags & VFSFlags::F_NoTimes) != 0;
-    const bool no_sizes = (_flags & VFSFlags::F_NoSizes) != 0;
-    auto fill = [&](size_t _n, const Fetching::CallbackParams &_params) {
-        assert(_n < listing_source.filenames.size());
-        listing_source.filenames[_n] = _params.filename;
-        listing_source.inodes[_n] = _params.inode;
-        listing_source.unix_types[_n] = IFTODT(_params.mode);
-        if( !no_times ) {
-            listing_source.atimes[_n] = _params.acc_time;
-            listing_source.mtimes[_n] = _params.mod_time;
-            listing_source.ctimes[_n] = _params.chg_time;
-            listing_source.btimes[_n] = _params.crt_time;
-            if( _params.add_time >= 0 )
-                listing_source.add_times.insert(_n, _params.add_time);
-        }
-        listing_source.unix_modes[_n] = _params.mode;
-        listing_source.unix_flags[_n] = _params.flags;
-        listing_source.uids[_n] = _params.uid;
-        listing_source.gids[_n] = _params.gid;
-        if( !no_sizes )
-            listing_source.sizes[_n] = _params.size;
-
-        if( want_ext_flags )
-            ext_flags[_n] = _params.ext_flags;
-        if( want_display_names )
-            devs[_n] = _params.dev;
-    };
-
-    size_t next_entry_index = 0;
-    const auto cb_param = [&](const Fetching::CallbackParams &_params) { fill(next_entry_index++, _params); };
-
-    if( need_to_add_dot_dot ) {
-        Fetching::ReadSingleEntryAttributesByPath(io, path, cb_param);
-        listing_source.filenames[0] = "..";
-    }
-
-    const auto cb_fetch = [&](size_t _fetched_now) {
-        // check if final entries count is more than previous approximate
-        if( next_entry_index + _fetched_now > allocated_size )
-            resize_dense(next_entry_index + _fetched_now);
-    };
-
-    // when Admin Mode is on - we use different fetch route
-    const int ret =
-        is_native_io
-            ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items, (_flags & VFSFlags::F_NoTimes) == 0)
-            : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
-    if( ret != 0 )
-        return std::unexpected(Error{Error::POSIX, ret});
-
-    if( _cancel_checker && _cancel_checker() )
-        return std::unexpected(Error{Error::POSIX, ECANCELED});
-
-    // check if final entries count is less than approximate
-    if( next_entry_index < allocated_size )
-        resize_dense(next_entry_index);
-
-    // Now fetch the localized display names, if requested. This is a rather expensive operation:
-    // for every directory it costs a stat() plus a LaunchServices-backed
-    // -[NSFileManager displayNameAtPath:] plus a Unicode normalisation - measured ~60us per entry,
-    // which makes a directory with 200k subdirectories take ~10 seconds to open. The overwhelming
-    // majority of the display names are identical to the plain filenames, so it only pays off on
-    // small/medium listings - for huge ones the feature is simply skipped.
-    if( _flags & VFSFlags::F_LoadDisplayNames ) {
-        static constexpr size_t max_items_for_display_names = 20'000;
-        if( next_entry_index <= max_items_for_display_names ) {
-            auto &dnc = DisplayNamesCache::Instance();
-            const std::string &directory = listing_source.directories[0];
-            for( size_t n = 0; n != next_entry_index; ++n ) {
-                if( !S_ISDIR(listing_source.unix_modes[n]) )
-                    continue;
-                const auto &filename = listing_source.filenames[n];
-                if( filename.empty() || filename == ".." )
-                    continue;
-                if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
-                    listing_source.display_filenames.insert(n, std::string(*display_name));
-            }
-        }
-        else {
-            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
-                       listing_source.directories[0],
-                       next_entry_index);
-        }
-    }
-
-    const auto perf_enumerated = std::chrono::steady_clock::now();
-
-    // Now the main fetching is done there's a second pass to gather optional attributes per item:
-    // - symlinks
-    // - tags
-    // Run the pass in parallel to reduce the latency of the critical path.
+    // A second pass over the enumerated entries: it resolves symlinks (readlink + stat of the
+    // target) and reads the Finder tags. With the incremental delivery it runs per chunk, so that
+    // every delivered listing carries complete per-item data.
     const bool tags_reading_enabled = TagsFetchingAllowed(_flags, _path);
     std::mutex listing_source_tags_mut;     // guard access to 'listing_source.tags'
     std::mutex listing_source_symlinks_mut; // guard access to 'listing_source.symlinks'
@@ -387,6 +315,138 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
             }
         }
     };
+
+    const auto run_epilogue = [&](const size_t _begin, const size_t _end) {
+        if( _begin == _end )
+            return;
+        pstld::for_each_n(
+            listing_source.filenames.begin() + _begin, _end - _begin, [&epilogue_pass](const std::string &_filename) {
+                try {
+                    epilogue_pass(_filename);
+                } catch( ... ) {
+                    // PSTL gets very upset when the functor throws an exception, so
+                    // swallow it silently instead of terminating.
+                }
+            });
+    };
+
+    // The incremental delivery: the first chunk is small enough to fill a screen, the following
+    // ones are big - each one costs a listing build plus a patch on the panel side.
+    const bool streaming = _on_chunk != nullptr;
+    constexpr size_t streaming_first_chunk = 4096;
+    // Each chunk costs a listing build plus a model patch on the panel side, and the patch is
+    // linear in the size of the whole listing - so deliver big ones and keep their number small.
+    constexpr size_t streaming_chunk = size_t{256} * 1024;
+    size_t chunk_begin = 0;
+    size_t chunk_size = streaming_first_chunk;
+    bool stream_cancelled = false;
+    const auto flush_chunk = [&](const size_t _end) {
+        if( !streaming || _end == chunk_begin )
+            return;
+        run_epilogue(chunk_begin, _end);
+        VFSListingPtr chunk = VFSListing::Build(MakeListingInputRange(listing_source, chunk_begin, _end));
+        chunk_begin = _end;
+        chunk_size = streaming_chunk;
+        if( !(*_on_chunk)(std::move(chunk)) )
+            stream_cancelled = true;
+    };
+
+    // allocate space for up to 64 items upfront
+    resize_dense(initial_prealloc_size);
+
+    const bool no_times = (_flags & VFSFlags::F_NoTimes) != 0;
+    const bool no_sizes = (_flags & VFSFlags::F_NoSizes) != 0;
+    auto fill = [&](size_t _n, const Fetching::CallbackParams &_params) {
+        assert(_n < listing_source.filenames.size());
+        listing_source.filenames[_n] = _params.filename;
+        listing_source.inodes[_n] = _params.inode;
+        listing_source.unix_types[_n] = IFTODT(_params.mode);
+        if( !no_times ) {
+            listing_source.atimes[_n] = _params.acc_time;
+            listing_source.mtimes[_n] = _params.mod_time;
+            listing_source.ctimes[_n] = _params.chg_time;
+            listing_source.btimes[_n] = _params.crt_time;
+            if( _params.add_time >= 0 )
+                listing_source.add_times.insert(_n, _params.add_time);
+        }
+        listing_source.unix_modes[_n] = _params.mode;
+        listing_source.unix_flags[_n] = _params.flags;
+        listing_source.uids[_n] = _params.uid;
+        listing_source.gids[_n] = _params.gid;
+        if( !no_sizes )
+            listing_source.sizes[_n] = _params.size;
+
+        if( want_ext_flags )
+            ext_flags[_n] = _params.ext_flags;
+        if( want_display_names )
+            devs[_n] = _params.dev;
+    };
+
+    size_t next_entry_index = 0;
+    const auto cb_param = [&](const Fetching::CallbackParams &_params) {
+        fill(next_entry_index++, _params);
+        // Deliver what has been read so far once the chunk is big enough - this is what puts the
+        // first screenful on the screen while the rest of the directory is still being enumerated.
+        if( streaming && !stream_cancelled && next_entry_index - chunk_begin >= chunk_size )
+            flush_chunk(next_entry_index);
+    };
+
+    if( need_to_add_dot_dot ) {
+        Fetching::ReadSingleEntryAttributesByPath(io, path, cb_param);
+        listing_source.filenames[0] = "..";
+    }
+
+    const auto cb_fetch = [&](size_t _fetched_now) {
+        // check if final entries count is more than previous approximate
+        if( next_entry_index + _fetched_now > allocated_size )
+            resize_dense(next_entry_index + _fetched_now);
+    };
+
+    // when Admin Mode is on - we use different fetch route
+    const int ret =
+        is_native_io
+            ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items, (_flags & VFSFlags::F_NoTimes) == 0)
+            : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
+    if( ret != 0 )
+        return std::unexpected(Error{Error::POSIX, ret});
+
+    if( _cancel_checker && _cancel_checker() )
+        return std::unexpected(Error{Error::POSIX, ECANCELED});
+
+    // check if final entries count is less than approximate
+    if( next_entry_index < allocated_size )
+        resize_dense(next_entry_index);
+
+    // Now fetch the localized display names, if requested. This is a rather expensive operation:
+    // for every directory it costs a stat() plus a LaunchServices-backed
+    // -[NSFileManager displayNameAtPath:] plus a Unicode normalisation - measured ~60us per entry,
+    // which makes a directory with 200k subdirectories take ~10 seconds to open. The overwhelming
+    // majority of the display names are identical to the plain filenames, so it only pays off on
+    // small/medium listings - for huge ones the feature is simply skipped.
+    if( (_flags & VFSFlags::F_LoadDisplayNames) && !streaming ) {
+        static constexpr size_t max_items_for_display_names = 20'000;
+        if( next_entry_index <= max_items_for_display_names ) {
+            auto &dnc = DisplayNamesCache::Instance();
+            const std::string &directory = listing_source.directories[0];
+            for( size_t n = 0; n != next_entry_index; ++n ) {
+                if( !S_ISDIR(listing_source.unix_modes[n]) )
+                    continue;
+                const auto &filename = listing_source.filenames[n];
+                if( filename.empty() || filename == ".." )
+                    continue;
+                if( auto display_name = dnc.DisplayName(listing_source.inodes[n], devs[n], directory + filename) )
+                    listing_source.display_filenames.insert(n, std::string(*display_name));
+            }
+        }
+        else {
+            Log::Debug("Skipping the localized display names for '{}' - too many entries ({})",
+                       listing_source.directories[0],
+                       next_entry_index);
+        }
+    }
+
+    const auto perf_enumerated = std::chrono::steady_clock::now();
+
     pstld::for_each_n(listing_source.filenames.begin(), next_entry_index, [epilogue_pass](const std::string &filename) {
         try {
             epilogue_pass(filename);
@@ -395,6 +455,16 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         }
     });
 
+    if( stream_cancelled )
+        return std::unexpected(Error{Error::POSIX, ECANCELED});
+    if( streaming ) {
+        flush_chunk(next_entry_index);
+        if( stream_cancelled )
+            return std::unexpected(Error{Error::POSIX, ECANCELED});
+        // Everything has been delivered chunk by chunk - there is nothing left to build.
+        return VFSListing::EmptyListing();
+    }
+    run_epilogue(0, next_entry_index);
     const auto perf_epilogue = std::chrono::steady_clock::now();
 
     // And, finally, compose the listing source into a compact immutable listing object.

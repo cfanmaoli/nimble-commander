@@ -4,6 +4,7 @@
 #include "ListingInput.h"
 #include <sys/param.h>
 #include <Base/mach_time.h>
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cstdio>
@@ -1445,4 +1446,61 @@ const ListingItem &Listing::iterator::operator*() const noexcept
     return i;
 }
 
+ListingInput MakeListingInputRange(const ListingInput &_src, const size_t _begin, const size_t _end)
+{
+    assert(_begin <= _end);
+    assert(_end <= _src.filenames.size());
+    const size_t count = _end - _begin;
+
+    ListingInput out;
+    out.title = _src.title;
+
+    const auto clone = [&](auto &_dst, const auto &_source) {
+        using container_t = std::remove_cvref_t<decltype(_dst)>;
+        using type_t = typename container_t::type;
+        switch( _source.mode() ) {
+            case type_t::common:
+                _dst = _source;
+                break;
+            case type_t::dense: {
+                _dst.reset(type_t::dense);
+                _dst.resize(count);
+                const std::span<const typename container_t::value_type> values = _source.dense_values();
+                std::copy_n(values.begin() + _begin, count, _dst.dense_values().begin());
+                break;
+            }
+            case type_t::sparse:
+                _dst.reset(type_t::sparse);
+                for( size_t i = _begin; i != _end; ++i )
+                    if( _source.has(i) )
+                        _dst.insert(i - _begin, _source[i]);
+                break;
+        }
+    };
+
+    clone(out.hosts, _src.hosts);
+    clone(out.directories, _src.directories);
+    clone(out.display_filenames, _src.display_filenames);
+    clone(out.sizes, _src.sizes);
+    clone(out.inodes, _src.inodes);
+    clone(out.atimes, _src.atimes);
+    clone(out.mtimes, _src.mtimes);
+    clone(out.ctimes, _src.ctimes);
+    clone(out.btimes, _src.btimes);
+    clone(out.add_times, _src.add_times);
+    clone(out.uids, _src.uids);
+    clone(out.gids, _src.gids);
+    clone(out.unix_flags, _src.unix_flags);
+    clone(out.symlinks, _src.symlinks);
+
+    out.filenames.assign(_src.filenames.begin() + _begin, _src.filenames.begin() + _end);
+    out.unix_modes.assign(_src.unix_modes.begin() + _begin, _src.unix_modes.begin() + _end);
+    out.unix_types.assign(_src.unix_types.begin() + _begin, _src.unix_types.begin() + _end);
+
+    for( const auto &[index, tags] : _src.tags )
+        if( index >= _begin && index < _end )
+            out.tags.emplace(index - _begin, tags);
+
+    return out;
+}
 } // namespace nc::vfs

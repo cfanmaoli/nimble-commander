@@ -285,6 +285,68 @@ TEST_CASE(PREFIX "FetchDirectoryListingPreview stops at the requested amount")
     CHECK(!zero);
 }
 
+TEST_CASE(PREFIX "FetchDirectoryListingIncremental delivers the entries in chunks")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_incremental_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    static constexpr int items_count = 5000; // just above the first chunk size
+    for( int i = 0; i != items_count; ++i )
+        std::ofstream(root / ("i" + std::to_string(i)));
+
+    // Collect the chunks and check that together they describe the same directory listing, in
+    // the same order, with the per-item data intact.
+    std::vector<std::string> streamed_names;
+    std::vector<uint64_t> streamed_sizes;
+    size_t chunks_count = 0;
+    size_t first_chunk_size = 0;
+    const auto result =
+        host().FetchDirectoryListingIncremental(root.c_str(), Flags::F_NoDotDot, {}, [&](VFSListingPtr _chunk) {
+            if( chunks_count == 0 )
+                first_chunk_size = _chunk->Count();
+            ++chunks_count;
+            for( unsigned i = 0; i != _chunk->Count(); ++i ) {
+                streamed_names.emplace_back(_chunk->Filename(i));
+                CHECK(_chunk->Host(i) != nullptr);
+                CHECK(_chunk->Directory(i) == std::string(root.c_str()) + "/");
+                streamed_sizes.emplace_back(_chunk->Size(i));
+            }
+            return true;
+        });
+    REQUIRE(result);
+    CHECK(chunks_count >= 2);
+    CHECK(first_chunk_size <= 4096);
+    CHECK(streamed_names.size() == items_count);
+
+    const auto full = host().FetchDirectoryListing(root.c_str(), Flags::F_NoDotDot);
+    REQUIRE(full);
+    REQUIRE((*full)->Count() == items_count);
+    for( unsigned i = 0; i != (*full)->Count(); ++i ) {
+        CHECK(streamed_names[i] == (*full)->Filename(i));
+        CHECK(streamed_sizes[i] == (*full)->Size(i));
+    }
+}
+
+TEST_CASE(PREFIX "FetchDirectoryListingIncremental can be cancelled from the handler")
+{
+    const auto root = std::filesystem::temp_directory_path() / "nc_incremental_cancel_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] { std::filesystem::remove_all(root); });
+    for( int i = 0; i != 5000; ++i )
+        std::ofstream(root / ("c" + std::to_string(i)));
+
+    size_t chunks_count = 0;
+    const auto result =
+        host().FetchDirectoryListingIncremental(root.c_str(), Flags::F_NoDotDot, {}, [&](VFSListingPtr) {
+            ++chunks_count;
+            return false; // stop after the very first chunk
+        });
+    CHECK(!result);
+    CHECK(result.error().Code() == ECANCELED);
+    CHECK(chunks_count == 1);
+}
 TEST_CASE(PREFIX "Names-only listing carries no attributes")
 {
     const auto root = std::filesystem::temp_directory_path() / "nc_names_only_test";

@@ -1322,6 +1322,47 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 
 
 
+## 34. 第二十六轮：渐进式目录加载（流式，替代预览 listing）
+
+### 15.1 问题：预览与全量是两份不同的 listing
+
+打开百万级目录时，面板先装一份 4096 条的预览，枚举完成后再装一份完整 listing。第二次安装走的是
+「刚进入新目录」的收尾逻辑 `panelChangedWithFocusedFilename:`，它会把光标复位到第 0 行
+（`PanelView.mm:914` → `setCurpos:0` → `PanelListView.ensureItemIsVisible:0` → 滚动到首行）。
+结果是：用户已经滚到中段，后台加载完成时视口被拽回首行。
+
+### 15.2 做法：一次枚举，边读边交付
+
+- `VFSHost::FetchDirectoryListingIncremental(path, flags, cancel, handler)`：每读够一批就交付一个
+  「只含这批条目」的 listing；不支持增量的 host 走默认实现，一次性交付整份 listing。
+- `NativeHost` 的首批 4096 条、之后每 256 KB 一批；每一批在交付前都会对这批条目跑 epilogue
+  （解析符号链接、读 Finder tags），所以每个 chunk 都是完整数据。
+- 面板收到第一个 chunk 立即 `InstallLoad`（首屏），随后的 chunk 先攒起来，枚举完成时合成**一次**
+  `ProducePatchedListing` + `ApplyPatchedListing`，在同一份模型上追加——不再有第二份 listing，
+  也就不会再触发「新目录」的复位逻辑。
+- `PanelListView` 增加 `topVisibleItemName` / `scrollToTopItemNamed:`：模型追加前后记住视口顶部
+  条目，按名字恢复滚动位置，配合 `reloadData` 也不会跳。
+- `Model::ApplyPatchedListing` 对追加条目改用**归并**（`by raw name` 与自定义排序两处），
+  并发使用 `pstld::sort`；原先的逐条 `insert` 在 k=26 万时是二次复杂度。
+
+### 15.3 实测（默认配置，100 万条目目录）
+
+```
+[perf] fetch n=4096 enum=16.4ms epilogue=0.1ms build=0.1ms total=16.6ms dir=/tmp/ncperf/million
+[perf] ui n=4096 modelLoad=0.0ms dataUpdated=1.8ms tail=1.2ms total=3.1ms
+[perf] incr.ui n=1000001 model=274.7ms view=2.4ms qs=0.0ms rest=0.0ms total=277.1ms
+[perf] stream n=1000001 tail=995905
+```
+
+首屏 3 ms 上屏；枚举在后台跑完（约 2.2 s）后，用一次 275 ms 的补丁把列表扩到 100 万条，
+期间视口位置按条目名恢复。与之前相比：少了一次完整枚举，也去掉了「跳回首行」和 2.4 s 的整表重装。
+
+### 15.4 已知限制
+
+- 模型侧的补丁仍是 O(n)：所以尾批一次性应用，而不是每个 chunk 都刷一次（那样会累积出秒级主线程停顿）。
+  真正意义上的「每 chunk 都增量上屏」需要把模型里的排序/过滤索引改成按 k 增量维护。
+- 视口锚点目前只在 List 视图实现；Brief/Gallery 仍会被整表刷新带走位置。
+
 ## 附：平铺视图与搜索的后续工作
 
 平铺视图的列式枚举、文件名/内容并行搜索，以及“能不能剥掉 VFS 层”的评估，都在

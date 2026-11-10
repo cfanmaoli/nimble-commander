@@ -10,6 +10,7 @@
 #include <string_view>
 #include <span>
 #include <expected>
+#include <functional>
 
 namespace nc::vfs {
 
@@ -244,6 +245,18 @@ public:
                                                                              size_t _max_items,
                                                                              unsigned long _flags,
                                                                              const VFSCancelChecker &_cancel_checker);
+
+    // Enumerates a directory and delivers the results while the enumeration is still running: the
+    // first chunk is what fits on a screen, the following ones carry the rest. Each chunk is a
+    // regular listing of just those entries, in the enumeration order, with the per-item attributes
+    // already filled in. The handler returns false to stop the enumeration.
+    // Hosts that cannot enumerate incrementally fall back to a single chunk carrying the whole
+    // listing, so the callers do not have to special-case anything.
+    using DirectoryListingChunkHandler = std::function<bool(VFSListingPtr)>;
+    virtual std::expected<void, Error> FetchDirectoryListingIncremental(std::string_view _path,
+                                                                        unsigned long _flags,
+                                                                        const VFSCancelChecker &_cancel_checker,
+                                                                        const DirectoryListingChunkHandler &_on_chunk);
 
     // Produces a regular listing, consisting of a single element.
     // If there's no overriden implementaition in derived class, VFSHost will try to produce this listing with Stat().

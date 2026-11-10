@@ -217,6 +217,10 @@ static void HeatUpConfigValues()
 - (void)applyPatchedListing:(const VFSListingPtr &)_listing
                     removed:(const std::vector<unsigned> &)_removed
                    appended:(unsigned)_appended;
+- (void)applyPatchedListing:(const VFSListingPtr &)_listing
+                       removed:(const std::vector<unsigned> &)_removed
+                      appended:(unsigned)_appended
+    cancelBackgroundOperations:(bool)_cancel_background;
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
 - (void)fetchLazyDatesForTopEntries;
 - (void)fetchLazyDatesForSortedRange:(NSRange)_range;
@@ -433,6 +437,10 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     // flat view state
     bool m_FlatView;
     unsigned long m_FlatViewGeneration;
+
+    // Identifies the incremental directory load whose chunks are being installed; bumped by every
+    // navigation so that the stale chunks of a superseded load are ignored.
+    std::atomic<unsigned long> m_StreamingLoadId;
     std::string m_FlatViewRoot;
     VFSHostPtr m_FlatViewHost;
 
@@ -916,9 +924,21 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
                     removed:(const std::vector<unsigned> &)_removed
                    appended:(unsigned)_appended
 {
+    [self applyPatchedListing:_listing removed:_removed appended:_appended cancelBackgroundOperations:true];
+}
+
+- (void)applyPatchedListing:(const VFSListingPtr &)_listing
+                       removed:(const std::vector<unsigned> &)_removed
+                      appended:(unsigned)_appended
+    cancelBackgroundOperations:(bool)_cancel_background
+{
     Log::Info(
         "Applying a patched listing, {} entries ({} dropped, {} added)", _listing->Count(), _removed.size(), _appended);
-    [self CancelBackgroundOperations];
+    if( _cancel_background )
+        [self CancelBackgroundOperations];
+    // The table reloads its rows wholesale when the count changes by more than a thousand - keep
+    // the item the user is looking at in place instead of dropping the viewport to the top.
+    const std::optional<std::string> top_item = [m_View topVisibleItemName];
     const auto perf_begin = std::chrono::steady_clock::now();
     const auto pers = CursorBackup{m_View.curpos, m_Data};
     m_Data.ApplyPatchedListing(_listing, _removed, _appended);
@@ -936,6 +956,8 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
         m_View.curpos = pers.RestoredCursorPosition();
     }
     [self onCursorChanged];
+    if( top_item )
+        [m_View scrollToTopItemNamed:*top_item];
     [m_View setNeedsDisplay];
     if( std::getenv("NC_PERF_LOG") != nullptr ) {
         using namespace std::chrono;
@@ -1275,6 +1297,10 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
 
 - (void)CancelBackgroundOperations
 {
+    // Invalidate the chunks of an incremental load that is being torn down: the fetching queue
+    // will stop at its next checkpoint, but the chunks it has already posted must not land on top
+    // of whatever gets installed instead.
+    m_StreamingLoadId.fetch_add(1);
     m_DirectorySizeCountingQ.Stop();
     m_DirectoryLoadingQ.Stop();
     m_DirectoryReLoadingQ.Stop();
@@ -1637,95 +1663,129 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         const auto canceller = VFSCancelChecker([&] { return m_DirectoryLoadingQ.IsStopped(); });
 
         bool big_directory = false;
-        // Showing nothing for the seconds a huge directory takes to enumerate is the worst part of
-        // opening it. Fetch the first screenful right away and put it on screen while the rest is
-        // still being read.
+        // The probe only classifies the directory now: the first screenful comes from the
+        // incremental fetch below, which enumerates the directory once instead of twice.
         {
             static constexpr size_t preview_items = 4096;
-            const auto perf_preview_begin = std::chrono::steady_clock::now();
             const std::expected<VFSListingPtr, Error> preview =
                 vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller);
-            if( preview && (*preview)->Count() >= preview_items ) {
+            if( preview && (*preview)->Count() >= preview_items )
                 big_directory = true;
-                const auto prepared_preview = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
-                    *preview, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
-                if( std::getenv("NC_PERF_LOG") != nullptr ) {
-                    using namespace std::chrono;
-                    const auto ms = duration_cast<microseconds>(steady_clock::now() - perf_preview_begin).count();
-                    fmt::println(stderr,
-                                 "[perf] preview n={} ready={:.1f}ms",
-                                 (*preview)->Count(),
-                                 static_cast<double>(ms) / 1000.0);
-                }
-                dispatch_to_main_queue([self, prepared_preview, _previous_listing] {
-                    // don't clobber anything that may have been installed in the meantime
-                    if( m_Data.ListingPtr() != _previous_listing )
-                        return;
-                    m_Data.InstallLoad(std::move(*prepared_preview));
-                    m_DataGeneration++;
-                    [m_View dataUpdated];
-                });
-            }
         }
 
-        // Only the huge directories benefit from lazy dates, and the preview has just told us
+        // Only the huge directories benefit from lazy dates, and the probe has just told us
         // whether this one is big.
         const bool lazy_dates = big_directory && ConfigLazyDates();
         const bool lazy_sizes = big_directory && ConfigLazySizes();
         const unsigned long fetch_flags =
             m_VFSFetchingFlags | (lazy_dates ? VFSFlags::F_NoTimes : 0) | (lazy_sizes ? VFSFlags::F_NoSizes : 0);
-        const std::expected<VFSListingPtr, Error> listing =
-            vfs.FetchDirectoryListing(directory, fetch_flags, canceller);
-        if( _request->LoadingResultCallback ) {
-            _request->LoadingResultCallback(listing ? std::expected<void, Error>{}
-                                                    : std::expected<void, Error>{std::unexpected(listing.error())});
-        }
 
-        if( !listing )
-            return std::unexpected(listing.error());
-
-        // TODO: need an ability to show errors at least
-
-        // do the expensive part of the model setup right here, on the background queue
-        const auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
-            *listing, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
-
-        [self CancelBackgroundOperations]; // clean running operations if any
-        dispatch_or_run_in_main_queue([=] {
-            const auto perf_begin = std::chrono::steady_clock::now();
-            [m_View savePathState];
-            m_FlatView = false;
-            m_FlatViewHost.reset();
-            m_FlatViewRoot.clear();
-            ++m_FlatViewGeneration;
-            m_LazyDates = lazy_dates;
-            m_LazySizes = lazy_sizes;
-            m_Data.InstallLoad(std::move(*prepared));
-            const auto perf_loaded = std::chrono::steady_clock::now();
-            for( const auto &i : _request->RequestSelectedEntries )
-                m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
-            m_DataGeneration++;
-            [m_View dataUpdated];
-            [self fetchLazyDatesForTopEntries];
-            const auto perf_updated = std::chrono::steady_clock::now();
-            [m_View panelChangedWithFocusedFilename:_request->RequestFocusedEntry
-                                  loadPreviousState:_request->LoadPreviousViewState];
-            [self onPathChanged];
-            if( std::getenv("NC_PERF_LOG") != nullptr ) {
-                using namespace std::chrono;
-                const auto perf_end = steady_clock::now();
-                const auto ms = [](auto _from, auto _to) {
-                    return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
-                };
-                fmt::println(stderr,
-                             "[perf] ui n={} modelLoad={:.1f}ms dataUpdated={:.1f}ms tail={:.1f}ms total={:.1f}ms",
-                             (*listing)->Count(),
-                             ms(perf_begin, perf_loaded),
-                             ms(perf_loaded, perf_updated),
-                             ms(perf_updated, perf_end),
-                             ms(perf_begin, perf_end));
+        // Deliver the listing to the panel chunk by chunk instead of producing a preview listing
+        // and then replacing it with an unrelated full one: the first chunk is the first screenful,
+        // every following chunk extends the same model in place. This is what keeps the scroll
+        // position and the focused item intact while a huge directory is being read - the view
+        // never sees a second, different listing.
+        const unsigned long stream_id = m_StreamingLoadId.fetch_add(1) + 1;
+        auto is_first_chunk = std::make_shared<bool>(true);
+        auto pending_chunks = std::make_shared<std::vector<VFSListingPtr>>();
+        auto pending_mutex = std::make_shared<std::mutex>();
+        const auto on_chunk = [self,
+                               stream_id,
+                               is_first_chunk,
+                               pending_chunks,
+                               pending_mutex,
+                               lazy_dates,
+                               lazy_sizes,
+                               _request,
+                               _sort_mode,
+                               _hard_filter,
+                               _soft_filter](VFSListingPtr _chunk) -> bool {
+            if( m_StreamingLoadId.load() != stream_id || m_DirectoryLoadingQ.IsStopped() )
+                return false; // superseded by a newer navigation or cancelled outright
+            if( *is_first_chunk ) {
+                *is_first_chunk = false;
+                // the expensive part of the model setup happens here, on the fetching queue
+                auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
+                    _chunk, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
+                dispatch_to_main_queue([self, stream_id, prepared, lazy_dates, lazy_sizes, _request] {
+                    if( m_StreamingLoadId.load() != stream_id )
+                        return;
+                    const auto perf_begin = std::chrono::steady_clock::now();
+                    [m_View savePathState];
+                    m_FlatView = false;
+                    m_FlatViewHost.reset();
+                    m_FlatViewRoot.clear();
+                    ++m_FlatViewGeneration;
+                    m_LazyDates = lazy_dates;
+                    m_LazySizes = lazy_sizes;
+                    m_Data.InstallLoad(std::move(*prepared));
+                    const auto perf_loaded = std::chrono::steady_clock::now();
+                    for( const auto &i : _request->RequestSelectedEntries )
+                        m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
+                    m_DataGeneration++;
+                    [m_View dataUpdated];
+                    [self fetchLazyDatesForTopEntries];
+                    const auto perf_updated = std::chrono::steady_clock::now();
+                    [m_View panelChangedWithFocusedFilename:_request->RequestFocusedEntry
+                                          loadPreviousState:_request->LoadPreviousViewState];
+                    [self onPathChanged];
+                    if( std::getenv("NC_PERF_LOG") != nullptr ) {
+                        using namespace std::chrono;
+                        const auto perf_end = steady_clock::now();
+                        const auto ms = [](auto _from, auto _to) {
+                            return static_cast<double>(duration_cast<microseconds>(_to - _from).count()) / 1000.0;
+                        };
+                        fmt::println(stderr,
+                                     "[perf] ui n={} modelLoad={:.1f}ms dataUpdated={:.1f}ms tail={:.1f}ms "
+                                     "total={:.1f}ms",
+                                     m_Data.ListingPtr()->Count(),
+                                     ms(perf_begin, perf_loaded),
+                                     ms(perf_loaded, perf_updated),
+                                     ms(perf_updated, perf_end),
+                                     ms(perf_begin, perf_end));
+                    }
+                });
             }
-        });
+            else {
+                // Keep the rest until the enumeration is over. The model-side patch is linear in the
+                // size of the whole listing, so applying every chunk would cost seconds of
+                // main-thread stalls; one patch at the end costs a single pass and still extends
+                // the very same listing that is already on screen.
+                const std::lock_guard<std::mutex> lock(*pending_mutex);
+                pending_chunks->emplace_back(std::move(_chunk));
+            }
+            return true;
+        };
+
+        const std::expected<void, Error> stream_result =
+            vfs.FetchDirectoryListingIncremental(directory, fetch_flags, canceller, on_chunk);
+        if( stream_result ) {
+            // Hand the tail over to the main queue - the first chunk may still be on its way
+            // there, so the patch has to be built from whatever listing is current at that point.
+            dispatch_to_main_queue([self, stream_id, pending_chunks] {
+                if( m_StreamingLoadId.load() != stream_id || pending_chunks->empty() )
+                    return;
+                const VFSListingPtr base = m_Data.ListingPtr();
+                if( !base )
+                    return;
+                unsigned appended = 0;
+                for( const VFSListingPtr &chunk : *pending_chunks )
+                    appended += chunk->Count();
+                VFSListingPtr patched = VFSListing::ProducePatchedListing(*base, {}, *pending_chunks);
+                if( patched == nullptr )
+                    patched = ProducePatchedListingGeneric(*base, {}, *pending_chunks);
+                if( patched == nullptr )
+                    return;
+                pending_chunks->clear();
+                [self applyPatchedListing:patched removed:{} appended:appended cancelBackgroundOperations:false];
+                if( std::getenv("NC_PERF_LOG") != nullptr )
+                    fmt::println(stderr, "[perf] stream n={} tail={}", patched->Count(), appended);
+            });
+        }
+        if( _request->LoadingResultCallback )
+            _request->LoadingResultCallback(stream_result);
+        if( !stream_result )
+            return std::unexpected(stream_result.error());
     } catch( std::exception &e ) {
         ShowExceptionAlert(e);
     } catch( ... ) {

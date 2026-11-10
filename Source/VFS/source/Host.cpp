@@ -233,6 +233,22 @@ Host::FetchDirectoryListingPreview([[maybe_unused]] std::string_view _path,
     return std::unexpected(Error{Error::POSIX, ENOTSUP});
 }
 
+std::expected<void, Error> Host::FetchDirectoryListingIncremental(std::string_view _path,
+                                                                  unsigned long _flags,
+                                                                  const VFSCancelChecker &_cancel_checker,
+                                                                  const DirectoryListingChunkHandler &_on_chunk)
+{
+    if( !_on_chunk )
+        return std::unexpected(Error{Error::POSIX, EINVAL});
+
+    const std::expected<VFSListingPtr, Error> listing = FetchDirectoryListing(_path, _flags, _cancel_checker);
+    if( !listing )
+        return std::unexpected(listing.error());
+    if( !_on_chunk(*listing) )
+        return std::unexpected(Error{Error::POSIX, ECANCELED});
+    return {};
+}
+
 HostDirObservationTicket Host::ObserveDirectoryChangesWithPaths([[maybe_unused]] std::string_view _path,
                                                                 DirectoryChangePathsHandler _handler)
 {

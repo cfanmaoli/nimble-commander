@@ -737,6 +737,30 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     }
 }
 
+- (std::optional<std::string>)topVisibleItemName
+{
+    if( m_Data == nullptr )
+        return std::nullopt;
+    const NSRect visible_rect = m_ScrollView.documentVisibleRect;
+    const NSInteger row = [m_TableView rowAtPoint:NSMakePoint(0, NSMinY(visible_rect) + 1)];
+    if( row < 0 || row >= static_cast<NSInteger>(m_Data->SortedEntriesCount()) )
+        return std::nullopt;
+    return m_Data->EntryAtSortPosition(static_cast<int>(row)).Filename();
+}
+
+- (void)scrollToTopItemNamed:(std::string_view)_filename
+{
+    if( m_Data == nullptr )
+        return;
+    const int row = m_Data->SortedIndexForName(_filename);
+    if( row < 0 )
+        return;
+    const NSRect item_rect = [m_TableView rectOfRow:row];
+    if( NSEqualRects(item_rect, NSZeroRect) )
+        return;
+    [m_ScrollView.contentView scrollPoint:NSMakePoint(0, item_rect.origin.y)];
+}
+
 - (void)ensureItemIsVisible:(int)_item_index
 {
     if( _item_index < 0 )

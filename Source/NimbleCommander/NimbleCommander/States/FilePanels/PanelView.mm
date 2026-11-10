@@ -872,6 +872,16 @@ struct StateStorage {
     }
 }
 
+- (std::optional<std::string>)topVisibleItemName
+{
+    return std::nullopt;
+}
+
+- (void)scrollToTopItemNamed:(std::string_view)_filename
+{
+    (void)_filename;
+}
+
 - (void)savePathState
 {
     dispatch_assert_main_queue();
