@@ -1337,9 +1337,9 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
   「只含这批条目」的 listing；不支持增量的 host 走默认实现，一次性交付整份 listing。
 - `NativeHost` 的首批 4096 条、之后每 256 KB 一批；每一批在交付前都会对这批条目跑 epilogue
   （解析符号链接、读 Finder tags），所以每个 chunk 都是完整数据。
-- 面板收到第一个 chunk 立即 `InstallLoad`（首屏），随后的 chunk 先攒起来，枚举完成时合成**一次**
-  `ProducePatchedListing` + `ApplyPatchedListing`，在同一份模型上追加——不再有第二份 listing，
-  也就不会再触发「新目录」的复位逻辑。
+- 面板收到第一个 chunk 立即 `InstallLoad`（首屏）；随后的 chunk 攒到 256 KB 或 400 ms 就合成一次
+  `ProducePatchedListing` + `ApplyPatchedListing`，在**同一份模型**上追加——百万条目大约 5 批，
+  期间列表持续变长；不再有第二份 listing，也就不会再触发「新目录」的复位逻辑。
 - `PanelListView` 增加 `topVisibleItemName` / `scrollToTopItemNamed:`：模型追加前后记住视口顶部
   条目，按名字恢复滚动位置，配合 `reloadData` 也不会跳。
 - `Model::ApplyPatchedListing` 对追加条目改用**归并**（`by raw name` 与自定义排序两处），
@@ -1350,12 +1350,18 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 ```
 [perf] fetch n=4096 enum=16.4ms epilogue=0.1ms build=0.1ms total=16.6ms dir=/tmp/ncperf/million
 [perf] ui n=4096 modelLoad=0.0ms dataUpdated=1.8ms tail=1.2ms total=3.1ms
-[perf] incr.ui n=1000001 model=274.7ms view=2.4ms qs=0.0ms rest=0.0ms total=277.1ms
-[perf] stream n=1000001 tail=995905
+[perf] incr.ui n=397312 model=59.9ms view=6.0ms total=66.2ms   [perf] stream n=397312 chunk=196608
+[perf] incr.ui n=593920 model=74.9ms view=6.2ms total=81.4ms   [perf] stream n=593920 chunk=196608
+[perf] incr.ui n=790528 model=89.7ms view=6.3ms total=96.3ms   [perf] stream n=790528 chunk=196608
+[perf] incr.ui n=987136 model=109.3ms view=6.0ms total=115.6ms [perf] stream n=987136 chunk=196608
 ```
 
-首屏 3 ms 上屏；枚举在后台跑完（约 2.2 s）后，用一次 275 ms 的补丁把列表扩到 100 万条，
-期间视口位置按条目名恢复。与之前相比：少了一次完整枚举，也去掉了「跳回首行」和 2.4 s 的整表重装。
+首屏 3 ms 上屏；之后每 256 KB 左右追加一批（百万条目约 5 批，每批 66~116 ms），列表在枚举过程中
+持续变长，视口位置按条目名恢复。与之前相比：少了一次完整枚举，也去掉了「跳回首行」和 2.4 s 的整表重装。
+
+`Model::ApplyAppendedListing()` 是这一批能落地的前提：追加补丁不改变已有条目的 raw index，于是
+volatile data 原地增长、名字序与自定义排序用 `ranges::inplace_merge` 归并，统计量只累加新条目，
+整体从 O(n) 重建降到 O(k log k) 排序 + O(n) 廉价搬运。
 
 ### 15.4 已知限制
 
