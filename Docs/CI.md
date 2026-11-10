@@ -19,9 +19,7 @@ The nightly cron runs at **18:17 UTC**, deliberately not at the top of the hour:
 queue is congested there, and the runs used to start hours late. Scheduled runs are also the first
 thing affected by GitHub's Actions incidents, and a dropped night is not retried - if a nightly is
 missing, trigger it by hand with `gh workflow run build.yml --repo cfanmaoli/nimble-commander
---ref main` and check `gh run list`. The two workflows still listed on GitHub as *Nightly Build* and
-*Release Build* are leftovers from upstream: their files are gone from every branch and they need
-Apple certificates and notarisation credentials that this fork does not have, so they never run.
+--ref main` and check `gh run list`.
 
 A newer run on the same branch cancels the stale one (`concurrency`), and every job has a
 `timeout-minutes` cap so a stuck build cannot hold a runner for an hour.
