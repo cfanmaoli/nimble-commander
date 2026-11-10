@@ -9,8 +9,14 @@ builds per push is exactly what used to starve the queue.
 
 | Event | Jobs |
 |---|---|
-| `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG |
+| `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG - **skipped when `main` has not moved since the last successful nightly** |
 | `workflow_dispatch` | Debug tests with clang-format and clang-tidy, DMG; tick `full` to get the nightly set |
+
+The `preflight` job runs first on `ubuntu-latest` (a few seconds, no macOS runner). For a scheduled
+run it looks up the most recent **successful scheduled** run and compares its `head_sha` with the
+current `github.sha`: if they are the same, the macOS jobs are skipped and the run ends after the
+preflight. A manual dispatch always proceeds - it is a deliberate action. A nightly that failed or
+was cancelled is not counted as "last successful", so a broken night is retried on the next day.
 
 Trigger a run from the Actions tab (*Build and Test* → *Run workflow*) or with
 `gh workflow run build.yml --ref main -f full=true`.
