@@ -14,6 +14,10 @@ on:
         description: 'Run every configuration, the full clang-tidy and the integration tests'
         type: boolean
         default: false
+      publish_nightly:
+        description: 'Publish the built DMG as the rolling nightly pre-release'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -163,6 +167,74 @@ jobs:
       run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
     - name: Build and run integration tests
       run: cd Scripts && ./run_all_integration_tests.sh
+
+  publish-nightly:
+    # Turns the unsigned DMG of a scheduled run into the rolling 'nightly' pre-release. The tag
+    # and the release are recreated every night, so the download links stay stable while the
+    # assets always point at the last built commit.
+    needs: [preflight, build-unsigned]
+    if: |
+      needs.preflight.outputs.proceed == 'true' &&
+      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_nightly))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        fetch-tags: true # the notes are the log since the previous nightly tag
+    - uses: actions/download-artifact@v6
+      with:
+        name: nimble-commander-fork-unsigned
+        path: dist
+    - name: Publish the nightly pre-release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        SHA: ${{ github.sha }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        dmg_files=(dist/*.dmg)
+        if [ ${#dmg_files[@]} -eq 0 ]; then
+          echo 'No DMG in the artifact' >&2
+          exit 1
+        fi
+        dmg="${dmg_files[0]}"
+        asset=nimble-commander-fork-nightly.dmg
+        cp "$dmg" "$asset"
+        sha256sum "$asset" > "$asset.sha256"
+
+        notes=$(mktemp)
+        {
+          echo "Nightly build of `$REF_NAME` at commit [`$SHA`](https://github.com/$GITHUB_REPOSITORY/commit/$SHA) ($(date -u +%Y-%m-%d))."
+          echo
+          echo 'The application is unsigned and not notarised: drag it into /Applications and use'
+          echo 'right-click -> Open on the first launch, or run'
+          echo '`xattr -dr com.apple.quarantine "/Applications/Nimble Commander-Fork.app"`.'
+          echo 'Requires macOS 12 Monterey or newer, Apple Silicon only.'
+          echo
+          echo '```'
+          cat "$asset.sha256"
+          echo '```'
+          echo
+          echo '## Changes since the previous nightly'
+          if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
+            git log --no-merges --pretty='- %s (%h)' "nightly..$SHA" | head -60
+          else
+            echo '- first nightly build'
+          fi
+        } > "$notes"
+
+        # Recreate the release so that the tag points at the built commit and the assets are
+        # always the freshest ones.
+        gh release delete nightly --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes >/dev/null 2>&1 || true
+        gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/nightly" >/dev/null 2>&1 || true
+        gh release create nightly "$asset" "$asset.sha256" \
+          --repo "$GITHUB_REPOSITORY" \
+          --target "$SHA" --prerelease --title 'Nightly build' --notes-file "$notes"
 
   build-unsigned:
     # Every remaining run is deliberate, so produce the unsigned DMG in all of them.

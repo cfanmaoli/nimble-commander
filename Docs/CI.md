@@ -44,6 +44,11 @@ A newer run on the same branch cancels the stale one (`concurrency`), and every 
 - **integration-tests** - starts the docker/colima dependencies and runs
   `Scripts/run_all_integration_tests.sh`.
 - **build-unsigned** - `Scripts/build_unsigned.sh`, producing the `nimble-commander-fork-unsigned` DMG.
+- **publish-nightly** - only on a scheduled run (or a manual dispatch with `publish_nightly` ticked):
+  recreates the rolling [`nightly` pre-release](https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly)
+  with the freshly built DMG as `nimble-commander-fork-nightly.dmg` plus its `.sha256`, moves the
+  `nightly` tag to the built commit, and writes the commit list since the previous nightly into the
+  release notes. The DMG here is unsigned - the notes repeat the right-click-to-open caveat.
 
 ## Running the same checks locally
 

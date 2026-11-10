@@ -33,6 +33,11 @@ full clang-tidy and the integration tests - trigger the same workflow manually w
 input ticked, or wait for the nightly run.
 
 ## Step 8: Create a GitHub Release (only if binaries are to be published)
+
+Nightly builds are already published automatically: every scheduled run that actually builds (see
+the preflight in `Docs/CI.md`) replaces the `nightly` pre-release with the unsigned DMG
+`nimble-commander-fork-nightly.dmg`. The steps below are for a versioned release.
+
 The fork deliberately doesn't distribute prebuilt binaries that contain the UnRAR library, and the
 clean variant is built locally by whoever needs it - see the README. Should that policy ever change:
 - Releases -> Draft a new release
