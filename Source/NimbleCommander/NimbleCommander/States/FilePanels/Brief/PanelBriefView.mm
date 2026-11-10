@@ -323,7 +323,7 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
     const auto &layout = m_ItemLayout;
     const unsigned short width_addition = (2 * layout.inset_left) + layout.icon_size + layout.inset_right;
     if( m_ColumnsLayout.dynamic_width_equal ) {
-        const auto max_width = *std::max_element(widths.begin(), widths.end());
+        const auto max_width = *std::ranges::max_element(widths);
         const unsigned short width = max_width + width_addition;
         widths.assign(static_cast<size_t>(total_count), width);
     }
@@ -331,7 +331,7 @@ static void PadWithSpaceForTags(std::span<unsigned short> _widths, const data::M
         std::ranges::for_each(widths, [width_addition](auto &width) { width += width_addition; });
         if( widths.size() < total_count ) {
             // the rest of the items weren't measured - give them the widest value we've seen
-            const auto max_width = *std::max_element(widths.begin(), widths.end());
+            const auto max_width = *std::ranges::max_element(widths);
             widths.resize(total_count, max_width);
         }
     }

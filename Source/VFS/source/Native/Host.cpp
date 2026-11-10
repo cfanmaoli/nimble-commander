@@ -398,7 +398,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     const auto perf_epilogue = std::chrono::steady_clock::now();
 
     // And, finally, compose the listing source into a compact immutable listing object.
-    const VFSListingPtr listing = VFSListing::Build(std::move(listing_source));
+    VFSListingPtr listing = VFSListing::Build(std::move(listing_source));
 
     if( std::getenv("NC_PERF_LOG") != nullptr ) {
         using namespace std::chrono;
