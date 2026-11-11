@@ -142,22 +142,25 @@ SearchInFile::Response SearchInFile::SearchText(uint64_t *_offset, uint64_t *_by
         }
         else {
             assert(size_t(result.location + result.length) <= m_DecodedBufferSize); // sanity check
+            // The match may end exactly at the end of the decoded window, in which case the index
+            // array has no entry for its end - the byte length of the window tail has to be used
+            // instead. Reading the entry unconditionally overran the buffer by one element.
+            const size_t match_end = static_cast<size_t>(result.location + result.length);
+            const size_t match_end_byte = match_end < m_DecodedBufferSize ? m_DecodedBufferIndx[match_end]
+                                                                          : (m_File.WindowSize() - left_window_gap);
             // check for whole phrase is this option is set
             if( m_SearchOptionsBits.find_whole_phrase && !IsWholePhrase(m_DecodedBufferString, result) ) {
                 // false alarm - just move position beyond found part ang go on
-                m_Position = m_Position + m_DecodedBufferIndx[result.location + result.length];
+                m_Position = m_Position + match_end_byte;
                 continue;
             }
 
             if( _offset != nullptr )
                 *_offset = m_Position + m_DecodedBufferIndx[result.location];
 
-            if( _offset != nullptr )
-                *_bytes_len = (size_t(result.location + result.length) < m_DecodedBufferSize
-                                   ? m_DecodedBufferIndx[result.location + result.length]
-                                   : m_File.WindowSize() - left_window_gap) -
-                              m_DecodedBufferIndx[result.location];
-            m_Position = m_Position + m_DecodedBufferIndx[result.location + result.length];
+            if( _bytes_len != nullptr )
+                *_bytes_len = match_end_byte - m_DecodedBufferIndx[result.location];
+            m_Position = m_Position + match_end_byte;
             return Response::Found;
         }
     }
