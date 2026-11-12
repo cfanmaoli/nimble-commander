@@ -1,5 +1,24 @@
 # What's New in Nimble Commander-Fork
 
+## Version 1.9.2 (12 Nov 2026)
+
+### Performance with huge directories
+- Opening a directory no longer waits for the whole listing: the first screen appears while the rest is still being read, and the remaining entries are streamed into the panel in batches. A 1,000,000-entry directory paints its first screen in tens of milliseconds instead of seconds.
+- The incremental refresh of a huge directory applies the changes in place instead of reloading, and a streaming update no longer jumps back to the first row - the scroll position is kept in the list, brief and gallery presentations.
+- The by-name order is reused when the panel is sorted by name, which cuts the per-batch sorting cost.
+
+### Fixes
+- Fixed a crash in the incremental listing refresh: after a directory change the append-only patch could pass a past-the-end iterator to `inplace_merge` - the everyday "a hidden file appears next to `..`" case - taking the app down during the FSEvents refresh.
+- Fixed a heap-buffer-overflow in the content search when a match ended exactly at the edge of the decoded window; found by the ASAN nightly run.
+
+### Updates
+- `Check for Updates` now checks our GitHub releases through a Sparkle feed generated from them; the release DMGs are signed with an EdDSA key whose public half is embedded in the app. Nightly builds are published to a separate channel and are not offered by default.
+- Updated third-party libraries: Catch2 3.16.1, fmt 12.2.1, lz4 1.11.1; refreshed rapidjson, pstld and the libc++ backport.
+
+### Under the hood
+- The nightly CI workflow publishes the rolling `nightly` pre-release and skips itself when `main` has not moved since the last successful scheduled build.
+- Added a local clang-tidy runner (`Scripts/check_tidy_local.sh`).
+
 ## Version 1.9.1 (8 Nov 2026)
 
 ### Fork
