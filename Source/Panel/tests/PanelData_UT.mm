@@ -941,6 +941,43 @@ TEST_CASE("ApplyAppendedListing keeps the order, the selection and the statistic
     for( const char *name : {"a", "b", "c", "d", "e", "f", "g"} )
         CHECK(data.RawIndexForName(name) >= 0);
 }
+TEST_CASE("ApplyAppendedListing survives an append that the filter hides")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"..", "a", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+    data.SetHardFiltering(HardFilter{.show_hidden = false});
+
+    // A hidden file appears next to the '..' entry - it is filtered out of the display order, so
+    // there is nothing to merge there. This used to pass a past-the-end iterator to inplace_merge.
+    const VFSListingPtr l2 = ProduceDummyListing({"..", "a", "c", ".hidden"});
+    data.ApplyPatchedListing(l2, {}, 1);
+
+    CHECK(data.RawEntriesCount() == 4);
+    CHECK(data.SortedEntriesCount() == 3); // '..', 'a', 'c' - the hidden one is not shown
+    CHECK(data.RawIndexForName(".hidden") >= 0);
+    CHECK(data.SortedIndexForName(".hidden") == -1);
+    REQUIRE(data.SortedEntriesCount() == 3);
+    CHECK(data.EntryAtSortPosition(0).Filename() == "..");
+    CHECK(data.EntryAtSortPosition(1).Filename() == "a");
+    CHECK(data.EntryAtSortPosition(2).Filename() == "c");
+}
+
+TEST_CASE("ApplyAppendedListing keeps the dot-dot at the top of the display order")
+{
+    const VFSListingPtr l1 = ProduceDummyListing({"..", "a", "c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    const VFSListingPtr l2 = ProduceDummyListing({"..", "a", "c", "b", "d"});
+    data.ApplyPatchedListing(l2, {}, 2);
+
+    REQUIRE(data.SortedEntriesCount() == 5);
+    std::vector<std::string> order;
+    for( int i = 0; i != data.SortedEntriesCount(); ++i )
+        order.emplace_back(data.EntryAtSortPosition(i).Filename());
+    CHECK(order == std::vector<std::string>{"..", "a", "b", "c", "d"});
+}
 } // namespace
 
 #undef PREFIX

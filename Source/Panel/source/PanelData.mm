@@ -330,7 +330,10 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
 
     if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
         const IndirectListingComparator cmp{*_listing, new_vd, m_CustomSortMode};
-        const size_t dotdot_prefix = _listing->IsDotDot(0) ? 1 : 0;
+        // The dot-dot entry stays pinned at the top and is not part of the merge. It is only
+        // there if the filter kept it, so look at the actual array instead of assuming index 0.
+        const size_t dotdot_prefix =
+            (!new_by_custom_sort.empty() && _listing->IsDotDot(new_by_custom_sort.front())) ? 1 : 0;
         std::vector<unsigned> appended_sorted;
         appended_sorted.reserve(_appended_count);
         for( unsigned i = new_count - _appended_count; i != new_count; ++i )
@@ -1260,9 +1263,18 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
         pstld::sort(appended_by_name.begin(), appended_by_name.end(), name_less);
     else
         std::ranges::sort(appended_by_name, name_less);
-    m_EntriesByRawName.insert(m_EntriesByRawName.end(), appended_by_name.begin(), appended_by_name.end());
-    std::ranges::inplace_merge(
-        m_EntriesByRawName.begin(), m_EntriesByRawName.begin() + old_count, m_EntriesByRawName.end(), name_less);
+    if( m_EntriesByRawName.size() == old_count ) {
+        m_EntriesByRawName.insert(m_EntriesByRawName.end(), appended_by_name.begin(), appended_by_name.end());
+        std::ranges::inplace_merge(
+            m_EntriesByRawName.begin(), m_EntriesByRawName.begin() + old_count, m_EntriesByRawName.end(), name_less);
+    }
+    else {
+        // The model is unexpectedly out of sync - rebuild the order instead of merging into a
+        // range whose bounds do not make sense.
+        m_EntriesByRawName.resize(new_count);
+        std::ranges::iota(m_EntriesByRawName, 0u);
+        std::ranges::sort(m_EntriesByRawName, name_less);
+    }
 
     // Custom sort order: same idea, except that only the entries passing the hard filter go in.
     const auto visible = [&](unsigned _i) {
@@ -1271,7 +1283,10 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
         QuickSearchHighlight unused_highlight;
         return m_HardFiltering.IsValidItem(_listing->Item(_i), unused_highlight);
     };
-    const size_t dotdot_prefix = _listing->IsDotDot(0) ? 1 : 0;
+    // dot-dot is pinned to the top and is not part of the merge; it may also be filtered out, so
+    // the actual array decides rather than the listing.
+    const size_t dotdot_prefix =
+        (!m_EntriesByCustomSort.empty() && _listing->IsDotDot(m_EntriesByCustomSort.front())) ? 1 : 0;
     const size_t old_visible = m_EntriesByCustomSort.size();
     if( m_CustomSortMode.sort != SortMode::SortNoSort ) {
         const IndirectListingComparator cmp{*_listing, m_VolatileData, m_CustomSortMode};
@@ -1299,11 +1314,16 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
             else
                 std::ranges::sort(appended_sorted, appended_less);
         }
-        m_EntriesByCustomSort.insert(m_EntriesByCustomSort.end(), appended_sorted.begin(), appended_sorted.end());
-        std::ranges::inplace_merge(m_EntriesByCustomSort.begin() + dotdot_prefix,
-                                   m_EntriesByCustomSort.begin() + old_visible + dotdot_prefix,
-                                   m_EntriesByCustomSort.end(),
-                                   appended_less);
+        if( !appended_sorted.empty() ) {
+            m_EntriesByCustomSort.insert(m_EntriesByCustomSort.end(), appended_sorted.begin(), appended_sorted.end());
+            // The retained prefix keeps its order and the appended run is merged into it. The
+            // middle is the start of the appended run, i.e. the size before the insertion - the
+            // dot-dot offset belongs to the first iterator only.
+            std::ranges::inplace_merge(m_EntriesByCustomSort.begin() + dotdot_prefix,
+                                       m_EntriesByCustomSort.begin() + old_visible,
+                                       m_EntriesByCustomSort.end(),
+                                       appended_less);
+        }
     }
     else {
         for( unsigned i = old_count; i != new_count; ++i )
