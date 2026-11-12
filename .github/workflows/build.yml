@@ -256,6 +256,8 @@ jobs:
     - name: Install the dependencies
       run: brew install create-dmg pandoc basictex
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0 # the bundle version is the number of commits
     - name: Install the test dependencies
       # 'gem install' has to happen before path_helper reshuffles the PATH - afterwards it resolves
       # to the un-writable system ruby.

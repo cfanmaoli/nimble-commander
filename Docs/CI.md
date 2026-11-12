@@ -101,7 +101,15 @@ slow and it was the flakiest step of the old pipeline.
 
 The non-MAS build checks for updates through Sparkle, which reads `SUFeedURL` from
 `NimbleCommander-NonMAS-Info.plist`. It points at `appcast.xml` in the root of the `main` branch
-of this repository, so the update check never reaches the upstream project. The checked-in appcast
-has no items on purpose - the fork doesn't publish prebuilt binaries - so `Check for Updates`
-reports that the installed version is the latest one. See [Release.md](Release.md) for what to do
-if that policy ever changes.
+of this repository, so the update check never reaches the upstream project.
+
+The appcast is generated from our GitHub releases by `Scripts/update_appcast.py`: the latest
+tagged release is the regular update, the rolling `nightly` pre-release is published in the
+`nightly` channel. The enclosures point at the DMG assets of those releases, and each archive is
+signed with the EdDSA key whose public half is `SUPublicEDKey` in the plist - the private key
+lives outside the repository (see [Release.md](Release.md), step 9).
+
+The build number is the number of commits: `build_unsigned.sh` stamps the packaged application
+with `git rev-list --count HEAD` (which is why the job checks out with `fetch-depth: 0`), and the
+local `sign-install-fork.sh` does the same. That keeps the build numbers monotonic, so Sparkle
+compares them meaningfully against the appcast items.

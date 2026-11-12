@@ -55,8 +55,12 @@ $XC build | tee -a ${LOG_FILE} | xcpretty
     
 cp -R "${APP_PATH}" ./
 
-VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist" )
-BUILD=$( $PBUDDY -c "Print CFBundleVersion" "$APP_PATH/Contents/Info.plist" )
+# The build number is the number of commits: it only ever grows, which is what Sparkle compares
+# against the appcast items when checking for updates.
+BUILD=$(git -C "${ROOT_DIR}" rev-list --count HEAD)
+$PBUDDY -c "Set :CFBundleVersion ${BUILD}" "${APP_NAME}/Contents/Info.plist"
+
+VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "${APP_NAME}/Contents/Info.plist" )
 
 create-dmg \
  --volname "Nimble Commander-Fork Unsigned" \

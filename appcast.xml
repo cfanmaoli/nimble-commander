@@ -1,11 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-    <channel>
-        <title>Nimble Commander-Fork</title>
-        <link>https://github.com/cfanmaoli/nimble-commander</link>
-        <description>Update feed for Nimble Commander-Fork. The fork doesn't publish prebuilt binaries, so
-            this feed intentionally contains no items - 'Check for Updates' reports that the installed
-            version is the latest one.</description>
-        <language>en</language>
-    </channel>
+  <channel>
+    <title>Nimble Commander-Fork</title>
+    <link>https://github.com/cfanmaoli/nimble-commander</link>
+    <description>Update feed for Nimble Commander-Fork. The items point at the DMG assets of
+      the GitHub releases of the fork; the nightly pre-release is kept in its own channel.</description>
+    <language>en</language>
+    <item>
+      <title>Nimble Commander-Fork 1.9.1</title>
+      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.1</link>
+      <pubDate>Sun, 08 Nov 2026 15:47:33 +0000</pubDate>
+      <sparkle:version>4461</sparkle:version>
+      <sparkle:shortVersionString>1.9.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.1</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.1/nimble-commander-fork-1.9.1.dmg"
+                 sparkle:edSignature="RvNbX3Q6FtY1H9BTYVr8B80CHT9X946CqvRrjsmsEBjfEq9LMZEkGo3Qv84pMqW3iKrQXdK1CFbx8SBt1UhKDQ=="
+                 length="11088239"
+                 type="application/octet-stream" />
+    </item>
+    <item>
+      <title>Nightly build</title>
+      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly</link>
+      <pubDate>Thu, 12 Nov 2026 01:09:56 +0000</pubDate>
+      <sparkle:version>1</sparkle:version>
+      <sparkle:shortVersionString>1.9.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly</sparkle:releaseNotesLink>
+      <sparkle:channel>nightly</sparkle:channel>
+      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/nightly/nimble-commander-fork-nightly.dmg"
+                 sparkle:edSignature="OMzZj2PgtZsan5ZoEBLFPgzQPtb7CamW/tffnJq7sCKn5dxW4ppgb6xPZd12PTv0s/gMmDOPHDT7v4aP7MrFDQ=="
+                 length="12419337"
+                 type="application/octet-stream" />
+    </item>
+  </channel>
 </rss>

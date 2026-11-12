@@ -47,27 +47,30 @@ clean variant is built locally by whoever needs it - see the README. Should that
 
 ## Step 9: Update the Sparkle feed
 The application reads its update feed from the root of the `main` branch - see `SUFeedURL` in
-`Source/NimbleCommander/NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist`. The checked-in
-`appcast.xml` is intentionally empty, so `Check for Updates` simply reports that the installed
-version is the latest one.
+`Source/NimbleCommander/NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist`. The feed is
+generated from the GitHub releases of the fork: the latest tagged release is served as the regular
+update, the rolling `nightly` pre-release lives in the `nightly` channel (Sparkle only offers it
+to users who opt into that channel).
 
-If release builds are ever published, add an item to that file, for example:
+The release DMGs are signed with an EdDSA key; the public half is checked into the plist as
+`SUPublicEDKey`, the private half is kept outside the repository in `~/.sparkle-fork/ed25519.key`
+(mode 600) and must never be committed. Both the local `sign-install-fork.sh` and the CI
+`build_unsigned.sh` stamp `CFBundleVersion` with the number of commits, so build numbers only
+ever grow and Sparkle can tell which release is newer.
 
-```xml
-<item>
-  <title>Version X.Y.Z</title>
-  <pubDate>...</pubDate>
-  <sparkle:version>BUILD</sparkle:version>
-  <sparkle:shortVersionString>X.Y.Z</sparkle:shortVersionString>
-  <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-  <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/vX.Y.Z/nimble-commander-fork-X.Y.Z.dmg"
-             type="application/octet-stream" />
-</item>
+After publishing a release (and after the nightly is refreshed), regenerate the feed and commit it:
+
+```sh
+Scripts/update_appcast.py --sign-update /path/to/Sparkle/bin/sign_update
+git add appcast.xml && git commit -m "Update the Sparkle feed"
+git push
 ```
 
-The fork doesn't set `SUPublicEDKey`, so the feed is served without EdDSA signatures. Before the
-first real release, generate a key pair with Sparkle's `generate_keys` tool, put the public key
-back into the plist, sign the appcast and keep the private key out of the repository.
+The script downloads the DMG assets, reads their versions from the application bundles, signs each
+archive and writes `appcast.xml` with the enclosures pointing at the release assets on GitHub. Pass
+`--dry-run` to inspect the feed, `--tag vX.Y.Z` to pin a specific release and `--no-nightly` to
+leave the nightly out. The Sparkle tools ship in the official Sparkle release archive
+(`Sparkle-<version>.tar.xz`).
 
 ## Step 10: Mac App Store
 The fork doesn't ship the sandboxed MAS build.

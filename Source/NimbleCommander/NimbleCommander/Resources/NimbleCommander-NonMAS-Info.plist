@@ -93,5 +93,7 @@ All rights reserved.</string>
 	</dict>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/cfanmaoli/nimble-commander/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>DcRa8R63HzIYppJbbQRMWYjVL8WQfWEqX9JWhiBrA/k=</string>
 </dict>
 </plist>
