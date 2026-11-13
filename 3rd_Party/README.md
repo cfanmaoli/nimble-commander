@@ -62,5 +62,5 @@ already built `.a` files.
 | sparkle         | 2.10.1     | 2026.10.25 | https://github.com/sparkle-project/Sparkle.git
 | spdlog          | 1.17.0     | 2026.01.04 | https://github.com/gabime/spdlog.git
 | unordered_dense | 5.3.3      | 2026.10.22 | https://github.com/martinus/unordered_dense.git
-| zlib            | 1.3.2      | 2026.02.17 | https://zlib.net/zlib-1.3.2.tar.gz
+| zlib            | 1.4        | 2026.11.04 | https://zlib.net/zlib-1.3.2.tar.gz
 | zstd            | 1.5.7      | 2025.02.19 | https://github.com/facebook/zstd.git
