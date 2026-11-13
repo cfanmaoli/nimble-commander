@@ -756,6 +756,11 @@ TEST_CASE(PREFIX "Test multiple shells in parallel via output")
             ctx.shell.WriteChildInput("set prompt='>'\rclear\r");
     }
 
+    // Ten shells starting at once can take a while to reach their prompt on a loaded CI runner,
+    // and the original 5s budget made this test flaky (a nightly run once failed on shell #2).
+    constexpr auto startup_timeout = 30s;
+    constexpr auto echo_timeout = 20s;
+
     // wait until each shell wakes up
     for( size_t i = 0; i != number; ++i ) {
         const std::string expected = ">                   "
@@ -763,7 +768,7 @@ TEST_CASE(PREFIX "Test multiple shells in parallel via output")
                                      "                    "
                                      "                    "
                                      "                    ";
-        if( const bool arrived = shells[i].buffer_dump.wait_to_become(5s, expected); !arrived ) {
+        if( const bool arrived = shells[i].buffer_dump.wait_to_become(startup_timeout, expected); !arrived ) {
             FAIL(fmt::format("Shell {} didn't arrive in time, current state: {}", i, shells[i].buffer_dump.value));
         }
     }
@@ -783,7 +788,7 @@ TEST_CASE(PREFIX "Test multiple shells in parallel via output")
                                             "                    "
                                             "                    "
                                             "                    ";
-        if( const bool arrived = shells[i].buffer_dump.wait_to_become(5s, expected); !arrived ) {
+        if( const bool arrived = shells[i].buffer_dump.wait_to_become(echo_timeout, expected); !arrived ) {
             FAIL(fmt::format("Shell {} didn't arrive in time, current state: {}", i, shells[i].buffer_dump.value));
         }
     }
