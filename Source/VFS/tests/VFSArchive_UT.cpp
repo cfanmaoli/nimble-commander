@@ -4,9 +4,15 @@
 #include <VFS/VFS.h>
 #include <VFS/ArcLA.h>
 #include "../source/ArcLA/Internal.h" // FIXME!
+#include "../source/ArcHelper/Helper.h"
+#include "../source/ArcHelper/Host.h"
+#include "../source/ArcHelper/Protocol.h"
+#include <VFS/VFSArchiveProxy.h>
 #include <VFS/VFSGenericMemReadOnlyFile.h>
 #include <Base/WriteAtomically.h>
 #include <Base/algo.h>
+#include <cstdlib>
+#include <sys/stat.h>
 
 #define PREFIX "VFSArchive "
 
@@ -2175,6 +2181,399 @@ TEST_CASE(PREFIX "aborts the initial scan when it gets cancelled")
         CHECK(e.error() == nc::Error{nc::Error::POSIX, ECANCELED});
     }
     CHECK(checks > 0);
+}
+
+// The RAR fixtures below are taken from the libarchive test suite
+// (libarchive/test/test_read_format_rar*.rar.uu, BSD-2-Clause), decoded and embedded so that
+// the tests do not depend on files outside the repository.
+const unsigned char __rar5_stored[] = {
+    0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00, 0x33, 0x92, 0xb5, 0xe5, 0x0a, 0x01, 0x05, 0x06, 0x00, 0x05, 0x01,
+    0x01, 0x80, 0x80, 0x00, 0x38, 0x30, 0x06, 0x63, 0x2c, 0x02, 0x03, 0x0b, 0x9d, 0x00, 0x04, 0x9d, 0x00, 0xa4, 0x83,
+    0x02, 0xb4, 0x43, 0xa0, 0x95, 0x80, 0x00, 0x01, 0x0e, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x77, 0x6f, 0x72, 0x6c, 0x64,
+    0x2e, 0x74, 0x78, 0x74, 0x0a, 0x03, 0x13, 0x7e, 0x0e, 0xab, 0x5b, 0x56, 0xe9, 0x0e, 0x1a, 0x68, 0x65, 0x6c, 0x6c,
+    0x6f, 0x20, 0x6c, 0x69, 0x62, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x73,
+    0x75, 0x69, 0x74, 0x65, 0x21, 0x0a, 0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00,
+};
+
+const unsigned char __rar4[] = {
+    0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, 0xcf, 0x90, 0x73, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x84, 0x52, 0x74, 0x20, 0x90, 0x32, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x03, 0x42, 0xa2,
+    0xc8, 0xbe, 0xb7, 0x76, 0xda, 0x3e, 0x14, 0x30, 0x08, 0x00, 0xa4, 0x81, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x2e,
+    0x74, 0x78, 0x74, 0x80, 0x08, 0xb7, 0x76, 0xda, 0x3e, 0xb7, 0x76, 0xda, 0x3e, 0x74, 0x65, 0x73, 0x74, 0x20, 0x74,
+    0x65, 0x78, 0x74, 0x20, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x0d, 0x0a, 0x9d, 0x2f, 0x74, 0x20, 0x90,
+    0x32, 0x00, 0x08, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x03, 0x7b, 0x44, 0xc9, 0xb6, 0xd1, 0x4c, 0xd8, 0x3e,
+    0x14, 0x30, 0x08, 0x00, 0xff, 0xa1, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x6c, 0x69, 0x6e, 0x6b, 0xc0, 0x08, 0xd1,
+    0x4c, 0xd8, 0x3e, 0x50, 0x5f, 0xda, 0x3e, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x74, 0x78, 0x74, 0xcd, 0xe0, 0x74, 0x20,
+    0x90, 0x3a, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x03, 0x42, 0xa2, 0xc8, 0xbe, 0x63, 0x77, 0xda,
+    0x3e, 0x14, 0x30, 0x10, 0x00, 0xa4, 0x81, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x64, 0x69, 0x72, 0x5c, 0x74, 0x65,
+    0x73, 0x74, 0x2e, 0x74, 0x78, 0x74, 0xc0, 0xcc, 0x63, 0x77, 0xda, 0x3e, 0x63, 0x77, 0xda, 0x3e, 0x74, 0x65, 0x73,
+    0x74, 0x20, 0x74, 0x65, 0x78, 0x74, 0x20, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x0d, 0x0a, 0xa1, 0xc8,
+    0x74, 0xe0, 0x90, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x63,
+    0x77, 0xda, 0x3e, 0x14, 0x30, 0x07, 0x00, 0xed, 0x41, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x64, 0x69, 0x72, 0xc0,
+    0xcc, 0x63, 0x77, 0xda, 0x3e, 0x64, 0x77, 0xda, 0x3e, 0xe6, 0xe7, 0x74, 0xe0, 0x90, 0x36, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x9d, 0xab, 0xd5, 0x3e, 0x14, 0x30, 0x0c, 0x00, 0xed,
+    0x41, 0x00, 0x00, 0x74, 0x65, 0x73, 0x74, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x64, 0x69, 0x72, 0x80, 0xcc, 0x9d, 0xab,
+    0xd5, 0x3e, 0xc5, 0x5d, 0xda, 0x3e, 0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00,
+};
+
+const unsigned char __rar4_encrypted[] = {
+    0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, 0xcf, 0x90, 0x73, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x5d, 0xfc, 0x74, 0x24, 0x84, 0x2f, 0x00, 0x20, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x03, 0x5c, 0x86,
+    0xad, 0xa6, 0xa5, 0x4c, 0x31, 0x43, 0x1d, 0x33, 0x07, 0x00, 0xb4, 0x81, 0x00, 0x00, 0x66, 0x6f, 0x6f, 0x2e, 0x74,
+    0x78, 0x74, 0x4f, 0x03, 0xbc, 0xd9, 0xd6, 0x16, 0x4c, 0xdf, 0x45, 0x40, 0x1a, 0x92, 0x92, 0x88, 0xdf, 0x15, 0x2b,
+    0x8e, 0x9e, 0xcf, 0x70, 0xb9, 0x40, 0xe8, 0xc9, 0x47, 0xe6, 0xce, 0xd6, 0xbf, 0x44, 0xe2, 0xb8, 0x35, 0xa8, 0x9c,
+    0xe8, 0x65, 0x37, 0x01, 0x07, 0x45, 0x74, 0x24, 0x84, 0x2f, 0x00, 0x20, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
+    0x03, 0xbe, 0xe2, 0x90, 0xcd, 0xa6, 0x4c, 0x31, 0x43, 0x1d, 0x33, 0x07, 0x00, 0xb4, 0x81, 0x00, 0x00, 0x62, 0x61,
+    0x72, 0x2e, 0x74, 0x78, 0x74, 0x4f, 0x03, 0xbc, 0xd9, 0xd6, 0x16, 0x4c, 0xdf, 0x70, 0x74, 0x7a, 0x48, 0x89, 0x88,
+    0x0f, 0x66, 0x5b, 0x7d, 0xe5, 0x06, 0xb9, 0x72, 0x1e, 0xa8, 0x25, 0x55, 0xf8, 0xca, 0x37, 0x01, 0xa3, 0xed, 0xf4,
+    0xf1, 0x14, 0xf3, 0x23, 0x64, 0xd1, 0xa1, 0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00,
+};
+
+static std::string WriteRarFixture(const char *_dir, const char *_name, const unsigned char *_data, size_t _size)
+{
+    const std::filesystem::path path = std::filesystem::path(_dir) / _name;
+    if( !nc::base::WriteAtomically(path, {reinterpret_cast<const std::byte *>(_data), _size}) )
+        throw std::runtime_error("cannot write the RAR fixture");
+    return path.string();
+}
+
+TEST_CASE(PREFIX "ncrar-helper protocol parser")
+{
+    // A listing as produced by the helper: one entry per line, then a terminator.
+    const std::string sample =
+        std::string{R"({"index":0,"name":"dir/file.txt","dir":false,"encrypted":false,"solid":false,)"              //
+                    R"("size":123,"packed":100,"mtime":1537937022,"crc":123456,"link_type":0,"mode":33188})"        //
+                    "\n"                                                                                            //
+                    R"({"index":1,"name":"dir","dir":true,"encrypted":false,"solid":false,"size":0,)"               //
+                    R"("packed":0,"mtime":1537937000,"crc":0,"link_type":0})"                                       //
+                    "\n"                                                                                            //
+                    R"({"index":2,"name":"dir/link","dir":false,"encrypted":true,"solid":true,)"                    //
+                    R"("size":8,"packed":5,"mtime":0,"crc":0,"link_type":1,"link_target":"file.txt","mode":41471})" //
+                    "\n"                                                                                            //
+                    R"({"done":true,"entries":3})"                                                                  //
+                    "\n"};
+
+    const std::optional<rar::Listing> listing = rar::ParseListing(sample);
+    REQUIRE(listing);
+    CHECK(listing->done);
+    CHECK(listing->reported_entries == 3);
+    REQUIRE(listing->entries.size() == 3);
+
+    const rar::Entry &first = listing->entries[0];
+    CHECK(first.index == 0);
+    CHECK(first.name == "dir/file.txt");
+    REQUIRE(first.components.size() == 2);
+    CHECK(first.components[0] == "dir");
+    CHECK(first.components[1] == "file.txt");
+    CHECK_FALSE(first.dir);
+    CHECK_FALSE(first.encrypted);
+    CHECK_FALSE(first.solid);
+    CHECK_FALSE(first.IsLink());
+    CHECK(first.size == 123);
+    CHECK(first.packed == 100);
+    CHECK(first.mtime == 1537937022);
+    CHECK(first.crc == 123456);
+    CHECK_FALSE(first.link_target.has_value());
+    REQUIRE(first.mode.has_value());
+    CHECK(*first.mode == 0100644);
+
+    const rar::Entry &second = listing->entries[1];
+    CHECK(second.dir);
+    CHECK_FALSE(second.mode.has_value()); // Windows-style entries don't report a mode
+    CHECK(second.name == "dir");
+    REQUIRE(second.components.size() == 1);
+    CHECK(second.components[0] == "dir");
+
+    const rar::Entry &third = listing->entries[2];
+    CHECK(third.encrypted);
+    CHECK(third.solid);
+    CHECK(third.IsLink());
+    CHECK(third.link_type == rar::LinkType::UnixSymlink);
+    REQUIRE(third.link_target.has_value());
+    CHECK(*third.link_target == "file.txt");
+    REQUIRE(third.mode.has_value());
+    CHECK(*third.mode == 0120777);
+
+    // Windows-style separators are normalized, empty lines are ignored and the terminator isn't
+    // mandatory.
+    const std::optional<rar::Listing> partial = rar::ParseListing("\n"
+                                                                  R"({"index":0,"name":"a\\b.txt"})"
+                                                                  "\n\n");
+    REQUIRE(partial);
+    CHECK_FALSE(partial->done);
+    REQUIRE(partial->entries.size() == 1);
+    CHECK(partial->entries[0].name == "a/b.txt");
+    REQUIRE(partial->entries[0].components.size() == 2);
+    CHECK(partial->entries[0].components[1] == "b.txt");
+
+    // Broken input is rejected.
+    CHECK_FALSE(rar::ParseListing("not a json at all"));
+    CHECK_FALSE(rar::ParseListing(R"({"name":"no_index_here"})"));
+    CHECK_FALSE(rar::ParseListing(R"({"index":0,"name":""})"));
+    CHECK_FALSE(rar::ParseListing(R"({"index":0,"name":"ok"})"
+                                  "\n"
+                                  "garbage"
+                                  "\n"));
+}
+
+TEST_CASE(PREFIX "ncrar-helper link response parser")
+{
+    const std::optional<std::string> target = rar::ParseLinkResponse(R"({"target":"dir/file.txt"})"
+                                                                     "\n");
+    REQUIRE(target);
+    CHECK(*target == "dir/file.txt");
+
+    CHECK_FALSE(rar::ParseLinkResponse(""));
+    CHECK_FALSE(rar::ParseLinkResponse("not a json at all"));
+    CHECK_FALSE(rar::ParseLinkResponse(R"({"ok":false,"code":4,"error":"the entry is not a link"})"));
+    CHECK_FALSE(rar::ParseLinkResponse(R"({"target":""})"));
+}
+
+TEST_CASE(PREFIX "browses a RAR archive with the ncrar-helper")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
+
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
+
+    CHECK(host->IsImmutableFS());
+    CHECK_FALSE(host->IsWritable());
+    CHECK(host->IsDirectory("/", 0));
+    CHECK_FALSE(host->IsDirectory("/helloworld.txt", 0));
+
+    const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
+    REQUIRE(listing->Count() == 1);
+    CHECK(listing->Filename(0) == "helloworld.txt");
+    CHECK((listing->UnixMode(0) & S_IFMT) == S_IFREG);
+    CHECK((listing->UnixMode(0) & 07777) == 0644); // comes from the archive's Unix attributes
+    CHECK(listing->Size(0) == 29);
+    CHECK(host->ShouldProduceThumbnails());
+
+    const VFSStat st = host->Stat("/helloworld.txt", 0).value();
+    CHECK(st.size == 29);
+    CHECK(st.mtime.tv_sec == 1537937022);
+
+    CheckFileIs(*host, "/helloworld.txt", "hello libarchive test suite!\n");
+
+    // The payload is streamed, so only forward movement is supported.
+    const VFSFilePtr file = host->CreateFile("/helloworld.txt").value();
+    REQUIRE(file->Open(VFSFlags::OF_Read));
+    CHECK(file->GetReadParadigm() == VFSFile::ReadParadigm::Sequential);
+    CHECK(file->Size().value() == 29);
+    CHECK(file->Pos().value() == 0);
+
+    char buf[16] = {};
+    REQUIRE(file->Read(buf, 5).value() == 5);
+    CHECK(std::string_view{buf, 5} == "hello");
+    REQUIRE(file->Skip(1));
+    REQUIRE(file->Seek(17, VFSFile::Seek_Set).value() == 17);
+    REQUIRE(file->Read(buf, 4).value() == 4);
+    CHECK(std::string_view{buf, 4} == "test");
+    CHECK_FALSE(file->Eof());
+
+    const std::expected<uint64_t, Error> rewind = file->Seek(0, VFSFile::Seek_Set);
+    REQUIRE_FALSE(rewind);
+    CHECK(rewind.error() == Error{Error::POSIX, ENOTSUP});
+
+    REQUIRE(file->Seek(29, VFSFile::Seek_Set).value() == 29);
+    CHECK(file->Eof());
+    CHECK(file->Read(buf, sizeof(buf)).value() == 0);
+    REQUIRE(file->Close());
+}
+
+TEST_CASE(PREFIX "prefers the ncrar-helper for a RAR archive")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
+
+    const VFSHostPtr host = VFSArchiveProxy::OpenFileAsArchive(fixture, TestEnv().vfs_native, nullptr, {});
+    REQUIRE(host);
+    CHECK(std::string_view{host->Tag()} == RarHelperHost::UniqueTag);
+    CheckFileIs(*host, "/helloworld.txt", "hello libarchive test suite!\n");
+}
+
+TEST_CASE(PREFIX "falls back to one-shot commands for an old ncrar-helper")
+{
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
+
+    // A stand-in for a helper released before the persistent mode: it answers the one-shot
+    // commands only and exits like a usage error when asked to "serve".
+    const std::string script_text = R"(#!/bin/sh
+case "$1" in
+serve)
+    exit 2
+    ;;
+list)
+    printf '%s\n' '{"index":0,"name":"helloworld.txt","dir":false,"encrypted":false,"solid":false,"size":29,"packed":29,"mtime":1537937022,"crc":2510308276,"link_type":0,"mode":33261}'
+    printf '%s\n' '{"done":true,"entries":1}'
+    ;;
+read)
+    printf 'hello libarchive test suite!\n'
+    ;;
+*)
+    exit 2
+    ;;
+esac
+)";
+    const std::filesystem::path script = std::filesystem::path(dir.directory) / "old-ncrar-helper";
+    REQUIRE(nc::base::WriteAtomically(script,
+                                      {reinterpret_cast<const std::byte *>(script_text.data()), script_text.size()}));
+    REQUIRE(::chmod(script.c_str(), S_IRWXU) == 0);
+
+    const char *const previous = ::getenv("NCRAR_HELPER");
+    const std::optional<std::string> saved = previous ? std::optional<std::string>{previous} : std::nullopt;
+    const auto restore_env = at_scope_end([&] {
+        if( saved )
+            ::setenv("NCRAR_HELPER", saved->c_str(), 1);
+        else
+            ::unsetenv("NCRAR_HELPER");
+    });
+    REQUIRE(::setenv("NCRAR_HELPER", script.c_str(), 1) == 0);
+
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
+    CHECK_FALSE(host->SupportsSessions());
+
+    const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
+    REQUIRE(listing->Count() == 1);
+    CHECK(listing->Filename(0) == "helloworld.txt");
+    // 0755 comes from the helper's optional mode field, not from the synthetic 0644 fallback.
+    CHECK((listing->UnixMode(0) & S_IFMT) == S_IFREG);
+    CHECK((listing->UnixMode(0) & 07777) == 0755);
+    CHECK((host->Stat("/helloworld.txt", 0).value().mode & 07777) == 0755);
+    CheckFileIs(*host, "/helloworld.txt", "hello libarchive test suite!\n");
+}
+
+TEST_CASE(PREFIX "aborts the RAR scan when it gets cancelled")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
+
+    int checks = 0;
+    const auto cancelled = [&checks] {
+        ++checks;
+        return true;
+    };
+    try {
+        [[maybe_unused]] const auto host =
+            std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native, std::nullopt, cancelled);
+        FAIL("RarHelperHost must not be constructed when the scan gets cancelled");
+    } catch( nc::ErrorException &e ) {
+        CHECK(e.error() == Error{Error::POSIX, ECANCELED});
+    }
+    CHECK(checks > 0);
+}
+
+TEST_CASE(PREFIX "browses a RAR4 archive with the ncrar-helper")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture = WriteRarFixture(dir.directory.c_str(), "rar4.rar", __rar4, std::size(__rar4));
+
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
+
+    // The archive stores test.txt, testlink, testdir/test.txt and two directories.
+    const VFSListingPtr root = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
+    REQUIRE(root->Count() == 4);
+    CHECK(root->Filename(0) == "test.txt");
+    CHECK(root->Filename(1) == "testlink");
+    CHECK(root->Filename(2) == "testdir");
+    CHECK(root->Filename(3) == "testemptydir");
+
+    CHECK_FALSE(host->IsDirectory("/test.txt", 0));
+    CHECK(host->IsDirectory("/testdir", 0));
+    CHECK(host->IsDirectory("/testdir/", 0));
+    CHECK(host->IsDirectory("/testemptydir", 0));
+    CHECK(host->Stat("/testemptydir", 0).value().size == 0);
+
+    const VFSListingPtr subdir = host->FetchDirectoryListing("/testdir", VFSFlags::F_NoDotDot).value();
+    REQUIRE(subdir->Count() == 1);
+    CHECK(subdir->Filename(0) == "test.txt");
+    CHECK(subdir->Size(0) == 20);
+
+    CheckFileIs(*host, "/test.txt", "test text document\r\n");
+    CheckFileIs(*host, "/testdir/test.txt", "test text document\r\n");
+
+    // The fixture carries Unix attributes: 0644 for regular files and 0777 for the symlink.
+    CHECK((root->UnixMode(0) & 07777) == 0644);
+    CHECK((root->UnixMode(1) & S_IFMT) == S_IFLNK);
+    CHECK((root->UnixMode(1) & 07777) == 0777);
+
+    // RAR4 keeps the target of a symlink in the entry payload; the helper recovers it on demand.
+    const std::expected<std::string, Error> target = host->ReadSymlink("/testlink");
+    REQUIRE(target);
+    CHECK(*target == "test.txt");
+
+    // A path lookup follows the link, while F_NoFollow reports the link itself.
+    const VFSStat followed = host->Stat("/testlink", 0).value();
+    CHECK((followed.mode & S_IFMT) == S_IFREG);
+    CHECK(followed.size == 20);
+    const VFSStat link_stat = host->Stat("/testlink", VFSFlags::F_NoFollow).value();
+    CHECK((link_stat.mode & S_IFMT) == S_IFLNK);
+    CheckFileIs(*host, "/testlink", "test text document\r\n");
+
+    std::vector<std::string> names;
+    REQUIRE(host->IterateDirectoryListing("/", [&](const VFSDirEnt &_entry) {
+        names.emplace_back(_entry.name);
+        return true;
+    }));
+    REQUIRE(names.size() == 4);
+    CHECK(names[2] == "testdir");
+}
+
+TEST_CASE(PREFIX "asks for a password for an encrypted RAR archive")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar4_encrypted.rar", __rar4_encrypted, std::size(__rar4_encrypted));
+
+    try {
+        [[maybe_unused]] const auto host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native);
+        FAIL("RarHelperHost must demand a password for an encrypted archive");
+    } catch( nc::ErrorException &e ) {
+        CHECK(e.error() == Error{Error::POSIX, ENEEDAUTH});
+    }
+
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native, std::string{"12345678"}));
+    const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
+    REQUIRE(listing->Count() == 2);
+    CheckFileIs(*host, "/foo.txt", "data of foo.txt\n");
+
+    // Two files read at once use two separate helper sessions - their byte streams must not mix.
+    const VFSFilePtr foo = host->CreateFile("/foo.txt").value();
+    const VFSFilePtr bar = host->CreateFile("/bar.txt").value();
+    REQUIRE(foo->Open(VFSFlags::OF_Read));
+    REQUIRE(bar->Open(VFSFlags::OF_Read));
+    std::string foo_data;
+    std::string bar_data;
+    char chunk[4] = {};
+    for( int iteration = 0; iteration != 64 && !(foo->Eof() && bar->Eof()); ++iteration ) {
+        if( const std::expected<size_t, Error> read = foo->Read(chunk, sizeof(chunk)); read && *read > 0 )
+            foo_data.append(chunk, *read);
+        if( const std::expected<size_t, Error> read = bar->Read(chunk, sizeof(chunk)); read && *read > 0 )
+            bar_data.append(chunk, *read);
+    }
+    CHECK(foo_data == "data of foo.txt\n");
+    CHECK(bar_data == "data of bar.txt\n");
+    REQUIRE(foo->Close());
+    REQUIRE(bar->Close());
 }
 
 } // namespace VFSArchiveTest
