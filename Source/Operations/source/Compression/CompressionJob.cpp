@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "CompressionJob.h"
 #include <Base/algo.h>
+#include <algorithm>
 #include <libarchive/archive.h>
 #include <libarchive/archive_entry.h>
 #include <Utility/PathManip.h>
@@ -9,6 +10,71 @@
 #include <fmt/format.h>
 
 namespace nc::ops {
+
+namespace {
+
+// The option strings below were verified against libarchive 3.8.11 (the version this project
+// links): archive_write_set_options() accepts them, and the archives written with them are read
+// back with the matching compression method. A rejected option leaves the writer's default in
+// place, hence the return value can be ignored.
+void SetWriteOptions(struct archive *_archive, const std::string &_options) noexcept
+{
+    std::ignore = archive_write_set_options(_archive, _options.c_str());
+}
+
+const char *ZipCompressionName(CompressionMethod _method) noexcept
+{
+    switch( _method ) {
+        case CompressionMethod::store:
+            return "store";
+        case CompressionMethod::deflate:
+            return "deflate";
+        case CompressionMethod::bzip2:
+            return "bzip2";
+        case CompressionMethod::lzma:
+            return "lzma";
+        case CompressionMethod::zstd:
+            return "zstd";
+        default:
+            return "deflate";
+    }
+}
+
+const char *SevenZipCompressionName(CompressionMethod _method) noexcept
+{
+    switch( _method ) {
+        case CompressionMethod::store:
+            return "store";
+        case CompressionMethod::deflate:
+            return "deflate";
+        case CompressionMethod::bzip2:
+            return "bzip2";
+        case CompressionMethod::lzma:
+            return "lzma2"; // 7-Zip's LZMA implementation, libarchive doesn't accept "lzma" here
+        case CompressionMethod::zstd:
+            return "zstd";
+        default:
+            return "lzma2";
+    }
+}
+
+const char *TarFilterOptionName(CompressionMethod _method) noexcept
+{
+    switch( _method ) {
+        case CompressionMethod::gzip:
+            return "gzip";
+        case CompressionMethod::bzip2:
+            return "bzip2";
+        case CompressionMethod::xz:
+            return "xz";
+        case CompressionMethod::zstd:
+            return "zstd";
+        default:
+            return nullptr;
+    }
+}
+
+} // namespace
 
 // General TODO list for Compression:
 // 1. there's no need to call stat() twice per element.
@@ -56,10 +122,15 @@ struct CompressionJob::Source {
 CompressionJob::CompressionJob(std::vector<VFSListingItem> _src_files,
                                std::string _dst_root,
                                VFSHostPtr _dst_vfs,
-                               std::string _password)
+                               std::string _password,
+                               CompressionOptions _options)
     : m_InitialListingItems{std::move(_src_files)}, m_DstRoot{std::move(_dst_root)}, m_DstVFS{std::move(_dst_vfs)},
-      m_Password{std::move(_password)}
+      m_Password{std::move(_password)}, m_Options{_options}
 {
+    m_Options.level = std::clamp(m_Options.level, 1, 9);
+    if( m_Options.format != CompressionFormat::zip )
+        m_Password.clear(); // only the zip container can encrypt its payload
+
     if( m_DstRoot.empty() || m_DstRoot.back() != '/' )
         m_DstRoot += '/';
 }
@@ -100,8 +171,45 @@ bool CompressionJob::BuildArchive()
     const std::expected<void, Error> open_rc = m_TargetFile->Open(flags);
     if( open_rc ) {
         m_Archive = archive_write_new();
-        archive_write_set_format_zip(m_Archive);
-        archive_write_add_filter_none(m_Archive);
+        switch( m_Options.format ) {
+            case CompressionFormat::zip:
+                archive_write_set_format_zip(m_Archive);
+                archive_write_add_filter_none(m_Archive);
+                SetWriteOptions(m_Archive, fmt::format("zip:compression={}", ZipCompressionName(m_Options.method)));
+                SetWriteOptions(m_Archive, fmt::format("zip:compression-level={}", m_Options.level));
+                break;
+            case CompressionFormat::sevenzip:
+                archive_write_set_format_7zip(m_Archive);
+                archive_write_add_filter_none(m_Archive);
+                SetWriteOptions(m_Archive,
+                                fmt::format("7zip:compression={}", SevenZipCompressionName(m_Options.method)));
+                SetWriteOptions(m_Archive, fmt::format("7zip:compression-level={}", m_Options.level));
+                break;
+            case CompressionFormat::tar: {
+                archive_write_set_format_pax(m_Archive);
+                switch( m_Options.method ) {
+                    case CompressionMethod::gzip:
+                        archive_write_add_filter_gzip(m_Archive);
+                        break;
+                    case CompressionMethod::bzip2:
+                        archive_write_add_filter_bzip2(m_Archive);
+                        break;
+                    case CompressionMethod::xz:
+                        archive_write_add_filter_xz(m_Archive);
+                        break;
+                    case CompressionMethod::zstd:
+                        archive_write_add_filter_zstd(m_Archive);
+                        break;
+                    default:
+                        archive_write_add_filter_none(m_Archive);
+                        break;
+                }
+                if( const char *filter = TarFilterOptionName(m_Options.method) )
+                    SetWriteOptions(m_Archive, fmt::format("{}:compression-level={}", filter, m_Options.level));
+                break;
+            }
+        }
+
         if( !m_Password.empty() ) {
             if( archive_write_set_options(m_Archive, "zip:encryption=aes256") != ARCHIVE_OK ) {
                 Stop();
@@ -121,9 +229,6 @@ bool CompressionJob::BuildArchive()
         archive_write_set_bytes_in_last_block(m_Archive, 1);
 
         ProcessItems();
-
-        if( m_Source->filenames.empty() )
-            WriteEmptyArchiveEntry(m_Archive);
 
         archive_write_close(m_Archive);
         archive_write_free(m_Archive);
@@ -383,12 +488,13 @@ CompressionJob::ProcessRegularItem(int _index, const std::string &_relative_path
 
 std::string CompressionJob::FindSuitableFilename(const std::string &_proposed_arcname) const
 {
-    std::string fn = fmt::format("{}{}.zip", m_DstRoot, _proposed_arcname);
+    const std::string extension{CompressionExtension(m_Options)};
+    std::string fn = fmt::format("{}{}{}", m_DstRoot, _proposed_arcname, extension);
     if( !m_DstVFS->Stat(fn, VFSFlags::F_NoFollow) )
         return fn;
 
     for( int i = 2; i < 100; ++i ) {
-        fn = fmt::format("{}{} {}.zip", m_DstRoot, _proposed_arcname, i);
+        fn = fmt::format("{}{} {}{}", m_DstRoot, _proposed_arcname, i, extension);
         if( !m_DstVFS->Stat(fn, VFSFlags::F_NoFollow) )
             return fn;
     }
@@ -582,18 +688,6 @@ void CompressionJob::archive_entry_copy_stat(struct archive_entry *_ae, const VF
     struct ::stat sys_stat;
     VFSStat::ToSysStat(_vfs_stat, sys_stat);
     ::archive_entry_copy_stat(_ae, &sys_stat);
-}
-
-void CompressionJob::WriteEmptyArchiveEntry(struct ::archive *_archive)
-{
-    auto entry = archive_entry_new();
-    archive_entry_set_pathname(entry, "");
-    struct stat st;
-    memset(&st, 0, sizeof(st));
-    st.st_mode = S_IFDIR | S_IRWXU;
-    ::archive_entry_copy_stat(entry, &st);
-    archive_write_header(_archive, entry);
-    archive_entry_free(entry);
 }
 
 bool CompressionJob::WriteEAs(struct archive *_a,

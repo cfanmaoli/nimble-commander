@@ -11,12 +11,6 @@
             "value" : "Dark theme: "
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Темная тема"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "OK"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОК"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,12 +65,6 @@
             "value" : "Light theme: "
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Светлая тема"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -105,12 +81,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Switch when macOS appearance changes:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переключать когда оформление macOS изменяется:"
           }
         },
         "zh-Hans" : {

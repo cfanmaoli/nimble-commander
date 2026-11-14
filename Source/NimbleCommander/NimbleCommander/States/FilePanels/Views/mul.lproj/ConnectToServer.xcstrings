@@ -11,12 +11,6 @@
             "value" : "Connect"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключиться"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Connection Path"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Путь подключения"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "SFTP Server"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SFTP сервер"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "FTP Server"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FTP сервер"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "WebDAV Server"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WebDAV сервер"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Network Share"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сетевая папка"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Dropbox Account"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Учетная запись Dropbox"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -179,12 +137,6 @@
             "value" : "Title"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -200,12 +152,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^A"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^A"
           }
         },
@@ -227,12 +173,6 @@
             "value" : "^X, ⌫"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^X, ⌫"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,12 +188,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^E"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^E"
           }
         },
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Close"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
           }
         },
         "zh-Hans" : {

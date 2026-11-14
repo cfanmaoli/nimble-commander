@@ -11,12 +11,6 @@
             "value" : "Files only"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Только файлы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Arguments:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аргументы:"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Cancel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "OK"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОК"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "File mask:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска файлов:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -131,12 +101,6 @@
             "value" : "Run in terminal"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запускать в терминале"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -152,12 +116,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "..."
           }
         },
@@ -179,12 +137,6 @@
             "value" : "*, *.*, *.cpp, *.*m, etc."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "*, *.*, *.cpp, *.*m и т.д."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -203,12 +155,6 @@
             "value" : "Name:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -224,12 +170,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%%"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "%%"
           }
         },
@@ -251,12 +191,6 @@
             "value" : "Any occurrences of %% will be replaced with file path. You can use backslashes to escape spaces, so that they are not interpreted as parameter delimiters."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все экземпляры %% будут заменены на путь файла. Вы можете использовать обратный слэш для избегания интерпретации пробелов как разделитей параметров."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Application path:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Путь приложения:"
           }
         },
         "zh-Hans" : {

@@ -11,12 +11,6 @@
             "value" : "Existing filename:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя существующего файла:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Enter a symlink value"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Введите имя символической ссылки"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Symbolic link filename:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя символической ссылки:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Enter a symlink name"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Введите имя символической ссылки"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Create"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
           }
         },
         "zh-Hans" : {

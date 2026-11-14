@@ -21,6 +21,7 @@ public:
 
 protected:
     void AddDeselectorIfNeeded(nc::ops::Operation &_with_operation, PanelController *_to_target) const;
+    [[nodiscard]] nc::config::Config &Configuration() const noexcept;
 
 private:
     [[nodiscard]] bool ShouldAutomaticallyDeselect() const;

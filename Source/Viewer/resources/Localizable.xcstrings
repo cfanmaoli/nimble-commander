@@ -5,12 +5,6 @@
       "comment" : "Menu item option in internal viewer search",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поиск с учетом регистра"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -23,12 +17,6 @@
       "comment" : "Menu item title in internal viewer search",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить недавние поиски"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -41,12 +29,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кодировка файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -59,12 +41,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Позиция файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77,12 +53,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размер файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -95,12 +65,6 @@
       "comment" : "Window title for internal file viewer",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотр файла - %@"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -113,12 +77,6 @@
       "comment" : "Menu item option in internal viewer search",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать фразу целиком"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -131,12 +89,6 @@
       "comment" : "Tooltip for menu element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Шестнадцатеричный"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -149,12 +101,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Язык подсветки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -167,12 +113,6 @@
       "comment" : "Title for process sheet when opening a vfs file",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открытие файла..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -185,12 +125,6 @@
       "comment" : "Menu element of language selection",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Простой текст"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -203,12 +137,6 @@
       "comment" : "Tooltip for menu element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотр"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -221,12 +149,6 @@
       "comment" : "Menu item title in internal viewer search",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавние поиски"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -239,12 +161,6 @@
       "comment" : "Menu item title in internal viewer search",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Последние"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -257,12 +173,6 @@
       "comment" : "Placeholder for search text field in internal viewer",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать в файле"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -275,12 +185,6 @@
       "comment" : "Tooltip for menu element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Текст"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -293,12 +197,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вид"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -311,12 +209,6 @@
       "comment" : "Tooltip for the footer element",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заворачивать строки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",

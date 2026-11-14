@@ -11,12 +11,6 @@
             "value" : "OK"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОK"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Basic"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Основная"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Advanced"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дополнительная"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Detailed Volume Information"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Детальная информация о томе"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Name:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Mounted at:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключен в:"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Device:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Устройство:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Format:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Формат:"
           }
         },
         "zh-Hans" : {
@@ -203,12 +155,6 @@
             "value" : "Total bytes:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всего байт:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -225,12 +171,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Free bytes:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Свободно байт:"
           }
         },
         "zh-Hans" : {
@@ -251,12 +191,6 @@
             "value" : "Available bytes:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Доступно байт:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Used bytes:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Использ. байт:"
           }
         },
         "zh-Hans" : {
@@ -299,12 +227,6 @@
             "value" : "Objects count:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кол-во объектов:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -321,12 +243,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Files count:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кол-во файлов:"
           }
         },
         "zh-Hans" : {
@@ -347,12 +263,6 @@
             "value" : "Folders count:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кол-во папок:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -369,12 +279,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Maximum objects:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Максимум объектов:"
           }
         },
         "zh-Hans" : {
@@ -395,12 +299,6 @@
             "value" : "I/O block size:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размер блока I/O:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -419,12 +317,6 @@
             "value" : "Min. allocation:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мин. аллокация:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -441,12 +333,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Allocation clump:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мин. увеличение:"
           }
         },
         "zh-Hans" : {

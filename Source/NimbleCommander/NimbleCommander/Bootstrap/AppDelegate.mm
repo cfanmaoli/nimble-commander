@@ -85,6 +85,7 @@
 #include <Term/Log.h>
 
 #include <VFS/Log.h>
+#include <VFS/RarHelper.h>
 
 #include <VFSIcon/Log.h>
 
@@ -116,6 +117,7 @@ static const auto g_ConfigSelectedTheme = "general.theme";
 static const auto g_ConfigThemes = "themes";
 static const auto g_ConfigExtEditorsList = "externalEditors.editors_v1";
 static const auto g_ConfigFinderTags = "filePanel.FinderTags.tags";
+static const auto g_ConfigCompressionRarSupport = "compression.rarSupport";
 
 nc::config::Config &GlobalConfig() noexcept
 {
@@ -249,6 +251,7 @@ static NCAppDelegate *g_Me = nil;
         CheckDefaultsReset();
         m_SupportDirectory = nc::AppDelegate::SupportDirectory();
         [self setupConfigs];
+        nc::vfs::rar::SetHelperEnabled(GlobalConfig().GetBool(g_ConfigCompressionRarSupport));
         m_SystemThemeDetector = std::make_unique<nc::SystemThemeDetector>();
     }
     return self;

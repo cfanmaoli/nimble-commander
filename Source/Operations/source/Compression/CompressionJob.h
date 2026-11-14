@@ -2,6 +2,7 @@
 #pragma once
 
 #include "../Job.h"
+#include "CompressionOptions.h"
 #include <VFS/VFS.h>
 #include <Base/chained_strings.h>
 
@@ -46,7 +47,8 @@ public:
     CompressionJob(std::vector<VFSListingItem> _src_files,
                    std::string _dst_root,
                    VFSHostPtr _dst_vfs,
-                   std::string _password);
+                   std::string _password,
+                   CompressionOptions _options = {});
     ~CompressionJob() override;
 
     const std::string &TargetArchivePath() const;
@@ -82,7 +84,6 @@ private:
 
     ssize_t WriteCallback(struct archive *_archive, const void *_buffer, size_t _length);
 
-    static void WriteEmptyArchiveEntry(struct ::archive *_archive);
     static bool
     WriteEAs(struct ::archive *_a, std::span<const std::byte> _md, std::string_view _path, std::string_view _name);
     static bool WriteEAsIfAny(VFSFile &_src, struct ::archive *_a, std::string_view _source_fn);
@@ -93,6 +94,7 @@ private:
     VFSHostPtr m_DstVFS;
     std::string m_TargetArchivePath;
     std::string m_Password;
+    CompressionOptions m_Options;
 
     struct ::archive *m_Archive = nullptr;
     std::shared_ptr<VFSFile> m_TargetFile;

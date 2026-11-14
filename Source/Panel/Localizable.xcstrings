@@ -4,12 +4,6 @@
     "Clear Recents" : {
       "comment" : "Title for clear recents menu item in selection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить недавние поиски"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -21,12 +15,6 @@
     "Deselect files by mask:" : {
       "comment" : "Title for deselection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Снять выделение по маске:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -38,12 +26,6 @@
     "Mask “%@”" : {
       "comment" : "Find file masks history - plain mask",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска “%@”"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -55,12 +37,6 @@
     "Mask: *, or *.t?t, or *.txt,*.jpg" : {
       "comment" : "Placeholder prompt for a filemask",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска: *, или *.t?t, или *.txt,*.jpg"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -72,12 +48,6 @@
     "New Tool" : {
       "comment" : "A placeholder title for a new external tool",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новый инструмент"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -89,12 +59,6 @@
     "Options" : {
       "comment" : "Title for options menu item in selection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Настройки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -106,12 +70,6 @@
     "Recent Searches" : {
       "comment" : "Title for recent searches menu item in selection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавние поиски"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -123,12 +81,6 @@
     "RegEx “%@”" : {
       "comment" : "Find file masks history - regex",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RegEx “%@”"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -140,12 +92,6 @@
     "Regular expression" : {
       "comment" : "Placeholder prompt for a regex",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярное выражение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -157,12 +103,6 @@
     "Regular Expression" : {
       "comment" : "Title for regular expression option in selection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярное выражение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -174,12 +114,6 @@
     "Select files by mask:" : {
       "comment" : "Title for selection by mask popup",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделить по маске:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -191,12 +125,6 @@
     "Specify a regular expression to match filenames with." : {
       "comment" : "Tooltip for a regex filename match",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Укажите регулярное выражения для поиска имен файлов."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -208,12 +136,6 @@
     "Use \"*\" for multiple-character wildcard, \"?\" for single-character wildcard and \",\" to specify more than one mask." : {
       "comment" : "Tooltip for mask filename match",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Используйте \"*\" для подстановки нескольких символов, \"?\" для подстановки одного символа и \",\" чтобы указать больше одной маски."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",

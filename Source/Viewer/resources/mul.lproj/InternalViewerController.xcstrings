@@ -11,12 +11,6 @@
             "value" : "Go"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Go to"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти к:"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Percentage (%)"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Проценту (%)"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Offset (B)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Смещению (Б)"
           }
         },
         "zh-Hans" : {

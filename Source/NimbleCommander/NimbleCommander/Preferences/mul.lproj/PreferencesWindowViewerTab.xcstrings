@@ -11,12 +11,6 @@
             "value" : "Common"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Общее"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Same window"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Текущем окне"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Auto-detect encoding"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автоопределение кодировки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Default encoding:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кодировка по умолчанию:"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "File history:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "История файлов:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Save position"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять позицию"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Save view mode"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять режим отображения"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Save encoding"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять кодировку"
           }
         },
         "zh-Hans" : {
@@ -203,12 +155,6 @@
             "value" : "Save wrapping"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять перенос"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -225,12 +171,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Save selection"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять выделение"
           }
         },
         "zh-Hans" : {
@@ -251,12 +191,6 @@
             "value" : "Clear history"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить историю"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "File window size:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размер окна файла:"
           }
         },
         "zh-Hans" : {
@@ -299,12 +227,6 @@
             "value" : "32 Kb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "32 Кб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -321,12 +243,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "64 Kb"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64 Кб"
           }
         },
         "zh-Hans" : {
@@ -347,12 +263,6 @@
             "value" : "128 Kb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "128 Кб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -369,12 +279,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "256 Kb"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "256 Кб"
           }
         },
         "zh-Hans" : {
@@ -395,12 +299,6 @@
             "value" : "512 Kb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "512 Кб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -417,12 +315,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "1024 Kb"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1024 Кб"
           }
         },
         "zh-Hans" : {
@@ -443,12 +335,6 @@
             "value" : "Check com.apple.TextEncoding"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Проверять com.apple.TextEncoding"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -465,12 +351,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Save language"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранять язык"
           }
         },
         "zh-Hans" : {
@@ -491,12 +371,6 @@
             "value" : "Separate window"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отдельном окне"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -513,12 +387,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Show viewer in:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать просмотрщик в:"
           }
         },
         "zh-Hans" : {
@@ -539,12 +407,6 @@
             "value" : "Enable syntax highlighting"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить подсветку синтаксиса"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -561,12 +423,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Reload automatically"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обновлять автоматически"
           }
         },
         "zh-Hans" : {

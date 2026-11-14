@@ -11,12 +11,6 @@
             "value" : "Created Time ↓"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени создания ↓"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Created Time ↑"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени создания ↑"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Added Time ↑"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени добавления ↑"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Options"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Настройки"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Extension ↓"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расширению ↓"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Accessed Time ↑"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени открытия ↑"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Case-Insensitive"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Без учета регистра"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Modified Time ↓"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени модификации ↓"
           }
         },
         "zh-Hans" : {
@@ -203,12 +155,6 @@
             "value" : "Size ↓"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размеру ↓"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -225,12 +171,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Natural"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Естественное"
           }
         },
         "zh-Hans" : {
@@ -251,12 +191,6 @@
             "value" : "Size ↑"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размеру ↑"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Case-Sensitive"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "С учетом регистра"
           }
         },
         "zh-Hans" : {
@@ -299,12 +227,6 @@
             "value" : "Modified Time ↑"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени модификации ↑"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -321,12 +243,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Name ↑"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имени ↑"
           }
         },
         "zh-Hans" : {
@@ -347,12 +263,6 @@
             "value" : "Separate Folders from Files"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отделять папки от файлов"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -369,12 +279,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Accessed Time ↓"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени открытия ↓"
           }
         },
         "zh-Hans" : {
@@ -395,12 +299,6 @@
             "value" : "Extension ↑"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расширению ↑"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -417,12 +315,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sort by"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по"
           }
         },
         "zh-Hans" : {
@@ -443,12 +335,6 @@
             "value" : "Added Time ↓"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Времени добавления ↓"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -465,12 +351,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Name ↓"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имени ↓"
           }
         },
         "zh-Hans" : {
@@ -491,12 +371,6 @@
             "value" : "Comparison"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cравнение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -513,12 +387,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Extensionless Folders"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Папки без расширения"
           }
         },
         "zh-Hans" : {

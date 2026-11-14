@@ -11,12 +11,6 @@
             "value" : "When choosing an editor to start, editors are checked in order of appearance in this list."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "При выборе редактора они проверяются в очередности этого списка."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "File mask"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска файла"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "When choosing an editor to start, editors are checked in order of appearance in this list."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "При выборе редактора они проверяются в очередности этого списка."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "External editor"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Внешний редактор"
           }
         },
         "zh-Hans" : {

@@ -11,12 +11,6 @@
             "value" : "How do you wish to import this theme?"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Как вы хотели бы импортировать данную тему?"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Overwrite current theme settings"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переписать настройки текущей темы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,12 +65,6 @@
             "value" : "Import as a new theme:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импортировать как новую тему:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -105,12 +81,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Import"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импорт"
           }
         },
         "zh-Hans" : {

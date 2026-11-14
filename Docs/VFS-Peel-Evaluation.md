@@ -262,7 +262,7 @@ materialize，所以看起来就是“永远加载”。（composed 策略同样
 
 - 两种策略都在级别循环与单目录循环里检查预算，超时就把已有结果装上去并标记 `timed_out`；
 - 面板弹出专门的提示："扫描耗时过长，因此只显示了前 N 项……可以在 filePanel.general.flatViewMaxSeconds 中提高时间上限"
-  （en/ru/zh-Hans 三条）；
+  （en/zh-Hans 三条）；
 - 日志里 `timed_out` 一并输出，便于诊断。
 
 验证：
@@ -284,7 +284,7 @@ materialize，所以看起来就是“永远加载”。（composed 策略同样
   与 `<home>/Library/Mobile Documents/`（iCloud Drive）；
 - 跳过发生在**收集子目录**时，两种策略（columnar / composed）都生效，条目本身不进结果；
 - 如果平铺的根就在这两个前缀里（用户明确要看），则不跳过——此时只有 30 s 预算兜底；
-- 由于“跳过”是静默少内容，第一次跳过的那个启动会弹一次说明（en/ru/zh-Hans），之后只记日志，
+- 由于“跳过”是静默少内容，第一次跳过的那个启动会弹一次说明（en/zh-Hans），之后只记日志，
   不会每次开平铺都弹。
 
 实测 `/Users/me`（默认配置，8 线程）：

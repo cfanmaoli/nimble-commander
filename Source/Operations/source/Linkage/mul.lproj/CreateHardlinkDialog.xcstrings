@@ -11,12 +11,6 @@
             "value" : "Enter a hardlink name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Введите имя жесткой ссылки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -35,12 +29,6 @@
             "value" : "Create"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -57,12 +45,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
           }
         },
         "zh-Hans" : {

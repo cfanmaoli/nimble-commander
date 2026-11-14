@@ -10,12 +10,6 @@
             "value" : "Please authenticate as an Administrator to provide Nimble Commander-Fork additional rights"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы предоставить Nimble Commander-Fork дополнительные права"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -31,12 +25,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please authenticate as an Administrator to allow Nimble Commander-Fork install additional components."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пожалуйста пройдите аутентификацию как администратор чтобы позволить Nimble Commander-Fork установить дополнительные компоненты."
           }
         },
         "zh-Hans" : {

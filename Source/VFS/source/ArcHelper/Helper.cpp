@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
+#include <mutex>
 #include <tuple>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,9 +23,7 @@ bool IsExecutable(const std::string &_path) noexcept
     return !_path.empty() && ::access(_path.c_str(), X_OK) == 0;
 }
 
-} // namespace
-
-std::optional<std::string> FindHelper()
+std::optional<std::string> FindHelperUncached()
 {
     // The component is distributed as an application bundle that the user drags into Applications.
     for( const std::string &candidate :
@@ -34,6 +33,43 @@ std::optional<std::string> FindHelper()
             return candidate;
 
     return std::nullopt;
+}
+
+// The component is enabled by default, so that callers which never configure it (e.g. the VFS
+// unit tests) keep the historical behaviour.
+[[clang::no_destroy]] std::mutex g_HelperMutex;
+bool g_HelperEnabled = true;
+bool g_HelperLookupDone = false;
+[[clang::no_destroy]] std::optional<std::string> g_HelperPath;
+
+} // namespace
+
+void SetHelperEnabled(const bool _enabled) noexcept
+{
+    const std::lock_guard lock(g_HelperMutex);
+    if( g_HelperEnabled == _enabled )
+        return;
+    g_HelperEnabled = _enabled;
+    g_HelperLookupDone = false;
+    g_HelperPath.reset();
+}
+
+bool IsHelperEnabled() noexcept
+{
+    const std::lock_guard lock(g_HelperMutex);
+    return g_HelperEnabled;
+}
+
+std::optional<std::string> FindHelper()
+{
+    const std::lock_guard lock(g_HelperMutex);
+    if( !g_HelperEnabled )
+        return std::nullopt;
+    if( !g_HelperLookupDone ) {
+        g_HelperPath = FindHelperUncached();
+        g_HelperLookupDone = true;
+    }
+    return g_HelperPath;
 }
 
 bool LooksLikeRarArchive(Host &_parent, const std::string_view _path, const VFSCancelChecker &_cancel_checker)

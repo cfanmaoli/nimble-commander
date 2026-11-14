@@ -11,12 +11,6 @@
             "value" : "[A x-y] Characters from the xth to the yth, padded with spaces"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A x-y] Символы x-y, отступ пробелами"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -32,12 +26,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "7"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "7"
           }
         },
@@ -59,12 +47,6 @@
             "value" : "^O"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^O"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Nx-y] Characters from the xth to the yth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Nx-y] Символы с x по y"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "[E0x-y] Characters from the xth to the yth, padded with zeros"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E0x-y] Символы x-y, отступ нулями"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[N0x-y] Characters from the xth to the yth, padded with zeros"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N0x-y] Символы x-y, отступ нулями"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Insert Extension"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить расширение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -179,12 +137,6 @@
             "value" : "[s] Seconds in 2-digit format"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[s] Секунды в 2-значном формате"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -200,12 +152,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "⌘↩"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "⌘↩"
           }
         },
@@ -227,12 +173,6 @@
             "value" : "[Gx-] Characters starting from the xth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Gx-] Символы начиная с символа x"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,12 +188,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "4"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "4"
           }
         },
@@ -275,12 +209,6 @@
             "value" : "[N-x-] Characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N-x-] Символы с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,12 +225,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[M] Month in 2-digit format"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[M] Месяц в 2-значном формате"
           }
         },
         "zh-Hans" : {
@@ -323,12 +245,6 @@
             "value" : "[C] Counter"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[C] Счетчик"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -344,12 +260,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^T"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^T"
           }
         },
@@ -371,12 +281,6 @@
             "value" : "[Gx-y] Characters from the xth to the yth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Gx-y] Символы x по y"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -393,12 +297,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "OK"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОК"
           }
         },
         "zh-Hans" : {
@@ -419,12 +317,6 @@
             "value" : "[Nx--y] Characters from the xth to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Nx--y] Символы с x по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -441,12 +333,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[YMD] Date"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[YMD] Дата"
           }
         },
         "zh-Hans" : {
@@ -467,12 +353,6 @@
             "value" : "[m] Minutes in 2-digit format"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[m] Минуты в 2-значном формате"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -488,12 +368,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^D"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^D"
           }
         },
@@ -515,12 +389,6 @@
             "value" : "Unchanged"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Без изменений"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -539,12 +407,6 @@
             "value" : "Insert Name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -560,12 +422,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "[E]"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "[E]"
           }
         },
@@ -587,12 +443,6 @@
             "value" : "[Px--y] Characters from the xth to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Px--y] Символы с x по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -608,12 +458,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "5"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "5"
           }
         },
@@ -635,12 +479,6 @@
             "value" : "Change Case"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изменить регистр"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -656,12 +494,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "8"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "8"
           }
         },
@@ -683,12 +515,6 @@
             "value" : "Cancel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -705,12 +531,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Nx,y] y characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Nx,y] y символов начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -731,12 +551,6 @@
             "value" : "[Cx+y/z:w] -\"\"-, with width w"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Cx+y/z:w] -\"\"-, с шириной w"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -752,12 +566,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^A"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^A"
           }
         },
@@ -779,12 +587,6 @@
             "value" : "Step by:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Шаг:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -801,12 +603,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[E] Extension"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E] Расширение"
           }
         },
         "zh-Hans" : {
@@ -827,12 +623,6 @@
             "value" : "[Px] xth character of the filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Px] x-ый символ имени"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -849,12 +639,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "]] Closing square bracket"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "]] Закрывающая квадратная скобка"
           }
         },
         "zh-Hans" : {
@@ -875,12 +659,6 @@
             "value" : "[G-x-] Characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G-x-] Символы с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -897,12 +675,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Renamed"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переименованный"
           }
         },
         "zh-Hans" : {
@@ -923,12 +695,6 @@
             "value" : "[A0x-y] Characters from the xth to the yth, padded with zeros"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A0x-y] Символы x-y, отступ нулями"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -945,12 +711,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Start at:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Начать с:"
           }
         },
         "zh-Hans" : {
@@ -971,12 +731,6 @@
             "value" : "[Px-] Characters starting from the xth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Px-] Символы начиная с символа x"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -993,12 +747,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Px-y] Characters from the xth to the yth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Px-y] Символы x по y"
           }
         },
         "zh-Hans" : {
@@ -1019,12 +767,6 @@
             "value" : "[U] UPPERCASE"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[U] ВЕРХНИЙ РЕГИСТР"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1040,12 +782,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^R"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^R"
           }
         },
@@ -1067,12 +803,6 @@
             "value" : "Remove Item"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить объект"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1088,12 +818,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^N"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^N"
           }
         },
@@ -1115,12 +839,6 @@
             "value" : "[E-x-] Characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E-x-] Символы с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1137,12 +855,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Insert Extension"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить расширение"
           }
         },
         "zh-Hans" : {
@@ -1163,12 +875,6 @@
             "value" : "Insert Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить полное имя файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1185,12 +891,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[P x-y] Characters from the xth to the yth, padded with spaces"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P x-y] Символы x-y, отступ пробелами"
           }
         },
         "zh-Hans" : {
@@ -1211,12 +911,6 @@
             "value" : "[y] Year in 2-digit format"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[y] Год в 2-значной форме"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1233,12 +927,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[E] Extension"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E] Расширение"
           }
         },
         "zh-Hans" : {
@@ -1259,12 +947,6 @@
             "value" : "Insert Counter"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить счетчик"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1281,12 +963,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ex-] Characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ex-] Символы начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -1307,12 +983,6 @@
             "value" : "[Ax-y] Characters from the xth to the yth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ax-y] Символы x по y"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1329,12 +999,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ax--y] Characters from the xth to the yth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ax--y] Символы с x по y-последний символ"
           }
         },
         "zh-Hans" : {
@@ -1355,12 +1019,6 @@
             "value" : "[F] Capitalize Each Word"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[F] С Заглавных Букв"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1377,12 +1035,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ax] xth character of the filename"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ax] x-ый символ имени"
           }
         },
         "zh-Hans" : {
@@ -1403,12 +1055,6 @@
             "value" : "[N x-y] Characters from the xth to the yth, padded with spaces"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N x-y] Символы x-y, отступ пробелами"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1425,12 +1071,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Digits:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цифр:"
           }
         },
         "zh-Hans" : {
@@ -1451,12 +1091,6 @@
             "value" : "[Gx] xth character of the filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Gx] x-ый символ имени"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1475,12 +1109,6 @@
             "value" : "Original"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Исходный"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1496,12 +1124,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "1x"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "1x"
           }
         },
@@ -1523,12 +1145,6 @@
             "value" : "1"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1545,12 +1161,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Search for:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найти:"
           }
         },
         "zh-Hans" : {
@@ -1571,12 +1181,6 @@
             "value" : "Rename pattern"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Маска переименования"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1593,12 +1197,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[n] Original case"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[n] Исходный регистр"
           }
         },
         "zh-Hans" : {
@@ -1619,12 +1217,6 @@
             "value" : "[G x-y] Characters from the xth to the yth, padded with spaces"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G x-y] Символы x-y, отступ пробелами"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1641,12 +1233,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[N-x-y] Characters from the x-last to the y-last character"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N-x-y] Символы с x-последнего по y-последний символ"
           }
         },
         "zh-Hans" : {
@@ -1667,12 +1253,6 @@
             "value" : "[C] Default counter"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[C] Счетчик по-умолчанию"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1689,12 +1269,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Search & replace"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поиск и замена"
           }
         },
         "zh-Hans" : {
@@ -1715,12 +1289,6 @@
             "value" : "[d] Localized date"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[d] Локализованная дата"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1737,12 +1305,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ax-] Characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ax-] Символы начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -1763,12 +1325,6 @@
             "value" : "Uppercase/lowercase"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Верхний/нижний регистр"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1785,12 +1341,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ax,y] y characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ax,y] y символов начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -1811,12 +1361,6 @@
             "value" : "[P-x-y] Characters from the xth-last to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P-x-y] Символы с x-последнего по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1833,12 +1377,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Aa"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аа"
           }
         },
         "zh-Hans" : {
@@ -1859,12 +1397,6 @@
             "value" : "[E-x-y] Characters from the xth-last to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E-x-y] Символы с x-последнего по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1881,12 +1413,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[hms] Time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[hms] Время"
           }
         },
         "zh-Hans" : {
@@ -1907,12 +1433,6 @@
             "value" : "[Nx] The xth character of the name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Nx] x-ый символ имени"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1929,12 +1449,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[P-x-] Characters starting from the xth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P-x-] Символы с x-последнего символа"
           }
         },
         "zh-Hans" : {
@@ -1955,12 +1469,6 @@
             "value" : "Insert Counter"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить счетчик"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1976,12 +1484,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^L"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^L"
           }
         },
@@ -2003,12 +1505,6 @@
             "value" : "[Cx+y] -\"\"-, stepping by y "
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Cx+y] -\"\"-, шаг по y "
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2025,12 +1521,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Define counter"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Задать счетчик"
           }
         },
         "zh-Hans" : {
@@ -2051,12 +1541,6 @@
             "value" : "Insert Time"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить время"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2073,12 +1557,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[N-x,y] y characters starting from the xth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N-x,y] y символов начиная с x-последнего символа"
           }
         },
         "zh-Hans" : {
@@ -2099,12 +1577,6 @@
             "value" : "[N] Name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N] Имя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2120,12 +1592,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "2"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "2"
           }
         },
@@ -2147,12 +1613,6 @@
             "value" : "Insert Parent Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя родителя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2171,12 +1631,6 @@
             "value" : "[D] Day in 2-digit format"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[D] День в 2-значной форме"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2192,12 +1646,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "9"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "9"
           }
         },
@@ -2219,12 +1667,6 @@
             "value" : "Insert Name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить время"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2243,12 +1685,6 @@
             "value" : "UPPERCASE"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ВЕРХНИЙ РЕГИСТР"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2264,12 +1700,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^E"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^E"
           }
         },
@@ -2291,12 +1721,6 @@
             "value" : "Insert Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить полное имя файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2313,12 +1737,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ex--y] Characters from the xth to the yth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ex--y] Символы с x по y-последний символ"
           }
         },
         "zh-Hans" : {
@@ -2339,12 +1757,6 @@
             "value" : "Insert Grandparent Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя родителя родителя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2360,12 +1772,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^P"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^P"
           }
         },
@@ -2387,12 +1793,6 @@
             "value" : "6"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2409,12 +1809,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[P] Parent filename"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P] Полное имя родителя"
           }
         },
         "zh-Hans" : {
@@ -2435,12 +1829,6 @@
             "value" : "[G] Grandparent filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G] Имя родителя родителя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2457,12 +1845,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Cx+y/z] -\"\"-, every z files"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Cx+y/z] -\"\"-, каждые z файлов"
           }
         },
         "zh-Hans" : {
@@ -2483,12 +1865,6 @@
             "value" : "Insert Parent Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя родителя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2505,12 +1881,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Insert Grandparent Filename"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя родителя родителя"
           }
         },
         "zh-Hans" : {
@@ -2531,12 +1901,6 @@
             "value" : "Replace with:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заменить на:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2555,12 +1919,6 @@
             "value" : "Insert Time"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить время"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2576,12 +1934,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "[E]"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "[E]"
           }
         },
@@ -2603,12 +1955,6 @@
             "value" : "RegEx"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RegExp"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2624,12 +1970,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^W"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^W"
           }
         },
@@ -2651,12 +1991,6 @@
             "value" : "lowercase"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "нижний регистр"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2673,12 +2007,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[h] Hours in 2-digit, 24-hour format"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[h] Часы в 2-значном форме, 24 часа"
           }
         },
         "zh-Hans" : {
@@ -2699,12 +2027,6 @@
             "value" : "[P-x,y] y characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P-x,y] y символов начиная с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2721,12 +2043,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Px,y] y characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Px,y] y символов начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -2747,12 +2063,6 @@
             "value" : "[Gx--y] Characters from the xth to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Gx--y] Символы с x по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2768,12 +2078,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^I"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^I"
           }
         },
@@ -2795,12 +2099,6 @@
             "value" : "[E-x,y] y characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E-x,y] y символов начиная с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2819,12 +2117,6 @@
             "value" : "[E x-y] Characters from the xth to the yth, padded with spaces"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[E x-y] Символы x-y, отступ пробелами"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2840,12 +2132,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^S"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^S"
           }
         },
@@ -2867,12 +2153,6 @@
             "value" : "[Ex] xth character of the extension"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ex] x-ый символ расширения"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2889,12 +2169,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[A] Filename"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A] Полное имя"
           }
         },
         "zh-Hans" : {
@@ -2915,12 +2189,6 @@
             "value" : "[Y] Year in 4-digit format"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Y] Год в 4-значном формате"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2936,12 +2204,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^C"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^C"
           }
         },
@@ -2963,12 +2225,6 @@
             "value" : "[P0x-y] Characters from the xth to the yth, padded with zeros"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[P0x-y] Символы x-y, отступ нулями"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2985,12 +2241,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[G-x-y] Characters from the xth-last to the yth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G-x-y] Символы с x-последнего по y-последний символ"
           }
         },
         "zh-Hans" : {
@@ -3011,12 +2261,6 @@
             "value" : "[Nx-] Characters starting from the xth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Nx-] Символы начиная с символа x"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3033,12 +2277,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[Ex,y] y characters starting from the xth"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ex,y] y символов начиная с символа x"
           }
         },
         "zh-Hans" : {
@@ -3059,12 +2297,6 @@
             "value" : "[[ Opening square bracket"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[[ Открывающая квадратная скобка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3083,12 +2315,6 @@
             "value" : "[A-x-] Characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A-x-] y символов начиная с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3104,12 +2330,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "3"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "3"
           }
         },
@@ -3131,12 +2351,6 @@
             "value" : "^U"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^U"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3153,12 +2367,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[L] lowercase"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[L] нижний регистр"
           }
         },
         "zh-Hans" : {
@@ -3179,12 +2387,6 @@
             "value" : "[A-x-y] Characters from the xth-last to the yth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A-x-y] Символы с x-последнего по y-последний символ"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3201,12 +2403,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[G-x,y] y characters starting from the xth-last"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G-x,y] y символов начиная с x-последнего символа"
           }
         },
         "zh-Hans" : {
@@ -3227,12 +2423,6 @@
             "value" : "Capitalize Each Word"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "С Большой Буквы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3248,12 +2438,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "10"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "10"
           }
         },
@@ -3275,12 +2459,6 @@
             "value" : "Other"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прочее"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3297,12 +2475,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[t] Localized time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[t] Локализованное время"
           }
         },
         "zh-Hans" : {
@@ -3323,12 +2495,6 @@
             "value" : "[Cx] Counter starting at x"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Cx] Счетчик начиная с x"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3345,12 +2511,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Change Case"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изменить регистр"
           }
         },
         "zh-Hans" : {
@@ -3371,12 +2531,6 @@
             "value" : "[Gx,y] y characters starting from the xth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Gx,y] y символов начиная с символа x"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3393,12 +2547,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Other"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прочее"
           }
         },
         "zh-Hans" : {
@@ -3419,12 +2567,6 @@
             "value" : "[Ex-y] Characters from the xth to the yth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[Ex-y] Символы x по y"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3441,12 +2583,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[N#-#] Range"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N#-#] Диапазон"
           }
         },
         "zh-Hans" : {
@@ -3467,12 +2603,6 @@
             "value" : "[A-x,y] y characters starting from the xth-last"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[A-x,y] y символов начиная с x-последнего символа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3491,12 +2621,6 @@
             "value" : "[G0x-y] Characters from the xth to the yth, padded with zeros"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[G0x-y] Символы x-y, отступ нулями"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3513,12 +2637,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "[N] Name"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "[N] Имя"
           }
         },
         "zh-Hans" : {

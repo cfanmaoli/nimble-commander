@@ -11,12 +11,6 @@
             "value" : "All"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Filter"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильтр"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Always use the Fn buttons as F1 ... F19"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всегда использовать Fn кнопки как F1..F19"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Defaults"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "По умолчанию"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Customized"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переопределённые"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Third"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Третий"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Action"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Действие"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Primary"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Основной"
           }
         },
         "zh-Hans" : {
@@ -203,12 +155,6 @@
             "value" : "Conflicts"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Конфликты"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -225,12 +171,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Conflicts"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Конфликты"
           }
         },
         "zh-Hans" : {
@@ -251,12 +191,6 @@
             "value" : "Fourth"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Четвертый"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -275,12 +209,6 @@
             "value" : "Secondary"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Второй"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -293,12 +221,6 @@
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Text Cell\"; ObjectID = \"Yun-5T-3Fx\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",

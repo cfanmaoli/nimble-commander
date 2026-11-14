@@ -11,12 +11,6 @@
             "value" : "Put Back"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вернуть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -29,12 +23,6 @@
       "comment" : "Menu item for case when no handlers are available, for English is '<None>'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "<Нет>"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -47,12 +35,6 @@
       "comment" : "Submenu title to choose app to always open with, for English is 'Always Open With'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всегда открывать в программе"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -65,12 +47,6 @@
       "comment" : "Menu item to choose an app from MAS",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,12 +59,6 @@
       "comment" : "Compress some items here",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -101,12 +71,6 @@
       "comment" : "Compress one item here",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать “%@”"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -119,12 +83,6 @@
       "comment" : "Compress one item",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать “%@” в противоположной панели"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -137,12 +95,6 @@
       "comment" : "Compress some items here",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать %lu объектов"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -155,12 +107,6 @@
       "comment" : "Compress some items",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать %lu объектов в противоположной панели"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -173,12 +119,6 @@
       "comment" : "Compress some items",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать в противоположной панели"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -191,12 +131,6 @@
       "comment" : "Copy one item",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать “%@”"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -209,12 +143,6 @@
       "comment" : "Copy many items",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скопировать %d объектов"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -227,12 +155,6 @@
       "comment" : "Copy many items",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать %lu объектов"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -245,12 +167,6 @@
       "comment" : "Copy many items as plain-text pathnames",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать %lu объектов как пути"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -263,12 +179,6 @@
       "comment" : "Copy one item as a plain-text pathname",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать “%@” как путь"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -281,12 +191,6 @@
       "comment" : "Menu item postfix marker for default apps to open with, for English is 'default'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "по умолчанию"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -299,12 +203,6 @@
       "comment" : "Menu item title to delete file, for English is 'Delete Permanently'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить необратимо"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -317,12 +215,6 @@
       "comment" : "Duplicate an item",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дублировать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -335,12 +227,6 @@
       "comment" : "Menu item for indicating that fetching process is in progress",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загрузка..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -353,12 +239,6 @@
       "comment" : "Menu item title to move to trash, for English is 'Move to Trash'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переместить в Корзину"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -371,12 +251,6 @@
       "comment" : "Menu item title for opening a file by default, for English is 'Open'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -389,12 +263,6 @@
       "comment" : "Submenu title to choose app to open with, for English is 'Open With'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть в программе"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -407,12 +275,6 @@
       "comment" : "Menu item to choose other app to open with, for English is 'Other...'",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выбрать программу..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -425,12 +287,6 @@
       "comment" : "Share submenu title",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поделиться"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -443,12 +299,6 @@
       "comment" : "Tags submenu title",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Теги"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",

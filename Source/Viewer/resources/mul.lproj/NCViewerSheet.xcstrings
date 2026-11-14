@@ -11,12 +11,6 @@
             "value" : "Close"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -29,12 +23,6 @@
       "comment" : "Class = \"NSWindow\"; title = \"Window\"; ObjectID = \"F0z-JX-Cv5\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Окно"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",

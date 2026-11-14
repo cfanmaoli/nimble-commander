@@ -552,6 +552,33 @@
          */
         "cursorMode": 0
     },
+
+    /**
+     * Settings related to the compress operation
+     */
+    "compression": {
+        /**
+         * Default archive container, one of: zip, 7z, tar.
+         */
+        "format": "zip",
+
+        /**
+         * Default compression method.
+         * For zip and 7z: store, deflate, bzip2, lzma, zstd.
+         * For tar: none, gzip, bzip2, xz, zstd (the matching libarchive filter).
+         */
+        "method": "deflate",
+
+        /**
+         * Compression level, an integer from 1 to 9.
+         */
+        "level": 6,
+
+        /**
+         * Enable the optional RAR support component (ncrar-helper.app).
+         */
+        "rarSupport": true
+    },
     
     "externalTools": {
         "tools_v1": [

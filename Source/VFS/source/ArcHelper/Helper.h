@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Base/Error.h>
+#include <VFS/RarHelper.h>
 #include <VFS/VFSDeclarations.h>
 #include <expected>
 #include <optional>

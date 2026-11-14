@@ -1261,7 +1261,7 @@ if( row_delta > 1000 )
   `flatViewMaxDirectories`（默认 2,000,000）；
 - 截断时不再整目录丢弃，而是按预算保留前面的条目（以前如果单个目录本身就超限，整个平铺列表会是空的）；
 - 截断会**明确告知**：`Log::Warn` + 一个 sheet 提示（标题「平铺视图显示不完整」，正文说明只显示了前 N 项、
-  以及用哪个设置项提高上限），字符串已加入 `Localizable.xcstrings` 的 en/ru/zh-Hans。
+  以及用哪个设置项提高上限），字符串已加入 `Localizable.xcstrings` 的 en/zh-Hans。
 
 **验证**：
 

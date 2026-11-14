@@ -11,12 +11,6 @@
             "value" : "^K"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^K"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Otherwise the item will be skipped"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Иначе объект будет пропущен"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Otherwise the item will be skipped"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Иначе объект будет пропущен"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Overwrite Older"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заменить старый"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Keep Both"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Оставить оба"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -131,12 +101,6 @@
             "value" : "Overwrite"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заменить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -152,12 +116,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^S"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^S"
           }
         },
@@ -179,12 +137,6 @@
             "value" : "Skip"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пропустить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -200,12 +152,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^P"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^P"
           }
         },
@@ -227,12 +173,6 @@
             "value" : "Append"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дописать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,12 +188,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "⌘⎋"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "⌘⎋"
           }
         },
@@ -275,12 +209,6 @@
             "value" : "Abort"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отменить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,12 +225,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Hold Shift to apply to all (^A)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удерживайте Shift чтобы применить ко всем (^A)"
           }
         },
         "zh-Hans" : {
@@ -323,12 +245,6 @@
             "value" : "Apply to all"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Применить ко всем"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -345,12 +261,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "New:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новый:"
           }
         },
         "zh-Hans" : {
@@ -371,12 +281,6 @@
             "value" : "Existing:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имеющийся:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -395,12 +299,6 @@
             "value" : "File already exists"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файл уже существует"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -416,12 +314,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^O"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^O"
           }
         },

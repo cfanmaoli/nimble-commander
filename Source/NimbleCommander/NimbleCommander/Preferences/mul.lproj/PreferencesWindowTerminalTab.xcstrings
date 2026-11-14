@@ -11,12 +11,6 @@
             "value" : "Supported shells: bash, zsh and [t]csh"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддерживаемые shell: bash, zsh и [t]csh"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Default login shell"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shell входа по умолчанию"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "▁ Underline"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "▁ Подчеркивание"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -81,12 +63,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "█ Block"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "█ Блок"
           }
         },
         "zh-Hans" : {
@@ -107,12 +83,6 @@
             "value" : "Cursor:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Курсор"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Open shell with: "
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запускать терминал с:"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : " ▏Vertical Bar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " ▏Вертикальная полоса"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -179,12 +137,6 @@
             "value" : "Hide scrollbar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть полосу прокрутки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -201,12 +153,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Command (complete path):"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Команда (полный путь)"
           }
         },
         "zh-Hans" : {

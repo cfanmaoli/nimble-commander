@@ -2508,6 +2508,21 @@ TEST_CASE(PREFIX "asks for a password for an encrypted RAR archive")
     CheckFileIs(*host, "/foo.txt", "data of foo.txt\n");
 }
 
+TEST_CASE(PREFIX "the ncrar-helper support can be switched off")
+{
+    // The component is on by default, so the tests above keep working on machines that have it.
+    REQUIRE(rar::IsHelperEnabled());
+
+    rar::SetHelperEnabled(false);
+    CHECK_FALSE(rar::IsHelperEnabled());
+    CHECK_FALSE(rar::FindHelper()); // must not look at the filesystem
+
+    rar::SetHelperEnabled(true);
+    CHECK(rar::IsHelperEnabled());
+    // The result depends on the machine, but the cached lookup must still work after re-enabling.
+    std::ignore = rar::FindHelper();
+}
+
 } // namespace VFSArchiveTest
 
 #undef PREFIX

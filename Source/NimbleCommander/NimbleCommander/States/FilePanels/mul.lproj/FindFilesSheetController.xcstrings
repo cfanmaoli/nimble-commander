@@ -11,12 +11,6 @@
             "value" : "⎋"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "⎋"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -32,12 +26,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "0"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "0"
           }
         },
@@ -59,12 +47,6 @@
             "value" : "^M"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^M"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,12 +65,6 @@
             "value" : "The filename mask is invalid"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловая маска некорректна"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -104,12 +80,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "="
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "="
           }
         },
@@ -131,12 +101,6 @@
             "value" : "^I"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^I"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -153,12 +117,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Look in archives"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать в архивах"
           }
         },
         "zh-Hans" : {
@@ -179,12 +137,6 @@
             "value" : "Files and folders"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файлы и папки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -200,12 +152,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^S"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^S"
           }
         },
@@ -227,12 +173,6 @@
             "value" : "Panel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Панель"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -249,12 +189,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Location"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расположение"
           }
         },
         "zh-Hans" : {
@@ -275,12 +209,6 @@
             "value" : "Mb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,12 +225,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Modify time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время модификации"
           }
         },
         "zh-Hans" : {
@@ -323,12 +245,6 @@
             "value" : "View"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просмотр"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -345,12 +261,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Folders"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Папки"
           }
         },
         "zh-Hans" : {
@@ -371,12 +281,6 @@
             "value" : "Filename"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -392,12 +296,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "0"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "0"
           }
         },
@@ -419,12 +317,6 @@
             "value" : "^P"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^P"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -441,12 +333,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Search for:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать:"
           }
         },
         "zh-Hans" : {
@@ -467,12 +353,6 @@
             "value" : "Files"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файлы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -485,12 +365,6 @@
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Text Cell\"; ObjectID = \"jtt-0L-3Vf\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -507,12 +381,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Size"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Размер"
           }
         },
         "zh-Hans" : {
@@ -533,12 +401,6 @@
             "value" : "Look in subdirectories"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать в подпапках"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -551,12 +413,6 @@
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Text Cell\"; ObjectID = \"MOD-fH-Yh6\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -569,12 +425,6 @@
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Text Cell\"; ObjectID = \"NaU-Re-Nxc\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -590,12 +440,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^G"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^G"
           }
         },
@@ -617,12 +461,6 @@
             "value" : "Stop"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Стоп"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -639,12 +477,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Search"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать"
           }
         },
         "zh-Hans" : {
@@ -665,12 +497,6 @@
             "value" : "Gb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Гб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -687,12 +513,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Close"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
           }
         },
         "zh-Hans" : {
@@ -713,12 +533,6 @@
             "value" : "Search for items using mask:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать файлы с маской:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -731,12 +545,6 @@
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Text Cell\"; ObjectID = \"ROy-iE-OqK\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -755,12 +563,6 @@
             "value" : "Containing text:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Содержащие текст:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -776,12 +578,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^T"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^T"
           }
         },
@@ -803,12 +599,6 @@
             "value" : "b"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "б"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -824,12 +614,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "≤"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "≤"
           }
         },
@@ -851,12 +635,6 @@
             "value" : "Go To"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -875,12 +653,6 @@
             "value" : "Kb"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -896,12 +668,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^V"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^V"
           }
         },
@@ -923,12 +689,6 @@
             "value" : "⚠️"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "⚠️"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -944,12 +704,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "≥"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "≥"
           }
         },
@@ -971,12 +725,6 @@
             "value" : "With size:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "С размером:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -993,12 +741,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Items found:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найдено:"
           }
         },
         "zh-Hans" : {

@@ -18,8 +18,8 @@ A **Preferences → Language** tab that
 
 ## Why
 
-Nimble Commander ships English, Russian and Simplified Chinese. Anyone whose language is not on
-that list has no practical way to get one: a real translation means touching 55 String Catalogs
+Nimble Commander ships English and Simplified Chinese. Anyone whose language is not on that list
+has no practical way to get one: a real translation means touching 55 String Catalogs
 across seven Xcode projects, and getting it merged means finding someone to maintain it.
 
 The exported file is plain JSON with the English source sitting next to every entry — which is
@@ -63,7 +63,7 @@ button next to the popup does that, after asking once.
 
 The selection is stored in `~/Library/Application Support/Nimble Commander/LanguagePacks/active.txt`:
 
-    builtin:ru      one of the bundled languages
+    builtin:zh-Hans one of the bundled languages
     pack:ja         an imported pack
     (empty)         follow the system
 
@@ -100,7 +100,7 @@ exist inside the compiled nibs.
 We deliberately do **not** write `AppleLanguages`. Running the app under a per-app language
 override makes AppKit assert inside CoreUI while rasterising an SF Symbol
 (`CUINamedVectorGlyph.m:2599`, reproducible with `defaults write info.filesmanager.Files
-AppleLanguages -array ru` and any `NSAlert`) — a problem of its own that this feature should not
+AppleLanguages -array zh-Hans` and any `NSAlert`) — a problem of its own that this feature should not
 step into.
 
 ## Known limits

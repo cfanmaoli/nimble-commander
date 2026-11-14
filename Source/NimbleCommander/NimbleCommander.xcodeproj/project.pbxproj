@@ -61,6 +61,7 @@
 		CF0A48072BDD9F6D00833160 /* PreferencesWindowPanelsTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF4E56371D5064FE00452912 /* PreferencesWindowPanelsTab.mm */; };
 		CF0A48082BDD9F7400833160 /* PreferencesWindowPanelsTabOperationsConcurrencySheet.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF9B07C426FF0CC200D2842B /* PreferencesWindowPanelsTabOperationsConcurrencySheet.mm */; };
 		CF0A48092BDD9F7900833160 /* PreferencesWindowTerminalTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF4E563B1D5064FE00452912 /* PreferencesWindowTerminalTab.mm */; };
+		CD5E7A110000000000000003 /* PreferencesWindowCompressionTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = CD5E7A110000000000000002 /* PreferencesWindowCompressionTab.mm */; };
 		CF0A480A2BDD9F7E00833160 /* PreferencesWindowThemesControls.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF04DDFA1E2F100C0047B1F9 /* PreferencesWindowThemesControls.mm */; };
 		CF0A480B2BDD9F8200833160 /* PreferencesWindowThemesTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF04DDE41E2DBE9D0047B1F9 /* PreferencesWindowThemesTab.mm */; };
 		CF0A480C2BDD9F8800833160 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFB7006C28B243F6000A1272 /* PreferencesWindowThemesTabAutomaticSwitchingSheet.mm */; };
@@ -1015,6 +1016,8 @@
 		CF4E56391D5064FE00452912 /* PreferencesWindowPanelsTabColoringFilterSheet.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowPanelsTabColoringFilterSheet.mm; path = NimbleCommander/Preferences/PreferencesWindowPanelsTabColoringFilterSheet.mm; sourceTree = SOURCE_ROOT; };
 		CF4E563A1D5064FE00452912 /* PreferencesWindowTerminalTab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PreferencesWindowTerminalTab.h; path = NimbleCommander/Preferences/PreferencesWindowTerminalTab.h; sourceTree = SOURCE_ROOT; };
 		CF4E563B1D5064FE00452912 /* PreferencesWindowTerminalTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowTerminalTab.mm; path = NimbleCommander/Preferences/PreferencesWindowTerminalTab.mm; sourceTree = SOURCE_ROOT; };
+		CD5E7A110000000000000001 /* PreferencesWindowCompressionTab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PreferencesWindowCompressionTab.h; path = NimbleCommander/Preferences/PreferencesWindowCompressionTab.h; sourceTree = SOURCE_ROOT; };
+		CD5E7A110000000000000002 /* PreferencesWindowCompressionTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowCompressionTab.mm; path = NimbleCommander/Preferences/PreferencesWindowCompressionTab.mm; sourceTree = SOURCE_ROOT; };
 		CF4E563C1D5064FE00452912 /* PreferencesWindowViewerTab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PreferencesWindowViewerTab.h; path = NimbleCommander/Preferences/PreferencesWindowViewerTab.h; sourceTree = SOURCE_ROOT; };
 		CF4E563D1D5064FE00452912 /* PreferencesWindowViewerTab.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PreferencesWindowViewerTab.mm; path = NimbleCommander/Preferences/PreferencesWindowViewerTab.mm; sourceTree = SOURCE_ROOT; };
 		CF4E56711D50667300452912 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PreferencesWindowExternalEditorsTab.xib; sourceTree = "<group>"; };
@@ -1514,6 +1517,8 @@
 				CF04DDF41E2DBF1D0047B1F9 /* Preferences.mm */,
 				CFC762962D3C59C3000498AA /* Preferences.xcstrings */,
 				CF12580D2CB5C1B4003906C6 /* PreferencesWindow.swift */,
+				CD5E7A110000000000000001 /* PreferencesWindowCompressionTab.h */,
+				CD5E7A110000000000000002 /* PreferencesWindowCompressionTab.mm */,
 				CF4E562E1D5064FE00452912 /* PreferencesWindowExternalEditorsTab.h */,
 				CF4E562F1D5064FE00452912 /* PreferencesWindowExternalEditorsTab.mm */,
 				CF4E56721D50667300452912 /* PreferencesWindowExternalEditorsTab.xib */,
@@ -3226,6 +3231,7 @@
 				CF0A48792BDDA51100833160 /* FindFilesSheetController.mm in Sources */,
 				CF0A47F72BDD9E7A00833160 /* AppDelegate+Migration.mm in Sources */,
 				CF0A48092BDD9F7900833160 /* PreferencesWindowTerminalTab.mm in Sources */,
+				CD5E7A110000000000000003 /* PreferencesWindowCompressionTab.mm in Sources */,
 				CF0A48632BDDA3D700833160 /* PanelListViewDateTimeView.mm in Sources */,
 				CF764CF6258766E500D7ED17 /* DragSender.mm in Sources */,
 				CF0A485C2BDDA3A900833160 /* PanelBriefViewCollectionViewItem.mm in Sources */,

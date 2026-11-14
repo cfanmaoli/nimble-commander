@@ -5,12 +5,6 @@
       "comment" : "Class = \"NSWindow\"; title = \"Window\"; ObjectID = \"1\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ""
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -27,12 +21,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
           }
         },
         "zh-Hans" : {
@@ -53,12 +41,6 @@
             "value" : "Go"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75,12 +57,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Go to the folder:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти к папке:"
           }
         },
         "zh-Hans" : {

@@ -20,11 +20,12 @@ namespace nc::ops {
 Compression::Compression(std::vector<VFSListingItem> _src_files,
                          std::string _dst_root,
                          VFSHostPtr _dst_vfs,
-                         std::string _passphrase)
+                         std::string _passphrase,
+                         CompressionOptions _options)
 {
     m_InitialSourceItemsAmount = (int)_src_files.size();
     m_InitialSingleItemFilename = m_InitialSourceItemsAmount == 1 ? _src_files.front().DisplayName() : "";
-    m_Job = std::make_unique<CompressionJob>(std::move(_src_files), _dst_root, _dst_vfs, _passphrase);
+    m_Job = std::make_unique<CompressionJob>(std::move(_src_files), _dst_root, _dst_vfs, _passphrase, _options);
     m_Job->m_TargetPathDefined = [this] { OnTargetPathDefined(); };
     m_Job->m_TargetWriteError = [this](Error _err, const std::string &_path, VFSHost &_vfs) {
         OnTargetWriteError(_err, _path, _vfs);

@@ -11,12 +11,6 @@
             "value" : "Title"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -32,12 +26,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^V"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^V"
           }
         },
@@ -59,12 +47,6 @@
             "value" : "^X"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "^X"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -80,12 +62,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "^O"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "^O"
           }
         },
@@ -107,12 +83,6 @@
             "value" : "Favorites"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранное"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Reset to Default Favorites"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить к Избранному по-умолчанию"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Location"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расположение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Reset to Finder's Favorites"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить к Избранному Finder'а"
           }
         },
         "zh-Hans" : {

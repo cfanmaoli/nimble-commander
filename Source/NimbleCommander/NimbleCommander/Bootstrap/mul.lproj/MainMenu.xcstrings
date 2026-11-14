@@ -11,12 +11,6 @@
             "value" : "Trash"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Корзина"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,12 +27,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Put Back"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вернуть"
           }
         },
         "zh-Hans" : {
@@ -59,12 +47,6 @@
             "value" : "Empty Trash…"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить корзину…"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -80,12 +62,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "5"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "5"
           }
         },
@@ -107,12 +83,6 @@
             "value" : "Show Logs..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать журналы..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,12 +99,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Go"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переход"
           }
         },
         "zh-Hans" : {
@@ -155,12 +119,6 @@
             "value" : "Move To Trash"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переместить в Корзину"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,12 +135,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Always Open With"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всегда открывать в программе"
           }
         },
         "zh-Hans" : {
@@ -203,12 +155,6 @@
             "value" : "Debug"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отладка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -225,12 +171,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Bring All to Front"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все окна - на передний план"
           }
         },
         "zh-Hans" : {
@@ -251,12 +191,6 @@
             "value" : "Reveal In Opposite Panel Tab"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать в противоположной вкладке"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -273,12 +207,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "New Folder"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая папка"
           }
         },
         "zh-Hans" : {
@@ -299,12 +227,6 @@
             "value" : "Back"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Назад"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -321,12 +243,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Recently Closed"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавно закрытые"
           }
         },
         "zh-Hans" : {
@@ -347,12 +263,6 @@
             "value" : "Add to Favorites"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить в избранное"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -369,12 +279,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Brief System Overview"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Краткий обзор системы"
           }
         },
         "zh-Hans" : {
@@ -395,12 +299,6 @@
             "value" : "Go"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переход"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -419,12 +317,6 @@
             "value" : "New Tab"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая вкладка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -440,12 +332,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Switch Dual/Single Pane"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Switch Dual/Single Pane"
           }
         },
@@ -467,12 +353,6 @@
             "value" : "Applications"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Программы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -489,12 +369,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Manage Favorites..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Управлять избранным..."
           }
         },
         "zh-Hans" : {
@@ -515,12 +389,6 @@
             "value" : "Help"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Справка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -537,12 +405,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sort by Accessed Time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по времени открытия"
           }
         },
         "zh-Hans" : {
@@ -563,12 +425,6 @@
             "value" : "Window"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Окно"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -585,12 +441,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Minimize"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Убрать в Dock"
           }
         },
         "zh-Hans" : {
@@ -611,12 +461,6 @@
             "value" : "Window"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Окно"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -632,12 +476,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AMainMenu"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "AMainMenu"
           }
         },
@@ -659,12 +497,6 @@
             "value" : "Nimble Commander-Fork"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nimble Commander-Fork"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -680,12 +512,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Nimble Commander-Fork"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Nimble Commander-Fork"
           }
         },
@@ -707,12 +533,6 @@
             "value" : "About Nimble Commander-Fork"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "О Nimble Commander-Fork"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -729,12 +549,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Enter"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Войти"
           }
         },
         "zh-Hans" : {
@@ -755,12 +569,6 @@
             "value" : "Close"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -777,12 +585,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "File"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файл"
           }
         },
         "zh-Hans" : {
@@ -803,12 +605,6 @@
             "value" : "New Window"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новое окно"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -825,12 +621,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "File"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файл"
           }
         },
         "zh-Hans" : {
@@ -851,12 +641,6 @@
             "value" : "Preferences…"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Настройки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -873,12 +657,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Services"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Службы"
           }
         },
         "zh-Hans" : {
@@ -899,12 +677,6 @@
             "value" : "Services"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Службы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -921,12 +693,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Hide Nimble Commander-Fork"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть Nimble Commander-Fork"
           }
         },
         "zh-Hans" : {
@@ -947,12 +713,6 @@
             "value" : "Quit Nimble Commander-Fork"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершить Nimble Commander-Fork"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -969,12 +729,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Hide Others"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть остальные"
           }
         },
         "zh-Hans" : {
@@ -995,12 +749,6 @@
             "value" : "Show All"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать все"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1017,12 +765,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Copy"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать"
           }
         },
         "zh-Hans" : {
@@ -1043,12 +785,6 @@
             "value" : "Select All"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделить все"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1065,12 +801,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Paste"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить"
           }
         },
         "zh-Hans" : {
@@ -1091,12 +821,6 @@
             "value" : "Edit"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Правка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1113,12 +837,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Edit"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Правка"
           }
         },
         "zh-Hans" : {
@@ -1139,12 +857,6 @@
             "value" : "Zoom"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изменить масштаб"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1161,12 +873,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "View"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вид"
           }
         },
         "zh-Hans" : {
@@ -1187,12 +893,6 @@
             "value" : "View"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вид"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1209,12 +909,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Help"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Справка"
           }
         },
         "zh-Hans" : {
@@ -1235,12 +929,6 @@
             "value" : "Help"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Справка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1257,12 +945,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sync Panels"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сделать панели одинаковыми"
           }
         },
         "zh-Hans" : {
@@ -1283,12 +965,6 @@
             "value" : "Swap Panels"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поменять панели местами"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1305,12 +981,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Command"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Команда"
           }
         },
         "zh-Hans" : {
@@ -1331,12 +1001,6 @@
             "value" : "Command"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Команда"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1353,12 +1017,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "File Attributes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файловые атрибуты"
           }
         },
         "zh-Hans" : {
@@ -1379,12 +1037,6 @@
             "value" : "Detailed Volume Information"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Детальная информация о томе"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1401,12 +1053,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить..."
           }
         },
         "zh-Hans" : {
@@ -1427,12 +1073,6 @@
             "value" : "Create Directory..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать папку..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1449,12 +1089,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Copy To..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать в..."
           }
         },
         "zh-Hans" : {
@@ -1475,12 +1109,6 @@
             "value" : "Copy As..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать как..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1497,12 +1125,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Rename/Move To..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переименовать/переместить в..."
           }
         },
         "zh-Hans" : {
@@ -1523,12 +1145,6 @@
             "value" : "Rename/Move As..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переименовать/переместить как..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1545,12 +1161,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Enter Full Screen"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перейти в полноэкранный режим"
           }
         },
         "zh-Hans" : {
@@ -1571,12 +1181,6 @@
             "value" : "Sorting"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировка"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1593,12 +1197,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sorting"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировка"
           }
         },
         "zh-Hans" : {
@@ -1619,12 +1217,6 @@
             "value" : "Sort by Name"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по имени"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1641,12 +1233,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sort by Extension"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по расширению"
           }
         },
         "zh-Hans" : {
@@ -1667,12 +1253,6 @@
             "value" : "Sort by Modified Time"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по времени модификации"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1689,12 +1269,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Sort by Size"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по размеру"
           }
         },
         "zh-Hans" : {
@@ -1715,12 +1289,6 @@
             "value" : "Sort by Creation Time"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по времени создания"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1737,12 +1305,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Separate Folders from Files"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отделять папки от файлов"
           }
         },
         "zh-Hans" : {
@@ -1763,12 +1325,6 @@
             "value" : "View Mode"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Режим отображения"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1787,12 +1343,6 @@
             "value" : "View Mode"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Режим отображения"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1808,12 +1358,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "1"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "1"
           }
         },
@@ -1835,12 +1379,6 @@
             "value" : "2"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1856,12 +1394,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "3"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "3"
           }
         },
@@ -1883,12 +1415,6 @@
             "value" : "4"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1905,12 +1431,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Preview"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Быстрый просмотр"
           }
         },
         "zh-Hans" : {
@@ -1931,12 +1451,6 @@
             "value" : "Refresh"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обновить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1953,12 +1467,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Deselect All"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Убрать выделение"
           }
         },
         "zh-Hans" : {
@@ -1979,12 +1487,6 @@
             "value" : "Case-Insensitive Comparison"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сравнение без учета регистра"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2001,12 +1503,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Internal Viewer"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Встроенный просмотрщик"
           }
         },
         "zh-Hans" : {
@@ -2027,12 +1523,6 @@
             "value" : "Links"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ссылки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2049,12 +1539,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Links"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ссылки"
           }
         },
         "zh-Hans" : {
@@ -2075,12 +1559,6 @@
             "value" : "Create Symbolic Link"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать символическую ссылку"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2097,12 +1575,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Edit Symbolic Link"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Редактировать символическую ссылку"
           }
         },
         "zh-Hans" : {
@@ -2123,12 +1595,6 @@
             "value" : "Create Hard Link"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать жесткую ссылку"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2145,12 +1611,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Select by Mask..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделить с маской..."
           }
         },
         "zh-Hans" : {
@@ -2171,12 +1631,6 @@
             "value" : "Deselect by Mask..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Снять выделение с маской..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2193,12 +1647,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete Permanently..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить необратимо..."
           }
         },
         "zh-Hans" : {
@@ -2219,12 +1667,6 @@
             "value" : "Network Share..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сетевой папке..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2241,12 +1683,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Redo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Повторить"
           }
         },
         "zh-Hans" : {
@@ -2267,12 +1703,6 @@
             "value" : "Tags"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Теги"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2288,12 +1718,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "10"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "10"
           }
         },
@@ -2315,12 +1739,6 @@
             "value" : "Move Up"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сдвинуть вверх"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2337,12 +1755,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "SFTP Server..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SFTP серверу..."
           }
         },
         "zh-Hans" : {
@@ -2363,12 +1775,6 @@
             "value" : "Utilities"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Утилиты"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2385,12 +1791,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Close Other Tabs"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть остальные вкладки"
           }
         },
         "zh-Hans" : {
@@ -2411,12 +1811,6 @@
             "value" : "Compress..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2433,12 +1827,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Open With"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть в программе"
           }
         },
         "zh-Hans" : {
@@ -2459,12 +1847,6 @@
             "value" : "Compress To..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сжать в..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2480,12 +1862,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "6"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "6"
           }
         },
@@ -2507,12 +1883,6 @@
             "value" : "Desktop"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Рабочий стол"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2529,12 +1899,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Move Down"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сдвинуть вниз"
           }
         },
         "zh-Hans" : {
@@ -2555,12 +1919,6 @@
             "value" : "Rename In Place"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переименовать на месте"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2577,12 +1935,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Case-Sensitive Comparison"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сравнение с учетом регистра"
           }
         },
         "zh-Hans" : {
@@ -2603,12 +1955,6 @@
             "value" : "New File"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новый файл"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2625,12 +1971,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Close Window"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть окно"
           }
         },
         "zh-Hans" : {
@@ -2651,12 +1991,6 @@
             "value" : "Invert Selection"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инвертировать выделение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2673,12 +2007,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cut"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вырезать"
           }
         },
         "zh-Hans" : {
@@ -2699,12 +2027,6 @@
             "value" : "Turn Admin Mode On"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить режим администратора"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2721,12 +2043,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Calculate Folders Sizes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вычислить размер папок"
           }
         },
         "zh-Hans" : {
@@ -2747,12 +2063,6 @@
             "value" : "Duplicate"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дублировать"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2768,12 +2078,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "8"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "8"
           }
         },
@@ -2795,12 +2099,6 @@
             "value" : "Downloads"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загрузки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2817,12 +2115,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "FTP Server..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FTP серверу..."
           }
         },
         "zh-Hans" : {
@@ -2843,12 +2135,6 @@
             "value" : "Visit the Forum"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Посетить форум"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2865,12 +2151,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Show/Hide Toolbar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать/скрыть панель инструментов"
           }
         },
         "zh-Hans" : {
@@ -2891,12 +2171,6 @@
             "value" : "Find..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найти..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2913,12 +2187,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "External Editor"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Внешний редактор"
           }
         },
         "zh-Hans" : {
@@ -2939,12 +2207,6 @@
             "value" : "Nimble Commander-Fork Help"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Справка Nimble Commander-Fork"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2961,12 +2223,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Home"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Личное"
           }
         },
         "zh-Hans" : {
@@ -2987,12 +2243,6 @@
             "value" : "Manage Connections..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Управлять соединениями..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3009,12 +2259,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Dropbox Storage..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Хранилищу Dropbox..."
           }
         },
         "zh-Hans" : {
@@ -3035,12 +2279,6 @@
             "value" : "Copy Item Directory"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать директорию файла"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3057,12 +2295,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Frequently Visited"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Часто посещаемые"
           }
         },
         "zh-Hans" : {
@@ -3083,12 +2315,6 @@
             "value" : "Right Panel..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Правая панель..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3105,12 +2331,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Debug"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отладка"
           }
         },
         "zh-Hans" : {
@@ -3131,12 +2351,6 @@
             "value" : "Find with Spotlight..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найти с помощью Spotlight..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3153,12 +2367,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Reveal In Opposite Panel"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать в противоположной панели"
           }
         },
         "zh-Hans" : {
@@ -3179,12 +2387,6 @@
             "value" : "Documents"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Документы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3201,12 +2403,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Connections"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Соединения"
           }
         },
         "zh-Hans" : {
@@ -3227,12 +2423,6 @@
             "value" : "Deselect by Extension"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Снять выделение по расширению"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3249,12 +2439,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Copy Item Path"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать путь файла"
           }
         },
         "zh-Hans" : {
@@ -3275,12 +2459,6 @@
             "value" : "Enclosing Folder"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На уровень выше"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3297,12 +2475,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Move Right"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сдвинуть вправо"
           }
         },
         "zh-Hans" : {
@@ -3323,12 +2495,6 @@
             "value" : "WebDAV Server..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WebDAV серверу..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3345,12 +2511,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Favorites"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранные"
           }
         },
         "zh-Hans" : {
@@ -3371,12 +2531,6 @@
             "value" : "Clear Menu"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить меню"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3393,12 +2547,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Restore Closed Tab"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Восстановить закрытую вкладку"
           }
         },
         "zh-Hans" : {
@@ -3419,12 +2567,6 @@
             "value" : "Move Item Here"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переместить объект сюда"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3441,12 +2583,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Favorites"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранные"
           }
         },
         "zh-Hans" : {
@@ -3467,12 +2603,6 @@
             "value" : "New Folder with Selection"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новая папка из выделения"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3489,12 +2619,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Quick Lists"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Быстрые списки"
           }
         },
         "zh-Hans" : {
@@ -3515,12 +2639,6 @@
             "value" : "Open"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3537,12 +2655,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Show/Hide Tab Bar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать/скрыть панель вкладок"
           }
         },
         "zh-Hans" : {
@@ -3563,12 +2675,6 @@
             "value" : "Open Extended Attributes"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать расширенные атрибуты"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3585,12 +2691,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Follow Symlink"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Следовать за ссылкой"
           }
         },
         "zh-Hans" : {
@@ -3611,12 +2711,6 @@
             "value" : "Processes List"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Список процессов"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3633,12 +2727,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Undo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отменить"
           }
         },
         "zh-Hans" : {
@@ -3659,12 +2747,6 @@
             "value" : "Batch Rename..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Групповое переименование..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3683,12 +2765,6 @@
             "value" : "Show/Hide Panels"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать/скрыть панели"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3701,12 +2777,6 @@
       "comment" : "Class = \"NSMenuItem\"; title = \"Show VFS List\"; ObjectID = \"Pid-lQ-zTt\";",
       "extractionState" : "manual",
       "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать список ВФС"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3723,12 +2793,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Recent Connections"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Последние подключения"
           }
         },
         "zh-Hans" : {
@@ -3749,12 +2813,6 @@
             "value" : "Calculate All Folders Sizes"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вычислить размер всех папок"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3771,12 +2829,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Frequently Visited"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Часто посещаемые"
           }
         },
         "zh-Hans" : {
@@ -3797,12 +2849,6 @@
             "value" : "Panels Position"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Позиция панелей"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3819,12 +2865,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Volumes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Тома"
           }
         },
         "zh-Hans" : {
@@ -3845,12 +2885,6 @@
             "value" : "Eject Volume"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Извлечь том"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3867,12 +2901,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Connect To"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключиться к"
           }
         },
         "zh-Hans" : {
@@ -3893,12 +2921,6 @@
             "value" : "Go To Folder..."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переход к папке..."
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3915,12 +2937,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Extensionless Folders"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Папки без расширений"
           }
         },
         "zh-Hans" : {
@@ -3941,12 +2957,6 @@
             "value" : "Forward"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вперед"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3963,12 +2973,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Into Folder"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В папку"
           }
         },
         "zh-Hans" : {
@@ -3989,12 +2993,6 @@
             "value" : "Select by Extension"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделить по расширению"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4011,12 +3009,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Show Next Tab"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать следующую вкладку"
           }
         },
         "zh-Hans" : {
@@ -4037,12 +3029,6 @@
             "value" : "Root"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Корень"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4059,12 +3045,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Natural Comparison"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Естественное сравнение"
           }
         },
         "zh-Hans" : {
@@ -4085,12 +3065,6 @@
             "value" : "Quick Lists"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Быстрые списки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4107,12 +3081,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "History"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "История"
           }
         },
         "zh-Hans" : {
@@ -4133,12 +3101,6 @@
             "value" : "Sort by Added Time"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сортировать по времени добавления"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4155,12 +3117,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Tools"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инструменты"
           }
         },
         "zh-Hans" : {
@@ -4181,12 +3137,6 @@
             "value" : "Favorites"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранные"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4203,12 +3153,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Connect To"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключиться к"
           }
         },
         "zh-Hans" : {
@@ -4229,12 +3173,6 @@
             "value" : "Show Previous Tab"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать предыдущую вкладку"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4251,12 +3189,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Create Directory In Opposite Panel..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать папку в противоположной панели…"
           }
         },
         "zh-Hans" : {
@@ -4277,12 +3209,6 @@
             "value" : "Tools"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инструменты"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4299,12 +3225,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Paste Filenames to Terminal..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имена файлов в терминал..."
           }
         },
         "zh-Hans" : {
@@ -4325,12 +3245,6 @@
             "value" : "Show/Hide Terminal"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать/скрыть терминал"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4347,12 +3261,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Copy Item Name"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Копировать имя файла"
           }
         },
         "zh-Hans" : {
@@ -4373,12 +3281,6 @@
             "value" : "Paste Filename to Terminal"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вставить имя файла в терминал"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4397,12 +3299,6 @@
             "value" : "Move Left"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сдвинуть влево"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4418,12 +3314,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "9"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "9"
           }
         },
@@ -4445,12 +3335,6 @@
             "value" : "7"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "7"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4467,12 +3351,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Library"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Библиотеки"
           }
         },
         "zh-Hans" : {
@@ -4493,12 +3371,6 @@
             "value" : "Focus Overlapped Terminal"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фокус на терминал"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4515,12 +3387,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Left Panel..."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Левая панель..."
           }
         },
         "zh-Hans" : {
@@ -4541,12 +3407,6 @@
             "value" : "Parent Folders"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Родительские папки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4563,12 +3423,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Recently Closed"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недавно закрытые"
           }
         },
         "zh-Hans" : {
@@ -4589,12 +3443,6 @@
             "value" : "Show Hidden Files"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать скрытые файлы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4611,12 +3459,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Flat View"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Плоский вид"
           }
         },
         "zh-Hans" : {
@@ -4637,12 +3479,6 @@
             "value" : "Panels Position"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Положение панелей"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4659,12 +3495,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Find Next"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найти далее"
           }
         },
         "zh-Hans" : {

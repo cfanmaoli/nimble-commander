@@ -5,6 +5,7 @@
 #include "PreferencesWindowViewerTab.h"
 #include "PreferencesWindowExternalEditorsTab.h"
 #include "PreferencesWindowTerminalTab.h"
+#include "PreferencesWindowCompressionTab.h"
 #include "PreferencesWindowHotkeysTab.h"
 #include "PreferencesWindowToolsTab.h"
 #include "PreferencesWindowThemesTab.h"
@@ -22,6 +23,7 @@ static PreferencesWindowController *CreatePrefWindow()
         [[PreferencesWindowViewerTab alloc] initWithHistory:app_del.internalViewerHistory],
         [[PreferencesWindowExternalEditorsTab alloc] initWithEditorsStorage:app_del.externalEditorsStorage],
         [PreferencesWindowTerminalTab new],
+        [PreferencesWindowCompressionTab new],
         [[PreferencesWindowHotkeysTab alloc] initWithToolsStorage:tools_storage
                                           actionsShortcutsManager:app_del.actionsShortcutsManager],
         [[PreferencesWindowToolsTab alloc] initWithToolsStorage:tools_storage],

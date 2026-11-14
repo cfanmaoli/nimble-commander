@@ -2,6 +2,7 @@
 #pragma once
 
 #include "../Operation.h"
+#include "CompressionOptions.h"
 #include <VFS/VFS.h>
 
 /*
@@ -20,7 +21,8 @@ public:
     Compression(std::vector<VFSListingItem> _src_files,
                 std::string _dst_root,
                 VFSHostPtr _dst_vfs,
-                std::string _passphrase = "");
+                std::string _passphrase = "",
+                CompressionOptions _options = {});
     ~Compression() override;
 
     std::string ArchivePath() const;

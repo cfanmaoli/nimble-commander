@@ -571,8 +571,11 @@ std::vector<std::string> BuiltInLanguages()
 {
     @autoreleasepool {
         std::vector<std::string> result;
+        // Russian is not offered: the project cannot maintain that translation. Users who want it can
+        // import a language pack instead.
         for( NSString *language in(g_main_bundle ?: NSBundle.mainBundle).localizations )
-            if( [language isKindOfClass:NSString.class] && ![language isEqualToString:@"Base"] )
+            if( [language isKindOfClass:NSString.class] && ![language isEqualToString:@"Base"] &&
+                ![language isEqualToString:@"ru"] )
                 result.emplace_back(language.UTF8String);
         std::ranges::sort(result);
         result.erase(std::ranges::unique(result).begin(), result.end());

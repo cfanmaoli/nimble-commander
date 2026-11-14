@@ -113,6 +113,7 @@
 		CF69CFE61DA227E400992B84 /* XAttr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XAttr.h; path = include/VFS/XAttr.h; sourceTree = "<group>"; };
 		CF69CFE71DA227E400992B84 /* VFS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VFS.h; path = include/VFS/VFS.h; sourceTree = "<group>"; };
 		CF69CFE81DA227E400992B84 /* VFSArchiveProxy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VFSArchiveProxy.h; path = include/VFS/VFSArchiveProxy.h; sourceTree = "<group>"; };
+		CD5E7A220000000000000001 /* RarHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RarHelper.h; path = include/VFS/RarHelper.h; sourceTree = "<group>"; };
 		CF69CFE91DA227E400992B84 /* VFSConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VFSConfiguration.h; path = include/VFS/VFSConfiguration.h; sourceTree = "<group>"; };
 		CF69CFEA1DA227E400992B84 /* VFSDeclarations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VFSDeclarations.h; path = include/VFS/VFSDeclarations.h; sourceTree = "<group>"; };
 		CF69CFEB1DA227E400992B84 /* VFSEasyOps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VFSEasyOps.h; path = include/VFS/VFSEasyOps.h; sourceTree = "<group>"; };
@@ -392,6 +393,7 @@
 				CF26DE0721CFA2AE003F0E93 /* VFS_fwd.h */,
 				CF69CFE71DA227E400992B84 /* VFS.h */,
 				CF69CFE81DA227E400992B84 /* VFSArchiveProxy.h */,
+				CD5E7A220000000000000001 /* RarHelper.h */,
 				CF69CFE91DA227E400992B84 /* VFSConfiguration.h */,
 				CF69CFEA1DA227E400992B84 /* VFSDeclarations.h */,
 				CF69CFEB1DA227E400992B84 /* VFSEasyOps.h */,

@@ -11,12 +11,6 @@
             "value" : "Save"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -35,12 +29,6 @@
             "value" : "Connect"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключиться"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -56,12 +44,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "root"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "root"
           }
         },
@@ -83,12 +65,6 @@
             "value" : "Connect to SFTP server:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключиться к SFTP серверу:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -107,12 +83,6 @@
             "value" : "Password:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пароль:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -128,12 +98,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "example.com"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "example.com"
           }
         },
@@ -155,12 +119,6 @@
             "value" : "example.com"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "example.com"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -176,12 +134,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "path"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "path"
           }
         },
@@ -203,12 +155,6 @@
             "value" : "path"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "path"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -227,12 +173,6 @@
             "value" : "Remote port:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удаленный порт:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,12 +188,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "22"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "22"
           }
         },
@@ -275,12 +209,6 @@
             "value" : "Cancel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,12 +225,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Username:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Логин:"
           }
         },
         "zh-Hans" : {
@@ -323,12 +245,6 @@
             "value" : "server password or key passphrase"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "пароль пользователя или ключа"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -344,12 +260,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "22"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "22"
           }
         },
@@ -371,12 +281,6 @@
             "value" : "arbitrary title"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "произвольное название"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -395,12 +299,6 @@
             "value" : "Title:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -416,12 +314,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "root"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "root"
           }
         },
@@ -443,12 +335,6 @@
             "value" : "🔑"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔑"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -465,12 +351,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Server:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сервер:"
           }
         },
         "zh-Hans" : {
@@ -491,12 +371,6 @@
             "value" : "passwd"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "passwd"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -513,12 +387,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Key file:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Путь к ключу:"
           }
         },
         "zh-Hans" : {

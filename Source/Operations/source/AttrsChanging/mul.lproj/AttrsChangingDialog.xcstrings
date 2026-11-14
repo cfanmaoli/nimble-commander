@@ -11,12 +11,6 @@
             "value" : "UF_APPEND"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UF_APPEND"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -35,12 +29,6 @@
             "value" : "Additional access rights"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дополнительные права"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -56,12 +44,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_FIRMLINK"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_FIRMLINK"
           }
         },
@@ -83,12 +65,6 @@
             "value" : "Tracked"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tracked"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -107,12 +83,6 @@
             "value" : "Process subfolders"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обрабатывать подпапки"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -128,12 +98,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_IMMUTABLE"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_IMMUTABLE"
           }
         },
@@ -155,12 +119,6 @@
             "value" : "Set UID on execution"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set UID on execution"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -176,12 +134,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Firmlink"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Firmlink"
           }
         },
@@ -203,12 +155,6 @@
             "value" : "←"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "←"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -227,12 +173,6 @@
             "value" : "Ok"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ОК"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,12 +188,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Archived"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Archived"
           }
         },
@@ -275,12 +209,6 @@
             "value" : "Restricted"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restricted"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -296,12 +224,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hidden"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Hidden"
           }
         },
@@ -323,12 +245,6 @@
             "value" : "Compressed"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compressed"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -345,12 +261,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Group:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Группа:"
           }
         },
         "zh-Hans" : {
@@ -371,12 +281,6 @@
             "value" : "Read"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -395,12 +299,6 @@
             "value" : "Cancel"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отменить"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -416,12 +314,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_NOUNLINK"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_NOUNLINK"
           }
         },
@@ -443,12 +335,6 @@
             "value" : "Dataless"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dataless"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -467,12 +353,6 @@
             "value" : "Modify time:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время модификации:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -488,12 +368,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sticky bit"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Sticky bit"
           }
         },
@@ -515,12 +389,6 @@
             "value" : "UF_DATAVAULT"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UF_DATAVAULT"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -536,12 +404,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_RESTRICTED"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_RESTRICTED"
           }
         },
@@ -563,12 +425,6 @@
             "value" : "Set GID on execution"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set GID on execution"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -584,12 +440,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Append-only"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Append-only"
           }
         },
@@ -611,12 +461,6 @@
             "value" : "UF_NODUMP"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UF_NODUMP"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -632,12 +476,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Immutable"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Immutable"
           }
         },
@@ -659,12 +497,6 @@
             "value" : "User flags"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Флаги пользователя"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -680,12 +512,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Opaque"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Opaque"
           }
         },
@@ -707,12 +533,6 @@
             "value" : "Create time:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время создания:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -728,12 +548,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "UF_TRACKED"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "UF_TRACKED"
           }
         },
@@ -755,12 +569,6 @@
             "value" : "Exec"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выполнение"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -779,12 +587,6 @@
             "value" : "Change time:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время изменения:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -800,12 +602,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Data vault"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Data vault"
           }
         },
@@ -827,12 +623,6 @@
             "value" : "Others:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Остальные:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -851,12 +641,6 @@
             "value" : "Owner:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Владелец:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -872,12 +656,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "UF_HIDDEN"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "UF_HIDDEN"
           }
         },
@@ -899,12 +677,6 @@
             "value" : "Write"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запись"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -920,12 +692,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_DATALESS"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_DATALESS"
           }
         },
@@ -947,12 +713,6 @@
             "value" : "UF_OPAQUE"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UF_OPAQUE"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -968,12 +728,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Immutable"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Immutable"
           }
         },
@@ -995,12 +749,6 @@
             "value" : "Owner:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Владелец:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1016,12 +764,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "←"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "←"
           }
         },
@@ -1043,12 +785,6 @@
             "value" : "UF_IMMUTABLE"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UF_IMMUTABLE"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1064,12 +800,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "SF_ARCHIVED"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "SF_ARCHIVED"
           }
         },
@@ -1091,12 +821,6 @@
             "value" : "Group:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Группа:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1115,12 +839,6 @@
             "value" : "Access time:"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время доступа:"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1136,12 +854,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "←"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "←"
           }
         },
@@ -1163,12 +875,6 @@
             "value" : "Append-only"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Append-only"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1184,12 +890,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No unlink"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "No unlink"
           }
         },
@@ -1211,12 +911,6 @@
             "value" : "SF_APPEND"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF_APPEND"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1235,12 +929,6 @@
             "value" : "System flags"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Флаги системы"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1256,12 +944,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "UF_COMPRESSED"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "UF_COMPRESSED"
           }
         },
@@ -1283,12 +965,6 @@
             "value" : "←"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "←"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1304,12 +980,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No dump"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "No dump"
           }
         },

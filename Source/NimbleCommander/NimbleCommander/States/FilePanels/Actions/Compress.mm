@@ -19,9 +19,24 @@ static PanelController *FindVisibleOppositeController(PanelController *_source);
 static void FocusResult(PanelController *_target, const std::shared_ptr<nc::ops::Compression> &_op);
 
 static const auto g_DeselectConfigFlag = "filePanel.general.deselectItemsAfterFileOperations";
+static const auto g_CompressionFormat = "compression.format";
+static const auto g_CompressionMethod = "compression.method";
+static const auto g_CompressionLevel = "compression.level";
+
+static nc::ops::CompressionOptions ReadCompressionOptions(const nc::config::Config &_config)
+{
+    return nc::ops::ResolveCompressionOptions(_config.GetString(g_CompressionFormat),
+                                              _config.GetString(g_CompressionMethod),
+                                              _config.GetInt(g_CompressionLevel));
+}
 
 CompressBase::CompressBase(nc::config::Config &_config) : m_Config{_config}
 {
+}
+
+nc::config::Config &CompressBase::Configuration() const noexcept
+{
+    return m_Config;
 }
 
 void CompressBase::AddDeselectorIfNeeded(nc::ops::Operation &_operation, PanelController *_target) const
@@ -71,7 +86,8 @@ void CompressHere::Perform(PanelController *_target, id /*_sender*/) const
       if( returnCode != NSModalResponseOK )
           return;
 
-      const auto op = std::make_shared<nc::ops::Compression>(entries, dialog.destination, _target.vfs, dialog.password);
+      const auto op = std::make_shared<nc::ops::Compression>(
+          entries, dialog.destination, _target.vfs, dialog.password, ReadCompressionOptions(Configuration()));
       const auto weak_op = std::weak_ptr<nc::ops::Compression>{op};
       __weak PanelController *weak_target = _target;
       op->ObserveUnticketed(nc::ops::Operation::NotifyAboutCompletion, [weak_target, weak_op] {
@@ -123,8 +139,8 @@ void CompressToOpposite::Perform(PanelController *_target, id /*_sender*/) const
       if( returnCode != NSModalResponseOK )
           return;
 
-      const auto op =
-          std::make_shared<nc::ops::Compression>(entries, dialog.destination, opposite_panel.vfs, dialog.password);
+      const auto op = std::make_shared<nc::ops::Compression>(
+          entries, dialog.destination, opposite_panel.vfs, dialog.password, ReadCompressionOptions(Configuration()));
       const auto weak_op = std::weak_ptr<nc::ops::Compression>{op};
       __weak PanelController *weak_target = opposite_panel;
       op->ObserveUnticketed(nc::ops::Operation::NotifyAboutCompletion, [weak_target, weak_op] {
@@ -168,8 +184,8 @@ bool context::CompressHere::ValidateMenuItem(PanelController *_target, NSMenuIte
 void context::CompressHere::Perform(PanelController *_target, id /*_sender*/) const
 {
     auto entries = m_Items;
-    const auto op =
-        std::make_shared<nc::ops::Compression>(std::move(entries), _target.currentDirectoryPath, _target.vfs);
+    const auto op = std::make_shared<nc::ops::Compression>(
+        std::move(entries), _target.currentDirectoryPath, _target.vfs, "", ReadCompressionOptions(Configuration()));
 
     const auto weak_op = std::weak_ptr<nc::ops::Compression>{op};
     __weak PanelController *weak_target = _target;
@@ -220,8 +236,11 @@ void context::CompressToOpposite::Perform(PanelController *_target, id /*_sender
         return;
 
     auto entries = m_Items;
-    const auto op = std::make_shared<nc::ops::Compression>(
-        std::move(entries), opposite_panel.currentDirectoryPath, opposite_panel.vfs);
+    const auto op = std::make_shared<nc::ops::Compression>(std::move(entries),
+                                                           opposite_panel.currentDirectoryPath,
+                                                           opposite_panel.vfs,
+                                                           "",
+                                                           ReadCompressionOptions(Configuration()));
     const auto weak_op = std::weak_ptr<nc::ops::Compression>{op};
     __weak PanelController *weak_target = opposite_panel;
     op->ObserveUnticketed(nc::ops::Operation::NotifyAboutCompletion, [weak_target, weak_op] {
