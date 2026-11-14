@@ -1,5 +1,23 @@
 # What's New in Nimble Commander-Fork
 
+## Version 1.9.3 (14 Nov 2026)
+
+### Optional RAR support
+- RAR archives can now be handled by a separate `ncrar-helper.app` component, distributed under the
+  UnRAR license: correct listing and extraction of solid archives, encrypted headers and payloads,
+  and automatic following of multi-volume sets. The application itself still contains no UnRAR code
+  - it starts the helper as a separate program and falls back to libarchive when the component is
+  not installed. Download it from the
+  [ncrar-helper releases](https://github.com/cfanmaoli/ncrar-helper/releases) and drag it into
+  Applications; see `Docs/RarSupport.md`.
+- The helper is looked up inside the `ncrar-helper.app` bundle in `~/Applications` or
+  `/Applications` on every archive open, so installing or removing it takes effect immediately.
+
+### Under the hood
+- Rebuilt every third-party library with the system toolchain; zlib was updated from 1.3.2 to 1.4
+  (fixes a `gzwrite()` buffer overflow, CVE-2026-85091, and several other issues).
+- Raised the timeout of the parallel-shell integration test, which had made a nightly run flaky.
+
 ## Version 1.9.2 (12 Nov 2026)
 
 ### Performance with huge directories
