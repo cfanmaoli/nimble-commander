@@ -47,22 +47,11 @@ public:
                                                                   const std::vector<std::string> &_args,
                                                                   const std::optional<std::string> &_password);
 
-    // Same as Spawn(), but also connects a pipe to the child's stdin. Used by the persistent
-    // "serve" mode, where commands are written to the child and responses are read back.
-    [[nodiscard]] static std::expected<ChildProcess, Error> SpawnWithStdin(const std::string &_helper_path,
-                                                                           const std::vector<std::string> &_args,
-                                                                           const std::optional<std::string> &_password);
-
     [[nodiscard]] bool IsValid() const noexcept;
     [[nodiscard]] int StdoutFD() const noexcept;
-    [[nodiscard]] int StdinFD() const noexcept;
 
     // Reads up to _size bytes from the child's stdout. Returns 0 at the end of the stream.
     [[nodiscard]] std::expected<size_t, Error> Read(void *_buf, size_t _size);
-
-    // Writes all bytes to the child's stdin. A child that has gone away yields EPIPE instead of
-    // killing the application with SIGPIPE.
-    [[nodiscard]] std::expected<void, Error> WriteAll(const void *_buf, size_t _size);
 
     // Waits for the child to exit and returns its exit code. Should be called at most once.
     [[nodiscard]] std::expected<int, Error> Wait();
@@ -71,15 +60,10 @@ public:
     void Terminate() noexcept;
 
 private:
-    static std::expected<ChildProcess, Error> SpawnImpl(const std::string &_helper_path,
-                                                        const std::vector<std::string> &_args,
-                                                        const std::optional<std::string> &_password,
-                                                        bool _connect_stdin);
     void Reset() noexcept;
 
     pid_t m_Pid = -1;
     int m_Fd = -1;
-    int m_StdinFd = -1;
 };
 
 } // namespace nc::vfs::rar

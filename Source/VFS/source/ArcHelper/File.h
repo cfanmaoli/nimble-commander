@@ -3,15 +3,12 @@
 
 #include "Host.h"
 #include "Helper.h"
-#include "Session.h"
-#include <memory>
 #include <optional>
 
 namespace nc::vfs::rar {
 
-// A file inside a RAR archive. The payload is streamed out of a persistent ncrar-helper session
-// when one is available, and out of a dedicated one-shot helper process otherwise; both give the
-// sequential access paradigm: reading goes forward only.
+// A file inside a RAR archive. The payload is streamed out of a dedicated ncrar-helper process,
+// hence the sequential access paradigm: reading goes forward only.
 class File final : public VFSFile
 {
 public:
@@ -31,10 +28,8 @@ public:
 
 private:
     void TerminateStream() noexcept;
-    void ReleaseSession(bool _healthy) noexcept;
 
-    std::optional<ChildProcess> m_Process; // one-shot "read" fallback
-    std::unique_ptr<SessionLease> m_Session;
+    std::optional<ChildProcess> m_Process;
     uint64_t m_Position = 0;
     uint64_t m_Size = 0;
     bool m_Opened = false;

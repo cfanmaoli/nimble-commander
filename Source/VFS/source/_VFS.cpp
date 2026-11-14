@@ -17,7 +17,6 @@
 #include "ArcHelper/Helper.cpp"
 #include "ArcHelper/Host.cpp"
 #include "ArcHelper/Protocol.cpp"
-#include "ArcHelper/Session.cpp"
 #include "ArcLA/File.cpp"
 #include "ArcLA/Host.cpp"
 #include "ArcLA/Internal.cpp"

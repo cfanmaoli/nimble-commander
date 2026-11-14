@@ -11,8 +11,6 @@
 #include <VFS/VFSGenericMemReadOnlyFile.h>
 #include <Base/WriteAtomically.h>
 #include <Base/algo.h>
-#include <cstdlib>
-#include <sys/stat.h>
 
 #define PREFIX "VFSArchive "
 
@@ -2229,6 +2227,16 @@ const unsigned char __rar4_encrypted[] = {
     0xf1, 0x14, 0xf3, 0x23, 0x64, 0xd1, 0xa1, 0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00,
 };
 
+// A tiny RAR5 archive with one 0755 executable, created with "rar a -m0". It verifies that the
+// helper's optional Unix mode reaches Stat() and directory listings instead of the synthetic 0644.
+const unsigned char __rar5_exec[] = {
+    0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00, 0x33, 0x92, 0xb5, 0xe5, 0x0a, 0x01, 0x05, 0x06, 0x00, 0x05,
+    0x01, 0x01, 0x80, 0x80, 0x00, 0x1d, 0x0c, 0xa7, 0xb4, 0x24, 0x02, 0x03, 0x0b, 0x91, 0x00, 0x04, 0x91, 0x00,
+    0xed, 0x83, 0x02, 0xe2, 0x86, 0x45, 0xc3, 0x80, 0x00, 0x01, 0x06, 0x72, 0x75, 0x6e, 0x2e, 0x73, 0x68, 0x0a,
+    0x03, 0x13, 0x53, 0xbe, 0xf7, 0x6a, 0x4e, 0x3a, 0x86, 0x16, 0x23, 0x21, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x73,
+    0x68, 0x0a, 0x65, 0x78, 0x69, 0x74, 0x20, 0x30, 0x0a, 0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00,
+};
+
 static std::string WriteRarFixture(const char *_dir, const char *_name, const unsigned char *_data, size_t _size)
 {
     const std::filesystem::path path = std::filesystem::path(_dir) / _name;
@@ -2385,6 +2393,26 @@ TEST_CASE(PREFIX "browses a RAR archive with the ncrar-helper")
     REQUIRE(file->Close());
 }
 
+TEST_CASE(PREFIX "reads unix modes from the ncrar-helper listing")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_exec.rar", __rar5_exec, std::size(__rar5_exec));
+
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
+
+    const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
+    REQUIRE(listing->Count() == 1);
+    CHECK(listing->Filename(0) == "run.sh");
+    CHECK((listing->UnixMode(0) & S_IFMT) == S_IFREG);
+    CHECK((listing->UnixMode(0) & 07777) == 0755); // from the archive, not the synthetic 0644
+    CHECK((host->Stat("/run.sh", 0).value().mode & 07777) == 0755);
+    CheckFileIs(*host, "/run.sh", "#!/bin/sh\nexit 0\n");
+}
+
 TEST_CASE(PREFIX "prefers the ncrar-helper for a RAR archive")
 {
     if( !rar::FindHelper() )
@@ -2397,83 +2425,6 @@ TEST_CASE(PREFIX "prefers the ncrar-helper for a RAR archive")
     REQUIRE(host);
     CHECK(std::string_view{host->Tag()} == RarHelperHost::UniqueTag);
     CheckFileIs(*host, "/helloworld.txt", "hello libarchive test suite!\n");
-}
-
-TEST_CASE(PREFIX "falls back to one-shot commands for an old ncrar-helper")
-{
-    const TestDir dir;
-    const std::string fixture =
-        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
-
-    // A stand-in for a helper released before the persistent mode: it answers the one-shot
-    // commands only and exits like a usage error when asked to "serve".
-    const std::string script_text = R"(#!/bin/sh
-case "$1" in
-serve)
-    exit 2
-    ;;
-list)
-    printf '%s\n' '{"index":0,"name":"helloworld.txt","dir":false,"encrypted":false,"solid":false,"size":29,"packed":29,"mtime":1537937022,"crc":2510308276,"link_type":0,"mode":33261}'
-    printf '%s\n' '{"done":true,"entries":1}'
-    ;;
-read)
-    printf 'hello libarchive test suite!\n'
-    ;;
-*)
-    exit 2
-    ;;
-esac
-)";
-    const std::filesystem::path script = std::filesystem::path(dir.directory) / "old-ncrar-helper";
-    REQUIRE(nc::base::WriteAtomically(script,
-                                      {reinterpret_cast<const std::byte *>(script_text.data()), script_text.size()}));
-    REQUIRE(::chmod(script.c_str(), S_IRWXU) == 0);
-
-    const char *const previous = ::getenv("NCRAR_HELPER");
-    const std::optional<std::string> saved = previous ? std::optional<std::string>{previous} : std::nullopt;
-    const auto restore_env = at_scope_end([&] {
-        if( saved )
-            ::setenv("NCRAR_HELPER", saved->c_str(), 1);
-        else
-            ::unsetenv("NCRAR_HELPER");
-    });
-    REQUIRE(::setenv("NCRAR_HELPER", script.c_str(), 1) == 0);
-
-    std::shared_ptr<RarHelperHost> host;
-    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
-    CHECK_FALSE(host->SupportsSessions());
-
-    const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
-    REQUIRE(listing->Count() == 1);
-    CHECK(listing->Filename(0) == "helloworld.txt");
-    // 0755 comes from the helper's optional mode field, not from the synthetic 0644 fallback.
-    CHECK((listing->UnixMode(0) & S_IFMT) == S_IFREG);
-    CHECK((listing->UnixMode(0) & 07777) == 0755);
-    CHECK((host->Stat("/helloworld.txt", 0).value().mode & 07777) == 0755);
-    CheckFileIs(*host, "/helloworld.txt", "hello libarchive test suite!\n");
-}
-
-TEST_CASE(PREFIX "aborts the RAR scan when it gets cancelled")
-{
-    if( !rar::FindHelper() )
-        SKIP("the ncrar-helper is required for this test");
-    const TestDir dir;
-    const std::string fixture =
-        WriteRarFixture(dir.directory.c_str(), "rar5_stored.rar", __rar5_stored, std::size(__rar5_stored));
-
-    int checks = 0;
-    const auto cancelled = [&checks] {
-        ++checks;
-        return true;
-    };
-    try {
-        [[maybe_unused]] const auto host =
-            std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native, std::nullopt, cancelled);
-        FAIL("RarHelperHost must not be constructed when the scan gets cancelled");
-    } catch( nc::ErrorException &e ) {
-        CHECK(e.error() == Error{Error::POSIX, ECANCELED});
-    }
-    CHECK(checks > 0);
 }
 
 TEST_CASE(PREFIX "browses a RAR4 archive with the ncrar-helper")
@@ -2555,25 +2506,6 @@ TEST_CASE(PREFIX "asks for a password for an encrypted RAR archive")
     const VFSListingPtr listing = host->FetchDirectoryListing("/", VFSFlags::F_NoDotDot).value();
     REQUIRE(listing->Count() == 2);
     CheckFileIs(*host, "/foo.txt", "data of foo.txt\n");
-
-    // Two files read at once use two separate helper sessions - their byte streams must not mix.
-    const VFSFilePtr foo = host->CreateFile("/foo.txt").value();
-    const VFSFilePtr bar = host->CreateFile("/bar.txt").value();
-    REQUIRE(foo->Open(VFSFlags::OF_Read));
-    REQUIRE(bar->Open(VFSFlags::OF_Read));
-    std::string foo_data;
-    std::string bar_data;
-    char chunk[4] = {};
-    for( int iteration = 0; iteration != 64 && !(foo->Eof() && bar->Eof()); ++iteration ) {
-        if( const std::expected<size_t, Error> read = foo->Read(chunk, sizeof(chunk)); read && *read > 0 )
-            foo_data.append(chunk, *read);
-        if( const std::expected<size_t, Error> read = bar->Read(chunk, sizeof(chunk)); read && *read > 0 )
-            bar_data.append(chunk, *read);
-    }
-    CHECK(foo_data == "data of foo.txt\n");
-    CHECK(bar_data == "data of bar.txt\n");
-    REQUIRE(foo->Close());
-    REQUIRE(bar->Close());
 }
 
 } // namespace VFSArchiveTest

@@ -44,19 +44,13 @@ When opening a file as an archive, the application:
 3. only then asks the helper for the listing; non-RAR files never touch it;
 4. if the helper is missing or fails, falls back to the libarchive-based reader exactly as before.
 
-Passwords are passed to the helper in its `open` command (or through its environment in one-shot
-mode), never on the command line, and the existing password prompt is reused when an archive is
-detected as encrypted.
+Passwords are passed to the helper through its environment, never on the command line, and the
+existing password prompt is reused when an archive is detected as encrypted.
 
-The application speaks the helper's persistent `serve` protocol: one helper process per open
-archive caches the entry listing, and file reads and link lookups are commands on the same
-protocol. Up to two such sessions are kept per archive, each leased to one reader at a time, so
-two concurrent reads cannot interleave their byte streams. When both pooled sessions are busy, a
-file read starts a private session for the duration of that read instead of waiting. A session
-that gets cancelled or times out is terminated with `SIGTERM` and replaced on the next use. If the
-installed helper is too old to understand `serve`, the application transparently uses the
-one-shot `list`/`read`/`link` commands, so such a binary keeps working (just without the caching
-benefit).
+The helper is invoked as a plain command line tool: the listing is fetched once with
+`ncrar-helper list` when the archive is opened, every entry read starts a fresh
+`ncrar-helper read`, and a RAR4 symlink target is requested with `ncrar-helper link`. No helper
+process is kept alive between operations.
 
 Symlinks are followed when walking a path: `Stat`, directory listings and file opens resolve every
 link component to the entry it points at, while a lookup with `F_NoFollow` and a directory
@@ -71,6 +65,8 @@ for archive entries, matching the libarchive-based reader.
 
 ## Limitations
 
+- Every entry read starts a fresh helper process, so previewing many entries of a big solid archive
+  is slower than it could be.
 - RAR4 hardlinks whose target isn't stored in the header cannot be resolved: UnRAR needs the target
   file to exist while extracting. RAR5 hardlinks normally carry the target and work.
 - RAR4 link targets are returned as stored by the archive. Absolute targets and targets containing

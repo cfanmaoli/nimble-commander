@@ -77,41 +77,6 @@ std::expected<void, Error> File::Open(const unsigned long _open_flags, const VFS
     if( _cancel_checker && _cancel_checker() )
         return std::unexpected(Error{Error::POSIX, ECANCELED});
 
-    // A persistent session is preferred: it keeps the archive open and reuses the cached listing,
-    // so a solid archive isn't re-scanned for every entry.
-    if( host->SupportsSessions() ) {
-        m_Session = host->AcquireSession();
-        if( !m_Session ) {
-            std::expected<Session, Error> spawned = Session::Open(
-                host->HelperPath(), std::string{host->JunctionPath()}, PasswordForHost(*host), _cancel_checker);
-            if( spawned ) {
-                m_Session = std::make_unique<SessionLease>(std::make_unique<Session>(std::move(*spawned)),
-                                                           SessionLease::Release{});
-            }
-            else if( spawned.error() == Error{Error::POSIX, ENOTSUP} ) {
-                host->DisableSessions(); // an older helper, use the one-shot commands below
-            }
-            else {
-                m_Opened = false;
-                return std::unexpected(spawned.error());
-            }
-        }
-
-        if( m_Session ) {
-            std::expected<uint64_t, Error> payload = m_Session->Get().BeginRead(*index, _cancel_checker);
-            if( !payload ) {
-                m_Session->MarkBroken();
-                m_Session.reset();
-                m_Opened = false;
-                return std::unexpected(payload.error());
-            }
-            m_Size = *payload; // the helper's actual payload is authoritative
-            if( m_Size == 0 )
-                ReleaseSession(true);
-            return {};
-        }
-    }
-
     const std::vector<std::string> args{"read", std::string{host->JunctionPath()}, std::to_string(*index)};
     std::expected<ChildProcess, Error> process = ChildProcess::Spawn(host->HelperPath(), args, PasswordForHost(*host));
     if( !process ) {
@@ -129,10 +94,6 @@ bool File::IsOpened() const
 
 std::expected<void, Error> File::Close()
 {
-    if( m_Session ) {
-        // A session with a partially consumed payload can't be reused - it is out of sync.
-        ReleaseSession(!m_Session->Get().HasPendingPayload());
-    }
     TerminateStream();
     m_Opened = false;
     m_Position = 0;
@@ -145,15 +106,6 @@ void File::TerminateStream() noexcept
     if( m_Process ) {
         m_Process->Terminate();
         m_Process.reset();
-    }
-}
-
-void File::ReleaseSession(const bool _healthy) noexcept
-{
-    if( m_Session ) {
-        if( !_healthy )
-            m_Session->MarkBroken();
-        m_Session.reset(); // the lease hands the session back to its pool, or shuts it down
     }
 }
 
@@ -192,31 +144,10 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
 
     assert(_buf != nullptr);
 
-    const size_t to_read = static_cast<size_t>(std::min<uint64_t>(_size, m_Size - m_Position));
-
-    if( m_Session ) {
-        const std::expected<size_t, Error> read = m_Session->Get().ReadPayload(_buf, to_read, {});
-        if( !read ) {
-            m_Session->MarkBroken();
-            m_Session.reset();
-            return std::unexpected(read.error());
-        }
-        if( *read == 0 ) {
-            // The helper has stopped before producing the whole payload - the archive is broken.
-            m_Session->MarkBroken();
-            m_Session.reset();
-            return std::unexpected(Error{Error::POSIX, EIO});
-        }
-
-        m_Position += *read;
-        if( m_Position >= m_Size )
-            ReleaseSession(!m_Session->Get().HasPendingPayload());
-        return *read;
-    }
-
     if( !m_Process )
         return std::unexpected(Error{Error::POSIX, EIO});
 
+    const size_t to_read = static_cast<size_t>(std::min<uint64_t>(_size, m_Size - m_Position));
     const std::expected<size_t, Error> read = m_Process->Read(_buf, to_read);
     if( !read )
         return std::unexpected(read.error());
@@ -245,9 +176,9 @@ std::expected<void, Error> File::Skip(size_t _size)
         return std::unexpected(Error{Error::POSIX, EINVAL});
 
     // Keep the trash buffer off the stack - the VFS code has a tight stack frame budget.
-    const std::unique_ptr<char[]> trash = std::make_unique<char[]>(32 * 1024);
+    const std::unique_ptr<char[]> trash = std::make_unique<char[]>(size_t{32} * 1024);
     while( _size > 0 ) {
-        const size_t chunk = std::min<size_t>(_size, 32 * 1024);
+        const size_t chunk = std::min<size_t>(_size, size_t{32} * 1024);
         const std::expected<size_t, Error> read = Read(trash.get(), chunk);
         if( !read )
             return std::unexpected(read.error());

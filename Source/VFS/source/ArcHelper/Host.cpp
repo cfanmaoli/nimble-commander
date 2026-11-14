@@ -3,12 +3,10 @@
 #include "../ListingInput.h"
 #include "File.h"
 #include "Helper.h"
-#include "Session.h"
 #include <Base/UnorderedUtil.h>
 #include <Base/algo.h>
 #include <Utility/PathManip.h>
 #include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <limits>
@@ -73,7 +71,7 @@ std::string JoinArchivePath(const std::vector<std::string> &_components)
 std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, const VFSCancelChecker &_cancel_checker)
 {
     std::string output;
-    const std::unique_ptr<char[]> buffer = std::make_unique<char[]>(64 * 1024);
+    const std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size_t{64} * 1024);
     while( true ) {
         if( _cancel_checker && _cancel_checker() )
             return std::unexpected(Error{Error::POSIX, ECANCELED});
@@ -90,7 +88,7 @@ std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, c
         if( poll_rc == 0 )
             continue; // the timeout expired, check for cancellation again
 
-        const std::expected<size_t, Error> read = _process.Read(buffer.get(), 64 * 1024);
+        const std::expected<size_t, Error> read = _process.Read(buffer.get(), size_t{64} * 1024);
         if( !read )
             return std::unexpected(read.error());
         if( *read == 0 )
@@ -100,7 +98,7 @@ std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, c
     return output;
 }
 
-// The one-shot "link" command, used when the helper is too old to understand "serve".
+// The one-shot "link" command, used for RAR4 symlinks whose target isn't in the listing.
 std::expected<std::string, Error> FetchLinkTargetOneShot(const std::string &_helper_path,
                                                          const std::string &_archive_path,
                                                          const std::optional<std::string> &_password,
@@ -187,8 +185,6 @@ struct RarHelperHost::Impl {
     uint64_t UpdateDirectorySize(DirRec &_directory, const std::string &_path);
     void ApplyEntry(const rar::Entry &_entry, EntryRec &_rec);
 
-    std::unique_ptr<rar::SessionLease> AcquireSession();
-    void ReturnSession(std::unique_ptr<rar::Session> _session, bool _healthy) noexcept;
     std::expected<std::string, Error> LinkTarget(EntryRec &_entry, const VFSCancelChecker &_cancel_checker);
     std::expected<std::string, Error>
     ResolvePath(std::string_view _path, bool _follow_last, const VFSCancelChecker &_cancel_checker);
@@ -199,14 +195,6 @@ struct RarHelperHost::Impl {
     std::optional<std::string> password;
     struct ::stat src_stat;
     bool needs_path_resolving = false;
-
-    // Persistent sessions. The helper's "serve" mode caches the listing, so file reads reuse it;
-    // a small pool bounds the number of helper processes while keeping concurrent readers apart.
-    static constexpr size_t kMaxSessions = 2;
-    std::atomic<bool> sessions_supported{true};
-    mutable std::mutex sessions_mutex;
-    std::vector<std::unique_ptr<rar::Session>> idle_sessions;
-    size_t live_sessions = 0;
 
     mutable std::mutex link_target_mutex;
 };
@@ -324,7 +312,7 @@ std::expected<std::string, Error> RarHelperHost::ResolvePath(const std::string_v
     if( _path.empty() || _path[0] != '/' )
         return std::unexpected(Error{Error::POSIX, EINVAL});
 
-    const std::string path = NormalizeLookupPath(_path);
+    std::string path = NormalizeLookupPath(_path);
     if( path == "/" || !I->needs_path_resolving )
         return path;
 
@@ -334,29 +322,6 @@ std::expected<std::string, Error> RarHelperHost::ResolvePath(const std::string_v
 bool RarHelperHost::NeedsPathResolving() const noexcept
 {
     return I->needs_path_resolving;
-}
-
-std::unique_ptr<rar::SessionLease> RarHelperHost::AcquireSession()
-{
-    return I->AcquireSession();
-}
-
-bool RarHelperHost::SupportsSessions() const noexcept
-{
-    return I->sessions_supported.load();
-}
-
-void RarHelperHost::DisableSessions() noexcept
-{
-    I->sessions_supported.store(false);
-
-    std::vector<std::unique_ptr<rar::Session>> victims;
-    {
-        const std::lock_guard lock(I->sessions_mutex);
-        victims.swap(I->idle_sessions);
-        I->live_sessions = 0;
-    }
-    victims.clear(); // shut the children down outside the lock
 }
 
 std::expected<void, Error> RarHelperHost::DoInit(const VFSCancelChecker &_cancel_checker)
@@ -373,7 +338,7 @@ std::expected<void, Error> RarHelperHost::DoInit(const VFSCancelChecker &_cancel
     I->archive_path = JunctionPath();
     I->password = Config().password;
 
-    if( const std::expected<void, Error> rc = InitListing(_cancel_checker); !rc )
+    if( const std::expected<void, Error> rc = ReadListing(_cancel_checker); !rc )
         return rc;
 
     const auto root = I->path_to_dir.find("/");
@@ -383,40 +348,7 @@ std::expected<void, Error> RarHelperHost::DoInit(const VFSCancelChecker &_cancel
     return {};
 }
 
-std::expected<void, Error> RarHelperHost::InitListing(const VFSCancelChecker &_cancel_checker)
-{
-    if( !I->sessions_supported.load() )
-        return ReadListingOneShot(_cancel_checker);
-
-    // The persistent mode is the preferred route: the helper opens the archive once and caches the
-    // listing, and the same process serves subsequent reads and links. An old helper that doesn't
-    // understand "serve" gets ENOTSUP from Session::Open; the one-shot commands still work with it.
-    std::expected<rar::Session, Error> session =
-        rar::Session::Open(I->helper_path, I->archive_path, I->password, _cancel_checker);
-    if( session ) {
-        std::expected<rar::Listing, Error> listing = session->List(_cancel_checker);
-        if( listing ) {
-            if( const std::expected<void, Error> rc = ApplyListing(*listing); !rc )
-                return rc;
-
-            // The session already has the archive open - park it in the pool for file reads.
-            const std::lock_guard lock(I->sessions_mutex);
-            I->idle_sessions.emplace_back(std::make_unique<rar::Session>(std::move(*session)));
-            I->live_sessions = 1;
-            return {};
-        }
-        if( listing.error() != Error{Error::POSIX, ENOTSUP} )
-            return std::unexpected(listing.error());
-    }
-    else if( session.error() != Error{Error::POSIX, ENOTSUP} ) {
-        return std::unexpected(session.error());
-    }
-
-    I->sessions_supported.store(false);
-    return ReadListingOneShot(_cancel_checker);
-}
-
-std::expected<void, Error> RarHelperHost::ReadListingOneShot(const VFSCancelChecker &_cancel_checker)
+std::expected<void, Error> RarHelperHost::ReadListing(const VFSCancelChecker &_cancel_checker)
 {
     const std::vector<std::string> args{"list", I->archive_path};
     std::expected<rar::ChildProcess, Error> process = rar::ChildProcess::Spawn(I->helper_path, args, I->password);
@@ -437,24 +369,18 @@ std::expected<void, Error> RarHelperHost::ReadListingOneShot(const VFSCancelChec
     const std::optional<rar::Listing> listing = rar::ParseListing(*output);
     if( !listing )
         return std::unexpected(Error{Error::POSIX, EFTYPE});
-
-    return ApplyListing(*listing);
-}
-
-std::expected<void, Error> RarHelperHost::ApplyListing(const rar::Listing &_listing)
-{
-    if( !_listing.done )
+    if( !listing->done )
         return std::unexpected(Error{Error::POSIX, EFTYPE});
 
     // Match the behaviour of the libarchive host: an encrypted archive without a password is
     // reported as "needs authentication" so that the caller has a chance to ask for one.
     if( !I->password ) {
         const auto is_encrypted = [](const rar::Entry &_entry) { return _entry.encrypted; };
-        if( std::ranges::any_of(_listing.entries, is_encrypted) )
+        if( std::ranges::any_of(listing->entries, is_encrypted) )
             return std::unexpected(Error{Error::POSIX, ENEEDAUTH});
     }
 
-    BuildTree(_listing);
+    BuildTree(*listing);
     return {};
 }
 
@@ -506,7 +432,7 @@ void RarHelperHost::BuildTree(const rar::Listing &_listing)
         if( entry.dir ) {
             std::string dir_path = path;
             dir_path += '/';
-            if( I->path_to_dir.find(dir_path) == I->path_to_dir.end() ) {
+            if( !I->path_to_dir.contains(dir_path) ) {
                 Impl::DirRec dir;
                 dir.full_path = dir_path;
                 I->path_to_dir.emplace(std::move(dir_path), std::move(dir));
@@ -599,67 +525,6 @@ RarHelperHost::Impl::EntryRec *RarHelperHost::Impl::FindEntryInDir(const std::st
     return nullptr;
 }
 
-std::unique_ptr<rar::SessionLease> RarHelperHost::Impl::AcquireSession()
-{
-    if( !sessions_supported.load() )
-        return nullptr;
-
-    std::unique_ptr<rar::Session> session;
-    bool spawn = false;
-    {
-        const std::lock_guard lock(sessions_mutex);
-        if( !idle_sessions.empty() ) {
-            session = std::move(idle_sessions.back());
-            idle_sessions.pop_back();
-        }
-        else if( live_sessions < kMaxSessions ) {
-            ++live_sessions; // reserve the slot, the actual spawn happens outside the lock
-            spawn = true;
-        }
-        else {
-            return nullptr; // both pooled sessions are busy
-        }
-    }
-
-    if( spawn ) {
-        std::expected<rar::Session, Error> spawned = rar::Session::Open(helper_path, archive_path, password, {});
-        if( !spawned ) {
-            {
-                const std::lock_guard lock(sessions_mutex);
-                if( live_sessions > 0 )
-                    --live_sessions;
-            }
-            if( spawned.error() == Error{Error::POSIX, ENOTSUP} )
-                sessions_supported.store(false);
-            return nullptr;
-        }
-        session = std::make_unique<rar::Session>(std::move(*spawned));
-    }
-
-    return std::make_unique<rar::SessionLease>(std::move(session),
-                                               [this](std::unique_ptr<rar::Session> _returned, bool _healthy) {
-                                                   ReturnSession(std::move(_returned), _healthy);
-                                               });
-}
-
-void RarHelperHost::Impl::ReturnSession(std::unique_ptr<rar::Session> _session, const bool _healthy) noexcept
-{
-    bool keep = false;
-    {
-        const std::lock_guard lock(sessions_mutex);
-        if( _session && _healthy && sessions_supported.load() && _session->IsHealthy() ) {
-            idle_sessions.push_back(std::move(_session));
-            keep = true;
-        }
-        else if( live_sessions > 0 ) {
-            --live_sessions;
-        }
-    }
-    // A dropped session is destroyed outside the lock: its destructor shuts the child down.
-    if( !keep )
-        _session.reset();
-}
-
 std::expected<std::string, Error> RarHelperHost::Impl::LinkTarget(EntryRec &_entry,
                                                                   const VFSCancelChecker &_cancel_checker)
 {
@@ -669,48 +534,10 @@ std::expected<std::string, Error> RarHelperHost::Impl::LinkTarget(EntryRec &_ent
             return *_entry.link_target;
     }
 
-    std::optional<std::string> target;
-    if( sessions_supported.load() ) {
-        // Prefer a pooled session; when both are busy, spawn a private one instead of waiting.
-        std::unique_ptr<rar::SessionLease> lease = AcquireSession();
-        std::unique_ptr<rar::Session> private_session;
-        rar::Session *session = nullptr;
-        if( lease ) {
-            session = &lease->Get();
-        }
-        else {
-            std::expected<rar::Session, Error> spawned =
-                rar::Session::Open(helper_path, archive_path, password, _cancel_checker);
-            if( spawned ) {
-                private_session = std::make_unique<rar::Session>(std::move(*spawned));
-                session = private_session.get();
-            }
-            else if( spawned.error() == Error{Error::POSIX, ENOTSUP} ) {
-                sessions_supported.store(false);
-            }
-            else {
-                return std::unexpected(spawned.error());
-            }
-        }
-
-        if( session != nullptr ) {
-            std::expected<std::string, Error> result = session->Link(_entry.index, _cancel_checker);
-            if( !result ) {
-                if( lease )
-                    lease->MarkBroken();
-                return std::unexpected(result.error());
-            }
-            target = std::move(*result);
-        }
-    }
-
-    if( !target ) {
-        std::expected<std::string, Error> result =
-            FetchLinkTargetOneShot(helper_path, archive_path, password, _entry.index, _cancel_checker);
-        if( !result )
-            return std::unexpected(result.error());
-        target = std::move(*result);
-    }
+    std::expected<std::string, Error> target =
+        FetchLinkTargetOneShot(helper_path, archive_path, password, _entry.index, _cancel_checker);
+    if( !target )
+        return std::unexpected(target.error());
 
     {
         const std::lock_guard lock(link_target_mutex);
@@ -831,7 +658,7 @@ bool RarHelperHost::IsDirectory(std::string_view _path, unsigned long _flags, co
         return true;
 
     if( I->needs_path_resolving && !(_flags & VFSFlags::F_NoFollow) ) {
-        const std::expected<std::string, Error> resolved = I->ResolvePath(path, true, _cancel_checker);
+        std::expected<std::string, Error> resolved = I->ResolvePath(path, true, _cancel_checker);
         if( !resolved )
             return false;
         path = std::move(*resolved);

@@ -11,10 +11,6 @@
 
 namespace nc::vfs {
 
-namespace rar {
-class SessionLease;
-}
-
 // A read-only VFS over a RAR archive served by the external ncrar-helper program. Nothing from the
 // UnRAR library is linked into the app: this host only knows the helper's text protocol.
 class RarHelperHost final : public Host
@@ -69,15 +65,6 @@ public:
     // True when the archive has at least one link entry, i.e. path resolution isn't a no-op.
     [[nodiscard]] bool NeedsPathResolving() const noexcept;
 
-    // Leases a pooled helper session for a file read. Returns nullptr when this host has fallen
-    // back to the one-shot commands or when both pooled sessions are already busy.
-    [[nodiscard]] std::unique_ptr<rar::SessionLease> AcquireSession();
-
-    [[nodiscard]] bool SupportsSessions() const noexcept;
-
-    // Marks the persistent mode as unusable, e.g. after an older helper rejected "serve".
-    void DisableSessions() noexcept;
-
     // Path of the helper executable that was located when this host was built.
     [[nodiscard]] const std::string &HelperPath() const noexcept;
 
@@ -93,9 +80,7 @@ private:
     struct Impl;
 
     std::expected<void, Error> DoInit(const VFSCancelChecker &_cancel_checker);
-    std::expected<void, Error> InitListing(const VFSCancelChecker &_cancel_checker);
-    std::expected<void, Error> ReadListingOneShot(const VFSCancelChecker &_cancel_checker);
-    std::expected<void, Error> ApplyListing(const rar::Listing &_listing);
+    std::expected<void, Error> ReadListing(const VFSCancelChecker &_cancel_checker);
     void BuildTree(const rar::Listing &_listing);
     const class RarHelperHostConfiguration &Config() const;
 

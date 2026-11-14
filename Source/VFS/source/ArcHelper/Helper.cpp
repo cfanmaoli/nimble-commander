@@ -7,8 +7,6 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
-#include <pthread.h>
-#include <signal.h>
 #include <tuple>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,38 +20,6 @@ namespace {
 bool IsExecutable(const std::string &_path) noexcept
 {
     return !_path.empty() && ::access(_path.c_str(), X_OK) == 0;
-}
-
-// Writes without letting a dead child kill the process with SIGPIPE. The signal is blocked for the
-// duration of the write and, if it was raised, consumed before the previous mask is restored.
-std::expected<size_t, Error> WriteOnceNoSigPipe(const int _fd, const void *_buf, const size_t _size)
-{
-    sigset_t pipe_set;
-    sigemptyset(&pipe_set);
-    sigaddset(&pipe_set, SIGPIPE);
-    sigset_t previous_set;
-    ::pthread_sigmask(SIG_BLOCK, &pipe_set, &previous_set);
-
-    ssize_t written = -1;
-    do {
-        written = ::write(_fd, _buf, _size);
-    } while( written < 0 && errno == EINTR );
-    const int error = errno;
-
-    if( written < 0 && error == EPIPE ) {
-        // The write itself generated SIGPIPE; it is pending for this thread only.
-        sigset_t pending;
-        if( ::sigpending(&pending) == 0 && sigismember(&pending, SIGPIPE) == 1 ) {
-            int signal = 0;
-            while( ::sigwait(&pipe_set, &signal) != 0 ) {
-            }
-        }
-    }
-
-    ::pthread_sigmask(SIG_SETMASK, &previous_set, nullptr);
-    if( written < 0 )
-        return std::unexpected(Error{Error::POSIX, error});
-    return static_cast<size_t>(written);
 }
 
 } // namespace
@@ -112,11 +78,10 @@ Error ErrorForHelperExitCode(const int _exit_code)
     }
 }
 
-ChildProcess::ChildProcess(ChildProcess &&_rhs) noexcept : m_Pid(_rhs.m_Pid), m_Fd(_rhs.m_Fd), m_StdinFd(_rhs.m_StdinFd)
+ChildProcess::ChildProcess(ChildProcess &&_rhs) noexcept : m_Pid(_rhs.m_Pid), m_Fd(_rhs.m_Fd)
 {
     _rhs.m_Pid = -1;
     _rhs.m_Fd = -1;
-    _rhs.m_StdinFd = -1;
 }
 
 ChildProcess &ChildProcess::operator=(ChildProcess &&_rhs) noexcept
@@ -125,10 +90,8 @@ ChildProcess &ChildProcess::operator=(ChildProcess &&_rhs) noexcept
         Reset();
         m_Pid = _rhs.m_Pid;
         m_Fd = _rhs.m_Fd;
-        m_StdinFd = _rhs.m_StdinFd;
         _rhs.m_Pid = -1;
         _rhs.m_Fd = -1;
-        _rhs.m_StdinFd = -1;
     }
     return *this;
 }
@@ -141,21 +104,6 @@ ChildProcess::~ChildProcess()
 std::expected<ChildProcess, Error> ChildProcess::Spawn(const std::string &_helper_path,
                                                        const std::vector<std::string> &_args,
                                                        const std::optional<std::string> &_password)
-{
-    return SpawnImpl(_helper_path, _args, _password, false);
-}
-
-std::expected<ChildProcess, Error> ChildProcess::SpawnWithStdin(const std::string &_helper_path,
-                                                                const std::vector<std::string> &_args,
-                                                                const std::optional<std::string> &_password)
-{
-    return SpawnImpl(_helper_path, _args, _password, true);
-}
-
-std::expected<ChildProcess, Error> ChildProcess::SpawnImpl(const std::string &_helper_path,
-                                                           const std::vector<std::string> &_args,
-                                                           const std::optional<std::string> &_password,
-                                                           const bool _connect_stdin)
 {
     if( _helper_path.empty() )
         return std::unexpected(Error{Error::POSIX, ENOENT});
@@ -182,56 +130,34 @@ std::expected<ChildProcess, Error> ChildProcess::SpawnImpl(const std::string &_h
         envp.push_back(nullptr);
     }
 
-    int out_fds[2] = {-1, -1};
-    if( ::pipe(out_fds) != 0 )
+    int fds[2] = {-1, -1};
+    if( ::pipe(fds) != 0 )
         return std::unexpected(Error{Error::POSIX, errno});
-
-    int in_fds[2] = {-1, -1};
-    if( _connect_stdin && ::pipe(in_fds) != 0 ) {
-        const int error = errno;
-        ::close(out_fds[0]);
-        ::close(out_fds[1]);
-        return std::unexpected(Error{Error::POSIX, error});
-    }
 
     const pid_t pid = ::fork();
     if( pid < 0 ) {
         const int error = errno;
-        ::close(out_fds[0]);
-        ::close(out_fds[1]);
-        if( in_fds[0] >= 0 )
-            ::close(in_fds[0]);
-        if( in_fds[1] >= 0 )
-            ::close(in_fds[1]);
+        ::close(fds[0]);
+        ::close(fds[1]);
         return std::unexpected(Error{Error::POSIX, error});
     }
 
     if( pid == 0 ) {
         // Child.
-        if( in_fds[0] >= 0 ) {
-            ::close(in_fds[1]);
-            if( ::dup2(in_fds[0], STDIN_FILENO) < 0 )
-                ::_exit(126);
-            if( in_fds[0] != STDIN_FILENO )
-                ::close(in_fds[0]);
-        }
-        ::close(out_fds[0]);
-        if( ::dup2(out_fds[1], STDOUT_FILENO) < 0 )
+        ::close(fds[0]);
+        if( ::dup2(fds[1], STDOUT_FILENO) < 0 )
             ::_exit(126);
-        if( out_fds[1] != STDOUT_FILENO )
-            ::close(out_fds[1]);
+        if( fds[1] != STDOUT_FILENO )
+            ::close(fds[1]);
         ::execve(_helper_path.c_str(), argv.data(), envp.empty() ? ::environ : envp.data());
         ::_exit(127);
     }
 
-    ::close(out_fds[1]);
-    if( in_fds[0] >= 0 )
-        ::close(in_fds[0]);
+    ::close(fds[1]);
 
     ChildProcess process;
     process.m_Pid = pid;
-    process.m_Fd = out_fds[0];
-    process.m_StdinFd = in_fds[1];
+    process.m_Fd = fds[0];
     return process;
 }
 
@@ -243,29 +169,6 @@ bool ChildProcess::IsValid() const noexcept
 int ChildProcess::StdoutFD() const noexcept
 {
     return m_Fd;
-}
-
-int ChildProcess::StdinFD() const noexcept
-{
-    return m_StdinFd;
-}
-
-std::expected<void, Error> ChildProcess::WriteAll(const void *_buf, const size_t _size)
-{
-    if( m_StdinFd < 0 )
-        return std::unexpected(Error{Error::POSIX, EBADF});
-
-    const char *const bytes = static_cast<const char *>(_buf);
-    size_t written = 0;
-    while( written < _size ) {
-        const std::expected<size_t, Error> rc = WriteOnceNoSigPipe(m_StdinFd, bytes + written, _size - written);
-        if( !rc )
-            return std::unexpected(rc.error());
-        if( *rc == 0 )
-            return std::unexpected(Error{Error::POSIX, EIO});
-        written += *rc;
-    }
-    return {};
 }
 
 std::expected<size_t, Error> ChildProcess::Read(void *_buf, const size_t _size)
@@ -307,10 +210,6 @@ void ChildProcess::Terminate() noexcept
 
 void ChildProcess::Reset() noexcept
 {
-    if( m_StdinFd >= 0 ) {
-        ::close(m_StdinFd);
-        m_StdinFd = -1;
-    }
     if( m_Fd >= 0 ) {
         ::close(m_Fd);
         m_Fd = -1;
