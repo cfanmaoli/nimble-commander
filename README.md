@@ -32,8 +32,11 @@ changed to avoid confusion with the original project.
   and out.
 - **Trash support** — browse `~/.Trash` and the per-volume trashes (`/Volumes/*/.Trashes/<uid>`),
   empty all of them at once and put items back to their original locations.
-- **RAR support without proprietary code** — RAR archives are read through libarchive, the same
-  backend that upstream uses; no third-party RAR implementation is bundled with this branch.
+- **Optional RAR support** — RAR archives are read through libarchive out of the box. If you need
+  full RAR support (solid archives, encrypted headers and payloads, multi-volume sets), install the
+  separate [ncrar-helper.app](https://github.com/cfanmaoli/ncrar-helper/releases) component: it is
+  an independent program under the UnRAR license, so the application itself still contains no
+  proprietary code. See [Docs/RarSupport.md](Docs/RarSupport.md).
 - **Smaller fixes** — cancellable archive scans, pinyin-initial quick filtering, a regular-expression
   quick filter mode, mouse back/forward navigation, and a privileged helper that keeps working with
   locally signed builds.
@@ -87,3 +90,6 @@ The fork itself is written by DeepSeek under continuous human supervision and re
 
 Nimble Commander-Fork is distributed under the GNU General Public License version 3.
 Copyright (C) 2013-2026 Michael Kazakov, and the Nimble Commander-Fork contributors for their changes.
+
+The optional RAR support component (`ncrar-helper.app`) is a separate program distributed under
+the UnRAR license by RARLAB; it is not part of this application and is not covered by the GPLv3.

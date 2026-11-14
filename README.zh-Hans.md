@@ -33,8 +33,10 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
   一次性列在同一个面板里，处理层级很深的目录时不用来回进出。
 - **支持废纸篓** —— 可以浏览 `~/.Trash` 和各磁盘的废纸篓（`/Volumes/*/.Trashes/<uid>`），一次清空全部，
   也可以把条目放回原来的位置。
-- **RAR 支持且不涉及专有代码** —— RAR 归档通过 libarchive 读取，和上游用的是同一套后端；本分支不附带任何
-  第三方 RAR 实现。
+- **可选的 RAR 支持** —— RAR 归档默认通过 libarchive 读取。如果需要完整的 RAR 支持（solid 压缩包、加密头与
+  加密数据、多卷），可安装独立的 [ncrar-helper.app](https://github.com/cfanmaoli/ncrar-helper/releases)
+  组件：它是采用 UnRAR 许可证的独立程序，应用本身仍不包含任何专有代码。详见
+  [Docs/RarSupport.md](Docs/RarSupport.md)。
 - **零散修复** —— 归档扫描可取消、快速过滤支持拼音首字母、快速过滤新增正则表达式模式、鼠标侧键前进/后退，
   以及用本地证书签名后依然可用的特权助手。
 
@@ -84,3 +86,6 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 
 Nimble Commander-Fork 以 GNU 通用公共许可证第 3 版发布。
 版权所有 (C) 2013-2026 Michael Kazakov，以及 Nimble Commander-Fork 的各位贡献者对其改动的部分。
+
+可选的 RAR 支持组件（`ncrar-helper.app`）是由 RARLAB 以 UnRAR 许可证单独分发的独立程序；它不属于本应用，
+也不受 GPLv3 约束。
