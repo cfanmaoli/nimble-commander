@@ -16,9 +16,9 @@ class Host;
 
 namespace nc::vfs::rar {
 
-// Locates the ncrar-helper executable. Checks $NCRAR_HELPER first, then the copy inside the
-// user's Application Support directory, then the usual Homebrew prefixes. Returns nullopt when
-// no usable helper is installed - the RAR support is optional and the app must work without it.
+// Locates the ncrar-helper executable inside the ncrar-helper.app bundle in ~/Applications or
+// /Applications. Returns nullopt when no usable helper is installed - the RAR support is optional
+// and the app must work without it.
 [[nodiscard]] std::optional<std::string> FindHelper();
 
 // Returns true when the first bytes of the file at _path carry the RAR signature, i.e. when the

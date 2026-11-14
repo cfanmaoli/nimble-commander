@@ -26,19 +26,12 @@ bool IsExecutable(const std::string &_path) noexcept
 
 std::optional<std::string> FindHelper()
 {
-    if( const char *env = ::getenv("NCRAR_HELPER"); env != nullptr && env[0] != 0 ) {
-        if( std::string path{env}; IsExecutable(path) )
-            return path;
-    }
-
-    if( std::string path =
-            nc::base::CommonPaths::Home() + "Library/Application Support/Nimble Commander-Fork/ncrar-helper";
-        IsExecutable(path) )
-        return path;
-
-    for( const char *candidate : {"/usr/local/bin/ncrar-helper", "/opt/homebrew/bin/ncrar-helper"} )
+    // The component is distributed as an application bundle that the user drags into Applications.
+    for( const std::string &candidate :
+         {nc::base::CommonPaths::Home() + "Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper",
+          std::string{"/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper"}} )
         if( IsExecutable(candidate) )
-            return std::string{candidate};
+            return candidate;
 
     return std::nullopt;
 }

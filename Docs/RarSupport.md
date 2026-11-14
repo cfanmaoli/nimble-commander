@@ -18,18 +18,23 @@ side is an aggregate of independent programs (GPLv3 section 5), not a combined w
 
 ## Installing it
 
-Unpack the `ncrar-helper-<version>-macos-arm64.zip` component and run its `install.sh`, which copies
-the helper into `~/Library/Application Support/Nimble Commander-Fork/` (`install.sh --uninstall`
-removes it again). Alternatively place the binary manually into one of the locations the
-application looks at:
+Open `ncrar-helper-<version>-macos-arm64.dmg` and drag `ncrar-helper.app` into Applications. No
+installer and no script is involved - the application looks for the helper inside that bundle.
 
-1. `$NCRAR_HELPER` (the full path of an executable), when set;
-2. `~/Library/Application Support/Nimble Commander-Fork/ncrar-helper`;
-3. `/usr/local/bin/ncrar-helper`;
-4. `/opt/homebrew/bin/ncrar-helper`.
+The component may live in either of two places (the first one that exists and is executable wins):
 
-The first one that exists and is executable wins. The application checks for the helper on every
-archive open, so installing or removing it does not require a restart.
+1. `~/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`;
+2. `/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`.
+
+The application checks for the helper on every archive open, so installing or removing the bundle
+does not require a restart.
+
+The component is ad-hoc signed and not notarised. If Gatekeeper quarantines the bundle after a
+download, clear the attribute once:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/ncrar-helper.app
+```
 
 A binary is only built for arm64; the helper is a plain command line tool and can also be built
 from source (see the project's README: `scripts/bootstrap-unrar.sh`, then CMake, then
