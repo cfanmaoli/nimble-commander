@@ -37,9 +37,10 @@ The project website, with downloads and release notes, is
 - **Optional RAR support** — RAR archives are read through libarchive out of the box. If you need
   full RAR support (solid archives, encrypted headers and payloads, multi-volume sets), install the
   separate [ncrar-helper.app](https://github.com/cfanmaoli/ncrar-helper/releases) component: it is
-  an independent program under the UnRAR license, so the application itself still contains no
-  proprietary code. Enable it in *Preferences → Compression*, which also shows whether it is
-  installed and which version it is. See [Docs/RarSupport.md](Docs/RarSupport.md).
+  an independent program whose own code is MIT-licensed, while the UnRAR sources it bundles remain
+  under the UnRAR license - the application itself still contains no proprietary code. Enable it in
+  *Preferences → Compression*, which also shows whether it is installed and which version it is.
+  See [Docs/RarSupport.md](Docs/RarSupport.md).
 - **Compression preferences** — the archive format (zip, 7z, tar), the algorithm and the level used
   by the compress dialog are configurable in *Preferences → Compression*.
 - **Smaller fixes** — cancellable archive scans, pinyin-initial quick filtering, a regular-expression
@@ -96,5 +97,6 @@ The fork itself is written by DeepSeek under continuous human supervision and re
 Nimble Commander-Fork is distributed under the GNU General Public License version 3.
 Copyright (C) 2013-2026 Michael Kazakov, and the Nimble Commander-Fork contributors for their changes.
 
-The optional RAR support component (`ncrar-helper.app`) is a separate program distributed under
-the UnRAR license by RARLAB; it is not part of this application and is not covered by the GPLv3.
+The optional RAR support component (`ncrar-helper.app`) is a separate program: its own code is
+MIT-licensed and the UnRAR sources it bundles are distributed under the UnRAR license by RARLAB. It
+is not part of this application and is not covered by the GPLv3.

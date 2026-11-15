@@ -12,9 +12,10 @@ restriction on a combined work. Linking UnRAR into the application would make th
 non-distributable.
 
 `ncrar-helper` therefore is a **standalone executable** that the application starts and talks to
-over a pipe. The GPL application contains no UnRAR code and no UnRAR headers; the helper is
-distributed separately under the UnRAR license (see its `LICENSE`). Distributing the two side by
-side is an aggregate of independent programs (GPLv3 section 5), not a combined work.
+over a pipe. The GPL application contains no UnRAR code and no UnRAR headers. The helper's own code
+is MIT-licensed; the UnRAR sources it bundles remain under the UnRAR license (see its `LICENSE` and
+`LICENSE-MIT`). Distributing the two side by side is an aggregate of independent programs (GPLv3
+section 5), not a combined work.
 
 ## Installing it
 
