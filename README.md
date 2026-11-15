@@ -1,6 +1,7 @@
 # Nimble Commander-Fork
 
 [**English**](README.md) | [简体中文](README.zh-Hans.md)
+[![Build and Test](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml/badge.svg)](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml)
 
 Nimble Commander-Fork is a community-maintained fork of
 [Nimble Commander](https://github.com/mikekazakov/nimble-commander) — a free dual-pane file manager
