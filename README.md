@@ -19,10 +19,6 @@ The project website, with downloads and release notes, is
 
 ## What this fork changes
 
-- **Simplified Chinese out of the box** — the fork ships a thorough zh-Hans localization (menus,
-  preferences, file-operation dialogs, error messages, permission requests; about 1,460 strings). A
-  Chinese system starts in Chinese, with no language pack to download; see
-  [README.zh-Hans.md](README.zh-Hans.md).
 - **Apple Silicon only** — the app and all bundled libraries are built for arm64; Intel support was
   dropped.
 - **Language packs** — the app ships English and Simplified Chinese only; translations for other
