@@ -18,15 +18,17 @@ A **Preferences → Language** tab that
 
 ## Why
 
-Nimble Commander ships English and Simplified Chinese. Anyone whose language is not on that list
-has no practical way to get one: a real translation means touching 55 String Catalogs
-across seven Xcode projects, and getting it merged means finding someone to maintain it.
+Nimble Commander ships English and Simplified Chinese only. Other languages are distributed
+separately: translations live in the [nc-language](https://github.com/cfanmaoli/nc-language)
+repository, and a user can download a JSON file and import it - no Xcode, signing or maintainer in
+the loop.
 
 The exported file is plain JSON with the English source sitting next to every entry — which is
 exactly the shape an AI can translate in one pass. Export, ask for a translation into your own
 language, import, restart. No Xcode, no signing, no maintainer in the loop. That is the entire
 point of the feature: making "my language is not supported" something a user can fix without
-waiting for someone else.
+waiting for someone else. Finished translations are collected in
+[nc-language](https://github.com/cfanmaoli/nc-language) so everyone can reuse them.
 
 ## Quick start
 

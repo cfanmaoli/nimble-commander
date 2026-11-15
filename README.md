@@ -20,10 +20,11 @@ changed to avoid confusion with the original project.
   [README.zh-Hans.md](README.zh-Hans.md).
 - **Apple Silicon only** — the app and all bundled libraries are built for arm64; Intel support was
   dropped.
-- **Language packs** — *Preferences → Language* can export the interface strings of the current
-  language as JSON, import a translation back, and switch between the built-in languages and any
-  imported pack without Xcode, a rebuild or a re-sign. See
-  [Tools/language-packs.md](Tools/language-packs.md).
+- **Language packs** — the app ships English and Simplified Chinese only; translations for other
+  languages are collected in [nc-language](https://github.com/cfanmaoli/nc-language) and can be
+  imported at any time. *Preferences → Language* switches between the built-in languages and the
+  imported packs, and can export the current strings as JSON - no Xcode, rebuild or re-sign needed.
+  See [Tools/language-packs.md](Tools/language-packs.md).
 - **More bundled themes** — Solarized (light/dark), Nord, Dracula, Gruvbox (light/dark), One Dark,
   Tokyo Night, Catppuccin (Mocha/Latte), GitHub Dark and Monokai, next to the original Light, Dark
   and Classic themes.

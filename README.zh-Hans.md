@@ -16,17 +16,19 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 
 - 菜单、偏好设置、各文件操作对话框、错误提示、权限申请等界面文案都已翻译，约 1,460 条字符串。
 - 在中文系统上安装后直接显示中文界面，**不需要**另外下载语言包或重新编译。
-- 想换语言：**偏好设置 → 语言**，可在内置语言之间切换，也可以导入自己翻译的语言包。
-- 想参与翻译：同在这个标签页里导出 JSON 翻译稿，翻译完再导回来即可，不需要 Xcode。
+- 应用只内置英文和简体中文；其它语言请到 [nc-language](https://github.com/cfanmaoli/nc-language) 仓库
+  下载对应的 JSON 文件，再到 **偏好设置 → 语言** 导入并重启即可。
+- 想参与翻译：语言文件集中放在 [nc-language](https://github.com/cfanmaoli/nc-language) 仓库，
+  克隆后修改 `languages/en.json` 并提交 PR；也可以在本机导出 JSON、翻译后导入预览。不需要 Xcode。
 
 尚未翻译的还有 [WHATS_NEW.md](WHATS_NEW.md)、[Docs/Help.md](Docs/Help.md) 用户手册和部分开发文档，欢迎补充。
 
 ## 本分支的改动
 
 - **仅支持 Apple Silicon** —— 应用本身和所有随附的静态库都只构建 arm64，不再支持 Intel。
-- **语言包** —— *偏好设置 → 语言* 可以把当前语言的界面字符串导出成 JSON，把翻译导回来，并在内置语言和
-  导入的语言包之间切换，不需要 Xcode、重新编译或重新签名。详见
-  [Tools/language-packs.md](Tools/language-packs.md)。
+- **语言包** —— 应用只内置英文和简体中文；其它语言的翻译集中在
+  [nc-language](https://github.com/cfanmaoli/nc-language) 仓库，下载 JSON 后在 *偏好设置 → 语言* 导入即可，
+  不需要 Xcode、重新编译或重新签名。详见 [Tools/language-packs.md](Tools/language-packs.md)。
 - **更多内置主题** —— 在原有的 Light、Dark、Classic 之外，新增 Solarized（亮/暗）、Nord、Dracula、
   Gruvbox（亮/暗）、One Dark、Tokyo Night、Catppuccin（Mocha/Latte）、GitHub Dark 和 Monokai。
 - **平铺视图** —— `显示 > 平铺`（快捷键 `Option + Command + B`）把当前目录及其所有子目录里的文件和文件夹

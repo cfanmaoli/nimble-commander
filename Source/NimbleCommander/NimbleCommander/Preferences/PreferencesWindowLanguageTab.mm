@@ -150,6 +150,22 @@ struct Entry {
     m_Status.frame = NSMakeRect(20, 8, 540, 38);
     [root addSubview:m_Status];
 
+    // All xib-based preference tabs are 730 points wide. Keep this programmatic content at its
+    // natural width but centre it in a root of the same width, so that selecting this tab does not
+    // shrink the preferences window.
+    NSView *const content = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 580, 350)];
+    for( NSView *const view in root.subviews.copy )
+        [content addSubview:view];
+    content.translatesAutoresizingMaskIntoConstraints = NO;
+    [root addSubview:content];
+    [NSLayoutConstraint activateConstraints:@[
+        [content.centerXAnchor constraintEqualToAnchor:root.centerXAnchor],
+        [content.topAnchor constraintEqualToAnchor:root.topAnchor],
+        [content.widthAnchor constraintEqualToConstant:580],
+        [content.heightAnchor constraintEqualToConstant:350],
+    ]];
+    root.frame = NSMakeRect(0, 0, 730, 350);
+
     self.view = root;
     [self refresh];
 }

@@ -243,6 +243,14 @@ NSArray<NSBundle *> *RelevantBundles()
 
 NSString *CurrentLprojPath(NSBundle *_bundle)
 {
+    // When a built-in language is selected explicitly, export/import must look at that language's
+    // lproj - the bundle's preferred localizations still follow the system language.
+    if( !g_active_language.empty() ) {
+        NSString *const candidate = [_bundle.resourcePath
+            stringByAppendingPathComponent:[@(g_active_language.c_str()) stringByAppendingPathExtension:@"lproj"]];
+        if( [[NSFileManager defaultManager] fileExistsAtPath:candidate] )
+            return candidate;
+    }
     NSString *const localizable = [_bundle pathForResource:@"Localizable" ofType:@"strings"];
     if( localizable.length )
         return localizable.stringByDeletingLastPathComponent;

@@ -192,7 +192,9 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 
     [self.view layoutSubtreeIfNeeded];
     const NSSize fitting = stack.fittingSize;
-    self.view.frame = NSMakeRect(0, 0, std::max(440.0, fitting.width + 40.0), std::max(200.0, fitting.height + 36.0));
+    // All xib-based preference tabs are 730 points wide; matching that keeps the window from
+    // collapsing when this tab is selected.
+    self.view.frame = NSMakeRect(0, 0, std::max(730.0, fitting.width + 40.0), std::max(200.0, fitting.height + 36.0));
 }
 
 - (void)loadSettings
