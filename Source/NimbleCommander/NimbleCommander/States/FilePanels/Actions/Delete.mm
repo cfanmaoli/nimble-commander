@@ -348,12 +348,15 @@ void PutBack::Perform(PanelController *_target, id /*_sender*/) const
 {
     const std::vector<VFSListingItem> items = _target.selectedEntriesOrFocusedEntry;
     int failures = 0;
+    int leftovers = 0;
     for( const VFSListingItem &item : items ) {
         if( !item.Host()->IsNativeFS() )
             continue;
-        std::string resulting_path;
-        if( nc::routedio::PutBackTrashedItem(item.Path(), resulting_path) != 0 )
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item.Path());
+        if( !outcome.restored )
             ++failures;
+        else if( outcome.source_remains )
+            ++leftovers;
     }
 
     [_target hintAboutFilesystemChange];
@@ -362,6 +365,15 @@ void PutBack::Perform(PanelController *_target, id /*_sender*/) const
         NSAlert *const alert = [NSAlert new];
         alert.messageText = failures == 1 ? TrashLocalizedText(@"Failed to put back an item.")
                                           : TrashLocalizedText(@"Failed to put back some of the items.");
+        [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+        [alert beginSheetModalForWindow:_target.window completionHandler:nil];
+    }
+    else if( leftovers > 0 ) {
+        NSAlert *const alert = [NSAlert new];
+        alert.messageText =
+            leftovers == 1
+                ? TrashLocalizedText(@"The item was restored, but the copy in the Trash couldn't be removed.")
+                : TrashLocalizedText(@"Some items were restored, but the copies in the Trash couldn't be removed.");
         [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
         [alert beginSheetModalForWindow:_target.window completionHandler:nil];
     }

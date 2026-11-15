@@ -2,12 +2,17 @@
 #include "File.h"
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <tuple>
 
 namespace nc::vfs::rar {
 
 namespace {
+
+// How long to wait for the helper to report its verdict once the payload has been fully read. At
+// this point the child has nothing left to do but exit, so the wait is only a safety net.
+constexpr std::chrono::seconds kExitTimeout{5};
 
 std::optional<std::string> PasswordForHost(const RarHelperHost &_host)
 {
@@ -68,6 +73,7 @@ std::expected<void, Error> File::Open(const unsigned long _open_flags, const VFS
     m_Position = 0;
     m_Size = st->size;
     m_Opened = true;
+    m_Failed = false;
 
     // Empty entries don't need any decompression - and spawning the helper for them would walk the
     // whole archive for nothing.
@@ -98,6 +104,7 @@ std::expected<void, Error> File::Close()
     m_Opened = false;
     m_Position = 0;
     m_Size = 0;
+    m_Failed = false;
     return {};
 }
 
@@ -139,6 +146,8 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
 {
     if( !IsOpened() )
         return std::unexpected(Error{Error::POSIX, EINVAL});
+    if( m_Failed )
+        return std::unexpected(Error{Error::POSIX, EIO});
     if( Eof() || _size == 0 )
         return 0;
 
@@ -164,9 +173,25 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
     }
 
     m_Position += *read;
-    if( m_Position >= m_Size )
-        TerminateStream(); // the payload is fully read - don't keep the child around
+    if( m_Position < m_Size )
+        return *read;
 
+    // The payload is complete, but a complete length is not proof of a successful read: a helper
+    // that ran into a checksum mismatch or a damaged block reports it through its exit status
+    // after handing out the data. Only a zero status makes this stream valid.
+    const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kExitTimeout);
+    TerminateStream(); // the verdict is in - don't keep the child around
+
+    if( !exit_code || !exit_code->has_value() ) {
+        // The helper failed to report or is still running - its verdict is unknown, so the stream
+        // can't be presented as a successful read.
+        m_Failed = true;
+        return std::unexpected(Error{Error::POSIX, EIO});
+    }
+    if( **exit_code != 0 ) {
+        m_Failed = true;
+        return std::unexpected(ErrorForHelperExitCode(**exit_code));
+    }
     return *read;
 }
 

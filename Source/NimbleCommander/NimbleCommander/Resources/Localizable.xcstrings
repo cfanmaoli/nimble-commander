@@ -2012,6 +2012,17 @@
         }
       }
     },
+    "Some items were restored, but the copies in the Trash couldn't be removed." : {
+      "comment" : "Message text when a put-back restored the items but the trash copies stayed behind",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分项目已放回原处，但无法从废纸篓中删除对应副本。"
+          }
+        }
+      }
+    },
     "Specify a regular expression to match filenames with. (^M)" : {
       "comment" : "Tooltip for a regex filename match",
       "localizations" : {
@@ -2153,6 +2164,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已添加以下标签：%@。"
+          }
+        }
+      }
+    },
+    "The item was restored, but the copy in the Trash couldn't be removed." : {
+      "comment" : "Message text when a put-back restored the item but the trash copy stayed behind",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目已放回原处，但无法从废纸篓中删除对应副本。"
           }
         }
       }

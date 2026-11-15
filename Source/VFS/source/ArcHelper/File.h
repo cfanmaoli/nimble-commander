@@ -33,6 +33,9 @@ private:
     uint64_t m_Position = 0;
     uint64_t m_Size = 0;
     bool m_Opened = false;
+    // Set when the helper reported a failure after the whole payload had been handed out: the
+    // stream is corrupt even though its length matches, so later reads must keep failing.
+    bool m_Failed = false;
 };
 
 } // namespace nc::vfs::rar

@@ -258,7 +258,7 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
 }
 
 int Fetching::ReadDirAttributesBulk(const int _dir_fd,
-                                    const std::function<void(size_t _fetched_now)> &_cb_fetch,
+                                    const std::function<bool(size_t _fetched_now)> &_cb_fetch,
                                     const Callback &_cb_param,
                                     const size_t _max_entries,
                                     const bool _with_times,
@@ -303,7 +303,8 @@ int Fetching::ReadDirAttributesBulk(const int _dir_fd,
         if( retcount == 0 )
             return 0;
 
-        _cb_fetch(retcount);
+        if( !_cb_fetch(retcount) )
+            return 0;
 
         const char *entry_start = attr_buf;
         for( int index = 0; index < retcount; index++ ) {

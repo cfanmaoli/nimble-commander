@@ -5,6 +5,7 @@
 #include <VFS/Host.h>
 #include <VFS/VFSFile.h>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstring>
 #include <mutex>
@@ -235,6 +236,32 @@ std::expected<int, Error> ChildProcess::Wait()
     if( WIFEXITED(status) )
         return WEXITSTATUS(status);
     return std::unexpected(Error{Error::POSIX, ECHILD}); // terminated by a signal
+}
+
+std::expected<std::optional<int>, Error> ChildProcess::WaitFor(const std::chrono::milliseconds _timeout)
+{
+    if( m_Pid <= 0 )
+        return std::unexpected(Error{Error::POSIX, ECHILD});
+
+    const auto deadline = std::chrono::steady_clock::now() + _timeout;
+    for( ;; ) {
+        int status = 0;
+        const pid_t result = ::waitpid(m_Pid, &status, WNOHANG);
+        if( result == m_Pid ) {
+            m_Pid = -1;
+            if( WIFEXITED(status) )
+                return WEXITSTATUS(status);
+            return std::unexpected(Error{Error::POSIX, ECHILD}); // terminated by a signal
+        }
+        if( result < 0 ) {
+            if( errno == EINTR )
+                continue;
+            return std::unexpected(Error{Error::POSIX, errno});
+        }
+        if( std::chrono::steady_clock::now() >= deadline )
+            return std::optional<int>{};
+        ::usleep(1000);
+    }
 }
 
 void ChildProcess::Terminate() noexcept

@@ -55,9 +55,11 @@ public:
      * returns 0 on success or errno value on error
      * '_max_entries' can be used to stop the enumeration early, e.g. to get a preview of a
      * directory with a million items. Zero means "no limit".
+     * '_cb_fetch' is called once per batch of entries; returning false stops the enumeration
+     * there and then, and the function still returns 0 - the caller knows why it asked to stop.
      */
     static int ReadDirAttributesBulk(const int _dir_fd,
-                                     const std::function<void(size_t _fetched_now)> &_cb_fetch,
+                                     const std::function<bool(size_t _fetched_now)> &_cb_fetch,
                                      const Callback &_cb_param,
                                      size_t _max_entries = 0,
                                      bool _with_times = true,

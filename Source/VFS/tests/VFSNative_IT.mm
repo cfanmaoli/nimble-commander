@@ -191,7 +191,10 @@ TEST_CASE(PREFIX "Fetching")
     const auto close_fd = at_scope_end([fd] { close(fd); });
 
     size_t fetched_notification = 0;
-    const auto fetch = [&](size_t _fetched) { fetched_notification += _fetched; };
+    const auto fetch = [&](size_t _fetched) {
+        fetched_notification += _fetched;
+        return true;
+    };
     const auto param = [&](const Fetching::CallbackParams &p) {
         REQUIRE(p.filename != nullptr);
         const std::string_view filename(p.filename);

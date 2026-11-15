@@ -63,6 +63,13 @@ The helper is invoked as a plain command line tool: the listing is fetched once 
 `ncrar-helper read`, and a RAR4 symlink target is requested with `ncrar-helper link`. No helper
 process is kept alive between operations.
 
+A read is validated against the helper's **exit status**, not just against the entry's declared
+size. UnRAR reports a checksum mismatch or a damaged block only after the entry's bytes have been
+handed out, so once the payload is complete the application waits for the child to exit and fails
+the read if the status is non-zero - a stream is never reported as successfully read on the
+strength of its length alone. A helper that is still running after producing the whole payload is
+treated as a failure as well; the wait is bounded, and the helper is then terminated.
+
 Symlinks are followed when walking a path: `Stat`, directory listings and file opens resolve every
 link component to the entry it points at, while a lookup with `F_NoFollow` and a directory
 listing still report the link itself as a link. RAR5 stores link targets in the header; for RAR4

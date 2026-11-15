@@ -4,6 +4,7 @@
 #include <Base/Error.h>
 #include <VFS/RarHelper.h>
 #include <VFS/VFSDeclarations.h>
+#include <chrono>
 #include <expected>
 #include <optional>
 #include <string>
@@ -56,6 +57,10 @@ public:
 
     // Waits for the child to exit and returns its exit code. Should be called at most once.
     [[nodiscard]] std::expected<int, Error> Wait();
+
+    // Waits up to _timeout for the child to exit and returns its exit code, or nullopt when it is
+    // still running by then. The child is not killed on timeout.
+    [[nodiscard]] std::expected<std::optional<int>, Error> WaitFor(std::chrono::milliseconds _timeout);
 
     // Closes the pipe, kills the child if it is still running and reaps it. Idempotent.
     void Terminate() noexcept;

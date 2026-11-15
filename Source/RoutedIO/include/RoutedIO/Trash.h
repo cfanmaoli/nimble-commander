@@ -44,10 +44,23 @@ std::optional<std::string> OriginalLocationOfTrashedItem(const std::string &_tra
 // Reads the put-back location of an item from a .DS_Store file. Exposed mainly for testing.
 std::optional<std::string> OriginalLocationFromDsStore(const std::string &_ds_store_path, const std::string &_filename);
 
+// The outcome of moving a trashed item back to its original location.
+struct PutBackResult {
+    // The item now lives at 'resulting_path'.
+    bool restored = false;
+    // The item was restored, but the copy in the Trash couldn't be removed - e.g. because the
+    // folder is read-only. The user has to clean that copy up manually.
+    bool source_remains = false;
+    // A POSIX error code when the item couldn't be restored at all.
+    int error = 0;
+    // The final location of the item. When the original name is taken, a numbered one is used.
+    std::string resulting_path;
+};
+
 // Moves a trashed item back to its original location, creating missing parent folders along the
-// way. Returns 0 on success or a POSIX error code, and fills '_resulting_path' with the final
-// location of the item.
-int PutBackTrashedItem(const std::string &_trash_item_path, std::string &_resulting_path);
+// way. Never replaces an existing directory entry: a taken name gets a numbered one. Restoring
+// across volumes copies the item, preserving its data and metadata, and then drops the source.
+PutBackResult PutBackTrashedItem(const std::string &_trash_item_path);
 
 // Records the original location of an item that is about to be moved to the trash. The value is
 // stored in an extended attribute, which survives the move.

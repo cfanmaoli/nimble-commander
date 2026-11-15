@@ -429,6 +429,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         // check if final entries count is more than previous approximate
         if( next_entry_index + _fetched_now > allocated_size )
             resize_dense(next_entry_index + _fetched_now);
+        return true;
     };
 
     // when Admin Mode is on - we use different fetch route

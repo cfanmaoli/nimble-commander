@@ -72,6 +72,36 @@ std::vector<Entry> Snapshot(const VFSListingPtr &_listing)
     return result;
 }
 
+// A tree of nested directories, one child per level - the shape that used to slip past the
+// per-level directory check.
+std::filesystem::path MakeChainTree(const int _depth)
+{
+    const auto root = std::filesystem::temp_directory_path() / ("nc_flat_chain_" + std::to_string(::getpid()));
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    std::filesystem::path current = root;
+    for( int i = 0; i != _depth; ++i ) {
+        current /= "d";
+        std::filesystem::create_directories(current);
+        std::ofstream(current / "f.txt") << "x";
+    }
+    return root;
+}
+
+// A single level that is wider than the directory budget.
+std::filesystem::path MakeWideTree(const int _width)
+{
+    const auto root = std::filesystem::temp_directory_path() / ("nc_flat_wide_" + std::to_string(::getpid()));
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    for( int i = 0; i != _width; ++i ) {
+        const auto dir = root / ("d" + std::to_string(i));
+        std::filesystem::create_directories(dir);
+        std::ofstream(dir / "f.txt") << "x";
+    }
+    return root;
+}
+
 } // namespace
 
 TEST_CASE(PREFIX "the columnar scan matches the composed one")
@@ -177,6 +207,63 @@ TEST_CASE(PREFIX "skips the requested cloud directories")
     for( const auto &entry : columnar_snapshot )
         saw_local = saw_local || std::get<0>(entry).contains("local.txt");
     CHECK(saw_local);
+
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE(PREFIX "the cumulative directory budget bounds both scans")
+{
+    const auto root = MakeChainTree(8);
+    const auto &host = Env().host;
+    const VFSCancelChecker no_cancel = nullptr;
+
+    const auto composed =
+        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 3, 1, 0.0, {});
+    const auto columnar =
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 3, 1, 0.0, {});
+
+    CHECK(composed.truncated);
+    CHECK(columnar.truncated);
+    CHECK(composed.scanned_directories == 3);
+    CHECK(columnar.scanned_directories == 3);
+    CHECK(composed.scanned_items == columnar.scanned_items);
+
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE(PREFIX "a level wider than the remaining directory budget is trimmed")
+{
+    const auto root = MakeWideTree(20);
+    const auto &host = Env().host;
+    const VFSCancelChecker no_cancel = nullptr;
+
+    const auto composed =
+        nc::core::BuildFlatListingComposed(host, root.string() + "/", 0, no_cancel, 1'000'000, 5, 2, 0.0, {});
+    const auto columnar =
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 1'000'000, 5, 2, 0.0, {});
+
+    CHECK(composed.truncated);
+    CHECK(columnar.truncated);
+    CHECK(composed.scanned_directories == 5);
+    CHECK(columnar.scanned_directories == 5);
+
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE(PREFIX "the columnar scan stops a wide directory at the item budget")
+{
+    const auto root = MakeWideTree(50);
+    const auto &host = Env().host;
+    const VFSCancelChecker no_cancel = nullptr;
+
+    const auto columnar =
+        nc::core::BuildFlatListingColumnar(host, root.string() + "/", 0, no_cancel, 10, 1'000'000, 1, 0.0, {});
+
+    CHECK(columnar.truncated);
+    CHECK(columnar.scanned_items == 10);
+    CHECK(columnar.scanned_directories == 1);
+    REQUIRE(columnar.listing);
+    CHECK(columnar.listing->Count() == 10);
 
     std::filesystem::remove_all(root);
 }

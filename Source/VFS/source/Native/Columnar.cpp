@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <fmt/core.h>
 #include <cstdlib>
+#include <functional>
 #include <mutex>
 #include <string_view>
 #include <thread>
@@ -38,19 +39,24 @@ bool IsSkipped(const std::string &_path, const std::vector<std::string> &_prefix
 struct SharedState {
     ListingInput input;
     size_t items = 0;
-    size_t directories = 1;         // the root itself
+    // Directories that were actually read, the root included. The cumulative budget is spent
+    // against this counter.
+    std::atomic<size_t> directories{0};
     size_t skipped_directories = 0; // cloud-synced subtrees the scan didn't enter
     std::atomic<bool> truncated{false};
-    std::mutex mutex; // guards input, items and directories
+    std::mutex mutex; // guards input, items and skipped_directories
 };
 
-// Enumerates one directory and appends its entries to the shared input.
+// Enumerates one directory and appends its entries to the shared input. The enumeration stops
+// early when '_stop_requested' returns true, when the entry budget runs out, or when the directory
+// itself can't be read any further.
 void AppendDirectory(SharedState &_state,
                      const std::string &_dir,
                      const unsigned long _fetch_flags,
                      const size_t _max_items,
                      std::vector<std::string> &_subdirs,
-                     const std::vector<std::string> &_skip_prefixes)
+                     const std::vector<std::string> &_skip_prefixes,
+                     const std::function<bool()> &_stop_requested)
 {
     std::string dir = _dir;
     if( dir.empty() || dir.back() != '/' )
@@ -115,7 +121,6 @@ void AppendDirectory(SharedState &_state,
         _state.input.unix_flags.insert(index, _params.flags);
         ++_state.items;
         if( is_dir ) {
-            ++_state.directories;
             std::string subdir = dir + std::string(name);
             if( IsSkipped(subdir + '/', _skip_prefixes) )
                 ++_state.skipped_directories;
@@ -124,9 +129,30 @@ void AppendDirectory(SharedState &_state,
         }
     };
 
+    // Stop the enumeration once the entry budget is spent - reading a directory with a million
+    // entries only to throw all of them away is exactly the kind of work the budget is for.
+    const size_t remaining_items = _state.items < _max_items ? _max_items - _state.items : 0;
+    if( remaining_items == 0 ) {
+        _state.truncated = true;
+        ::close(fd);
+        return;
+    }
+    size_t processed_entries = 0;
+    const auto on_batch = [&](const size_t _fetched_now) {
+        if( _stop_requested() )
+            return false;
+        processed_entries += _fetched_now;
+        return true;
+    };
+
     const auto begin = std::chrono::steady_clock::now();
-    std::ignore = native::Fetching::ReadDirAttributesBulk(fd, [](size_t) {}, on_entry, 0, with_times, with_sizes);
+    std::ignore =
+        native::Fetching::ReadDirAttributesBulk(fd, on_batch, on_entry, remaining_items, with_times, with_sizes);
     ::close(fd);
+    // The bulk call also stops when it runs into the entry cap - the listing is incomplete then,
+    // whether or not the item counter happens to land exactly on the limit.
+    if( processed_entries >= remaining_items )
+        _state.truncated = true;
 
     // Cloud providers and device file systems answer very slowly - log the directories that
     // stall so that a "hanging" flat view can be traced to the path that caused it.
@@ -191,6 +217,18 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
         }
         if( _cancel_checker && _cancel_checker() )
             return {};
+
+        // Spend the directory budget before reading anything: a level wider than what is left is
+        // trimmed up front, and the scan stops afterwards without entering another level.
+        const size_t entered = state.directories.load();
+        if( entered >= _max_directories ) {
+            state.truncated = true;
+            break;
+        }
+        const bool level_trimmed = level.size() > _max_directories - entered;
+        if( level_trimmed )
+            level.resize(_max_directories - entered);
+
         std::mutex next_mutex;
         std::vector<std::string> next;
         std::atomic<size_t> index{0};
@@ -202,8 +240,11 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                     return;
                 if( out_of_time() )
                     return;
+                state.directories.fetch_add(1, std::memory_order_relaxed);
                 std::vector<std::string> subdirs;
-                AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs, _skip_prefixes);
+                AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs, _skip_prefixes, [&] {
+                    return (_cancel_checker && _cancel_checker()) || out_of_time();
+                });
                 if( state.truncated )
                     return;
                 if( !subdirs.empty() ) {
@@ -225,7 +266,11 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
             for( auto &t : pool )
                 t.join();
         }
-        if( state.truncated || next.size() > _max_directories ) {
+        if( _cancel_checker && _cancel_checker() )
+            return {};
+        if( out_of_time() )
+            result.timed_out = true;
+        if( state.truncated || level_trimmed ) {
             state.truncated = true;
             break;
         }
@@ -235,7 +280,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
     if( out_of_time() )
         result.timed_out = true;
     result.items = state.items;
-    result.directories = state.directories;
+    result.directories = state.directories.load();
     result.skipped_directories = state.skipped_directories;
     result.truncated = state.truncated || result.timed_out;
     if( state.input.filenames.empty() )

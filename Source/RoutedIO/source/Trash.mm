@@ -4,10 +4,12 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <Base/CFPtr.h>
 #include <cerrno>
+#include <copyfile.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
 #include <filesystem>
 #include <string_view>
 #include <sys/mount.h>
@@ -247,13 +249,14 @@ bool IsDirectory(const std::string &_path)
     return stat(_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
 }
 
+// Reads an extended attribute of the entry itself - a symlink is not followed.
 bool ReadAttribute(const std::string &_path, const char *_name, std::string &_value)
 {
-    const ssize_t size = getxattr(_path.c_str(), _name, nullptr, 0, 0, 0);
+    const ssize_t size = getxattr(_path.c_str(), _name, nullptr, 0, 0, XATTR_NOFOLLOW);
     if( size <= 0 || size > 1024L * 1024 )
         return false;
     _value.assign(static_cast<size_t>(size), '\0');
-    const ssize_t result = getxattr(_path.c_str(), _name, _value.data(), _value.size(), 0, 0);
+    const ssize_t result = getxattr(_path.c_str(), _name, _value.data(), _value.size(), 0, XATTR_NOFOLLOW);
     if( result != size ) {
         _value.clear();
         return false;
@@ -261,24 +264,188 @@ bool ReadAttribute(const std::string &_path, const char *_name, std::string &_va
     return true;
 }
 
-std::string UniqueTarget(const std::string &_target)
+// How many numbered names a put-back is willing to try before it reports a failure.
+constexpr int kMaxTargetCandidates = 10'000;
+
+// Checks whether a directory entry already occupies the given path. Unlike
+// std::filesystem::exists(), a dangling symlink is still an occupant: the name is taken even
+// though the object the link points at is gone.
+bool EntryExists(const std::string &_path, int &_error)
 {
-    std::error_code ec;
-    if( !std::filesystem::exists(_target, ec) )
-        return _target;
+    struct stat st;
+    if( lstat(_path.c_str(), &st) == 0 )
+        return true;
+    _error = (errno == ENOENT || errno == ENOTDIR) ? 0 : errno;
+    return false;
+}
+
+// The name to use when the original one is taken: 'report.pdf' -> 'report 2.pdf'.
+std::string NumberedTarget(const std::string &_target, const int _index)
+{
     const std::filesystem::path path(_target);
-    const std::string stem = path.stem().string();
-    const std::string extension = path.extension().string();
-    for( int i = 2; i < 10'000; ++i ) {
-        std::string filename = stem;
-        filename += ' ';
-        filename += std::to_string(i);
-        filename += extension;
-        const std::string candidate = (path.parent_path() / filename).string();
-        if( !std::filesystem::exists(candidate, ec) )
-            return candidate;
+    std::string filename = path.stem().string();
+    filename += ' ';
+    filename += std::to_string(_index);
+    filename += path.extension().string();
+    return (path.parent_path() / filename).string();
+}
+
+// Renames without ever replacing an existing entry. RENAME_EXCL makes the check and the move a
+// single atomic operation, so another process can't slip an entry in between them.
+int RenameExclusive(const std::string &_from, const std::string &_to)
+{
+    if( renamex_np(_from.c_str(), _to.c_str(), RENAME_EXCL) == 0 )
+        return 0;
+    const int error = errno;
+    if( error != ENOTSUP && error != EINVAL )
+        return error;
+
+    // Some filesystems don't implement renameatx_np() - fall back to a plain rename guarded by a
+    // symlink-aware check. The window between the two calls remains, but it is the only one.
+    int check_error = 0;
+    if( EntryExists(_to, check_error) )
+        return EEXIST;
+    if( check_error != 0 )
+        return check_error;
+    return rename(_from.c_str(), _to.c_str()) == 0 ? 0 : errno;
+}
+
+// Copies the extended attributes of the entry itself, without following a symlink.
+int CopyAttributes(const std::string &_from, const std::string &_to)
+{
+    const ssize_t list_size = listxattr(_from.c_str(), nullptr, 0, XATTR_NOFOLLOW);
+    if( list_size < 0 )
+        return errno;
+    if( list_size == 0 )
+        return 0;
+
+    std::vector<char> names(static_cast<size_t>(list_size));
+    const ssize_t names_size = listxattr(_from.c_str(), names.data(), names.size(), XATTR_NOFOLLOW);
+    if( names_size < 0 )
+        return errno;
+    for( size_t pos = 0; pos < static_cast<size_t>(names_size); ) {
+        const std::string name{names.data() + pos};
+        pos += name.size() + 1;
+        if( name.empty() )
+            continue;
+        const ssize_t value_size = getxattr(_from.c_str(), name.c_str(), nullptr, 0, 0, XATTR_NOFOLLOW);
+        if( value_size < 0 )
+            return errno;
+        if( value_size > 64L * 1024 * 1024 )
+            return EFBIG;
+        std::vector<char> value(static_cast<size_t>(value_size));
+        if( getxattr(_from.c_str(), name.c_str(), value.data(), value.size(), 0, XATTR_NOFOLLOW) != value_size )
+            return errno;
+        if( setxattr(_to.c_str(), name.c_str(), value.data(), value.size(), 0, XATTR_NOFOLLOW) != 0 )
+            return errno;
     }
-    return _target;
+    return 0;
+}
+
+int CopyEntry(const std::string &_from, const std::string &_to);
+
+int CopyDirectory(const std::string &_from, const std::string &_to, const struct stat &_st)
+{
+    if( mkdir(_to.c_str(), _st.st_mode & 07777) != 0 )
+        return errno;
+
+    DIR *const dir = opendir(_from.c_str());
+    if( dir == nullptr )
+        return errno;
+    int result = 0;
+    while( const dirent *const entry = readdir(dir) ) {
+        const std::string name = entry->d_name;
+        if( name == "." || name == ".." )
+            continue;
+        std::string child_from = _from;
+        child_from += '/';
+        child_from += name;
+        std::string child_to = _to;
+        child_to += '/';
+        child_to += name;
+        const int rc = CopyEntry(child_from, child_to);
+        // A conflict with an entry that appeared inside a folder this call has just created is a
+        // race, not a taken top-level name - the caller has to drop the partial tree.
+        result = rc == EEXIST ? EIO : rc;
+        if( result != 0 )
+            break;
+    }
+    closedir(dir);
+    if( result != 0 )
+        return result;
+
+    // The children are in place - bring the directory's own mode, times, ACL and extended
+    // attributes over.
+    if( copyfile(_from.c_str(), _to.c_str(), nullptr, COPYFILE_METADATA) != 0 )
+        return errno;
+    return 0;
+}
+
+// Copies one entry without replacing anything at the destination. Directories are walked by hand
+// so that every child gets the full metadata treatment; copyfile() itself only handles files.
+int CopyEntry(const std::string &_from, const std::string &_to)
+{
+    struct stat st;
+    if( lstat(_from.c_str(), &st) != 0 )
+        return errno;
+
+    if( S_ISLNK(st.st_mode) ) {
+        std::string target;
+        std::vector<char> buffer(1024);
+        for( ;; ) {
+            const ssize_t length = readlink(_from.c_str(), buffer.data(), buffer.size());
+            if( length < 0 )
+                return errno;
+            if( static_cast<size_t>(length) < buffer.size() ) {
+                target.assign(buffer.data(), static_cast<size_t>(length));
+                break;
+            }
+            if( buffer.size() >= size_t{64} * 1024 )
+                return ENAMETOOLONG;
+            buffer.resize(buffer.size() * 2);
+        }
+        if( symlink(target.c_str(), _to.c_str()) != 0 )
+            return errno;
+        if( const int rc = CopyAttributes(_from, _to); rc != 0 )
+            return rc;
+        const struct timespec times[2] = {st.st_atimespec, st.st_mtimespec};
+        if( utimensat(AT_FDCWD, _to.c_str(), times, AT_SYMLINK_NOFOLLOW) != 0 )
+            return errno;
+        return 0;
+    }
+    if( S_ISDIR(st.st_mode) )
+        return CopyDirectory(_from, _to, st);
+    if( S_ISREG(st.st_mode) ) {
+        // COPYFILE_ALL carries the data, the resource fork, the ACL and the extended attributes
+        // (Finder tags, the quarantine flag, ...) over; COPYFILE_EXCL keeps the name reserved.
+        if( copyfile(_from.c_str(), _to.c_str(), nullptr, COPYFILE_ALL | COPYFILE_EXCL) != 0 )
+            return errno;
+        return 0;
+    }
+    if( S_ISFIFO(st.st_mode) )
+        return mkfifo(_to.c_str(), st.st_mode & 07777) == 0 ? 0 : errno;
+    if( S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) )
+        return mknod(_to.c_str(), st.st_mode, st.st_rdev) == 0 ? 0 : errno;
+    return EOPNOTSUPP; // sockets and anything unknown can't be recreated by copying
+}
+
+// Copies an entry tree without replacing anything at the destination. EEXIST means the destination
+// itself was taken and nothing was created; any other failure drops the partial copy.
+int CopyEntryExclusive(const std::string &_from, const std::string &_to)
+{
+    const int rc = CopyEntry(_from, _to);
+    if( rc == 0 || rc == EEXIST )
+        return rc;
+    std::error_code ec;
+    std::filesystem::remove_all(_to, ec);
+    return rc;
+}
+
+// Removes the recorded original location from the entry itself - with the default flags a symlink
+// would hand the operation to the file it points at.
+void RemoveOriginalPathAttribute(const std::string &_path) noexcept
+{
+    removexattr(_path.c_str(), g_OriginalPathAttr, XATTR_NOFOLLOW);
 }
 
 } // namespace
@@ -414,45 +581,78 @@ void RememberOriginalLocation(const std::string &_path)
         return;
     if( IsInsideTrash(_path) )
         return;
-    setxattr(_path.c_str(), g_OriginalPathAttr, _path.data(), _path.size(), 0, 0);
+    // Store the attribute on the entry itself: with the default flags a symlink would get the
+    // attribute of the file it points at, which isn't the object being trashed.
+    setxattr(_path.c_str(), g_OriginalPathAttr, _path.data(), _path.size(), 0, XATTR_NOFOLLOW);
 }
 
-int PutBackTrashedItem(const std::string &_trash_item_path, std::string &_resulting_path)
+PutBackResult PutBackTrashedItem(const std::string &_trash_item_path)
 {
-    _resulting_path.clear();
+    PutBackResult result;
+
+    if( _trash_item_path.empty() || _trash_item_path.front() != '/' ) {
+        result.error = EINVAL;
+        return result;
+    }
+
     const std::optional<std::string> original = OriginalLocationOfTrashedItem(_trash_item_path);
-    if( !original )
-        return ENOENT;
+    if( !original ) {
+        result.error = ENOENT;
+        return result;
+    }
 
     const std::filesystem::path target_path(*original);
-    std::error_code ec;
     if( target_path.has_parent_path() ) {
+        std::error_code ec;
         std::filesystem::create_directories(target_path.parent_path(), ec);
-        if( ec )
-            return ec.value();
-    }
-
-    const std::string target = UniqueTarget(target_path.string());
-    std::filesystem::rename(_trash_item_path, target, ec);
-    if( ec && ec.value() == EXDEV ) {
-        // The trash and the original location can sit on different volumes, in which case the
-        // item has to be copied over and then removed from the trash.
-        ec.clear();
-        std::filesystem::copy(_trash_item_path,
-                              target,
-                              std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks,
-                              ec);
-        if( !ec ) {
-            std::error_code remove_ec;
-            std::filesystem::remove_all(_trash_item_path, remove_ec);
+        if( ec ) {
+            result.error = ec.value() != 0 ? ec.value() : EIO;
+            return result;
         }
     }
-    if( ec )
-        return ec.value();
 
-    removexattr(target.c_str(), g_OriginalPathAttr, 0);
-    _resulting_path = target;
-    return 0;
+    // Walk the numbered names until one of them can be claimed. Claiming and placing the item are
+    // the same operation, so a taken name is reported as EEXIST instead of silently overwriting.
+    const std::string requested = target_path.string();
+    bool cross_volume = false;
+    for( int i = 1; i <= kMaxTargetCandidates; ++i ) {
+        const std::string candidate = i == 1 ? requested : NumberedTarget(requested, i);
+
+        int rc = 0;
+        if( cross_volume ) {
+            rc = CopyEntryExclusive(_trash_item_path, candidate);
+        }
+        else {
+            rc = RenameExclusive(_trash_item_path, candidate);
+            if( rc == EXDEV ) {
+                // The trash and the original location sit on different volumes - copy the item.
+                cross_volume = true;
+                rc = CopyEntryExclusive(_trash_item_path, candidate);
+            }
+        }
+
+        if( rc == 0 ) {
+            if( cross_volume ) {
+                // The copy is in place, so the restore itself has succeeded. Dropping the source
+                // is best effort from here on, but the failure still has to be reported.
+                std::error_code remove_ec;
+                std::filesystem::remove_all(_trash_item_path, remove_ec);
+                result.source_remains = static_cast<bool>(remove_ec);
+            }
+            result.restored = true;
+            result.resulting_path = candidate;
+            RemoveOriginalPathAttribute(candidate);
+            return result;
+        }
+        if( rc == EEXIST )
+            continue;
+
+        result.error = rc;
+        return result;
+    }
+
+    result.error = EEXIST;
+    return result;
 }
 
 int TrashItemAtPath(const char *_path) noexcept

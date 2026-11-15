@@ -29,6 +29,12 @@ struct FlatListingResult {
 
 // A flat listing built the classic way: one VFSListing per directory, composed at the end.
 // This is the reference implementation - archives, network hosts and remote panels all need it.
+//
+// The two size limits are cumulative budgets, spent before the I/O rather than after it:
+// '_max_directories' bounds the number of directories the scan may read (the root included) and
+// '_max_items' bounds the number of entries it pulls in. '_max_seconds' bounds the wall-clock time;
+// the check is cooperative, so a single blocked directory read can still overrun it. A scan stopped
+// by a limit returns the partial listing along with 'truncated' (and 'timed_out' for the deadline).
 FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                                            const std::string &_root,
                                            unsigned long _fetch_flags,

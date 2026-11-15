@@ -46,7 +46,11 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
         // accounting and the resulting listing stay deterministic.
         std::vector<std::string> frontier;
         frontier.emplace_back(_root);
-        size_t directories_seen = 1;
+        // Cumulative budgets: the scan may read this many directories in total (the root counts as
+        // one) and pull in this many entries. Both are spent before a level is fetched, so they
+        // bound the actual I/O and not merely the size of the result.
+        size_t directories_fetched = 0;
+        size_t items_fetched = 0;
 
         // The flat view never shows "." or "..", so don't ask the host to fetch the dot-dot
         // entry - for a directory tree of a few hundred thousand directories that is one extra
@@ -62,7 +66,7 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                 return false;
             return std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() > _max_seconds;
         };
-        while( !frontier.empty() && !truncated ) {
+        while( !frontier.empty() ) {
             if( _cancel_checker && _cancel_checker() )
                 return {}; // cancelled - the caller discards the result anyway
             if( out_of_time() ) {
@@ -70,14 +74,42 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                 break;
             }
 
+            // Spend the directory budget before doing any I/O: a level wider than what's left is
+            // trimmed up front, so the limit bounds the work rather than just the output.
+            if( directories_fetched >= max_directories ) {
+                truncated = true;
+                break;
+            }
+            if( frontier.size() > max_directories - directories_fetched ) {
+                frontier.resize(max_directories - directories_fetched);
+                truncated = true;
+            }
+
             const auto fetch_begin = std::chrono::steady_clock::now();
             std::vector<VFSListingPtr> fetched(frontier.size());
+            // Shared by the sequential and the threaded paths: how many entries this level has
+            // pulled in so far, and whether the deadline cut it short.
+            std::atomic<size_t> level_items{0};
+            std::atomic<bool> level_timed_out{false};
+            const auto fetch_one = [&](const size_t _index) {
+                if( out_of_time() ) {
+                    level_timed_out.store(true, std::memory_order_relaxed);
+                    return false;
+                }
+                if( items_fetched + level_items.load(std::memory_order_relaxed) >= max_items )
+                    return false; // the entry budget is spent - don't read more directories
+                if( auto listing = _host->FetchDirectoryListing(frontier[_index], scan_flags, _cancel_checker) ) {
+                    fetched[_index] = *listing;
+                    level_items.fetch_add((*listing)->Count(), std::memory_order_relaxed);
+                }
+                return true;
+            };
             if( threads == 1 || frontier.size() == 1 ) {
                 for( size_t i = 0; i != frontier.size(); ++i ) {
                     if( _cancel_checker && _cancel_checker() )
                         return {};
-                    if( auto listing = _host->FetchDirectoryListing(frontier[i], scan_flags, _cancel_checker) )
-                        fetched[i] = *listing;
+                    if( !fetch_one(i) )
+                        break;
                 }
             }
             else {
@@ -91,8 +123,8 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                             cancelled.store(true, std::memory_order_relaxed);
                             return;
                         }
-                        if( auto listing = _host->FetchDirectoryListing(frontier[i], scan_flags, _cancel_checker) )
-                            fetched[i] = *listing;
+                        if( !fetch_one(i) )
+                            return; // the entry budget or the deadline stopped this level
                     }
                 };
                 std::vector<std::thread> pool;
@@ -104,6 +136,14 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                 if( cancelled.load(std::memory_order_relaxed) )
                     return {};
             }
+
+            // Only the directories that produced a listing were actually read.
+            for( const VFSListingPtr &listing : fetched )
+                if( listing )
+                    ++directories_fetched;
+            items_fetched += level_items.load(std::memory_order_relaxed);
+            if( level_timed_out.load(std::memory_order_relaxed) )
+                result.timed_out = true;
 
             result.fetch_ms +=
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fetch_begin)
@@ -134,10 +174,8 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
                             }
                         if( skipped )
                             ++result.skipped_cloud_directories;
-                        else {
+                        else
                             next_frontier.emplace_back(std::move(subdir));
-                            ++directories_seen;
-                        }
                     }
                 }
 
@@ -166,15 +204,16 @@ FlatListingResult BuildFlatListingComposed(const VFSHostPtr &_host,
             result.fold_ms +=
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fold_begin)
                     .count();
-            if( listings.size() >= max_directories ) {
+            // A spent entry budget means the next level can't contribute anything - stop here.
+            if( !truncated && items_fetched >= max_items && !next_frontier.empty() )
                 truncated = true;
+            if( truncated || result.timed_out )
                 break;
-            }
             frontier = std::move(next_frontier);
         }
 
         result.scanned_items = total_items;
-        result.scanned_directories = directories_seen;
+        result.scanned_directories = directories_fetched;
         result.truncated = truncated;
 
         if( listings.empty() )
