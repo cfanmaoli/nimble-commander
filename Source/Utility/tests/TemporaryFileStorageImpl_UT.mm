@@ -4,10 +4,15 @@
 #include "UnitTests_main.h"
 #include <Base/algo.h>
 #include <cstdio>
+#include <cerrno>
+#include <unistd.h>
+#include <cstdlib>
 #include <dirent.h>
 #include <fstream>
 #include <ftw.h>
+#include <string>
 #include <sys/dirent.h>
+#include <vector>
 #include <Cocoa/Cocoa.h>
 
 #define PREFIX "[nc::utility::TemporaryFileStorageImpl] "
@@ -253,13 +258,17 @@ TEST_CASE(PREFIX "Makes a new dir after purging")
 
 std::string MakeTempFilesStorage()
 {
-    const auto base_path = EnsureTrailingSlash(NSTemporaryDirectory().fileSystemRepresentation);
-    const auto tmp_path = base_path + g_TestDirPrefix + "/";
-    if( access(tmp_path.c_str(), F_OK) == 0 )
-        RMRF(tmp_path);
-    if( mkdir(tmp_path.c_str(), S_IRWXU) != 0 )
-        throw std::runtime_error("mkdir failed");
-    return tmp_path;
+    // A unique directory per call: test binaries may run in parallel, and the leftovers of a
+    // crashed run must not collide with the next one.
+    const std::string base = EnsureTrailingSlash(NSTemporaryDirectory().fileSystemRepresentation) + g_TestDirPrefix;
+    for( int attempt = 1; attempt != 1000; ++attempt ) {
+        const std::string path = base + std::to_string(::getpid()) + '-' + std::to_string(attempt);
+        if( ::mkdir(path.c_str(), S_IRWXU) == 0 )
+            return path + '/';
+        if( errno != EEXIST )
+            break;
+    }
+    throw std::runtime_error("cannot create a temporary test directory");
 }
 
 int RMRF(const std::string &_path)

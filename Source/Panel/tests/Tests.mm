@@ -4,11 +4,16 @@
 #include <Base/CommonPaths.h>
 #include <Utility/FSEventsFileUpdateImpl.h>
 #include <Utility/NativeFSManagerImpl.h>
+#include <cerrno>
+#include <unistd.h>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <sys/dirent.h>
 #include <ftw.h>
 #include <memory>
+#include <string>
+#include <vector>
 #include "Tests.h"
 
 static auto g_TestDirPrefix = "_nc__panel__test_";
@@ -36,13 +41,17 @@ static int RMRF(const std::string &_path)
 
 static std::string MakeTempFilesStorage()
 {
-    const auto &base_path = nc::base::CommonPaths::AppTemporaryDirectory();
-    const auto tmp_path = base_path + g_TestDirPrefix + "/";
-    if( access(tmp_path.c_str(), F_OK) == 0 )
-        RMRF(tmp_path);
-    if( mkdir(tmp_path.c_str(), S_IRWXU) != 0 )
-        throw std::runtime_error("mkdir failed");
-    return tmp_path;
+    // A unique directory per call: test binaries may run in parallel, and the leftovers of a
+    // crashed run must not collide with the next one.
+    const std::string base = nc::base::CommonPaths::AppTemporaryDirectory() + g_TestDirPrefix;
+    for( int attempt = 1; attempt != 1000; ++attempt ) {
+        const std::string path = base + std::to_string(::getpid()) + '-' + std::to_string(attempt);
+        if( ::mkdir(path.c_str(), S_IRWXU) == 0 )
+            return path + '/';
+        if( errno != EEXIST )
+            break;
+    }
+    throw std::runtime_error("cannot create a temporary test directory");
 }
 
 TempTestDir::TempTestDir()
