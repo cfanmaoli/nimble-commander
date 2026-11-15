@@ -98,13 +98,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Copyright © 2013-2026 Michael Kazakov.\nAll rights reserved."
+            "value" : "Copyright © 2013-2026 Michael Kazakov.\nCopyright © 2026 The Nimble Commander-Fork contributors.\nAll rights reserved."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版权所有 © 2013-2026 Michael Kazakov。\n保留所有权利。"
+            "value" : "版权所有 © 2013-2026 Michael Kazakov。\n版权所有 © 2026 Nimble Commander-Fork 贡献者。\n保留所有权利。"
           }
         }
       }
