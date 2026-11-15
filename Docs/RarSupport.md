@@ -18,16 +18,21 @@ side is an aggregate of independent programs (GPLv3 section 5), not a combined w
 
 ## Installing it
 
-Open `ncrar-helper-<version>-macos-arm64.dmg` and drag `ncrar-helper.app` into Applications. No
-installer and no script is involved - the application looks for the helper inside that bundle.
+Download `ncrar-helper-<version>-macos-arm64.dmg` from the
+[releases](https://github.com/cfanmaoli/ncrar-helper/releases), open it and drag
+`ncrar-helper.app` into Applications. No installer and no script is involved - the application
+looks for the helper inside that bundle.
 
 The component may live in either of two places (the first one that exists and is executable wins):
 
 1. `~/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`;
 2. `/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`.
 
-The application checks for the helper on every archive open, so installing or removing the bundle
-does not require a restart.
+The lookup is cached: the application searches for the helper once whenever the component is
+enabled - at launch, or when the checkbox is toggled in **Preferences → Compression** - and reuses
+the result. Installing or removing the bundle therefore requires toggling the checkbox off and on
+once (or restarting the application) to be noticed. The same pane shows whether the helper is
+installed and its version.
 
 The component is ad-hoc signed and not notarised. If Gatekeeper quarantines the bundle after a
 download, clear the attribute once:
