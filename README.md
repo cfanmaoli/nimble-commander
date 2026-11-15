@@ -40,7 +40,10 @@ The project website, with downloads and release notes, is
   full RAR support (solid archives, encrypted headers and payloads, multi-volume sets), install the
   separate [ncrar-helper.app](https://github.com/cfanmaoli/ncrar-helper/releases) component: it is
   an independent program under the UnRAR license, so the application itself still contains no
-  proprietary code. See [Docs/RarSupport.md](Docs/RarSupport.md).
+  proprietary code. Enable it in *Preferences → Compression*, which also shows whether it is
+  installed and which version it is. See [Docs/RarSupport.md](Docs/RarSupport.md).
+- **Compression preferences** — the archive format (zip, 7z, tar), the algorithm and the level used
+  by the compress dialog are configurable in *Preferences → Compression*.
 - **Smaller fixes** — cancellable archive scans, pinyin-initial quick filtering, a regular-expression
   quick filter mode, mouse back/forward navigation, and a privileged helper that keeps working with
   locally signed builds.

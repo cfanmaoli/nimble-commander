@@ -39,8 +39,10 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
   也可以把条目放回原来的位置。
 - **可选的 RAR 支持** —— RAR 归档默认通过 libarchive 读取。如果需要完整的 RAR 支持（solid 压缩包、加密头与
   加密数据、多卷），可安装独立的 [ncrar-helper.app](https://github.com/cfanmaoli/ncrar-helper/releases)
-  组件：它是采用 UnRAR 许可证的独立程序，应用本身仍不包含任何专有代码。详见
-  [Docs/RarSupport.md](Docs/RarSupport.md)。
+  组件：它是采用 UnRAR 许可证的独立程序，应用本身仍不包含任何专有代码。安装后在 *偏好设置 → 压缩* 中启用，
+  同一面板会显示是否已安装及版本号。详见 [Docs/RarSupport.md](Docs/RarSupport.md)。
+- **压缩设置** —— 压缩对话框默认使用的归档格式（zip、7z、tar）、算法与级别都可以在
+  *偏好设置 → 压缩* 里设置。
 - **零散修复** —— 归档扫描可取消、快速过滤支持拼音首字母、快速过滤新增正则表达式模式、鼠标侧键前进/后退，
   以及用本地证书签名后依然可用的特权助手。
 
