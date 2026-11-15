@@ -10,6 +10,9 @@ Upstream development stopped after the 1.9.0 release, so this fork continues fro
 user interface, documentation and file formats are inherited from upstream; the application name was
 changed to avoid confusion with the original project.
 
+The project website, with downloads and release notes, is
+[cfanmaoli.github.io/nc-website](https://cfanmaoli.github.io/nc-website/).
+
 ![](Docs/nc.png)
 
 ## What this fork changes

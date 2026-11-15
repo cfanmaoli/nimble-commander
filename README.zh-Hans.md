@@ -8,6 +8,8 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 上游在 1.9.0 发布后停止维护，本分支从该版本继续。界面、文档和文件格式沿用上游，只改了应用名称，
 以免和原项目混淆。
 
+项目网站（含下载与更新说明）：[cfanmaoli.github.io/nc-website](https://cfanmaoli.github.io/nc-website/)。
+
 ![](Docs/nc.png)
 
 ## 默认就是中文
