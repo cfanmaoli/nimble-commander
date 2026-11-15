@@ -2,8 +2,13 @@
 
 #pragma once
 
-namespace nc::routedio {
+#include <string>
 
-int TrashItemAtPath(const char *_path) noexcept;
+namespace nc::routedio::detail {
 
-}
+// Removes a staging copy created by a cross-volume put-back: restores owner write access on every
+// directory inside it and then deletes the tree. Returns 0, or the errno when the staging entry
+// still couldn't be removed. Exposed mainly for testing.
+int RemoveStagingTree(const std::string &_staging) noexcept;
+
+} // namespace nc::routedio::detail

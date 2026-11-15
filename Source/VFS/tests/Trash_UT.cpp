@@ -2,6 +2,7 @@
 #include "Tests.h"
 #include <Base/algo.h>
 #include <RoutedIO/Trash.h>
+#include "../../RoutedIO/source/Trash.h" // detail::RemoveStagingTree, tested directly below
 #include <cstdlib>
 #include <fcntl.h>
 #include <filesystem>
@@ -349,6 +350,67 @@ TEST_CASE(PREFIX "put-back across volumes preserves the data and the metadata")
         // The restored copy is read-only again, so the source can't be dropped - that is reported.
         CHECK(outcome.source_remains);
     }
+
+    SECTION("a tree with links and a read-only folder is restored as a copy")
+    {
+        const std::string external = (dir.directory / "external").string();
+        WriteFile(external + "/file.txt", "untouched");
+        REQUIRE(::chmod(external.c_str(), 0755) == 0);
+        REQUIRE(::chmod((external + "/file.txt").c_str(), 0644) == 0);
+
+        const std::string trashed = mount + "/links";
+        WriteFile(trashed + "/readonly/child.txt", "child");
+        REQUIRE(::symlink(external.c_str(), (trashed + "/directory-link").c_str()) == 0);
+        REQUIRE(::symlink((external + "/file.txt").c_str(), (trashed + "/file-link").c_str()) == 0);
+        REQUIRE(::symlink("missing", (trashed + "/dangling-link").c_str()) == 0);
+        REQUIRE(::chmod((trashed + "/readonly").c_str(), 0500) == 0);
+
+        const std::string target = (dir.directory / "original" / "links").string();
+        std::filesystem::create_directories(target); // the restored copy gets a numbered name
+        RememberOriginalPath(trashed, target);
+        const std::string restored = (dir.directory / "original" / "links 2").string();
+        const auto restore_mode = at_scope_end([&] {
+            std::ignore = ::chmod((trashed + "/readonly").c_str(), 0700);
+            std::ignore = ::chmod((restored + "/readonly").c_str(), 0700);
+        });
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        REQUIRE(outcome.error == 0);
+        REQUIRE(outcome.restored);
+        CHECK(outcome.resulting_path == restored);
+        CHECK(ModeOf(external) == 0755);
+        CHECK(ModeOf(external + "/file.txt") == 0644);
+        CHECK(ReadFile(external + "/file.txt") == "untouched");
+        CHECK(ReadFile(restored + "/readonly/child.txt") == "child");
+        CHECK(std::filesystem::read_symlink(restored + "/directory-link") == external);
+        CHECK(std::filesystem::read_symlink(restored + "/dangling-link") == "missing");
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
+    }
+}
+
+TEST_CASE(PREFIX "staging cleanup leaves symlink targets outside the copy alone")
+{
+    TestDir dir;
+    const std::string external = (dir.directory / "external").string();
+    WriteFile(external + "/file.txt", "untouched");
+    REQUIRE(::chmod(external.c_str(), 0755) == 0);
+    REQUIRE(::chmod((external + "/file.txt").c_str(), 0644) == 0);
+
+    // A staging tree shaped like the one a cross-volume put-back leaves behind: a read-only
+    // folder, links pointing outside the copy and a dangling link.
+    const std::string staging = (dir.directory / "staging").string();
+    WriteFile(staging + "/readonly/child.txt", "child");
+    REQUIRE(::symlink(external.c_str(), (staging + "/directory-link").c_str()) == 0);
+    REQUIRE(::symlink((external + "/file.txt").c_str(), (staging + "/file-link").c_str()) == 0);
+    REQUIRE(::symlink("missing", (staging + "/dangling-link").c_str()) == 0);
+    REQUIRE(::chmod((staging + "/readonly").c_str(), 0500) == 0);
+
+    CHECK(nc::routedio::detail::RemoveStagingTree(staging) == 0);
+    CHECK(!std::filesystem::exists(staging));
+    // The cleanup may only change the staging tree itself, never what the links point at.
+    CHECK(ModeOf(external) == 0755);
+    CHECK(ModeOf(external + "/file.txt") == 0644);
+    CHECK(ReadFile(external + "/file.txt") == "untouched");
 }
 
 #undef PREFIX

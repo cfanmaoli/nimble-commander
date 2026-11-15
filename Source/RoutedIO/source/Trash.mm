@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2026 Michael Kazakov. Subject to GNU General Public License version 3.
+#include "Trash.h"
 #include <RoutedIO/Trash.h>
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -465,30 +466,6 @@ std::string StagingPath(const std::string &_target, const int _attempt)
     return (target.parent_path() / name).string();
 }
 
-// Removes a staging copy created by this call. The copy may have inherited read-only directory
-// modes from the source (e.g. 0500), which would keep remove_all() from deleting the children, so
-// owner write access is restored on every directory first. Returns 0, or the errno when the staging
-// entry still couldn't be removed.
-int RemoveStagingTree(const std::string &_staging) noexcept
-{
-    struct stat st;
-    if( ::lstat(_staging.c_str(), &st) == 0 && S_ISDIR(st.st_mode) ) {
-        std::error_code ec;
-        for( std::filesystem::recursive_directory_iterator
-                 it{_staging, std::filesystem::directory_options::skip_permission_denied, ec},
-             end;
-             !ec && it != end;
-             it.increment(ec) ) {
-            if( it->is_directory(ec) )
-                ::chmod(it->path().c_str(), 0700);
-        }
-        ::chmod(_staging.c_str(), 0700);
-    }
-    std::error_code ec;
-    std::filesystem::remove_all(_staging, ec);
-    return ec ? ec.value() : 0;
-}
-
 // Copies the entry into a fresh staging name next to '_target' and claims '_target' with an
 // atomic, non-replacing rename. Returns 0, EEXIST when the name is taken, or an errno. Whatever
 // already occupies '_target' is never touched, and a failure only removes the staging copy.
@@ -503,7 +480,7 @@ int CopyEntryExclusive(const std::string &_from, const std::string &_to)
             continue; // the staging name is taken as well - try the next one
         if( copy_rc != 0 ) {
             if( created ) {
-                const int cleanup_rc = RemoveStagingTree(staging);
+                const int cleanup_rc = detail::RemoveStagingTree(staging);
                 if( cleanup_rc != 0 )
                     return cleanup_rc;
             }
@@ -513,7 +490,7 @@ int CopyEntryExclusive(const std::string &_from, const std::string &_to)
         const int commit_rc = RenameExclusive(staging, _to);
         if( commit_rc == 0 )
             return 0;
-        const int cleanup_rc = RemoveStagingTree(staging);
+        const int cleanup_rc = detail::RemoveStagingTree(staging);
         if( cleanup_rc != 0 )
             return cleanup_rc;
         return commit_rc;
@@ -529,6 +506,36 @@ void RemoveOriginalPathAttribute(const std::string &_path) noexcept
 }
 
 } // namespace
+
+namespace detail {
+
+int RemoveStagingTree(const std::string &_staging) noexcept
+{
+    // The copy may have inherited read-only directory modes from the source (e.g. 0500), which
+    // would keep remove_all() from deleting the children, so owner write access is restored on
+    // every directory first.
+    struct stat st;
+    if( ::lstat(_staging.c_str(), &st) == 0 && S_ISDIR(st.st_mode) ) {
+        std::error_code ec;
+        for( std::filesystem::recursive_directory_iterator
+                 it{_staging, std::filesystem::directory_options::skip_permission_denied, ec},
+             end;
+             !ec && it != end;
+             it.increment(ec) ) {
+            // Both the query and the permission change must address the entry itself. A
+            // directory symlink can point outside the staging tree, and a dangling link must
+            // not stop the traversal before the remaining read-only directories are handled.
+            if( std::filesystem::is_directory(it->symlink_status(ec)) )
+                ::fchmodat(AT_FDCWD, it->path().c_str(), 0700, AT_SYMLINK_NOFOLLOW);
+        }
+        ::fchmodat(AT_FDCWD, _staging.c_str(), 0700, AT_SYMLINK_NOFOLLOW);
+    }
+    std::error_code ec;
+    std::filesystem::remove_all(_staging, ec);
+    return ec ? ec.value() : 0;
+}
+
+} // namespace detail
 
 std::string TrashDirectory()
 {
