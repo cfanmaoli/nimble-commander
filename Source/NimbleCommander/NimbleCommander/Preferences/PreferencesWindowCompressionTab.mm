@@ -75,6 +75,7 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 @property(nonatomic) NSPopUpButton *methodPopUp;
 @property(nonatomic) NSPopUpButton *levelPopUp;
 @property(nonatomic) NSButton *rarSupportCheckbox;
+@property(nonatomic) NSTextField *helperStatusLabel;
 
 - (void)buildViews;
 - (void)loadSettings;
@@ -84,6 +85,7 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 - (void)methodChanged:(id)_sender;
 - (void)levelChanged:(id)_sender;
 - (void)rarSupportChanged:(id)_sender;
+- (void)updateHelperStatus;
 @end
 
 @implementation PreferencesWindowCompressionTab
@@ -91,6 +93,7 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 @synthesize methodPopUp;
 @synthesize levelPopUp;
 @synthesize rarSupportCheckbox;
+@synthesize helperStatusLabel;
 
 - (instancetype)init
 {
@@ -106,8 +109,9 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 
 - (void)buildViews
 {
-    NSTextField *title = [NSTextField
-        labelWithString:NSLocalizedStringFromTable(@"Compression", @"Preferences", "Compression preferences title")];
+    NSTextField *title =
+        [NSTextField labelWithString:NSLocalizedStringFromTable(
+                                         @"Defaults", @"Preferences", "Compression preferences: settings group title")];
     title.font = [NSFont boldSystemFontOfSize:[NSFont systemFontSize]];
 
     self.formatPopUp = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
@@ -131,16 +135,17 @@ void SelectValue(NSPopUpButton *_popup, id _value)
     self.levelPopUp.action = @selector(levelChanged:);
 
     self.rarSupportCheckbox =
-        [NSButton checkboxWithTitle:NSLocalizedStringFromTable(@"Enable the RAR support component",
+        [NSButton checkboxWithTitle:NSLocalizedStringFromTable(@"Use the ncrar-helper component for RAR archives",
                                                                @"Preferences",
-                                                               "Compression preferences: RAR support checkbox")
+                                                               "Compression preferences: RAR helper checkbox")
                              target:self
                              action:@selector(rarSupportChanged:)];
 
     NSTextField *formatLabel = [NSTextField
         labelWithString:NSLocalizedStringFromTable(@"Format", @"Preferences", "Compression preferences: format label")];
-    NSTextField *methodLabel = [NSTextField
-        labelWithString:NSLocalizedStringFromTable(@"Method", @"Preferences", "Compression preferences: method label")];
+    NSTextField *methodLabel =
+        [NSTextField labelWithString:NSLocalizedStringFromTable(
+                                         @"Algorithm", @"Preferences", "Compression preferences: algorithm label")];
     NSTextField *levelLabel = [NSTextField
         labelWithString:NSLocalizedStringFromTable(@"Level", @"Preferences", "Compression preferences: level label")];
 
@@ -158,14 +163,30 @@ void SelectValue(NSPopUpButton *_popup, id _value)
     stack.alignment = NSLayoutAttributeLeading;
     stack.spacing = 10;
     stack.translatesAutoresizingMaskIntoConstraints = NO;
+    NSBox *separator = [[NSBox alloc] initWithFrame:NSZeroRect];
+    separator.boxType = NSBoxSeparator;
+    separator.translatesAutoresizingMaskIntoConstraints = NO;
+    [separator.heightAnchor constraintEqualToConstant:1].active = YES;
+
     [stack addArrangedSubview:title];
     [stack addArrangedSubview:grid];
+    [stack addArrangedSubview:separator];
     [stack addArrangedSubview:self.rarSupportCheckbox];
+
+    self.helperStatusLabel = [NSTextField labelWithString:@""];
+    self.helperStatusLabel.font = [NSFont systemFontOfSize:11];
+    self.helperStatusLabel.textColor = NSColor.secondaryLabelColor;
+    [stack addArrangedSubview:self.helperStatusLabel];
+
     [stack setCustomSpacing:14 afterView:grid];
+    [stack setCustomSpacing:4 afterView:self.rarSupportCheckbox];
+    [stack setCustomSpacing:12 afterView:separator];
+    [separator.widthAnchor constraintEqualToAnchor:grid.widthAnchor].active = YES;
 
     [self.view addSubview:stack];
+    // The other preference tabs centre their content horizontally; keep this one in line.
     [NSLayoutConstraint activateConstraints:@[
-        [stack.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
+        [stack.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
         [stack.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:18],
     ]];
 
@@ -188,6 +209,7 @@ void SelectValue(NSPopUpButton *_popup, id _value)
 
     self.rarSupportCheckbox.state = config.GetBool(g_ConfigRarSupport) ? NSControlStateValueOn : NSControlStateValueOff;
     [self updateLevelEnabled];
+    [self updateHelperStatus];
 }
 
 - (void)rebuildMethodPopUpForFormat:(NSString *)_format preferredMethod:(NSString *)_preferred_method
@@ -238,6 +260,42 @@ void SelectValue(NSPopUpButton *_popup, id _value)
     const bool enabled = self.rarSupportCheckbox.state == NSControlStateValueOn;
     GlobalConfig().Set(g_ConfigRarSupport, enabled);
     nc::vfs::rar::SetHelperEnabled(enabled);
+    [self updateHelperStatus];
+}
+
+- (void)updateHelperStatus
+{
+    if( !nc::vfs::rar::IsHelperEnabled() ) {
+        self.helperStatusLabel.stringValue =
+            NSLocalizedStringFromTable(@"Disabled", @"Preferences", "Compression preferences: RAR helper status");
+        return;
+    }
+
+    const std::optional<std::string> path = nc::vfs::rar::HelperPath();
+    if( !path ) {
+        self.helperStatusLabel.stringValue =
+            NSLocalizedStringFromTable(@"Not installed - the built-in RAR reader is used",
+                                       @"Preferences",
+                                       "Compression preferences: RAR helper status");
+        return;
+    }
+
+    NSString *const executable = [NSString stringWithUTF8String:path->c_str()];
+    NSString *const bundle_path = [[[executable stringByDeletingLastPathComponent] stringByDeletingLastPathComponent]
+        stringByDeletingLastPathComponent];
+    NSString *const version =
+        [[NSBundle bundleWithPath:bundle_path] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+    if( version.length ) {
+        self.helperStatusLabel.stringValue =
+            [NSString stringWithFormat:NSLocalizedStringFromTable(@"Installed · version %@",
+                                                                  @"Preferences",
+                                                                  "Compression preferences: RAR helper status"),
+                                       version];
+    }
+    else {
+        self.helperStatusLabel.stringValue =
+            NSLocalizedStringFromTable(@"Installed", @"Preferences", "Compression preferences: RAR helper status");
+    }
 }
 
 - (NSToolbarItem *)toolbarItem

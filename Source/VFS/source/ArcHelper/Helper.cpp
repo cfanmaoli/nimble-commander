@@ -60,6 +60,11 @@ bool IsHelperEnabled() noexcept
     return g_HelperEnabled;
 }
 
+std::optional<std::string> HelperPath()
+{
+    return FindHelper();
+}
+
 std::optional<std::string> FindHelper()
 {
     const std::lock_guard lock(g_HelperMutex);

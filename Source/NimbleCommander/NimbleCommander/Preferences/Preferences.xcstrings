@@ -605,23 +605,6 @@
         }
       }
     },
-    "Enable the RAR support component" : {
-      "comment" : "Compression preferences: RAR support checkbox",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Enable the RAR support component"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 RAR 支持组件"
-          }
-        }
-      }
-    },
     "Even row background" : {
       "comment" : "Theme settings entry title",
       "localizations" : {
@@ -1237,23 +1220,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "列表模式"
-          }
-        }
-      }
-    },
-    "Method" : {
-      "comment" : "Compression preferences: compression method",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Method"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "压缩方式"
           }
         }
       }
@@ -2132,6 +2098,125 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "把 Nimble Commander-Fork 的界面翻译成其它语言，也可以使用别人做好的翻译。先导出当前语言，把内容替换成你的译文，再导入回来并重启应用。"
+          }
+        }
+      }
+    },
+    "Algorithm" : {
+      "comment" : "Compression preferences: compression algorithm",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Algorithm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "算法"
+          }
+        }
+      }
+    },
+    "Use the ncrar-helper component for RAR archives" : {
+      "comment" : "Compression preferences: RAR helper checkbox",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use the ncrar-helper component for RAR archives"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 ncrar-helper 组件处理 RAR"
+          }
+        }
+      }
+    },
+    "Defaults" : {
+      "comment" : "Compression preferences: settings group title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Defaults"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认设置"
+          }
+        }
+      }
+    },
+    "Disabled" : {
+      "comment" : "Compression preferences: RAR helper status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disabled"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已禁用"
+          }
+        }
+      }
+    },
+    "Not installed - the built-in RAR reader is used" : {
+      "comment" : "Compression preferences: RAR helper status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not installed - the built-in RAR reader is used"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安装（使用内置 RAR 读取器）"
+          }
+        }
+      }
+    },
+    "Installed" : {
+      "comment" : "Compression preferences: RAR helper status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Installed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已安装"
+          }
+        }
+      }
+    },
+    "Installed · version %@" : {
+      "comment" : "Compression preferences: RAR helper status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Installed · version %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已安装 · 版本 %@"
           }
         }
       }
