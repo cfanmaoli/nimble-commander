@@ -75,6 +75,25 @@ time_t ModificationTime(const std::string &_path)
     return st.st_mtimespec.tv_sec;
 }
 
+// The put-back builds a cross-volume copy under a hidden staging name and only then claims the
+// destination. Nothing may be left behind once the call returns, whether it succeeded or not.
+size_t StagingEntryCount(const std::string &_directory)
+{
+    size_t count = 0;
+    std::error_code ec;
+    for( std::filesystem::directory_iterator it{_directory, ec}, end; !ec && it != end; it.increment(ec) )
+        if( it->path().filename().string().starts_with(".nc-restore-") )
+            ++count;
+    return count;
+}
+
+mode_t ModeOf(const std::string &_path)
+{
+    struct stat st;
+    REQUIRE(::lstat(_path.c_str(), &st) == 0);
+    return st.st_mode & 07777;
+}
+
 } // namespace
 
 TEST_CASE(PREFIX "put-back does not replace a dangling symlink")
@@ -231,6 +250,62 @@ TEST_CASE(PREFIX "put-back across volumes preserves the data and the metadata")
         CHECK(outcome.source_remains);
         CHECK(ReadFile(target) == "keep the source");
         CHECK(std::filesystem::exists(trashed));
+    }
+
+    SECTION("a failing copy leaves the existing target untouched")
+    {
+        const std::string trashed = mount + "/secret.bin";
+        WriteFile(trashed, "unreadable");
+        const std::string target = (dir.directory / "original" / "secret.bin").string();
+        WriteFile(target, "pre-existing");
+        RememberOriginalPath(trashed, target);
+        REQUIRE(::chmod(trashed.c_str(), 0000) == 0);
+        const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(trashed.c_str(), 0600); });
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        CHECK(!outcome.restored);
+        CHECK(outcome.error != 0);
+        // The copy never got to touch the destination, and its staging leftovers are gone.
+        CHECK(ReadFile(target) == "pre-existing");
+        CHECK(std::filesystem::exists(trashed));
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
+    }
+
+    SECTION("a read-only directory is restored together with its contents")
+    {
+        const std::string trashed = mount + "/ro";
+        WriteFile(trashed + "/child.txt", "child");
+        const std::string target = (dir.directory / "original" / "ro").string();
+        RememberOriginalPath(trashed, target);
+        // The marker has to be written while the directory is still writable.
+        REQUIRE(::chmod(trashed.c_str(), 0500) == 0);
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(target.c_str(), 0700); });
+        REQUIRE(outcome.error == 0);
+        REQUIRE(outcome.restored);
+        CHECK(ReadFile(target + "/child.txt") == "child");
+        CHECK(ModeOf(target) == 0500);
+        // Dropping the source needs write access to the source directory itself, so it stays.
+        CHECK(outcome.source_remains);
+    }
+
+    SECTION("an occupied cross-volume name gets a numbered one")
+    {
+        const std::string trashed = mount + "/item2.txt";
+        WriteFile(trashed, "new");
+        const std::string target = (dir.directory / "original" / "item2.txt").string();
+        WriteFile(target, "old");
+        RememberOriginalPath(trashed, target);
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        REQUIRE(outcome.error == 0);
+        REQUIRE(outcome.restored);
+        CHECK(outcome.resulting_path == (dir.directory / "original" / "item2 2.txt").string());
+        CHECK(ReadFile(target) == "old");
+        CHECK(ReadFile(outcome.resulting_path) == "new");
+        CHECK(!std::filesystem::exists(trashed));
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
     }
 }
 

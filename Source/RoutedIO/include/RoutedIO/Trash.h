@@ -58,8 +58,10 @@ struct PutBackResult {
 };
 
 // Moves a trashed item back to its original location, creating missing parent folders along the
-// way. Never replaces an existing directory entry: a taken name gets a numbered one. Restoring
-// across volumes copies the item, preserving its data and metadata, and then drops the source.
+// way. Never replaces an existing directory entry: a taken name gets a numbered one, and a
+// filesystem that can't do an atomic non-replacing rename makes the put-back fail instead of
+// risking the replacement. Restoring across volumes copies the item into a staging name next to
+// the destination, preserving its data and metadata, and only then claims the name.
 PutBackResult PutBackTrashedItem(const std::string &_trash_item_path);
 
 // Records the original location of an item that is about to be moved to the trash. The value is

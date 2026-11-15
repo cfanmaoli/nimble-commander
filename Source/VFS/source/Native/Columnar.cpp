@@ -130,8 +130,14 @@ void AppendDirectory(SharedState &_state,
     };
 
     // Stop the enumeration once the entry budget is spent - reading a directory with a million
-    // entries only to throw all of them away is exactly the kind of work the budget is for.
-    const size_t remaining_items = _state.items < _max_items ? _max_items - _state.items : 0;
+    // entries only to throw all of them away is exactly the kind of work the budget is for. The
+    // counter is read under the same lock that guards it: the other workers are adding entries to
+    // their own directories at the same time.
+    size_t remaining_items = 0;
+    {
+        const std::lock_guard lock{_state.mutex};
+        remaining_items = _state.items < _max_items ? _max_items - _state.items : 0;
+    }
     if( remaining_items == 0 ) {
         _state.truncated = true;
         ::close(fd);

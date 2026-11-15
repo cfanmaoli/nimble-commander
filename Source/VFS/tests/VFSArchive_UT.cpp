@@ -2393,6 +2393,32 @@ TEST_CASE(PREFIX "browses a RAR archive with the ncrar-helper")
     REQUIRE(file->Close());
 }
 
+TEST_CASE(PREFIX "a damaged RAR entry fails the read after the whole payload")
+{
+    if( !rar::FindHelper() )
+        SKIP("the ncrar-helper is required for this test");
+    const TestDir dir;
+
+    std::vector<unsigned char> broken(std::begin(__rar5_stored), std::end(__rar5_stored));
+    const std::string_view payload = "hello libarchive test suite!\n";
+    const auto payload_begin = std::ranges::search(broken, payload);
+    REQUIRE(!payload_begin.empty());
+    // Corrupt one payload byte, keeping the headers intact: the helper hands the whole entry out
+    // first and reports the checksum mismatch only afterwards, through its exit status. Before
+    // the status was verified this read looked like a success.
+    *(payload_begin.begin() + 5) ^= 0xFF;
+
+    const std::string fixture =
+        WriteRarFixture(dir.directory.c_str(), "rar5_damaged.rar", broken.data(), broken.size());
+    std::shared_ptr<RarHelperHost> host;
+    REQUIRE_NOTHROW(host = std::make_shared<RarHelperHost>(fixture, TestEnv().vfs_native));
+
+    const VFSFilePtr file = host->CreateFile("/helloworld.txt").value();
+    REQUIRE(file->Open(VFSFlags::OF_Read));
+    const std::expected<std::vector<uint8_t>, Error> data = file->ReadFile();
+    CHECK_FALSE(data);
+}
+
 TEST_CASE(PREFIX "reads unix modes from the ncrar-helper listing")
 {
     if( !rar::FindHelper() )

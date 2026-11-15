@@ -267,18 +267,6 @@ bool ReadAttribute(const std::string &_path, const char *_name, std::string &_va
 // How many numbered names a put-back is willing to try before it reports a failure.
 constexpr int kMaxTargetCandidates = 10'000;
 
-// Checks whether a directory entry already occupies the given path. Unlike
-// std::filesystem::exists(), a dangling symlink is still an occupant: the name is taken even
-// though the object the link points at is gone.
-bool EntryExists(const std::string &_path, int &_error)
-{
-    struct stat st;
-    if( lstat(_path.c_str(), &st) == 0 )
-        return true;
-    _error = (errno == ENOENT || errno == ENOTDIR) ? 0 : errno;
-    return false;
-}
-
 // The name to use when the original one is taken: 'report.pdf' -> 'report 2.pdf'.
 std::string NumberedTarget(const std::string &_target, const int _index)
 {
@@ -291,23 +279,14 @@ std::string NumberedTarget(const std::string &_target, const int _index)
 }
 
 // Renames without ever replacing an existing entry. RENAME_EXCL makes the check and the move a
-// single atomic operation, so another process can't slip an entry in between them.
+// single atomic operation, so another process can't slip an entry in between them. A filesystem
+// that can't provide that guarantee makes the restore fail instead - silently replacing an entry
+// with a plain rename() is not an acceptable fallback for user data.
 int RenameExclusive(const std::string &_from, const std::string &_to)
 {
     if( renamex_np(_from.c_str(), _to.c_str(), RENAME_EXCL) == 0 )
         return 0;
-    const int error = errno;
-    if( error != ENOTSUP && error != EINVAL )
-        return error;
-
-    // Some filesystems don't implement renameatx_np() - fall back to a plain rename guarded by a
-    // symlink-aware check. The window between the two calls remains, but it is the only one.
-    int check_error = 0;
-    if( EntryExists(_to, check_error) )
-        return EEXIST;
-    if( check_error != 0 )
-        return check_error;
-    return rename(_from.c_str(), _to.c_str()) == 0 ? 0 : errno;
+    return errno;
 }
 
 // Copies the extended attributes of the entry itself, without following a symlink.
@@ -342,12 +321,15 @@ int CopyAttributes(const std::string &_from, const std::string &_to)
     return 0;
 }
 
-int CopyEntry(const std::string &_from, const std::string &_to);
+int CopyEntry(const std::string &_from, const std::string &_to, bool &_created);
 
-int CopyDirectory(const std::string &_from, const std::string &_to, const struct stat &_st)
+int CopyDirectory(const std::string &_from, const std::string &_to, bool &_created)
 {
-    if( mkdir(_to.c_str(), _st.st_mode & 07777) != 0 )
+    // Owner access first: the source mode can be read-only (0500), while the children still have
+    // to be written. The final mode, ACL and times are applied below, once the tree is complete.
+    if( mkdir(_to.c_str(), 0700) != 0 )
         return errno;
+    _created = true;
 
     DIR *const dir = opendir(_from.c_str());
     if( dir == nullptr )
@@ -363,7 +345,8 @@ int CopyDirectory(const std::string &_from, const std::string &_to, const struct
         std::string child_to = _to;
         child_to += '/';
         child_to += name;
-        const int rc = CopyEntry(child_from, child_to);
+        bool child_created = false;
+        const int rc = CopyEntry(child_from, child_to, child_created);
         // A conflict with an entry that appeared inside a folder this call has just created is a
         // race, not a taken top-level name - the caller has to drop the partial tree.
         result = rc == EEXIST ? EIO : rc;
@@ -375,16 +358,20 @@ int CopyDirectory(const std::string &_from, const std::string &_to, const struct
         return result;
 
     // The children are in place - bring the directory's own mode, times, ACL and extended
-    // attributes over.
+    // attributes over. This also restores a read-only source directory's final permissions.
     if( copyfile(_from.c_str(), _to.c_str(), nullptr, COPYFILE_METADATA) != 0 )
         return errno;
     return 0;
 }
 
-// Copies one entry without replacing anything at the destination. Directories are walked by hand
-// so that every child gets the full metadata treatment; copyfile() itself only handles files.
-int CopyEntry(const std::string &_from, const std::string &_to)
+// Copies one entry, which must not exist yet. '_created' reports whether this call created the
+// destination entry - the staging cleanup relies on it, so that a failure before the creation
+// can't remove anything that belongs to somebody else. Directories are walked by hand so that
+// every child gets the full metadata treatment; copyfile() itself only handles files.
+int CopyEntry(const std::string &_from, const std::string &_to, bool &_created)
 {
+    _created = false;
+
     struct stat st;
     if( lstat(_from.c_str(), &st) != 0 )
         return errno;
@@ -406,6 +393,7 @@ int CopyEntry(const std::string &_from, const std::string &_to)
         }
         if( symlink(target.c_str(), _to.c_str()) != 0 )
             return errno;
+        _created = true;
         if( const int rc = CopyAttributes(_from, _to); rc != 0 )
             return rc;
         const struct timespec times[2] = {st.st_atimespec, st.st_mtimespec};
@@ -414,31 +402,76 @@ int CopyEntry(const std::string &_from, const std::string &_to)
         return 0;
     }
     if( S_ISDIR(st.st_mode) )
-        return CopyDirectory(_from, _to, st);
+        return CopyDirectory(_from, _to, _created);
     if( S_ISREG(st.st_mode) ) {
+        // Claim the name first: then a failed copy still leaves an entry this call owns, and the
+        // cleanup can never be confused with an entry that was already there.
+        const int fd = open(_to.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
+        if( fd < 0 )
+            return errno;
+        close(fd);
+        _created = true;
         // COPYFILE_ALL carries the data, the resource fork, the ACL and the extended attributes
-        // (Finder tags, the quarantine flag, ...) over; COPYFILE_EXCL keeps the name reserved.
-        if( copyfile(_from.c_str(), _to.c_str(), nullptr, COPYFILE_ALL | COPYFILE_EXCL) != 0 )
+        // (Finder tags, the quarantine flag, ...) over onto the claimed file.
+        if( copyfile(_from.c_str(), _to.c_str(), nullptr, COPYFILE_ALL) != 0 )
             return errno;
         return 0;
     }
-    if( S_ISFIFO(st.st_mode) )
-        return mkfifo(_to.c_str(), st.st_mode & 07777) == 0 ? 0 : errno;
-    if( S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) )
-        return mknod(_to.c_str(), st.st_mode, st.st_rdev) == 0 ? 0 : errno;
+    if( S_ISFIFO(st.st_mode) ) {
+        if( mkfifo(_to.c_str(), st.st_mode & 07777) != 0 )
+            return errno;
+        _created = true;
+        return chmod(_to.c_str(), st.st_mode & 07777) == 0 ? 0 : errno;
+    }
+    if( S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) ) {
+        if( mknod(_to.c_str(), st.st_mode, st.st_rdev) != 0 )
+            return errno;
+        _created = true;
+        return 0;
+    }
     return EOPNOTSUPP; // sockets and anything unknown can't be recreated by copying
 }
 
-// Copies an entry tree without replacing anything at the destination. EEXIST means the destination
-// itself was taken and nothing was created; any other failure drops the partial copy.
+// A hidden staging name next to '_target'. The copy is built there and only then committed with an
+// exclusive rename, so the final name is never written to and the commit stays on one filesystem.
+std::string StagingPath(const std::string &_target, const int _attempt)
+{
+    const std::filesystem::path target(_target);
+    std::string name = ".nc-restore-";
+    name += std::to_string(getpid());
+    name += '-';
+    name += std::to_string(_attempt);
+    return (target.parent_path() / name).string();
+}
+
+// Copies the entry into a fresh staging name next to '_target' and claims '_target' with an
+// atomic, non-replacing rename. Returns 0, EEXIST when the name is taken, or an errno. Whatever
+// already occupies '_target' is never touched, and a failure only removes the staging copy.
 int CopyEntryExclusive(const std::string &_from, const std::string &_to)
 {
-    const int rc = CopyEntry(_from, _to);
-    if( rc == 0 || rc == EEXIST )
-        return rc;
-    std::error_code ec;
-    std::filesystem::remove_all(_to, ec);
-    return rc;
+    constexpr int kMaxStagingAttempts = 32;
+    for( int attempt = 0; attempt != kMaxStagingAttempts; ++attempt ) {
+        const std::string staging = StagingPath(_to, attempt);
+        bool created = false;
+        const int copy_rc = CopyEntry(_from, staging, created);
+        if( copy_rc == EEXIST )
+            continue; // the staging name is taken as well - try the next one
+        if( copy_rc != 0 ) {
+            if( created ) {
+                std::error_code ec;
+                std::filesystem::remove_all(staging, ec);
+            }
+            return copy_rc;
+        }
+
+        const int commit_rc = RenameExclusive(staging, _to);
+        if( commit_rc == 0 )
+            return 0;
+        std::error_code ec;
+        std::filesystem::remove_all(staging, ec);
+        return commit_rc;
+    }
+    return EEXIST;
 }
 
 // Removes the recorded original location from the entry itself - with the default flags a symlink
