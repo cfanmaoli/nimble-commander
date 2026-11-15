@@ -1,7 +1,8 @@
+[![Build and Test](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml/badge.svg)](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml)
+
 # Nimble Commander-Fork
 
 [English](README.md) | **简体中文**
-[![Build and Test](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml/badge.svg)](https://github.com/cfanmaoli/nimble-commander/actions/workflows/build.yml)
 
 Nimble Commander-Fork 是 [Nimble Commander](https://github.com/mikekazakov/nimble-commander) 的社区维护分支。
 Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打速度、纯键盘操作和可定制性。
