@@ -1,0 +1,108 @@
+name: Release Build
+
+# Builds the unsigned release DMG and attaches it to a GitHub release.
+#
+# A release is built from an existing tag: publish a release (or dispatch this workflow with a tag)
+# once the version bump is committed and tagged. The DMG is produced by Scripts/build_unsigned.sh -
+# the same script the local release process uses - so the asset names match the ones the website and
+# the release notes refer to: nimble-commander-fork-<version>.dmg plus a .sha256 file.
+#
+# The appcast (appcast.xml) is NOT updated here: Sparkle's EdDSA private key is not available to CI,
+# so the feed is still regenerated locally with Scripts/update_appcast.py after the release is made.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build, e.g. v1.9.3 (leave empty to build the current default branch)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XC_VERSION: '27.2'
+
+jobs:
+
+  build-release:
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: write # attach the DMG to the release
+    steps:
+    - name: Select the Xcode version
+      run: |
+        if [ -d "/Applications/Xcode_${XC_VERSION}.app" ]; then
+          sudo xcode-select -s "/Applications/Xcode_${XC_VERSION}.app"
+        fi
+        xcodebuild -version
+    - uses: actions/checkout@v5
+      with:
+        # A published release is built from its tag; a manual run may name any tag, otherwise the
+        # current default branch is used.
+        ref: ${{ github.event_name == 'release' && github.ref || (inputs.tag != '' && format('refs/tags/{0}', inputs.tag) || github.ref) }}
+        fetch-depth: 0 # the bundle version is the number of commits
+    - name: Install the packaging dependencies
+      run: brew install create-dmg pandoc basictex
+    - name: Install the test dependencies
+      # 'gem install' has to happen before path_helper reshuffles the PATH - afterwards it resolves
+      # to the un-writable system ruby.
+      run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
+    - name: Build and package
+      run: |
+        eval "$(/usr/libexec/path_helper)"
+        cd Scripts && ./build_unsigned.sh
+    - name: Prepare the release assets
+      id: assets
+      run: |
+        set -euo pipefail
+        dmg=$(ls Scripts/*.dmg | head -1)
+        if [ -z "$dmg" ]; then
+          echo 'No DMG was produced' >&2
+          exit 1
+        fi
+        app='Scripts/Nimble Commander-Fork.app'
+        version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")
+        asset="nimble-commander-fork-${version}.dmg"
+        cp "$dmg" "$asset"
+        shasum -a 256 "$asset" > "$asset.sha256"
+        echo "asset=$asset" >> "$GITHUB_OUTPUT"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        cat "$asset.sha256"
+    - uses: actions/upload-artifact@v6
+      with:
+        name: nimble-commander-fork-release
+        path: |
+          *.dmg
+          *.sha256
+        if-no-files-found: error
+    - name: Attach the assets to the release
+      if: github.event_name == 'release' || inputs.tag != ''
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ASSET: ${{ steps.assets.outputs.asset }}
+        VERSION: ${{ steps.assets.outputs.version }}
+        TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+      run: |
+        set -euo pipefail
+        if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          echo "There is no release for tag $TAG - the assets are kept in the workflow artifact only."
+          echo "The DMG is $ASSET ($VERSION)."
+          exit 0
+        fi
+        gh release upload "$TAG" "$ASSET" "$ASSET.sha256" --repo "$GITHUB_REPOSITORY" --clobber
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: build-logs
+        path: Scripts/**/*.log
+        if-no-files-found: ignore
