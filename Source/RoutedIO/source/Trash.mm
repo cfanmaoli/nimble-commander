@@ -7,6 +7,7 @@
 #include <copyfile.h>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
@@ -334,8 +335,27 @@ int CopyDirectory(const std::string &_from, const std::string &_to, bool &_creat
     DIR *const dir = opendir(_from.c_str());
     if( dir == nullptr )
         return errno;
+
+    // NC_TRASH_TEST_READDIR_EIO is a test hook: it makes the enumeration fail after the first entry
+    // so that the error path can be exercised deterministically. It has no effect unless set.
+    const bool fail_readdir = std::getenv("NC_TRASH_TEST_READDIR_EIO") != nullptr;
     int result = 0;
-    while( const dirent *const entry = readdir(dir) ) {
+    int entries_read = 0;
+    for( ;; ) {
+        errno = 0;
+        if( fail_readdir && entries_read > 0 ) {
+            result = EIO;
+            break;
+        }
+        const dirent *const entry = readdir(dir);
+        if( entry == nullptr ) {
+            // A NULL can mean both "end of the listing" and "the listing failed" - the two have to
+            // be told apart, otherwise an incomplete copy is treated as a complete one.
+            if( errno != 0 )
+                result = errno;
+            break;
+        }
+        ++entries_read;
         const std::string name = entry->d_name;
         if( name == "." || name == ".." )
             continue;
@@ -353,7 +373,8 @@ int CopyDirectory(const std::string &_from, const std::string &_to, bool &_creat
         if( result != 0 )
             break;
     }
-    closedir(dir);
+    if( closedir(dir) != 0 && result == 0 )
+        result = errno;
     if( result != 0 )
         return result;
 
@@ -444,6 +465,30 @@ std::string StagingPath(const std::string &_target, const int _attempt)
     return (target.parent_path() / name).string();
 }
 
+// Removes a staging copy created by this call. The copy may have inherited read-only directory
+// modes from the source (e.g. 0500), which would keep remove_all() from deleting the children, so
+// owner write access is restored on every directory first. Returns 0, or the errno when the staging
+// entry still couldn't be removed.
+int RemoveStagingTree(const std::string &_staging) noexcept
+{
+    struct stat st;
+    if( ::lstat(_staging.c_str(), &st) == 0 && S_ISDIR(st.st_mode) ) {
+        std::error_code ec;
+        for( std::filesystem::recursive_directory_iterator
+                 it{_staging, std::filesystem::directory_options::skip_permission_denied, ec},
+             end;
+             !ec && it != end;
+             it.increment(ec) ) {
+            if( it->is_directory(ec) )
+                ::chmod(it->path().c_str(), 0700);
+        }
+        ::chmod(_staging.c_str(), 0700);
+    }
+    std::error_code ec;
+    std::filesystem::remove_all(_staging, ec);
+    return ec ? ec.value() : 0;
+}
+
 // Copies the entry into a fresh staging name next to '_target' and claims '_target' with an
 // atomic, non-replacing rename. Returns 0, EEXIST when the name is taken, or an errno. Whatever
 // already occupies '_target' is never touched, and a failure only removes the staging copy.
@@ -458,8 +503,9 @@ int CopyEntryExclusive(const std::string &_from, const std::string &_to)
             continue; // the staging name is taken as well - try the next one
         if( copy_rc != 0 ) {
             if( created ) {
-                std::error_code ec;
-                std::filesystem::remove_all(staging, ec);
+                const int cleanup_rc = RemoveStagingTree(staging);
+                if( cleanup_rc != 0 )
+                    return cleanup_rc;
             }
             return copy_rc;
         }
@@ -467,8 +513,9 @@ int CopyEntryExclusive(const std::string &_from, const std::string &_to)
         const int commit_rc = RenameExclusive(staging, _to);
         if( commit_rc == 0 )
             return 0;
-        std::error_code ec;
-        std::filesystem::remove_all(staging, ec);
+        const int cleanup_rc = RemoveStagingTree(staging);
+        if( cleanup_rc != 0 )
+            return cleanup_rc;
         return commit_rc;
     }
     return EEXIST;

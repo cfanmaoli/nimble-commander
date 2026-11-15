@@ -307,6 +307,48 @@ TEST_CASE(PREFIX "put-back across volumes preserves the data and the metadata")
         CHECK(!std::filesystem::exists(trashed));
         CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
     }
+
+    SECTION("a directory enumeration failure is not treated as a complete copy")
+    {
+        const std::string trashed = mount + "/tree2";
+        WriteFile(trashed + "/child.txt", "child");
+        const std::string target = (dir.directory / "original" / "tree2").string();
+        RememberOriginalPath(trashed, target);
+
+        // Make readdir() fail after the first entry, as it would on a hardware error. The partial
+        // directory must not be committed, and the source must stay in place.
+        REQUIRE(::setenv("NC_TRASH_TEST_READDIR_EIO", "1", 1) == 0);
+        const auto unset = at_scope_end([&] { ::unsetenv("NC_TRASH_TEST_READDIR_EIO"); });
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        CHECK(!outcome.restored);
+        CHECK(outcome.error == EIO);
+        CHECK(std::filesystem::exists(trashed));
+        CHECK(std::filesystem::exists(trashed + "/child.txt"));
+        CHECK(!std::filesystem::exists(target));
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
+    }
+
+    SECTION("a read-only directory that hits an occupied name leaves no staging copy")
+    {
+        const std::string trashed = mount + "/ro2";
+        WriteFile(trashed + "/child.txt", "child");
+        const std::string target = (dir.directory / "original" / "ro2").string();
+        RememberOriginalPath(trashed, target);
+        REQUIRE(::chmod(trashed.c_str(), 0500) == 0);
+        std::filesystem::create_directories(target);
+
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(trashed);
+        REQUIRE(outcome.error == 0);
+        REQUIRE(outcome.restored);
+        const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(outcome.resulting_path.c_str(), 0700); });
+        CHECK(outcome.resulting_path == (dir.directory / "original" / "ro2 2").string());
+        CHECK(std::filesystem::is_directory(target)); // the occupied name stayed untouched
+        CHECK(ReadFile(outcome.resulting_path + "/child.txt") == "child");
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
+        // The restored copy is read-only again, so the source can't be dropped - that is reported.
+        CHECK(outcome.source_remains);
+    }
 }
 
 #undef PREFIX
