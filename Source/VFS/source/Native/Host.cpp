@@ -468,9 +468,13 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
 
     // when Admin Mode is on - we use different fetch route
     const int ret =
-        is_native_io
-            ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param, _max_items, (_flags & VFSFlags::F_NoTimes) == 0)
-            : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
+        is_native_io ? Fetching::ReadDirAttributesBulk(fd,
+                                                       cb_fetch,
+                                                       cb_param,
+                                                       _max_items,
+                                                       (_flags & VFSFlags::F_NoTimes) == 0,
+                                                       (_flags & VFSFlags::F_NoSizes) == 0)
+                     : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});
 

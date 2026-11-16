@@ -8,6 +8,7 @@
 #include <VFS/NetFTP.h>
 #include <VFS/NetSFTP.h>
 #include <VFS/NetWebDAV.h>
+#include <VFS/RarHelper.h>
 #include <NimbleCommander/Bootstrap/AppDelegate.h>
 
 namespace nc::bootstrap {
@@ -27,6 +28,9 @@ void RegisterAvailableVFS()
     VFSFactory::Instance().RegisterVFS(vfs::ArchiveRawHost::Meta());
     VFSFactory::Instance().RegisterVFS(vfs::XAttrHost::Meta());
     VFSFactory::Instance().RegisterVFS(vfs::WebDAVHost::Meta());
+    // The RAR VFS is registered even while the optional component is disabled: the metadata is
+    // static, hosts are only created on demand.
+    VFSFactory::Instance().RegisterVFS(vfs::rar::RarHelperHostMeta());
 }
 
 } // namespace nc::bootstrap

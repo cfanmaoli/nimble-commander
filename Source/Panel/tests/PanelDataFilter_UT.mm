@@ -4,6 +4,9 @@
 
 #define PREFIX "PanelDataFilter "
 
+#include <VFS/VFS.h>
+#include <VFS/VFSListingInput.h>
+
 namespace {
 
 using namespace nc;
@@ -64,6 +67,61 @@ TEST_CASE(PREFIX "Fuzzy search")
         auto hl = FuzzySearch(tc.filename, tc.text);
         CHECK(hl == tc.expected);
     }
+}
+
+namespace {
+
+VFSListingPtr ProduceFilterTestListing(const std::vector<std::string> &_filenames)
+{
+    vfs::ListingInput l;
+    l.directories.reset(variable_container<>::type::common);
+    l.directories[0] = "/";
+    l.hosts.reset(variable_container<>::type::common);
+    l.hosts[0] = VFSHost::DummyHost();
+    for( const std::string &filename : _filenames ) {
+        l.filenames.emplace_back(filename);
+        l.unix_modes.emplace_back(0);
+        l.unix_types.emplace_back(0);
+    }
+    return VFSListing::Build(std::move(l));
+}
+
+} // namespace
+
+TEST_CASE(PREFIX "A regular expression is matched against the name, not its transliteration")
+{
+    const VFSListingPtr listing = ProduceFilterTestListing({"ab", "abc", "下载"});
+    TextualFilter filter;
+    filter.type = TextualFilter::Regex;
+    filter.ignore_dot_dot = true;
+
+    // The expression doesn't have to be shorter than the name it matches.
+    filter.text = @"a.*b";
+    CHECK(filter.IsValidItem(listing->Item(0)));
+    CHECK(filter.IsValidItem(listing->Item(1)));
+    CHECK_FALSE(filter.IsValidItem(listing->Item(2)));
+
+    // And the pinyin shortcut must not decide the match: "下载" doesn't contain an "x".
+    filter.text = @"x";
+    CHECK_FALSE(filter.IsValidItem(listing->Item(2)));
+    filter.text = @"xz";
+    CHECK_FALSE(filter.IsValidItem(listing->Item(2)));
+}
+
+TEST_CASE(PREFIX "Ideographs stay reachable through pinyin initials in the literal modes")
+{
+    const VFSListingPtr listing = ProduceFilterTestListing({"下载.txt", "plain.txt"});
+    TextualFilter filter;
+    filter.type = TextualFilter::Anywhere;
+    filter.ignore_dot_dot = true;
+
+    filter.text = @"xz";
+    CHECK(filter.IsValidItem(listing->Item(0)));
+    CHECK_FALSE(filter.IsValidItem(listing->Item(1)));
+
+    filter.text = @"txt";
+    CHECK(filter.IsValidItem(listing->Item(0)));
+    CHECK(filter.IsValidItem(listing->Item(1)));
 }
 
 TEST_CASE(PREFIX "Regex search")

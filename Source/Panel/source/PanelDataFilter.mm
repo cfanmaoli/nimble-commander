@@ -237,6 +237,16 @@ bool IsLatinOnly(NSString *_text) noexcept
     return true;
 }
 
+// Ideographs are the only thing the transliteration can contribute: for a name made of ASCII
+// characters the initials cache would be filled and then thrown away. Checking for a non-ASCII
+// character first is much cheaper - the quick search walks the whole listing on every keystroke.
+bool MayHaveIdeographs(NSString *_name) noexcept
+{
+    [[clang::no_destroy]] static NSCharacterSet *const non_ascii =
+        [NSCharacterSet characterSetWithRange:NSMakeRange(0x80, 0xFFFF - 0x80 + 1)];
+    return [_name rangeOfCharacterFromSet:non_ascii].location != NSNotFound;
+}
+
 } // namespace
 
 std::string PinyinInitialsForName(NSString *_name) noexcept
@@ -374,17 +384,9 @@ bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighligh
 
     NSString *const name = _item.DisplayNameNS();
 
-    // A name carrying ideographs can also be reached through the initials of its transliteration,
-    // so that "下载" answers to "xz" - the literal comparison below knows nothing about that.
-    if( auto pinyin = PinyinInitialsSearch(name, text, type) ) {
-        _found_range = *pinyin;
-        return true;
-    }
-
-    const auto namelen = name.length;
-    if( textlen > namelen )
-        return false; // unsatisfiable by definition
-
+    // A regular expression is matched against the name as it is: the length pre-check and the
+    // pinyin shortcut are both meaningless for it - "a.*b" doesn't have to be shorter than the
+    // name it matches, and the name must not be matched through its transliteration instead.
     if( type == Regex ) {
         if( auto res = RegexSearch(name, text) ) {
             _found_range = *res;
@@ -392,6 +394,20 @@ bool TextualFilter::IsValidItem(const VFSListingItem &_item, QuickSearchHighligh
         }
         return false;
     }
+
+    const auto namelen = name.length;
+
+    // A name carrying ideographs can also be reached through the initials of its transliteration,
+    // so that "下载" answers to "xz" - the literal comparison below knows nothing about that.
+    if( MayHaveIdeographs(name) ) {
+        if( auto pinyin = PinyinInitialsSearch(name, text, type) ) {
+            _found_range = *pinyin;
+            return true;
+        }
+    }
+
+    if( textlen > namelen )
+        return false; // unsatisfiable by definition
 
     if( type == Anywhere ) {
         const NSRange result = [name rangeOfString:text options:NSCaseInsensitiveSearch];

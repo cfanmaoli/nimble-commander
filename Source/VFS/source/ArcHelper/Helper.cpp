@@ -168,6 +168,10 @@ std::expected<ChildProcess, Error> ChildProcess::Spawn(const std::string &_helpe
     int fds[2] = {-1, -1};
     if( ::pipe(fds) != 0 )
         return std::unexpected(Error{Error::POSIX, errno});
+    // Another helper spawned concurrently would otherwise inherit this pipe through fork+exec and
+    // keep its read end open forever - our Read() would then never see EOF.
+    ::fcntl(fds[0], F_SETFD, FD_CLOEXEC);
+    ::fcntl(fds[1], F_SETFD, FD_CLOEXEC);
 
     const pid_t pid = ::fork();
     if( pid < 0 ) {

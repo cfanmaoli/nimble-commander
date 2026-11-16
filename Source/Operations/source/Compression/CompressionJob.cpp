@@ -232,10 +232,19 @@ bool CompressionJob::BuildArchive()
 
         ProcessItems();
 
-        archive_write_close(m_Archive);
+        const int close_rc = archive_write_close(m_Archive);
         archive_write_free(m_Archive);
+        m_Archive = nullptr;
 
-        std::ignore = m_TargetFile->Close();
+        const std::expected<void, Error> target_close_rc = m_TargetFile->Close();
+
+        // A failed close leaves an incomplete archive behind - a full disk or a central directory
+        // that couldn't be written must not be reported as a successful operation.
+        if( close_rc != ARCHIVE_OK || !target_close_rc ) {
+            m_TargetWriteError(
+                target_close_rc ? Error{Error::POSIX, EIO} : target_close_rc.error(), m_TargetArchivePath, *m_DstVFS);
+            Stop();
+        }
 
         if( IsStopped() ) {
             std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);

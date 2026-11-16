@@ -162,13 +162,12 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
         return std::unexpected(read.error());
 
     if( *read == 0 ) {
-        // The helper has stopped before producing the whole payload - the archive is broken.
-        const std::expected<int, Error> exit_code = m_Process->Wait();
+        // The helper has stopped before producing the whole payload - the archive is broken or the
+        // helper died. WaitFor() keeps this from blocking on a helper that never exits.
+        const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kExitTimeout);
         TerminateStream();
-        if( !exit_code )
-            return std::unexpected(Error{Error::POSIX, EIO});
-        if( *exit_code != 0 )
-            return std::unexpected(ErrorForHelperExitCode(*exit_code));
+        if( exit_code && exit_code->has_value() && **exit_code != 0 )
+            return std::unexpected(ErrorForHelperExitCode(**exit_code));
         return std::unexpected(Error{Error::POSIX, EIO});
     }
 

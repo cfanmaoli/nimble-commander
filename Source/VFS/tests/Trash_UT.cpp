@@ -476,4 +476,60 @@ TEST_CASE(PREFIX "emptying a trash folder never deletes into a mounted volume")
     CHECK(ReadFile(mount + "/keep.txt") == "keep");
 }
 
+TEST_CASE(PREFIX "put-back refuses a recorded location that isn't a sane absolute path")
+{
+    TestDir dir;
+    const std::string trash = (dir.directory / "trash").string();
+    std::filesystem::create_directories(trash);
+    const std::string item = trash + "/item.txt";
+    WriteFile(item, "x");
+
+    const auto set_location = [&](std::string_view _value) {
+        REQUIRE(::setxattr(item.c_str(),
+                           nc::routedio::detail::kOriginalLocationAttribute,
+                           _value.data(),
+                           _value.size(),
+                           0,
+                           XATTR_NOFOLLOW) == 0);
+    };
+
+    SECTION("a relative path")
+    {
+        set_location("relative/dir/item.txt");
+        CHECK(nc::routedio::PutBackTrashedItem(item).error == EINVAL);
+        CHECK(std::filesystem::exists(item));
+    }
+    SECTION("a path inside the trash")
+    {
+        // The check compares against the real trash folders - the test's own folder is just a
+        // folder, not a trash location.
+        const std::vector<std::string> locations = nc::routedio::TrashLocations();
+        if( locations.empty() )
+            SKIP("no trash folder is available");
+        set_location(locations.front() + "/nested/item.txt");
+        CHECK(nc::routedio::PutBackTrashedItem(item).error == EINVAL);
+        CHECK(std::filesystem::exists(item));
+    }
+    SECTION("a path reaching into the trash via a dot-dot")
+    {
+        const std::vector<std::string> locations = nc::routedio::TrashLocations();
+        if( locations.empty() )
+            SKIP("no trash folder is available");
+        const std::string name = std::filesystem::path(locations.front()).filename().string();
+        set_location(locations.front() + "/../" + name + "/nested/item.txt");
+        CHECK(nc::routedio::PutBackTrashedItem(item).error == EINVAL);
+        CHECK(std::filesystem::exists(item));
+    }
+    SECTION("a normal absolute path still works")
+    {
+        const std::string target = (dir.directory / "restored.txt").string();
+        set_location(target);
+        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item);
+        REQUIRE(outcome.error == 0);
+        CHECK(outcome.restored);
+        CHECK(outcome.resulting_path == target);
+        CHECK(ReadFile(target) == "x");
+    }
+}
+
 #undef PREFIX

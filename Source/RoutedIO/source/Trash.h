@@ -11,4 +11,7 @@ namespace nc::routedio::detail {
 // still couldn't be removed. Exposed mainly for testing.
 int RemoveStagingTree(const std::string &_staging) noexcept;
 
+// The extended attribute that records where an item came from. Exposed for testing.
+extern const char *const kOriginalLocationAttribute;
+
 } // namespace nc::routedio::detail

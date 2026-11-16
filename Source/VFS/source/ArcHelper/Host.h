@@ -81,7 +81,7 @@ private:
 
     std::expected<void, Error> DoInit(const VFSCancelChecker &_cancel_checker);
     std::expected<void, Error> ReadListing(const VFSCancelChecker &_cancel_checker);
-    void BuildTree(const rar::Listing &_listing);
+    std::expected<void, Error> BuildTree(const rar::Listing &_listing, const VFSCancelChecker &_cancel_checker);
     const class RarHelperHostConfiguration &Config() const;
 
     std::unique_ptr<Impl> I;

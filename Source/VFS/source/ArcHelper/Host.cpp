@@ -17,6 +17,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -66,6 +67,10 @@ std::string JoinArchivePath(const std::vector<std::string> &_components)
     return path;
 }
 
+// A listing of a million entries is well under a hundred megabytes - anything past this is a sign
+// of a broken helper rather than of a real archive, and must not make us allocate without a limit.
+constexpr size_t g_MaxHelperOutputSize = size_t{512} * 1024 * 1024;
+
 // Reads everything the child writes to stdout, checking for cancellation while waiting. Keep the
 // buffer off the stack - the VFS code has a tight stack frame budget.
 std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, const VFSCancelChecker &_cancel_checker)
@@ -93,6 +98,9 @@ std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, c
             return std::unexpected(read.error());
         if( *read == 0 )
             break;
+        // A corrupt or hostile helper must not be able to make us allocate without a limit.
+        if( output.size() + *read > g_MaxHelperOutputSize )
+            return std::unexpected(Error{Error::POSIX, EFBIG});
         output.append(buffer.get(), *read);
     }
     return output;
@@ -175,6 +183,11 @@ struct RarHelperHost::Impl {
         root.full_path = "/";
         path_to_dir.emplace("/", std::move(root));
     }
+
+    // Full path of an entry -> its index in the parent directory's entries vector. Entries can be
+    // created implicitly when a parent directory is first seen, so both ways register here.
+    ankerl::unordered_dense::map<std::string, size_t, nc::UnorderedStringHashEqual, nc::UnorderedStringHashEqual>
+        entry_index_by_path;
 
     DirRec *FindDir(const std::string_view _path_with_tr_sl);
     DirRec *FindOrBuildDir(const std::string_view _path_with_tr_sl);
@@ -380,13 +393,19 @@ std::expected<void, Error> RarHelperHost::ReadListing(const VFSCancelChecker &_c
             return std::unexpected(Error{Error::POSIX, ENEEDAUTH});
     }
 
-    BuildTree(*listing);
-    return {};
+    return BuildTree(*listing, _cancel_checker);
 }
 
-void RarHelperHost::BuildTree(const rar::Listing &_listing)
+std::expected<void, Error> RarHelperHost::BuildTree(const rar::Listing &_listing,
+                                                    const VFSCancelChecker &_cancel_checker)
 {
+    // Dedupe by the archive path: a linear scan of the parent's entries was quadratic for archives
+    // with many entries in the same directory, and a huge listing must stay cancellable.
+    I->entry_index_by_path.reserve(_listing.entries.size());
+
     for( const rar::Entry &entry : _listing.entries ) {
+        if( _cancel_checker && _cancel_checker() )
+            return std::unexpected(Error{Error::POSIX, ECANCELED});
         if( entry.components.empty() )
             continue;
 
@@ -401,6 +420,9 @@ void RarHelperHost::BuildTree(const rar::Listing &_listing)
                 path += '/';
             path += component;
         }
+        // Some archives store directories with a trailing slash - both spellings are the same entry.
+        while( path.size() > 1 && path.back() == '/' )
+            path.pop_back();
 
         const std::string_view parent_path = utility::PathManip::Parent(path);
         const std::string_view name = utility::PathManip::Filename(path);
@@ -411,20 +433,13 @@ void RarHelperHost::BuildTree(const rar::Listing &_listing)
         if( parent_dir == nullptr )
             continue; // skip entries with bogus paths
 
-        Impl::EntryRec *rec = nullptr;
-        for( Impl::EntryRec &existing : parent_dir->entries )
-            if( existing.name == name ) {
-                rec = &existing;
-                break;
-            }
-
-        if( rec == nullptr ) {
+        const auto [it, inserted] = I->entry_index_by_path.try_emplace(path, parent_dir->entries.size());
+        if( inserted ) {
             parent_dir->entries.emplace_back();
-            rec = &parent_dir->entries.back();
-            rec->name = name;
+            parent_dir->entries.back().name = name;
         }
 
-        I->ApplyEntry(entry, *rec);
+        I->ApplyEntry(entry, parent_dir->entries[it->second]);
 
         if( entry.IsLink() )
             I->needs_path_resolving = true;
@@ -439,6 +454,7 @@ void RarHelperHost::BuildTree(const rar::Listing &_listing)
             }
         }
     }
+    return {};
 }
 
 RarHelperHost::Impl::DirRec *RarHelperHost::Impl::FindDir(const std::string_view _path_with_tr_sl)
@@ -463,6 +479,10 @@ RarHelperHost::Impl::DirRec *RarHelperHost::Impl::FindOrBuildDir(const std::stri
         return nullptr;
 
     InsertDummyDirInto(parent_dir, entry_name);
+    // The implied entry is reachable through the same index as the explicit ones - an archive may
+    // list a directory both implicitly (via its children) and explicitly.
+    entry_index_by_path.emplace(std::string{_path_with_tr_sl.substr(0, _path_with_tr_sl.size() - 1)},
+                                parent_dir->entries.size() - 1);
 
     DirRec dir;
     dir.full_path = std::string{_path_with_tr_sl};
@@ -856,3 +876,22 @@ std::expected<std::string, Error> RarHelperHost::ReadSymlink(std::string_view _s
 }
 
 } // namespace nc::vfs
+
+namespace nc::vfs::rar {
+
+std::string_view RarHelperHostTag() noexcept
+{
+    return RarHelperHost::UniqueTag;
+}
+
+VFSMeta RarHelperHostMeta()
+{
+    return RarHelperHost::Meta();
+}
+
+VFSHostPtr CreateRarHelperHost(std::string_view _path, const VFSHostPtr &_parent, VFSCancelChecker _cancel_checker)
+{
+    return std::make_shared<RarHelperHost>(_path, _parent, std::nullopt, std::move(_cancel_checker));
+}
+
+} // namespace nc::vfs::rar

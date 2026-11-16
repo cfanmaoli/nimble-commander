@@ -937,15 +937,19 @@ void RelaunchApplication()
         //
         // Wait for this very process to disappear before starting the new copy: launching it
         // while we are still alive makes the preferences written a moment ago get lost.
-        NSString *const script =
-            [NSString stringWithFormat:@"while /bin/kill -0 %d 2>/dev/null; do sleep 0.2; done; sleep 0.5; "
-                                       @"/usr/bin/open -n \"%@\"",
-                                       static_cast<int>(getpid()),
-                                       bundle_path];
+        // The pid and the bundle path travel as positional arguments: the path is user-controlled -
+        // it may contain quotes, '$' or backticks - and must never be spliced into the script text.
+        NSString *const script = @"while /bin/kill -0 \"$1\" 2>/dev/null; do sleep 0.2; done; sleep 0.5; "
+                                  "/usr/bin/open -n \"$2\"";
         NSTask *const task = [[NSTask alloc] init];
         task.launchPath = @"/bin/sh";
-        task.arguments = @[@"-c", script];
-        [task launchAndReturnError:nil];
+        task.arguments = @[@"-c", script, @"nc-language-pack-restart", @(getpid()).stringValue, bundle_path];
+        NSError *launch_error = nil;
+        if( ![task launchAndReturnError:&launch_error] ) {
+            // Without the helper process terminating would leave the user with no app at all.
+            NSLog(@"Failed to schedule the relaunch: %@", launch_error.localizedDescription);
+            return;
+        }
         [NSApp terminate:nil];
     }
 }

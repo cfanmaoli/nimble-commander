@@ -5,6 +5,7 @@
 #include <NimbleCommander/Core/VFSInstanceManager.h>
 #include <VFS/ArcLA.h>
 #include <VFS/ArcLARaw.h>
+#include <VFS/RarHelper.h>
 #include <VFS/Native.h>
 #include <VFS/NetFTP.h>
 #include <VFS/NetSFTP.h>
@@ -65,6 +66,10 @@ struct ArcLARaw {
     std::string junction;
 };
 
+struct ArcRar {
+    std::string junction;
+};
+
 struct ArcUnRAR {
     std::string junction;
 };
@@ -121,6 +126,9 @@ std::any PanelDataPersistency::EncodeState(const VFSHost &_host)
     }
     else if( tag == vfs::ArchiveRawHost::UniqueTag ) {
         return ArcLARaw{std::string(_host.JunctionPath())};
+    }
+    else if( tag == vfs::rar::RarHelperHostTag() ) {
+        return ArcRar{std::string(_host.JunctionPath())};
     }
     return {};
 }
@@ -274,6 +282,14 @@ std::optional<PersistentLocation> PanelDataPersistency::JSONToLocation(const jso
 
                 result.hosts.emplace_back(ArcLARaw{h[g_HostInfoJunctionKey].GetString()});
             }
+            else if( tag == vfs::rar::RarHelperHostTag() ) {
+                if( !has_string(g_HostInfoJunctionKey) )
+                    return std::nullopt; // invalid data
+                if( result.hosts.empty() )
+                    return std::nullopt; // invalid data
+
+                result.hosts.emplace_back(ArcRar{h[g_HostInfoJunctionKey].GetString()});
+            }
         }
     }
 
@@ -330,6 +346,11 @@ std::string PanelDataPersistency::MakeFootprintString(const PersistentLocation &
             footprint += '|';
             footprint += la_raw->junction;
         }
+        else if( auto rar = std::any_cast<ArcRar>(&h) ) {
+            footprint += vfs::rar::RarHelperHostTag();
+            footprint += '|';
+            footprint += rar->junction;
+        }
         footprint += '|';
     }
 
@@ -358,7 +379,7 @@ std::string PanelDataPersistency::MakeVerbosePathString(const PersistentLocation
             verbose += la->junction;
         else if( auto la_raw = std::any_cast<ArcLARaw>(&h) )
             verbose += la_raw->junction;
-        else if( auto rar = std::any_cast<ArcUnRAR>(&h) )
+        else if( auto rar = std::any_cast<ArcRar>(&h) )
             verbose += rar->junction;
     }
 
@@ -463,6 +484,14 @@ static Value EncodeAny(const std::any &_host)
             MakeStandaloneString(g_HostInfoJunctionKey), MakeStandaloneString(la_raw->junction), g_CrtAllocator);
         return json;
     }
+    else if( auto rar = std::any_cast<ArcRar>(&_host) ) {
+        json.AddMember(MakeStandaloneString(g_HostInfoTypeKey),
+                       MakeStandaloneString(vfs::rar::RarHelperHostTag()),
+                       g_CrtAllocator);
+        json.AddMember(
+            MakeStandaloneString(g_HostInfoJunctionKey), MakeStandaloneString(rar->junction), g_CrtAllocator);
+        return json;
+    }
 
     return Value{kNullType};
 }
@@ -496,6 +525,10 @@ bool PanelDataPersistency::Fits(VFSHost &_alive, const std::any &_encoded)
     else if( tag == vfs::ArchiveRawHost::UniqueTag ) {
         if( auto la_raw = std::any_cast<ArcLARaw>(encoded) )
             return la_raw->junction == _alive.JunctionPath();
+    }
+    else if( tag == vfs::rar::RarHelperHostTag() ) {
+        if( auto rar = std::any_cast<ArcRar>(encoded) )
+            return rar->junction == _alive.JunctionPath();
     }
     return false;
 }
@@ -569,6 +602,14 @@ std::expected<VFSHostPtr, Error> PanelDataPersistency::CreateVFSFromLocation(con
 
                 const auto host = std::make_shared<vfs::ArchiveRawHost>(la_raw->junction.c_str(), vfs.back());
                 vfs.emplace_back(host);
+            }
+            else if( auto rar = std::any_cast<ArcRar>(&h) ) {
+                if( vfs.empty() )
+                    return std::unexpected(Error{Error::POSIX, EINVAL}); // invalid data
+
+                // The archive password is never persisted - an encrypted archive fails here and the
+                // panel is restored without that tab.
+                vfs.emplace_back(vfs::rar::CreateRarHelperHost(rar->junction, vfs.back()));
             }
         }
     } catch( const ErrorException &ee ) {

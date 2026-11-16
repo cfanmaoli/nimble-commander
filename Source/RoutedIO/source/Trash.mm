@@ -522,6 +522,8 @@ void RemoveOriginalPathAttribute(const std::string &_path) noexcept
 
 namespace detail {
 
+const char *const kOriginalLocationAttribute = g_OriginalPathAttr;
+
 int RemoveStagingTree(const std::string &_staging) noexcept
 {
     // The copy may have inherited read-only directory modes from the source (e.g. 0500), which
@@ -767,7 +769,19 @@ PutBackResult PutBackTrashedItem(const std::string &_trash_item_path)
         return result;
     }
 
-    const std::filesystem::path target_path(*original);
+    // The recorded location comes from an extended attribute or from the Trash's .DS_Store - both
+    // are writable by anything running as this user, and the latter also comes from whatever volume
+    // the trash folder belongs to. Only a normalized absolute path outside of every trash folder is
+    // accepted, so a crafted marker can't "restore" an item to an arbitrary relative location.
+    const std::filesystem::path target_path = std::filesystem::path(*original).lexically_normal();
+    const std::string target_string = target_path.string();
+    if( !target_path.is_absolute() || target_string == target_path.root_path().string() ||
+        IsInsideTrash(target_string) || target_string == _trash_item_path ||
+        target_string.starts_with(_trash_item_path + '/') ) {
+        result.error = EINVAL;
+        return result;
+    }
+
     if( target_path.has_parent_path() ) {
         std::error_code ec;
         std::filesystem::create_directories(target_path.parent_path(), ec);
