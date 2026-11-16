@@ -20,17 +20,26 @@ Go through the commits since the last release, and update `Docs/Help.md` accordi
 
 ## Step 4: Check the version works on the lowest supported macOS version
 
-## Step 5: Check that MAS version builds and works as well
-In case Provisioning Profiles or Signing Certificates have expired, renew them first.
+## Step 5: Check the signing configuration
+Signed packaging is opt-in and driven by environment variables - without them the DMG is unsigned:
+- `NC_CODESIGN_IDENTITY` - a Developer ID Application identity for `create-dmg --codesign`.
+- `NC_NOTARY_PROFILE` - a `notarytool` keychain profile; when set, `build_release.sh`/
+  `build_nightly.sh` submit and staple the DMG.
+- `NC_EXPORT_OPTIONS` - your own export options plist; the checked-in one references the upstream
+  provisioning profile name.
+
+CI does not sign anything: it builds unsigned DMGs, and the release attaches `UNSIGNED-BUILD.txt`
+explaining that Administrator Mode and the privileged helper need a signed build.
 
 ## Step 6: Write "What's New"
 Update 'WHATS_NEW.md' with the list of changes since the last release.
 
 ## Step 7: Make the build
-The `Build and Test` workflow builds and packages an unsigned DMG on every push to `main`
-(`nimble-commander-fork-unsigned` artifact). For the full matrix - all four configurations, the
-full clang-tidy and the integration tests - trigger the same workflow manually with the `full`
-input ticked, or wait for the nightly run.
+Pushes to `main` and pull requests run the gate (Debug tests with clang-format and clang-tidy) and
+stop there. The unsigned DMG is produced by the nightly run or by a manual dispatch of
+`Build and Test` (`nimble-commander-fork-unsigned` artifact); tick `full` for the complete matrix,
+the full clang-tidy and the integration tests. A versioned release is built by the `Release Build`
+workflow from the tag.
 
 ## Step 8: Create a GitHub Release (only if binaries are to be published)
 

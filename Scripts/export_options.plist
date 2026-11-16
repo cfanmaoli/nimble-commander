@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Used by build_release.sh / build_nightly.sh for signed packaging only. The provisioning profile
+     name below belongs to the upstream project - replace it with your own, or point
+     NC_EXPORT_OPTIONS at a different file. CI does not use this file: it builds unsigned. -->
 <plist version="1.0">
 <dict>
 	<key>provisioningProfiles</key>

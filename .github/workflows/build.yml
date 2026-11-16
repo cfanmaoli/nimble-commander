@@ -1,9 +1,13 @@
 name: Build and Test
 
 on:
-  # The fork is developed locally and CI is deliberately not wired to every commit: a workflow that
-  # fires on each push only burns the shared macOS runner pool. Run it manually when needed, or let
-  # the nightly do it.
+  # Pushes to the main branch and pull requests run the cheap gate - the Debug configuration with
+  # clang-format and clang-tidy. The full matrix, the integration tests and the packaging stay on
+  # the nightly schedule and on manual dispatches, so that the shared macOS runner pool isn't
+  # burned on every commit.
+  push:
+    branches: [main]
+  pull_request:
   schedule:
     # Nightly, 18:17 UTC. The minute is deliberately not :00 - GitHub's scheduler is heavily
     # congested at the top of the hour, and in practice these runs used to start hours late.
@@ -211,9 +215,13 @@ jobs:
         {
           echo "Nightly build of `$REF_NAME` at commit [`$SHA`](https://github.com/$GITHUB_REPOSITORY/commit/$SHA) ($(date -u +%Y-%m-%d))."
           echo
-          echo 'The application is unsigned and not notarised: drag it into /Applications and use'
-          echo 'right-click -> Open on the first launch, or run'
-          echo '`xattr -dr com.apple.quarantine "/Applications/Nimble Commander-Fork.app"`.'
+          echo '**This build is unsigned and not notarised.** macOS will refuse to open it on the first'
+          echo 'launch; if you want to run it anyway, allow it explicitly in System Settings ->'
+          echo 'Privacy & Security ("Open Anyway"). Nightly builds are meant for testing.'
+          echo
+          echo 'Administrator Mode and its privileged helper do not work in an unsigned build - the'
+          echo 'helper has to be signed with a Developer ID to be installed as a launch service.'
+          echo
           echo 'Requires macOS 12 Monterey or newer, Apple Silicon only.'
           echo
           echo '```'
@@ -237,8 +245,10 @@ jobs:
           --target "$SHA" --prerelease --title 'Nightly build' --notes-file "$notes"
 
   build-unsigned:
-    # Every remaining run is deliberate, so produce the unsigned DMG in all of them.
+    # The unsigned DMG is only needed for the nightly release and for the manual dispatches that
+    # publish it - a push or a pull request stops at the unit tests.
     needs: unit-tests
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: macos-26
     timeout-minutes: 40
     steps:

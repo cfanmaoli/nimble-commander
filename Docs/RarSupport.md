@@ -35,12 +35,10 @@ the result. Installing or removing the bundle therefore requires toggling the ch
 once (or restarting the application) to be noticed. The same pane shows whether the helper is
 installed and its version.
 
-The component is ad-hoc signed and not notarised. If Gatekeeper quarantines the bundle after a
-download, clear the attribute once:
-
-```sh
-xattr -dr com.apple.quarantine /Applications/ncrar-helper.app
-```
+The component is ad-hoc signed and not notarised. macOS will refuse to launch it on the first run
+until you allow it explicitly in **System Settings → Privacy & Security** ("Open Anyway").
+Administrator Mode is unrelated: it runs the application's own privileged helper, which comes from
+the signed build.
 
 A binary is only built for arm64; the helper is a plain command line tool and can also be built
 from source (see the project's README: `scripts/bootstrap-unrar.sh`, then CMake, then

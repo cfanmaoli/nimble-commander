@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Packaging for a signed release. Signing and notarisation are opt-in and have to be provided by the
+# maintainer: set NC_CODESIGN_IDENTITY to a Developer ID Application identity and NC_NOTARY_PROFILE
+# to a 'notarytool' keychain profile (see 'xcrun notarytool store-credentials'). Without them the DMG
+# is built unsigned, and the script says so at the end.
+
 set -e
 set -o pipefail
 
@@ -22,6 +27,11 @@ PBUDDY=/usr/libexec/PlistBuddy
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR=$(cd "$SCRIPTS_DIR/.." && pwd)
 XCODEPROJ="${ROOT_DIR}/Source/NimbleCommander/NimbleCommander.xcodeproj"
+CODESIGN_IDENTITY="${NC_CODESIGN_IDENTITY:-}"
+NOTARY_PROFILE="${NC_NOTARY_PROFILE:-}"
+# The default export options reference a provisioning profile by name - point NC_EXPORT_OPTIONS at
+# your own file when signing with a different one.
+EXPORT_OPTIONS="${NC_EXPORT_OPTIONS:-${SCRIPTS_DIR}/export_options.plist}"
 BUILD_DIR="${SCRIPTS_DIR}/build_release.tmp"
 ARCHIVE_PATH="${BUILD_DIR}/NC_NonMAS.xcarchive"
 BUILT_PATH="${BUILD_DIR}/built"
@@ -46,7 +56,7 @@ $XC -archivePath ${ARCHIVE_PATH} archive | xcpretty
 xcodebuild -exportArchive \
  -archivePath $ARCHIVE_PATH \
  -exportPath $BUILT_PATH \
- -exportOptionsPlist export_options.plist
+ -exportOptionsPlist "${EXPORT_OPTIONS}"
 
 # Extract the version number and the build number
 APP_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= *//' )
@@ -56,7 +66,7 @@ BUILD=$( $PBUDDY -c "Print CFBundleVersion" "${APP_PATH}/Contents/Info.plist" )
 DMG_NAME="nimble-commander-fork-${VERSION}(${BUILD}).dmg"
 
 # Wrap the built application into a .dmg disk image
-create-dmg \
+set -- \
  --volname "Nimble Commander-Fork" \
  --window-pos 200 200 \
  --window-size 610 386 \
@@ -64,15 +74,21 @@ create-dmg \
  --text-size 12 \
  --icon-size 128 \
  --icon "${APP_NAME}" 176 192 \
- --app-drop-link 432 192 \
- --codesign "Developer ID Application: Mikhail Kazakov (AC5SJT236H)" \
- "${DMG_NAME}" \
- "${APP_PATH}"
+ --app-drop-link 432 192
+if [ -n "${CODESIGN_IDENTITY}" ]; then
+    set -- "$@" --codesign "${CODESIGN_IDENTITY}"
+fi
+create-dmg "$@" "${DMG_NAME}" "${APP_PATH}"
 
-# Upload the built dmg into Apple's notary service and wait for the response
-xcrun notarytool submit ${DMG_NAME} --keychain-profile AC_PASSWORD --wait
-
-# Finally, staple the dmg
-xcrun stapler staple "${DMG_NAME}"
+if [ -n "${NOTARY_PROFILE}" ]; then
+    # Upload the built dmg into Apple's notary service and wait for the response, then staple it.
+    xcrun notarytool submit "${DMG_NAME}" --keychain-profile "${NOTARY_PROFILE}" --wait
+    xcrun stapler staple "${DMG_NAME}"
+else
+    echo 'NC_NOTARY_PROFILE is not set - the DMG was not notarised.'
+fi
+if [ -z "${CODESIGN_IDENTITY}" ]; then
+    echo 'NC_CODESIGN_IDENTITY is not set - the application inside the DMG is not signed.'
+fi
 
 # Done!

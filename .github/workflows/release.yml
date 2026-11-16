@@ -78,12 +78,26 @@ jobs:
         echo "asset=$asset" >> "$GITHUB_OUTPUT"
         echo "version=$version" >> "$GITHUB_OUTPUT"
         cat "$asset.sha256"
+    - name: Add the unsigned-build notice
+      run: |
+        set -euo pipefail
+        cat > UNSIGNED-BUILD.txt <<'EOF'
+        This build is unsigned and not notarised.
+
+        macOS refuses to open such an application on the first launch. If you decide to run it
+        anyway, allow it explicitly in System Settings -> Privacy & Security ("Open Anyway").
+
+        Administrator Mode and its privileged helper do not work in an unsigned build: the helper
+        has to be signed with a Developer ID to be installed as a launch service.
+        EOF
+        cat UNSIGNED-BUILD.txt >> "$GITHUB_STEP_SUMMARY"
     - uses: actions/upload-artifact@v6
       with:
         name: nimble-commander-fork-release
         path: |
           *.dmg
           *.sha256
+          UNSIGNED-BUILD.txt
         if-no-files-found: error
     - name: Attach the assets to the release
       if: github.event_name == 'release' || inputs.tag != ''
@@ -99,7 +113,8 @@ jobs:
           echo "The DMG is $ASSET ($VERSION)."
           exit 0
         fi
-        gh release upload "$TAG" "$ASSET" "$ASSET.sha256" --repo "$GITHUB_REPOSITORY" --clobber
+        gh release upload "$TAG" "$ASSET" "$ASSET.sha256" UNSIGNED-BUILD.txt \
+          --repo "$GITHUB_REPOSITORY" --clobber
     - uses: actions/upload-artifact@v6
       if: always()
       with:

@@ -1,14 +1,16 @@
 # Continuous integration
 
 Everything is driven by a single workflow, [`.github/workflows/build.yml`](../.github/workflows/build.yml).
-The fork is developed locally and the workflow is **not** wired to commits - it runs nightly or on
-demand. A workflow that fires on every push only burns the shared macOS runner pool, and seven full
-builds per push is exactly what used to starve the queue.
+Pushes to `main` and pull requests run a **cheap gate only** - the Debug configuration with
+clang-format and clang-tidy, roughly a tenth of a full run. The full matrix, the integration tests
+and the packaging stay on the nightly schedule and on manual dispatches, because a full run on
+every commit only burns the shared macOS runner pool and starves the queue.
 
 ## What runs when
 
 | Event | Jobs |
 |---|---|
+| `push` to `main`, `pull_request` | gate only: Debug tests with clang-format and clang-tidy, no packaging |
 | `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG - **skipped when `main` has not moved since the last successful nightly** |
 | `workflow_dispatch` | Debug tests with clang-format and clang-tidy, DMG; tick `full` to get the nightly set |
 
@@ -44,11 +46,17 @@ A newer run on the same branch cancels the stale one (`concurrency`), and every 
 - **integration-tests** - starts the docker/colima dependencies and runs
   `Scripts/run_all_integration_tests.sh`.
 - **build-unsigned** - `Scripts/build_unsigned.sh`, producing the `nimble-commander-fork-unsigned` DMG.
+  Scheduled runs and manual dispatches only - a push or a pull request never reaches it.
 - **publish-nightly** - only on a scheduled run (or a manual dispatch with `publish_nightly` ticked):
   recreates the rolling [`nightly` pre-release](https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly)
   with the freshly built DMG as `nimble-commander-fork-nightly.dmg` plus its `.sha256`, moves the
   `nightly` tag to the built commit, and writes the commit list since the previous nightly into the
-  release notes. The DMG here is unsigned - the notes repeat the right-click-to-open caveat.
+  release notes. The DMG is unsigned and not notarised: the notes say so and point at System
+  Settings → Privacy & Security instead of teaching a `xattr -dr com.apple.quarantine` bypass, and
+  they warn that Administrator Mode and its privileged helper don't work in an unsigned build.
+
+The versioned release workflow ([`release.yml`](../.github/workflows/release.yml)) attaches the same
+unsigned DMG plus a `UNSIGNED-BUILD.txt` notice to the release.
 
 ## Running the same checks locally
 
