@@ -978,6 +978,41 @@ TEST_CASE("ApplyAppendedListing keeps the dot-dot at the top of the display orde
         order.emplace_back(data.EntryAtSortPosition(i).Filename());
     CHECK(order == std::vector<std::string>{"..", "a", "b", "c", "d"});
 }
+
+TEST_CASE("ApplyAppendedListing merges appended entries with the case-insensitive order")
+{
+    // The default sort mode folds case, while the name order used for lookups is byte-wise. The
+    // appended run must not be assumed to be in display order.
+    const VFSListingPtr l1 = ProduceDummyListing({"c"});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    const VFSListingPtr l2 = ProduceDummyListing({"c", "B", "a"});
+    data.ApplyPatchedListing(l2, {}, 2);
+
+    std::vector<std::string> order;
+    for( int i = 0; i != data.SortedEntriesCount(); ++i )
+        order.emplace_back(data.EntryAtSortPosition(i).Filename());
+    CHECK(order == std::vector<std::string>{"a", "B", "c"});
+}
+
+TEST_CASE("ApplyAppendedListing merges appended entries with the folders-first order")
+{
+    const VFSListingPtr l1 = ProduceDummyListing(std::vector<std::tuple<std::string, bool>>{{"m.txt", false}});
+    Model data;
+    data.Load(l1, Model::PanelType::Directory);
+
+    // In byte order "a.txt" precedes "z_dir", but a folder is displayed before files.
+    const VFSListingPtr l2 = ProduceDummyListing(
+        std::vector<std::tuple<std::string, bool>>{{"m.txt", false}, {"a.txt", false}, {"z_dir", true}});
+    data.ApplyPatchedListing(l2, {}, 2);
+
+    std::vector<std::string> order;
+    for( int i = 0; i != data.SortedEntriesCount(); ++i )
+        order.emplace_back(data.EntryAtSortPosition(i).Filename());
+    CHECK(order == std::vector<std::string>{"z_dir", "a.txt", "m.txt"});
+}
+
 } // namespace
 
 #undef PREFIX

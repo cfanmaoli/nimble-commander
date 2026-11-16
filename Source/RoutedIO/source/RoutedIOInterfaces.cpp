@@ -923,37 +923,11 @@ int PosixIOInterfaceRouted::killpg(int _pid, int _signal) noexcept
 
 int PosixIOInterfaceRouted::trash(const char *_path) noexcept
 {
-    xpc_connection_t conn = Connection();
-    if( !conn ) // fallback to native on disabled routing or on helper connectity problems
-        return super::trash(_path);
-
-    xpc_object_t message = xpc_dictionary_create(nullptr, nullptr, 0);
-    xpc_dictionary_set_string(message, "operation", "trash");
-    xpc_dictionary_set_string(message, "path", _path);
-
-    xpc_object_t reply = xpc_connection_send_message_with_reply_sync(conn, message);
-    xpc_release(message);
-
-    if( xpc_get_type(reply) == XPC_TYPE_ERROR ) {
-        xpc_release(reply); // connection broken, faling back to native
-        return super::trash(_path);
-    }
-
-    if( const auto err = xpc_dictionary_get_int64(reply, "error") ) {
-        // got a graceful error, propaganate it
-        xpc_release(reply);
-        errno = static_cast<int>(err);
-        return -1;
-    }
-
-    if( !xpc_dictionary_get_bool(reply, "ok") ) {
-        xpc_release(reply);
-        errno = EIO;
-        return -1;
-    }
-
-    xpc_release(reply);
-    return 0;
+    // Trashing is deliberately never sent to the privileged helper: the helper runs as root, so the
+    // item would land in root's own trash, where this process can neither see nor restore it - the
+    // user would be told that the item was moved to the trash while it effectively disappeared.
+    // Files that only the helper can touch are still deletable through Delete Permanently.
+    return super::trash(_path);
 }
 
 } // namespace nc::routedio

@@ -22,6 +22,7 @@
 
 @implementation NCOpsCompressDialog {
     std::vector<VFSListingItem> m_SourceItems;
+    BOOL m_AllowsPassword;
     VFSHostPtr m_DestinationHost;
     std::string m_InitialDestination;
     std::string m_FinalDestination;
@@ -46,12 +47,14 @@
 - (instancetype)initWithItems:(const std::vector<VFSListingItem> &)_source_items
                destinationVFS:(const VFSHostPtr &)_destination_host
            initialDestination:(const std::string &)_initial_destination
+               allowsPassword:(bool)_allows_password
 {
     using namespace nc::ops;
     const auto nib_path = [Bundle() pathForResource:@"CompressDialog" ofType:@"nib"];
     self = [super initWithWindowNibPath:nib_path owner:self];
     if( self ) {
         m_SourceItems = _source_items;
+        m_AllowsPassword = _allows_password;
         m_DestinationHost = _destination_host;
         m_InitialDestination = _initial_destination;
         self.protectWithPassword = false;
@@ -77,6 +80,19 @@
     else
         self.destinationTitleTextField.stringValue = [NSString
             stringWithFormat:localizable::CompressionDiaglogCompressItemToTitle(), m_SourceItems.front().FilenameNS()];
+
+    if( !m_AllowsPassword ) {
+        // Only the zip container can protect its payload; the other formats would silently ignore
+        // the password, so it must not be offered for them.
+        self.protectWithPasswordCheckbox.enabled = NO;
+        self.protectWithPasswordCheckbox.state = NSControlStateValueOff;
+        self.protectWithPasswordCheckbox.toolTip =
+            @"Only the Zip format can protect the archive with a password - choose Zip in Preferences → Compression.";
+        self.passwordTextField.enabled = NO;
+        self.passwordTextField.stringValue = @"";
+        self.protectWithPassword = false;
+        [self validate];
+    }
 }
 
 - (void)validate

@@ -279,26 +279,23 @@ bool EmptyTrash::Predicate(PanelController * /*_target*/) const
 void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
 {
     // Like the Finder, empty the trashes of all mounted volumes, not just the boot one.
-    std::vector<std::string> items;
+    const std::vector<std::string> locations = nc::routedio::TrashLocations();
+    size_t item_count = 0;
     int first_error = 0;
-    for( const std::string &location : nc::routedio::TrashLocations() ) {
+    for( const std::string &location : locations ) {
         int error = 0;
-        std::vector<std::string> children = nc::routedio::ListTrashDirectory(location, error);
-        if( error != 0 ) {
-            if( first_error == 0 )
-                first_error = error;
-            continue;
-        }
-        items.insert(items.end(), children.begin(), children.end());
+        item_count += nc::routedio::ListTrashDirectory(location, error).size();
+        if( error != 0 && first_error == 0 )
+            first_error = error;
     }
-    if( first_error != 0 && items.empty() ) {
+    if( first_error != 0 && item_count == 0 ) {
         if( first_error == EPERM || first_error == EACCES )
             ShowTrashAccessDeniedAlert(_target);
         else
             ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
         return;
     }
-    if( items.empty() ) {
+    if( item_count == 0 ) {
         ShowTrashErrorAlert(_target, TrashLocalizedText(@"The Trash is empty."), nil);
         return;
     }
@@ -313,13 +310,15 @@ void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
                   completionHandler:^(NSModalResponse _response) {
                     if( _response != NSAlertFirstButtonReturn )
                         return;
-                    // Obj-C blocks capture 'items' as a const copy, so moving it out is pointless.
-                    dispatch_to_default([paths = items, weak_target] {
-                        int failures = 0;
-                        for( const std::string &path : paths ) {
-                            std::error_code ec;
-                            std::filesystem::remove_all(path, ec);
-                            if( ec )
+                    // The deletion itself is done by RoutedIO: it re-checks every entry, so that a
+                    // crafted volume can't make "empty the trash" delete through a link or into a
+                    // volume mounted inside the trash folder.
+                    dispatch_to_default([locations, weak_target] {
+                        size_t failures = 0;
+                        for( const std::string &location : locations ) {
+                            const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(location);
+                            failures += result.failed;
+                            if( result.error != 0 )
                                 ++failures;
                         }
                         dispatch_to_main_queue([failures, weak_target] {

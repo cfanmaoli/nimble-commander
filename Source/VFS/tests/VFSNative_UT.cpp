@@ -34,6 +34,25 @@ static bool ListingHas(const VFSListingPtr &listing, const std::string &_filenam
     return ListingHas(*listing, _filename);
 };
 
+TEST_CASE(PREFIX "Counts directory entries without reading their attributes")
+{
+    const TestDir dir;
+    for( int i = 0; i != 5; ++i )
+        close(creat((dir.directory / ("file" + std::to_string(i))).c_str(), 0644));
+
+    const std::optional<size_t> count = host().FetchDirectoryEntryCount(dir.directory.c_str(), 100, {});
+    REQUIRE(count.has_value());
+    CHECK(*count == 5);
+
+    // The counting stops as soon as the limit is reached.
+    const std::optional<size_t> limited = host().FetchDirectoryEntryCount(dir.directory.c_str(), 3, {});
+    REQUIRE(limited.has_value());
+    CHECK(*limited == 3);
+
+    // A directory that can't be opened isn't a "count of zero".
+    CHECK_FALSE(host().FetchDirectoryEntryCount("/no/such/directory", 10, {}).has_value());
+}
+
 TEST_CASE(PREFIX "Does produces unified Application directory")
 {
     const auto marker_path = "/Applications/__nc_fetch_probe__";

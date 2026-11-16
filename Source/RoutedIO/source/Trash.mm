@@ -245,10 +245,23 @@ std::string JoinPath(const std::string &_parent, const std::string &_name)
     return _parent + "/" + _name;
 }
 
-bool IsDirectory(const std::string &_path)
+// Checks that the path can be trusted as a trash folder. Trash folders come from mountable media,
+// so a symlink or a mount point there must never be followed: emptying such a "trash" would delete
+// through to an arbitrary directory.
+bool IsValidTrashDirectory(const std::string &_path)
 {
     struct stat st;
-    return stat(_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+    if( ::lstat(_path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode) )
+        return false;
+    if( st.st_uid != getuid() )
+        return false;
+    const std::filesystem::path parent_path = std::filesystem::path(_path).parent_path();
+    if( !parent_path.empty() ) {
+        struct stat parent_st;
+        if( ::lstat(parent_path.c_str(), &parent_st) == 0 && parent_st.st_dev != st.st_dev )
+            return false; // a mount point, not a folder
+    }
+    return true;
 }
 
 // Reads an extended attribute of the entry itself - a symlink is not followed.
@@ -547,7 +560,7 @@ std::vector<std::string> TrashLocations()
 {
     std::vector<std::string> locations;
     const std::string home_trash = TrashDirectory();
-    if( IsDirectory(home_trash) )
+    if( IsValidTrashDirectory(home_trash) )
         locations.push_back(home_trash);
 
     // Every mounted local volume has its own per-user trash folder.
@@ -561,7 +574,7 @@ std::vector<std::string> TrashLocations()
         std::string trash = mount;
         trash += "/.Trashes/";
         trash += uid;
-        if( IsDirectory(trash) )
+        if( IsValidTrashDirectory(trash) )
             locations.push_back(trash);
     }
     return locations;
@@ -600,7 +613,7 @@ std::string TrashForVolumeOf(const std::string &_path)
     std::string trash = best_mount;
     trash += "/.Trashes/";
     trash += std::to_string(getuid());
-    return IsDirectory(trash) ? trash : std::string{};
+    return IsValidTrashDirectory(trash) ? trash : std::string{};
 }
 
 bool IsTrashDirectory(const std::string &_path)
@@ -635,6 +648,72 @@ std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &
         result.push_back(std::move(path));
     }
     closedir(dir);
+    return result;
+}
+
+EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
+{
+    EmptyTrashResult result;
+
+    struct stat trash_stat;
+    if( ::lstat(_trash_directory.c_str(), &trash_stat) != 0 ) {
+        result.error = errno;
+        return result;
+    }
+    if( !S_ISDIR(trash_stat.st_mode) ) {
+        result.error = ENOTDIR;
+        return result;
+    }
+
+    DIR *const dir = opendir(_trash_directory.c_str());
+    if( dir == nullptr ) {
+        result.error = errno;
+        return result;
+    }
+    std::vector<std::string> names;
+    int read_error = 0;
+    for( ;; ) {
+        errno = 0;
+        const dirent *const entry = readdir(dir);
+        if( entry == nullptr ) {
+            if( errno != 0 )
+                read_error = errno;
+            break;
+        }
+        const std::string name = entry->d_name;
+        if( name == "." || name == ".." || name == ".DS_Store" )
+            continue;
+        names.emplace_back(name);
+    }
+    closedir(dir);
+    if( read_error != 0 ) {
+        result.error = read_error;
+        return result;
+    }
+
+    std::string prefix = _trash_directory;
+    if( prefix.empty() || prefix.back() != '/' )
+        prefix += '/';
+    for( const std::string &name : names ) {
+        const std::string path = prefix + name;
+        struct stat st;
+        if( ::lstat(path.c_str(), &st) != 0 ) {
+            ++result.failed;
+            continue;
+        }
+        // Only this user's items, and never a directory that lives on another device - that is a
+        // mounted volume sitting in the trash, not a trashed item.
+        if( st.st_uid != trash_stat.st_uid || (S_ISDIR(st.st_mode) && st.st_dev != trash_stat.st_dev) ) {
+            ++result.failed;
+            continue;
+        }
+        std::error_code ec;
+        std::filesystem::remove_all(path, ec);
+        if( ec )
+            ++result.failed;
+        else
+            ++result.deleted;
+    }
     return result;
 }
 

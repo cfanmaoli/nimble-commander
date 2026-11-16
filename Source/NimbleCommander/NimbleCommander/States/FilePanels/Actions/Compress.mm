@@ -78,9 +78,11 @@ void CompressHere::Perform(PanelController *_target, id /*_sender*/) const
     if( entries.empty() )
         return;
 
-    const auto dialog = [[NCOpsCompressDialog alloc] initWithItems:entries
-                                                    destinationVFS:_target.vfs
-                                                initialDestination:_target.currentDirectoryPath];
+    const auto dialog = [[NCOpsCompressDialog alloc]
+             initWithItems:entries
+            destinationVFS:_target.vfs
+        initialDestination:_target.currentDirectoryPath
+            allowsPassword:ReadCompressionOptions(Configuration()).format == nc::ops::CompressionFormat::zip];
 
     const auto handler = ^(NSModalResponse returnCode) {
       if( returnCode != NSModalResponseOK )
@@ -131,9 +133,11 @@ void CompressToOpposite::Perform(PanelController *_target, id /*_sender*/) const
     if( entries.empty() )
         return;
 
-    const auto dialog = [[NCOpsCompressDialog alloc] initWithItems:entries
-                                                    destinationVFS:opposite_panel.vfs
-                                                initialDestination:opposite_panel.currentDirectoryPath];
+    const auto dialog = [[NCOpsCompressDialog alloc]
+             initWithItems:entries
+            destinationVFS:opposite_panel.vfs
+        initialDestination:opposite_panel.currentDirectoryPath
+            allowsPassword:ReadCompressionOptions(Configuration()).format == nc::ops::CompressionFormat::zip];
 
     const auto handler = ^(NSModalResponse returnCode) {
       if( returnCode != NSModalResponseOK )

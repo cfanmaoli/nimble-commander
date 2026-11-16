@@ -86,13 +86,20 @@ void FSEventsDirUpdateImpl::FSEventsDirUpdateCallback([[maybe_unused]] ConstFSEv
                                                       const FSEventStreamEventFlags _flags[],
                                                       [[maybe_unused]] const FSEventStreamEventId _ids[])
 {
-    // WTF this data access is not locked????
-
     Log::Trace("FSEventsDirUpdate::Impl::FSEventsDirUpdateCallback for {} path(s): {}",
                _num,
                fmt::join(std::span<const char *>{reinterpret_cast<const char **>(_paths), _num}, ", "));
 
-    const WatchData &watch = *static_cast<const WatchData *>(_user_data);
+    WatchData &watch = *static_cast<WatchData *>(_user_data);
+    // The callback runs on the main run loop, while handlers can still be attached/removed from
+    // other threads - copy the lists under their lock instead of walking them in place.
+    std::vector<std::pair<uint64_t, std::function<void()>>> handlers;
+    std::vector<std::pair<uint64_t, EventPathsHandler>> path_handlers;
+    {
+        const std::lock_guard lock{watch.handlers_mutex};
+        handlers = watch.handlers;
+        path_handlers = watch.path_handlers;
+    }
     const char **const paths = reinterpret_cast<const char **>(_paths);
     const bool dir_itself_changed = ShouldFire(watch.path, _num, paths, _flags);
 
@@ -127,16 +134,10 @@ void FSEventsDirUpdateImpl::FSEventsDirUpdateCallback([[maybe_unused]] ConstFSEv
     if( !dir_itself_changed && changed_names.empty() )
         return;
 
-    if( !watch.handlers.empty() ) {
-        const auto handlers = watch.handlers; // the handlers may mutate the container
-        for( auto &h : handlers )
-            h.second();
-    }
-    if( !watch.path_handlers.empty() ) {
-        const auto handlers = watch.path_handlers;
-        for( auto &h : handlers )
-            h.second(changed_names);
-    }
+    for( auto &h : handlers )
+        h.second();
+    for( auto &h : path_handlers )
+        h.second(changed_names);
 }
 
 FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &path, void *context_ptr)
@@ -236,6 +237,7 @@ uint64_t FSEventsDirUpdateImpl::AddWatchPathImpl(std::string_view _path,
     // check if this path already presents in watched paths
     if( const auto it = m_Watches.find(dir_path); it != m_Watches.end() ) {
         Log::Trace("Using an already existing watcher for '{}'", _path);
+        const std::lock_guard handlers_lock{it->second->handlers_mutex};
         _attach(*it->second, ticket);
         return ticket;
     }
@@ -252,7 +254,10 @@ uint64_t FSEventsDirUpdateImpl::AddWatchPathImpl(std::string_view _path,
         return no_ticket;
     }
     w.path = ep.first->first;
-    _attach(w, ticket);
+    {
+        const std::lock_guard handlers_lock{w.handlers_mutex};
+        _attach(w, ticket);
+    }
     StartStream(w.stream);
 
     return ticket;
@@ -304,15 +309,32 @@ void FSEventsDirUpdateImpl::RemoveWatchPathWithTicket(uint64_t _ticket)
 
     for( auto i = m_Watches.begin(), e = m_Watches.end(); i != e; ++i ) {
         auto &watch = *i->second;
-        for( auto h = watch.handlers.begin(), he = watch.handlers.end(); h != he; ++h )
-            if( h->first == _ticket ) {
-                unordered_erase(watch.handlers, h);
-                if( watch.handlers.empty() ) {
-                    StopStream(watch.stream);
-                    m_Watches.erase(i);
+        bool removed = false;
+        {
+            const std::lock_guard handlers_lock{watch.handlers_mutex};
+            for( auto h = watch.handlers.begin(), he = watch.handlers.end(); h != he; ++h )
+                if( h->first == _ticket ) {
+                    unordered_erase(watch.handlers, h);
+                    removed = true;
+                    break;
                 }
-                return;
-            }
+            if( !removed )
+                for( auto h = watch.path_handlers.begin(), he = watch.path_handlers.end(); h != he; ++h )
+                    if( h->first == _ticket ) {
+                        unordered_erase(watch.path_handlers, h);
+                        removed = true;
+                        break;
+                    }
+        }
+        if( !removed )
+            continue;
+        // The watch is shared by both kinds of handlers - it may only go away when neither is
+        // listening anymore, otherwise the remaining clients would silently stop receiving events.
+        if( watch.handlers.empty() && watch.path_handlers.empty() ) {
+            StopStream(watch.stream);
+            m_Watches.erase(i);
+        }
+        return;
     }
 }
 
@@ -320,13 +342,31 @@ void FSEventsDirUpdateImpl::OnVolumeDidUnmount(const std::string &_on_path)
 {
     // when a volume is removed from the system we force every relevant panel to reload its data
     dispatch_assert_main_queue();
-    // locking??
-    for( auto &i : m_Watches ) {
-        if( i.second->path.starts_with(_on_path) ) {
+
+    // Copy the handlers out first: they may mutate the watch map themselves, so the lock must not
+    // be held while they run.
+    std::vector<std::function<void()>> handlers;
+    std::vector<EventPathsHandler> path_handlers;
+    {
+        const std::lock_guard lock{m_Lock};
+        for( auto &i : m_Watches ) {
+            if( !i.second->path.starts_with(_on_path) )
+                continue;
+            const std::lock_guard handlers_lock{i.second->handlers_mutex};
             for( const auto &h : i.second->handlers )
-                h.second();
+                handlers.emplace_back(h.second);
+            for( const auto &h : i.second->path_handlers )
+                path_handlers.emplace_back(h.second);
         }
     }
+
+    for( const auto &h : handlers )
+        h();
+    // A volume disappearing is a change of the directory itself - there are no individual names to
+    // report.
+    const std::vector<std::string> no_names;
+    for( const auto &h : path_handlers )
+        h(no_names);
 }
 
 } // namespace nc::utility

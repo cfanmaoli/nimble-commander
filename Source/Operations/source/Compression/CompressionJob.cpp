@@ -128,8 +128,10 @@ CompressionJob::CompressionJob(std::vector<VFSListingItem> _src_files,
       m_Password{std::move(_password)}, m_Options{_options}
 {
     m_Options.level = std::clamp(m_Options.level, 1, 9);
+    // Only the zip container can encrypt its payload. The dialog already disables the password
+    // controls for the other formats; this is the safety net for other callers.
     if( m_Options.format != CompressionFormat::zip )
-        m_Password.clear(); // only the zip container can encrypt its payload
+        m_Password.clear();
 
     if( m_DstRoot.empty() || m_DstRoot.back() != '/' )
         m_DstRoot += '/';

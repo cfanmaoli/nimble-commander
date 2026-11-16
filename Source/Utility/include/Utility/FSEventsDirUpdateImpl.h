@@ -28,6 +28,11 @@ private:
     struct WatchData {
         std::string path; // canonical fs representation, should include a trailing slash
         FSEventStreamRef stream = nullptr;
+        // Guards the handler lists: the stream callback (main run loop) copies them while other
+        // threads may still be attaching handlers. It is deliberately a separate lock that is
+        // never held across a dispatch - m_Lock is held while CreateEventStream() blocks on the
+        // main queue, and taking m_Lock from the callback there would deadlock.
+        std::mutex handlers_mutex;
         std::vector<std::pair<uint64_t, std::function<void()>>> handlers;
         std::vector<std::pair<uint64_t, EventPathsHandler>> path_handlers;
     };

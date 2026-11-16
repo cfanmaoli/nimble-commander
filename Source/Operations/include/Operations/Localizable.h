@@ -29,6 +29,7 @@ NSString *CompressionCompressingItemTitle();
 NSString *CompressionCompressingToTitle();
 NSString *CompressionDiaglogCompressItemsToTitle();
 NSString *CompressionDiaglogCompressItemToTitle();
+NSString *CompressionDiaglogPasswordRequiresZip();
 NSString *OperationAbortTitle();
 NSString *OperationRetryTitle();
 NSString *OperationContinueTitle();

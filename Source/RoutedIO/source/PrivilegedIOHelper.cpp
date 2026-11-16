@@ -376,10 +376,16 @@ static bool HandleReadLink(xpc_object_t _event) noexcept
         return false;
     const char *path = xpc_string_get_string_ptr(xpc_path);
 
-    char symlink[MAXPATHLEN];
+    // One extra byte for the terminator: readlink() returns at most MAXPATHLEN and doesn't
+    // terminate the buffer itself.
+    char symlink[MAXPATHLEN + 1];
     const ssize_t result = readlink(path, symlink, MAXPATHLEN);
     if( result < 0 ) {
         send_reply_error(_event, errno);
+    }
+    else if( result == MAXPATHLEN ) {
+        // The target doesn't fit - report that instead of handing out a truncated path.
+        send_reply_error(_event, ENAMETOOLONG);
     }
     else {
         symlink[result] = 0;
@@ -447,6 +453,11 @@ static bool HandleKillPG(xpc_object_t _event) noexcept
     if( xpc_signal == nullptr || xpc_get_type(xpc_signal) != XPC_TYPE_INT64 )
         return false;
     const int signal = static_cast<int>(xpc_int64_get_value(xpc_signal));
+
+    // This runs as root: refuse the broadcast forms of killpg() (pid 0/-1 mean "my group"/"every
+    // process I can signal") and anything that isn't a real signal number.
+    if( pid <= 1 || signal <= 0 || signal >= NSIG )
+        return false;
 
     const int result = killpg(pid, signal);
     if( result == 0 ) {

@@ -249,6 +249,17 @@
         }
       }
     },
+    "Only the Zip format can protect the archive with a password." : {
+      "comment" : "Compress files sheet, the password controls are disabled for non-zip formats",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有 Zip 格式可以用密码保护归档。"
+          }
+        }
+      }
+    },
     "Compressing “%@”" : {
       "comment" : "Compressing “%@”",
       "localizations" : {

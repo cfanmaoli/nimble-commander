@@ -451,6 +451,10 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_LazyDatesQ;
     bool m_LazyDates;
     bool m_LazySizes;
+    // Bumped whenever a whole new listing is installed. The lazy attribute fetching runs off the
+    // main queue, so its results are only applied when the listing they were requested for is
+    // still the one on screen.
+    unsigned long m_LazyEpoch;
     bool m_FlatTruncationReported;
     // raw indices whose attributes are being fetched right now - the scroll notifications can
     // fire many times before the first result lands, so this keeps the work bounded
@@ -540,6 +544,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_PendingRefreshScheduled = false;
         m_LazyDates = false;
         m_LazySizes = false;
+        m_LazyEpoch = 0;
         m_FlatTruncationReported = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
@@ -1022,7 +1027,10 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     for( auto raw_index : raw_indices )
         paths.emplace_back(directory + listing->Filename(raw_index));
 
-    m_LazyDatesQ.Run([self, paths = std::move(paths), raw_indices = std::move(raw_indices), host] {
+    // The results are only meaningful for the listing they were requested for - the panel may have
+    // moved to another directory (or reloaded the same one) by the time they arrive.
+    const unsigned long epoch = m_LazyEpoch;
+    m_LazyDatesQ.Run([self, paths = std::move(paths), raw_indices = std::move(raw_indices), host, epoch] {
         struct FetchedEntry {
             unsigned raw_index;
             data::Model::FetchedTimes times;
@@ -1046,9 +1054,18 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
             const uint64_t size = entry.HasSize(0) ? entry.Size(0) : std::numeric_limits<uint64_t>::max();
             fetched.emplace_back(raw_indices[i], times, size);
         }
-        if( fetched.empty() )
+        if( fetched.empty() ) {
+            // Nothing could be read - release the indices, otherwise these rows would never be
+            // requested again and would keep showing placeholders.
+            dispatch_to_main_queue([self, raw_indices = raw_indices] {
+                for( const unsigned raw_index : raw_indices )
+                    m_LazyPending.erase(raw_index);
+            });
             return;
-        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = raw_indices] {
+        }
+        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = raw_indices, epoch] {
+            if( m_LazyEpoch != epoch )
+                return; // the listing was replaced - these values belong to a different directory
             for( const unsigned raw_index : raw_indices )
                 m_LazyPending.erase(raw_index);
             if( !m_LazyDates && !m_LazySizes )
@@ -1075,6 +1092,8 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     const auto pers = CursorBackup{m_View.curpos, m_Data};
     m_Data.InstallLoad(std::move(_prepared));
     m_DataGeneration++;
+    m_LazyEpoch++;
+    m_LazyPending.clear();
     [m_View dataUpdated];
     [m_QuickSearch dataUpdated];
     if( [self checkAgainstRequestedFocusing] ) {
@@ -1306,6 +1325,7 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     m_DirectorySizeCountingQ.Stop();
     m_DirectoryLoadingQ.Stop();
     m_DirectoryReLoadingQ.Stop();
+    m_LazyDatesQ.Stop();
 }
 
 - (void)updateSpinningIndicator
@@ -1665,14 +1685,18 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         const auto canceller = VFSCancelChecker([&] { return m_DirectoryLoadingQ.IsStopped(); });
 
         bool big_directory = false;
-        // The probe only classifies the directory now: the first screenful comes from the
-        // incremental fetch below, which enumerates the directory once instead of twice.
+        // Classify the directory without building a listing for it - a plain entry count is all
+        // that is needed. Hosts that can't count cheaply fall back to the preview enumeration.
         {
             static constexpr size_t preview_items = 4096;
-            const std::expected<VFSListingPtr, Error> preview =
-                vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller);
-            if( preview && (*preview)->Count() >= preview_items )
-                big_directory = true;
+            if( const std::optional<size_t> count =
+                    vfs.FetchDirectoryEntryCount(directory, preview_items, canceller) ) {
+                big_directory = *count >= preview_items;
+            }
+            else if( const std::expected<VFSListingPtr, Error> preview =
+                         vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller) ) {
+                big_directory = (*preview)->Count() >= preview_items;
+            }
         }
 
         // Only the huge directories benefit from lazy dates, and the probe has just told us
@@ -1761,6 +1785,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                     for( const auto &i : _request->RequestSelectedEntries )
                         m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
                     m_DataGeneration++;
+                    m_LazyEpoch++;
+                    m_LazyPending.clear();
                     [m_View dataUpdated];
                     [self fetchLazyDatesForTopEntries];
                     const auto perf_updated = std::chrono::steady_clock::now();
@@ -1877,6 +1903,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_Data.Load(_listing, data::Model::PanelType::Temporary);
         const auto perf_loaded = std::chrono::steady_clock::now();
         m_DataGeneration++;
+        m_LazyEpoch++;
+        m_LazyPending.clear();
         [m_View dataUpdated];
         const auto perf_updated = std::chrono::steady_clock::now();
         [m_View panelChangedWithFocusedFilename:"" loadPreviousState:false];

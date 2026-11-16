@@ -246,6 +246,13 @@ public:
                                                                              unsigned long _flags,
                                                                              const VFSCancelChecker &_cancel_checker);
 
+    // Counts the entries of a directory, stopping at '_max_items'. Unlike the preview call above it
+    // doesn't read any attributes or build a listing, so it stays cheap even when the whole
+    // directory has to be read. Returns nullopt when the host can't answer - the caller then has to
+    // fall back to FetchDirectoryListingPreview(). Used to tell huge directories from ordinary ones.
+    virtual std::optional<size_t>
+    FetchDirectoryEntryCount(std::string_view _path, size_t _max_items, const VFSCancelChecker &_cancel_checker = {});
+
     // Enumerates a directory and delivers the results while the enumeration is still running: the
     // first chunk is what fits on a screen, the following ones carry the rest. Each chunk is a
     // regular listing of just those entries, in the enumeration order, with the per-item attributes

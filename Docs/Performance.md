@@ -1360,6 +1360,8 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 
 - `VFSHost::FetchDirectoryListingIncremental(path, flags, cancel, handler)`：每读够一批就交付一个
   「只含这批条目」的 listing；不支持增量的 host 走默认实现，一次性交付整份 listing。
+- 「大目录」的判定改用 `VFSHost::FetchDirectoryEntryCount(path, max_items)`：只做 readdir 计数，
+  不读任何属性、不建 listing；只有不支持该接口的 host 才退回预览枚举。
 - `NativeHost` 的首批 4096 条、之后每 256 KB 一批；每一批在交付前都会对这批条目跑 epilogue
   （解析符号链接、读 Finder tags），所以每个 chunk 都是完整数据。
 - 面板收到第一个 chunk 立即 `InstallLoad`（首屏）；随后的 chunk 攒到 256 KB 或 400 ms 就合成一次
@@ -1385,8 +1387,10 @@ if( take == 0 ) break;           // ← 空目录也算 take == 0，于是整棵
 
 `Model::ApplyAppendedListing()` 是这一批能落地的前提：追加补丁不改变已有条目的 raw index，于是
 volatile data 原地增长、名字序与自定义排序用 `ranges::inplace_merge` 归并，统计量只累加新条目，
-整体从 O(n) 重建降到 O(k log k) 排序 + O(n) 廉价搬运。另外，默认的按名字排序下两套顺序是同一个
-键，显示序直接复用已经排好的名字数组（逆序时反向遍历），每批的自定义排序从 ~30 ms 降到 ~8 ms。
+整体从 O(n) 重建降到 O(k log k) 排序 + O(n) 廉价搬运。另外，**只有当自定义排序恰好是「按名、区分大
+小写、不分离目录」时**，名字序与显示序才是同一个键，此时显示序直接复用已经排好的名字数组（逆序时
+反向遍历）；默认配置（不区分大小写 + 目录优先）必须按比较器重排追加段，否则归并的前提不成立。每批
+的自定义排序从 ~30 ms 降到 ~8 ms。
 
 单批成本（百万条目、196k 条目一批）：`ProducePatchedListing` 拷贝 11~18 ms、名字序归并 25~70 ms、
 显示序 8~9 ms、其余 ~2 ms、视图重载 ~2 ms。剩下的名字序归并是「同时维护按名索引」的固有成本；

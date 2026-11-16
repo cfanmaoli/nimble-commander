@@ -36,6 +36,23 @@ bool IsInsideTrash(const std::string &_path);
 // Full Disk Access permission.
 std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &_error);
 
+// The outcome of emptying one trash folder.
+struct EmptyTrashResult {
+    // Set when the folder itself couldn't be read - e.g. without the Full Disk Access permission.
+    int error = 0;
+    // Entries that are gone now.
+    size_t deleted = 0;
+    // Entries that were deliberately left alone: they belong to another user, or a directory that
+    // sits on another device (that is, a mounted volume rather than a trashed item).
+    size_t failed = 0;
+};
+
+// Deletes the contents of one trash folder. The folder itself must be a real directory owned by the
+// current user - a symlink or a mount point is refused, so that a crafted volume can't redirect the
+// deletion through its .Trashes folder. Entries that don't belong to the user or live on another
+// device are skipped and counted as failures.
+EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory);
+
 // Returns the original location of a trashed item, if it is known. The location is either
 // recorded by us when moving an item to the trash, or read from the .DS_Store of the trash
 // folder, which is maintained by the Finder.

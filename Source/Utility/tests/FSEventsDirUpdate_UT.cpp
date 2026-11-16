@@ -77,6 +77,77 @@ TEST_CASE(PREFIX "Removes event listeners")
     inst.RemoveWatchPathWithTicket(ticket2);
 }
 
+TEST_CASE(PREFIX "Removing a plain handler keeps the path handler of the same directory alive")
+{
+    const TempTestDir tmp_dir;
+    auto &inst = FSEventsDirUpdate::Instance();
+    int plain_calls = 0;
+    int path_calls = 0;
+    std::vector<std::string> last_names;
+
+    const auto plain = inst.AddWatchPath(tmp_dir.directory.c_str(), [&] { ++plain_calls; });
+    const auto with_paths = inst.AddWatchPath(tmp_dir.directory.c_str(), [&](std::span<const std::string> _names) {
+        ++path_calls;
+        last_names.assign(_names.begin(), _names.end());
+    });
+    REQUIRE(plain != 0);
+    REQUIRE(with_paths != 0);
+
+    // Both handlers share one watch - removing the plain one must not tear it down.
+    inst.RemoveWatchPathWithTicket(plain);
+
+    touch(tmp_dir.directory / "file.txt");
+    REQUIRE(runMainLoopUntilExpectationOrTimeout(5s, [&] { return path_calls >= 1; }));
+    CHECK(plain_calls == 0);
+    CHECK(std::ranges::find(last_names, "file.txt") != last_names.end());
+
+    inst.RemoveWatchPathWithTicket(with_paths);
+}
+
+TEST_CASE(PREFIX "Removing a path handler keeps the plain handler of the same directory alive")
+{
+    const TempTestDir tmp_dir;
+    auto &inst = FSEventsDirUpdate::Instance();
+    int plain_calls = 0;
+    int path_calls = 0;
+
+    const auto plain = inst.AddWatchPath(tmp_dir.directory.c_str(), [&] { ++plain_calls; });
+    const auto with_paths =
+        inst.AddWatchPath(tmp_dir.directory.c_str(), [&](std::span<const std::string>) { ++path_calls; });
+    REQUIRE(plain != 0);
+    REQUIRE(with_paths != 0);
+
+    inst.RemoveWatchPathWithTicket(with_paths);
+
+    touch(tmp_dir.directory / "file.txt");
+    REQUIRE(runMainLoopUntilExpectationOrTimeout(5s, [&] { return plain_calls >= 1; }));
+    CHECK(path_calls == 0);
+
+    inst.RemoveWatchPathWithTicket(plain);
+}
+
+TEST_CASE(PREFIX "Dropping the last handler of a directory stops the watch")
+{
+    const TempTestDir tmp_dir;
+    auto &inst = FSEventsDirUpdate::Instance();
+    int plain_calls = 0;
+    int path_calls = 0;
+
+    const auto plain = inst.AddWatchPath(tmp_dir.directory.c_str(), [&] { ++plain_calls; });
+    const auto with_paths =
+        inst.AddWatchPath(tmp_dir.directory.c_str(), [&](std::span<const std::string>) { ++path_calls; });
+    REQUIRE(plain != 0);
+    REQUIRE(with_paths != 0);
+    inst.RemoveWatchPathWithTicket(plain);
+    inst.RemoveWatchPathWithTicket(with_paths);
+
+    touch(tmp_dir.directory / "file.txt");
+    // Give the run loop a moment - no handler may fire anymore.
+    CHECK_FALSE(runMainLoopUntilExpectationOrTimeout(1s, [] { return false; }));
+    CHECK(plain_calls == 0);
+    CHECK(path_calls == 0);
+}
+
 TEST_CASE(PREFIX "Firing logic")
 {
     using I = FSEventsDirUpdateImpl;

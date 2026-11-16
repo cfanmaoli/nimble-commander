@@ -129,6 +129,12 @@ NSString *CompressionDiaglogCompressItemToTitle()
     return NSLocalizedString(@"Compress \u201c%@\u201d to:", "Compress files sheet prompt, compressing single file");
 }
 
+NSString *CompressionDiaglogPasswordRequiresZip()
+{
+    return NSLocalizedString(@"Only the Zip format can protect the archive with a password.",
+                             "Compress files sheet, the password controls are disabled for non-zip formats");
+}
+
 NSString *OperationAbortTitle()
 {
 

@@ -1293,14 +1293,19 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
         const auto appended_less = [&](unsigned _lhs, unsigned _rhs) { return cmp(_lhs, _rhs); };
         std::vector<unsigned> appended_sorted;
         appended_sorted.reserve(_appended_count);
-        if( m_CustomSortMode.sort == SortMode::SortByName ) {
+        // The raw name order that was built for the lookups can only double as the display order
+        // when it is exactly the order of the comparator: the plain name sort of SortByName is
+        // byte-wise, while the comparator may fold case and/or separate folders.
+        const bool raw_name_order_matches =
+            !m_CustomSortMode.sep_dirs && m_CustomSortMode.collation == SortMode::Collation::CaseSensitive;
+        if( m_CustomSortMode.sort == SortMode::SortByName && raw_name_order_matches ) {
             // The display order is the very same name order that has just been built for the
             // lookups - no need to sort the appended entries a second time.
             for( const unsigned i : appended_by_name )
                 if( visible(i) )
                     appended_sorted.emplace_back(i);
         }
-        else if( m_CustomSortMode.sort == SortMode::SortByNameRev ) {
+        else if( m_CustomSortMode.sort == SortMode::SortByNameRev && raw_name_order_matches ) {
             for( auto it = appended_by_name.rbegin(); it != appended_by_name.rend(); ++it )
                 if( visible(*it) )
                     appended_sorted.emplace_back(*it);

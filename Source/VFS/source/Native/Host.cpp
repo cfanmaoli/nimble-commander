@@ -84,6 +84,40 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingPreview(std
     return FetchDirectoryListingImpl(_path, _flags | VFSFlags::F_NoDotDot, _cancel_checker, _max_items);
 }
 
+std::optional<size_t> NativeHost::FetchDirectoryEntryCount(std::string_view _path,
+                                                           const size_t _max_items,
+                                                           const VFSCancelChecker &_cancel_checker)
+{
+    if( _max_items == 0 || !_path.starts_with('/') )
+        return std::nullopt;
+
+    StackAllocator alloc;
+    const std::pmr::string path(_path, &alloc);
+    auto &io = routedio::RoutedIO::InterfaceForAccess(path.c_str(), R_OK);
+    if( io.isrouted() )
+        return std::nullopt; // no cheap way to enumerate a directory through the helper
+    const int fd = io.open(path.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+    if( fd < 0 )
+        return std::nullopt;
+    const auto close_fd = at_scope_end([fd] { close(fd); });
+    DIR *const dirp = fdopendir(dup(fd));
+    if( dirp == nullptr )
+        return std::nullopt;
+    const auto close_dir = at_scope_end([dirp] { closedir(dirp); });
+
+    size_t count = 0;
+    while( const dirent *const entry = readdir(dirp) ) {
+        const std::string_view name = entry->d_name;
+        if( name == "." || name == ".." )
+            continue;
+        if( ++count >= _max_items )
+            break;
+        if( _cancel_checker && _cancel_checker() )
+            return std::nullopt;
+    }
+    return count;
+}
+
 std::expected<void, Error> NativeHost::FetchDirectoryListingIncremental(std::string_view _path,
                                                                         const unsigned long _flags,
                                                                         const VFSCancelChecker &_cancel_checker,
@@ -447,27 +481,21 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     if( next_entry_index < allocated_size )
         resize_dense(next_entry_index);
 
-    apply_display_names(0, next_entry_index);
-
     const auto perf_enumerated = std::chrono::steady_clock::now();
-
-    pstld::for_each_n(listing_source.filenames.begin(), next_entry_index, [epilogue_pass](const std::string &filename) {
-        try {
-            epilogue_pass(filename);
-        } catch( ... ) {
-            // PSTL gets very upset when the functor throws an exception, so swallow it silently instead of terminating.
-        }
-    });
 
     if( stream_cancelled )
         return std::unexpected(Error{Error::POSIX, ECANCELED});
     if( streaming ) {
+        // Every chunk has already been completed and delivered - only the tail is left.
         flush_chunk(next_entry_index);
         if( stream_cancelled )
             return std::unexpected(Error{Error::POSIX, ECANCELED});
         // Everything has been delivered chunk by chunk - there is nothing left to build.
         return VFSListing::EmptyListing();
     }
+
+    // No chunking: run the optional passes exactly once over the whole range.
+    apply_display_names(0, next_entry_index);
     run_epilogue(0, next_entry_index);
     const auto perf_epilogue = std::chrono::steady_clock::now();
 

@@ -413,4 +413,67 @@ TEST_CASE(PREFIX "staging cleanup leaves symlink targets outside the copy alone"
     CHECK(ReadFile(external + "/file.txt") == "untouched");
 }
 
+TEST_CASE(PREFIX "emptying a trash folder removes items without following links")
+{
+    TestDir dir;
+    const std::string external = (dir.directory / "external").string();
+    WriteFile(external + "/keep.txt", "keep");
+    const std::string trash = (dir.directory / "trash").string();
+    WriteFile(trash + "/file.txt", "x");
+    WriteFile(trash + "/sub/child.txt", "y");
+    REQUIRE(::symlink(external.c_str(), (trash + "/link").c_str()) == 0);
+    REQUIRE(::symlink((external + "/keep.txt").c_str(), (trash + "/file-link").c_str()) == 0);
+    WriteFile(trash + "/.DS_Store", "ds");
+
+    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(trash);
+    CHECK(result.error == 0);
+    CHECK(result.deleted == 4); // file.txt, sub, link, file-link
+    CHECK(result.failed == 0);
+    CHECK(!std::filesystem::exists(trash + "/file.txt"));
+    CHECK(!std::filesystem::exists(trash + "/sub"));
+    CHECK(!std::filesystem::exists(trash + "/link"));
+    // The links were deleted as entries - their targets are untouched.
+    CHECK(ReadFile(external + "/keep.txt") == "keep");
+    // The Finder's bookkeeping file is not ours to delete.
+    CHECK(std::filesystem::exists(trash + "/.DS_Store"));
+}
+
+TEST_CASE(PREFIX "a trash folder that is a symlink is refused")
+{
+    TestDir dir;
+    const std::string external = (dir.directory / "external").string();
+    WriteFile(external + "/keep.txt", "keep");
+    const std::string fake_trash = (dir.directory / "trash-link").string();
+    REQUIRE(::symlink(external.c_str(), fake_trash.c_str()) == 0);
+
+    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(fake_trash);
+    CHECK(result.error == ENOTDIR);
+    CHECK(result.deleted == 0);
+    CHECK(ReadFile(external + "/keep.txt") == "keep");
+}
+
+TEST_CASE(PREFIX "emptying a trash folder never deletes into a mounted volume")
+{
+    TestDir dir;
+    const std::string trash = (dir.directory / "trash").string();
+    const std::string mount = trash + "/mounted";
+    WriteFile(trash + "/item.txt", "x");
+    std::filesystem::create_directories(mount);
+
+    const auto image = (dir.directory / "volume.dmg").string();
+    if( std::system(("hdiutil create -quiet -size 16m -fs APFS -volname NCEmptyUT '" + image + "'").c_str()) != 0 )
+        SKIP("can't create a temporary disk image");
+    const auto detach = at_scope_end(
+        [&] { std::ignore = std::system(("hdiutil detach -quiet '" + mount + "' >/dev/null 2>&1").c_str()); });
+    if( std::system(("hdiutil attach -quiet -nobrowse -mountpoint '" + mount + "' '" + image + "'").c_str()) != 0 )
+        SKIP("can't attach a temporary disk image");
+    WriteFile(mount + "/keep.txt", "keep");
+
+    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(trash);
+    CHECK(result.error == 0);
+    CHECK(result.deleted == 1); // just item.txt
+    CHECK(result.failed == 1);  // the mounted volume is left alone
+    CHECK(ReadFile(mount + "/keep.txt") == "keep");
+}
+
 #undef PREFIX
