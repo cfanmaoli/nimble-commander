@@ -2179,6 +2179,36 @@
         }
       }
     },
+    "Restoring items…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在恢复项目…"
+          }
+        }
+      }
+    },
+    "The items are being moved back to their original locations." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些项目正在被移回它们原来的位置。"
+          }
+        }
+      }
+    },
+    "The put back was cancelled." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已取消放回。"
+          }
+        }
+      }
+    },
     "The name “%@” can’t be used." : {
       "comment" : "Message text when user is entering an invalid filename",
       "localizations" : {

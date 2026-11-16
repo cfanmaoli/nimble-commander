@@ -16,7 +16,9 @@
 
 #include <AppKit/AppKit.h>
 #include <algorithm>
+#include <atomic>
 #include <filesystem>
+#include <memory>
 
 namespace nc::panel::actions {
 
@@ -345,37 +347,99 @@ bool PutBack::Predicate(PanelController *_target) const
 
 void PutBack::Perform(PanelController *_target, id /*_sender*/) const
 {
-    const std::vector<VFSListingItem> items = _target.selectedEntriesOrFocusedEntry;
-    int failures = 0;
-    int leftovers = 0;
-    for( const VFSListingItem &item : items ) {
-        if( !item.Host()->IsNativeFS() )
-            continue;
-        const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item.Path());
-        if( !outcome.restored )
-            ++failures;
-        else if( outcome.source_remains )
-            ++leftovers;
-    }
+    std::vector<std::string> paths;
+    for( const VFSListingItem &item : _target.selectedEntriesOrFocusedEntry )
+        if( item.Host()->IsNativeFS() )
+            paths.emplace_back(item.Path());
+    if( paths.empty() )
+        return;
 
-    [_target hintAboutFilesystemChange];
+    // A put-back across volumes copies the whole tree, so it must not run on the main thread. The
+    // sheet below shows the progress and offers to cancel; same-volume restores are a single rename
+    // and finish long before the sheet would appear.
+    auto cancelled = std::make_shared<std::atomic_bool>(false);
+    auto finished = std::make_shared<std::atomic_bool>(false);
 
-    if( failures > 0 ) {
-        NSAlert *const alert = [NSAlert new];
-        alert.messageText = failures == 1 ? TrashLocalizedText(@"Failed to put back an item.")
-                                          : TrashLocalizedText(@"Failed to put back some of the items.");
-        [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
-        [alert beginSheetModalForWindow:_target.window completionHandler:nil];
-    }
-    else if( leftovers > 0 ) {
-        NSAlert *const alert = [NSAlert new];
-        alert.messageText =
-            leftovers == 1
-                ? TrashLocalizedText(@"The item was restored, but the copy in the Trash couldn't be removed.")
-                : TrashLocalizedText(@"Some items were restored, but the copies in the Trash couldn't be removed.");
-        [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
-        [alert beginSheetModalForWindow:_target.window completionHandler:nil];
-    }
+    NSAlert *const progress = [NSAlert new];
+    progress.messageText = TrashLocalizedText(@"Restoring items…");
+    progress.informativeText = TrashLocalizedText(@"The items are being moved back to their original locations.");
+    NSProgressIndicator *const spinner = [[NSProgressIndicator alloc] init];
+    spinner.style = NSProgressIndicatorStyleSpinning;
+    spinner.indeterminate = YES;
+    spinner.controlSize = NSControlSizeSmall;
+    spinner.frame = NSMakeRect(0, 0, 24, 24);
+    [spinner startAnimation:nil];
+    progress.accessoryView = spinner;
+    [progress addButtonWithTitle:TrashLocalizedText(@"Cancel")];
+
+    __weak PanelController *weak_target = _target;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+      PanelController *const target = weak_target;
+      if( target == nil || finished->load() )
+          return;
+      [progress beginSheetModalForWindow:target.window
+                       completionHandler:^(NSModalResponse _response) {
+                         // The work closes the sheet once it stops - pressing Cancel only raises the
+                         // flag, otherwise the window would be gone while the copy is still running.
+                         if( _response == NSAlertFirstButtonReturn )
+                             cancelled->store(true);
+                       }];
+    });
+
+    dispatch_to_default([paths = std::move(paths), cancelled, finished, weak_target, progress] {
+        int failures = 0;
+        int leftovers = 0;
+        bool was_cancelled = false;
+        for( const std::string &path : paths ) {
+            if( cancelled->load() ) {
+                was_cancelled = true;
+                break;
+            }
+            const nc::routedio::PutBackResult outcome =
+                nc::routedio::PutBackTrashedItem(path, [&cancelled] { return cancelled->load(); });
+            if( outcome.error == ECANCELED ) {
+                was_cancelled = true;
+                break;
+            }
+            if( !outcome.restored )
+                ++failures;
+            else if( outcome.source_remains )
+                ++leftovers;
+        }
+        finished->store(true);
+        dispatch_to_main_queue([weak_target, progress, failures, leftovers, was_cancelled] {
+            if( progress.window.sheetParent != nil )
+                [progress.window.sheetParent endSheet:progress.window];
+            PanelController *const target = weak_target;
+            if( target == nil )
+                return;
+            [target hintAboutFilesystemChange];
+            if( was_cancelled && failures == 0 && leftovers == 0 ) {
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = TrashLocalizedText(@"The put back was cancelled.");
+                [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+                [alert beginSheetModalForWindow:target.window completionHandler:nil];
+                return;
+            }
+            if( failures > 0 ) {
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = failures == 1 ? TrashLocalizedText(@"Failed to put back an item.")
+                                                  : TrashLocalizedText(@"Failed to put back some of the items.");
+                [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+                [alert beginSheetModalForWindow:target.window completionHandler:nil];
+            }
+            else if( leftovers > 0 ) {
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText =
+                    leftovers == 1
+                        ? TrashLocalizedText(@"The item was restored, but the copy in the Trash couldn't be removed.")
+                        : TrashLocalizedText(
+                              @"Some items were restored, but the copies in the Trash couldn't be removed.");
+                [alert addButtonWithTitle:TrashLocalizedText(@"OK")];
+                [alert beginSheetModalForWindow:target.window completionHandler:nil];
+            }
+        });
+    });
 }
 
 } // namespace nc::panel::actions

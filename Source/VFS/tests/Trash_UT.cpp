@@ -351,6 +351,24 @@ TEST_CASE(PREFIX "put-back across volumes preserves the data and the metadata")
         CHECK(outcome.source_remains);
     }
 
+    SECTION("a cancelled cross-volume copy leaves the item and no staging behind")
+    {
+        const std::string trashed = mount + "/cancel-dir";
+        for( int i = 0; i != 8; ++i )
+            WriteFile(trashed + "/file" + std::to_string(i) + ".txt", "x");
+        const std::string target = (dir.directory / "original" / "cancel-dir").string();
+        RememberOriginalPath(trashed, target);
+
+        int checks = 0;
+        const nc::routedio::PutBackResult outcome =
+            nc::routedio::PutBackTrashedItem(trashed, [&checks] { return ++checks > 4; });
+        CHECK(outcome.error == ECANCELED);
+        CHECK(!outcome.restored);
+        CHECK(std::filesystem::exists(trashed)); // the item is still in the trash
+        CHECK(!std::filesystem::exists(target));
+        CHECK(StagingEntryCount(std::filesystem::path(target).parent_path().string()) == 0);
+    }
+
     SECTION("a tree with links and a read-only folder is restored as a copy")
     {
         const std::string external = (dir.directory / "external").string();
@@ -474,6 +492,21 @@ TEST_CASE(PREFIX "emptying a trash folder never deletes into a mounted volume")
     CHECK(result.deleted == 1); // just item.txt
     CHECK(result.failed == 1);  // the mounted volume is left alone
     CHECK(ReadFile(mount + "/keep.txt") == "keep");
+}
+
+TEST_CASE(PREFIX "a put-back can be cancelled before it starts")
+{
+    TestDir dir;
+    const std::string trash = (dir.directory / "trash").string();
+    std::filesystem::create_directories(trash);
+    const std::string item = trash + "/item.txt";
+    WriteFile(item, "x");
+    RememberOriginalPath(item, (dir.directory / "original" / "item.txt").string());
+
+    const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item, [] { return true; });
+    CHECK(outcome.error == ECANCELED);
+    CHECK(!outcome.restored);
+    CHECK(std::filesystem::exists(item));
 }
 
 TEST_CASE(PREFIX "put-back refuses a recorded location that isn't a sane absolute path")

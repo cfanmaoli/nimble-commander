@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -79,7 +80,11 @@ struct PutBackResult {
 // filesystem that can't do an atomic non-replacing rename makes the put-back fail instead of
 // risking the replacement. Restoring across volumes copies the item into a staging name next to
 // the destination, preserving its data and metadata, and only then claims the name.
-PutBackResult PutBackTrashedItem(const std::string &_trash_item_path);
+// '_cancel_checker' is polled between the entries of a cross-volume copy; when it returns true the
+// put-back stops, removes its staging copy and reports ECANCELED. A cancelled put-back either
+// restores the whole item or leaves it in the trash.
+PutBackResult PutBackTrashedItem(const std::string &_trash_item_path,
+                                 const std::function<bool()> &_cancel_checker = {});
 
 // Records the original location of an item that is about to be moved to the trash. The value is
 // stored in an extended attribute, which survives the move.

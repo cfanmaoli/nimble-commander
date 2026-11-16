@@ -336,10 +336,19 @@ int CopyAttributes(const std::string &_from, const std::string &_to)
     return 0;
 }
 
-int CopyEntry(const std::string &_from, const std::string &_to, bool &_created);
+int CopyEntry(const std::string &_from,
+              const std::string &_to,
+              bool &_created,
+              const std::function<bool()> &_cancel_checker);
 
-int CopyDirectory(const std::string &_from, const std::string &_to, bool &_created)
+int CopyDirectory(const std::string &_from,
+                  const std::string &_to,
+                  bool &_created,
+                  const std::function<bool()> &_cancel_checker)
 {
+    if( _cancel_checker && _cancel_checker() )
+        return ECANCELED;
+
     // Owner access first: the source mode can be read-only (0500), while the children still have
     // to be written. The final mode, ACL and times are applied below, once the tree is complete.
     if( mkdir(_to.c_str(), 0700) != 0 )
@@ -379,8 +388,12 @@ int CopyDirectory(const std::string &_from, const std::string &_to, bool &_creat
         std::string child_to = _to;
         child_to += '/';
         child_to += name;
+        if( _cancel_checker && _cancel_checker() ) {
+            result = ECANCELED;
+            break;
+        }
         bool child_created = false;
-        const int rc = CopyEntry(child_from, child_to, child_created);
+        const int rc = CopyEntry(child_from, child_to, child_created, _cancel_checker);
         // A conflict with an entry that appeared inside a folder this call has just created is a
         // race, not a taken top-level name - the caller has to drop the partial tree.
         result = rc == EEXIST ? EIO : rc;
@@ -403,9 +416,15 @@ int CopyDirectory(const std::string &_from, const std::string &_to, bool &_creat
 // destination entry - the staging cleanup relies on it, so that a failure before the creation
 // can't remove anything that belongs to somebody else. Directories are walked by hand so that
 // every child gets the full metadata treatment; copyfile() itself only handles files.
-int CopyEntry(const std::string &_from, const std::string &_to, bool &_created)
+int CopyEntry(const std::string &_from,
+              const std::string &_to,
+              bool &_created,
+              const std::function<bool()> &_cancel_checker)
 {
     _created = false;
+
+    if( _cancel_checker && _cancel_checker() )
+        return ECANCELED;
 
     struct stat st;
     if( lstat(_from.c_str(), &st) != 0 )
@@ -437,7 +456,7 @@ int CopyEntry(const std::string &_from, const std::string &_to, bool &_created)
         return 0;
     }
     if( S_ISDIR(st.st_mode) )
-        return CopyDirectory(_from, _to, _created);
+        return CopyDirectory(_from, _to, _created, _cancel_checker);
     if( S_ISREG(st.st_mode) ) {
         // Claim the name first: then a failed copy still leaves an entry this call owns, and the
         // cleanup can never be confused with an entry that was already there.
@@ -482,13 +501,13 @@ std::string StagingPath(const std::string &_target, const int _attempt)
 // Copies the entry into a fresh staging name next to '_target' and claims '_target' with an
 // atomic, non-replacing rename. Returns 0, EEXIST when the name is taken, or an errno. Whatever
 // already occupies '_target' is never touched, and a failure only removes the staging copy.
-int CopyEntryExclusive(const std::string &_from, const std::string &_to)
+int CopyEntryExclusive(const std::string &_from, const std::string &_to, const std::function<bool()> &_cancel_checker)
 {
     constexpr int kMaxStagingAttempts = 32;
     for( int attempt = 0; attempt != kMaxStagingAttempts; ++attempt ) {
         const std::string staging = StagingPath(_to, attempt);
         bool created = false;
-        const int copy_rc = CopyEntry(_from, staging, created);
+        const int copy_rc = CopyEntry(_from, staging, created, _cancel_checker);
         if( copy_rc == EEXIST )
             continue; // the staging name is taken as well - try the next one
         if( copy_rc != 0 ) {
@@ -754,7 +773,7 @@ void RememberOriginalLocation(const std::string &_path)
     setxattr(_path.c_str(), g_OriginalPathAttr, _path.data(), _path.size(), 0, XATTR_NOFOLLOW);
 }
 
-PutBackResult PutBackTrashedItem(const std::string &_trash_item_path)
+PutBackResult PutBackTrashedItem(const std::string &_trash_item_path, const std::function<bool()> &_cancel_checker)
 {
     PutBackResult result;
 
@@ -782,6 +801,11 @@ PutBackResult PutBackTrashedItem(const std::string &_trash_item_path)
         return result;
     }
 
+    if( _cancel_checker && _cancel_checker() ) {
+        result.error = ECANCELED;
+        return result;
+    }
+
     if( target_path.has_parent_path() ) {
         std::error_code ec;
         std::filesystem::create_directories(target_path.parent_path(), ec);
@@ -800,14 +824,14 @@ PutBackResult PutBackTrashedItem(const std::string &_trash_item_path)
 
         int rc = 0;
         if( cross_volume ) {
-            rc = CopyEntryExclusive(_trash_item_path, candidate);
+            rc = CopyEntryExclusive(_trash_item_path, candidate, _cancel_checker);
         }
         else {
             rc = RenameExclusive(_trash_item_path, candidate);
             if( rc == EXDEV ) {
                 // The trash and the original location sit on different volumes - copy the item.
                 cross_volume = true;
-                rc = CopyEntryExclusive(_trash_item_path, candidate);
+                rc = CopyEntryExclusive(_trash_item_path, candidate, _cancel_checker);
             }
         }
 
