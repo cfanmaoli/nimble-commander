@@ -39,8 +39,8 @@ Below is the compatibility table for the older releases:
 ## Installation
 
 Nimble Commander-Fork is portable; it doesn't require the installation of additional components and can run from any folder.
-When downloaded from the Mac App Store, Nimble Commander-Fork is automatically placed in the `/Applications` folder.
-If it was built from source, it can be copied into the `/Applications` folder by dragging the icon there.
+The fork ships the standalone build only (Apple Silicon, arm64); it can be copied into the
+`/Applications` folder by dragging the icon there.
 You can also run Nimble Commander-Fork directly from a `.dmg` disk image; in this case, Nimble Commander-Fork will offer to move itself to the `/Applications` folder.
 
 ![Copying NC from a dmg](Help-install-dmg.png)
@@ -51,14 +51,7 @@ Simply double-click on the Nimble Commander-Fork icon to start it.
 
 ## Access Permissions
 
-If you downloaded Nimble Commander-Fork from the Mac App Store, the application will request permissions when navigating to a new location.
-This requirement is imposed on all applications published in the Mac App Store as a safety measure to prevent unauthorized access outside of the sandbox container.
-You can revoke granted access permissions at any time by clicking `Settings > General > Granted filesystem access > Reset`.
-The permission request will appear as shown below:
-
-![NC asking for an access permission](Help-sandbox-perm.png)
-
-Even if you downloaded Nimble Commander-Fork outside of the Mac App Store, accessing certain locations will require granting permissions.
+Accessing certain locations will require granting permissions.
 As of this writing, the list of such locations includes:
 
 - Desktop Folder
@@ -72,15 +65,13 @@ Alternatively, you can grant Nimble Commander-Fork Full Disk Access in System Se
 
 ## Version Differences
 
-There are two existing versions of Nimble Commander-Fork: the sandboxed version for the Mac App Store, and the standalone version that is built from source (see [Building](Building.md)).
-Both versions are mostly equal in terms of functionality.
-The sandboxed version consumes slightly more resources due to sandboxing, but it provides an additional layer of protection.
-The notable features missing from the sandboxed version are:
+This fork ships a single standalone, non-sandboxed build (see [Building](Building.md)) - the
+sandboxed Mac App Store build of the upstream project is not part of it. That is why Admin mode,
+the integrated terminal, network shares and the F1..F19 keys work without the sandbox restrictions.
 
-- Admin mode, as sandboxed applications are not allowed to install privileged helper tools.
-- Integrated terminal, as sandboxed applications are not allowed to send termination signals to other applications.
-- Mounting network shares, as sandboxed applications are not allowed to use the NetFS framework.
-- Interceping F1..F19 keystrokes as functional without holding the Fn modifier, as sandboxed applications cannot ask for accessbility permissions.
+Binaries published by the fork's CI are unsigned and not notarised; macOS asks for an explicit
+confirmation in `System Settings > Privacy & Security` on the first launch. Signed builds are
+produced locally by the maintainer - see [Release.md](Release.md).
 
 # File Panels
 

@@ -952,10 +952,19 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
             _error = ErrorText(json_error, "unable to serialize the pack");
             return false;
         }
+        // Importing over an existing pack replaces it; keep the previous copy next to it, so that
+        // a typo in a translation doesn't silently destroy someone's work. Only the most recent
+        // backup is kept - the file is named '<identifier>.json.backup'.
+        NSString *const pack_path = FromPath(PackFileFor(identifier));
+        NSFileManager *const fm = [NSFileManager defaultManager];
+        if( [fm fileExistsAtPath:pack_path] ) {
+            NSString *const backup_path = [pack_path stringByAppendingString:@".backup"];
+            [fm removeItemAtPath:backup_path error:nil];
+            [fm copyItemAtPath:pack_path toPath:backup_path error:nil];
+        }
+
         NSError *write_error = nil;
-        if( ![normalized_data writeToFile:FromPath(PackFileFor(identifier))
-                                  options:NSDataWritingAtomic
-                                    error:&write_error] ) {
+        if( ![normalized_data writeToFile:pack_path options:NSDataWritingAtomic error:&write_error] ) {
             _error = ErrorText(write_error, "unable to write the pack");
             return false;
         }

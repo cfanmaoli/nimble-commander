@@ -2,8 +2,10 @@
 #include "Helper.h"
 #include <Base/CommonPaths.h>
 #include <Base/algo.h>
+#include <Security/Security.h>
 #include <VFS/Host.h>
 #include <VFS/VFSFile.h>
+#include <Base/CFPtr.h>
 #include <cerrno>
 #include <chrono>
 #include <csignal>
@@ -16,6 +18,21 @@
 extern char **environ;
 
 namespace nc::vfs::rar {
+
+bool HasValidCodeSignature(const std::string &_path) noexcept
+{
+    const nc::base::CFPtr<CFURLRef> url = nc::base::CFPtr<CFURLRef>::adopt(CFURLCreateFromFileSystemRepresentation(
+        nullptr, reinterpret_cast<const UInt8 *>(_path.c_str()), static_cast<CFIndex>(_path.size()), false));
+    if( !url )
+        return false;
+    SecStaticCodeRef code = nullptr;
+    if( SecStaticCodeCreateWithPath(url.get(), kSecCSDefaultFlags, &code) != noErr )
+        return false;
+    const nc::base::CFPtr<SecStaticCodeRef> code_ref(code);
+    // No requirement beyond a valid signature: the helper is ad-hoc signed, and requiring an
+    // identity here would reject the documented installation.
+    return SecStaticCodeCheckValidity(code_ref.get(), kSecCSCheckAllArchitectures, nullptr) == noErr;
+}
 
 namespace {
 
@@ -30,7 +47,7 @@ std::optional<std::string> FindHelperUncached()
     for( const std::string &candidate :
          {nc::base::CommonPaths::Home() + "Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper",
           std::string{"/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper"}} )
-        if( IsExecutable(candidate) )
+        if( IsExecutable(candidate) && HasValidCodeSignature(candidate) )
             return candidate;
 
     return std::nullopt;

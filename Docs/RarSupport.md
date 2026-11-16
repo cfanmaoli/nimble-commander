@@ -29,6 +29,10 @@ The component may live in either of two places (the first one that exists and is
 1. `~/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`;
 2. `/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper`.
 
+The executable must carry a valid code signature - an ad-hoc one is fine, a completely unsigned
+binary is not: the application refuses to spawn it rather than running whatever happens to sit at
+that path. The packaged helper is ad-hoc signed, so it passes this check.
+
 The lookup is cached: the application searches for the helper once whenever the component is
 enabled - at launch, or when the checkbox is toggled in **Preferences → Compression** - and reuses
 the result. Installing or removing the bundle therefore requires toggling the checkbox off and on

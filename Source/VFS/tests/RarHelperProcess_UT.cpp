@@ -2,6 +2,8 @@
 #include "Tests.h"
 #include "../source/ArcHelper/Helper.h"
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -45,6 +47,28 @@ TEST_CASE(PREFIX "a helper that keeps running is not mistaken for a finished one
 {
     const std::optional<int> exit_code = WaitForExit(std::chrono::milliseconds{100}, "printf 'payload'; sleep 30");
     CHECK(!exit_code.has_value());
+}
+
+TEST_CASE(PREFIX "the helper executable must carry a code signature")
+{
+    const TestDir dir;
+
+    // A copy of a system binary keeps its Apple-issued signature inside the Mach-O file.
+    const std::string signed_path = (dir.directory / "signed-binary").string();
+    std::filesystem::copy_file("/bin/cp", signed_path);
+    CHECK(nc::vfs::rar::HasValidCodeSignature(signed_path));
+
+    // A plain script is not signed - the app must not spawn something like that just because it sits
+    // where the helper is expected.
+    const std::string unsigned_path = (dir.directory / "unsigned-binary").string();
+    {
+        std::ofstream unsigned_file(unsigned_path);
+        unsigned_file << "#!/bin/sh\nexit 0\n";
+    }
+    CHECK_FALSE(nc::vfs::rar::HasValidCodeSignature(unsigned_path));
+
+    // A missing file is refused as well.
+    CHECK_FALSE(nc::vfs::rar::HasValidCodeSignature((dir.directory / "missing").string()));
 }
 
 TEST_CASE(PREFIX "helper exit codes map onto POSIX errors")

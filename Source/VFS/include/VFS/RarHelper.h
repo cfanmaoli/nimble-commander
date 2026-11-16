@@ -22,6 +22,11 @@ void SetHelperEnabled(bool _enabled) noexcept;
 // one already performed for the current enable/disable cycle.
 [[nodiscard]] std::optional<std::string> HelperPath();
 
+// Checks that the file carries a valid code signature - an ad-hoc signature is enough, this only
+// rejects files that were never signed at all. The helper executable is vetted with it before it is
+// spawned, so that a stray file with the right name isn't executed silently.
+[[nodiscard]] bool HasValidCodeSignature(const std::string &_path) noexcept;
+
 // The tag the read-only RAR VFS is registered under, used when persisting panel state.
 [[nodiscard]] std::string_view RarHelperHostTag() noexcept;
 
