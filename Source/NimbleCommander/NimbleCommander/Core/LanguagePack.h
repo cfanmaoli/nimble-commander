@@ -28,6 +28,8 @@ struct ImportStats {
     std::size_t skipped_empty = 0;
     std::size_t skipped_malformed = 0;
     std::size_t skipped_placeholders = 0;
+    /** entries for keys this app doesn't have - they can't have any effect and are dropped. */
+    std::size_t skipped_unknown = 0;
     /** entries whose text is byte-identical to the built-in language, i.e. most likely not
      *  translated yet. Only measured when the pack targets a different language. */
     std::size_t identical_to_current = 0;

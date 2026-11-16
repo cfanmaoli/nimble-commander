@@ -445,6 +445,15 @@ struct Entry {
                                                                               @"Preferences",
                                                                               "Language preferences tab import result"),
                                                    @(stats.skipped_malformed)]];
+    if( stats.skipped_unknown )
+        [message
+            appendFormat:@"\n\n%@",
+                         [NSString
+                             stringWithFormat:NSLocalizedStringFromTable(
+                                                  @"Skipped %@ entries that aren’t part of this app’s localization.",
+                                                  @"Preferences",
+                                                  "Language preferences tab import result"),
+                                              @(stats.skipped_unknown)]];
     if( stats.measured_untranslated && stats.identical_to_current )
         [message appendFormat:@"\n\n%@",
                               [NSString stringWithFormat:NSLocalizedStringFromTable(

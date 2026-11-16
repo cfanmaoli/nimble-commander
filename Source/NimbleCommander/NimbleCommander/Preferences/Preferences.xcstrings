@@ -1695,6 +1695,23 @@
         }
       }
     },
+    "Skipped %@ entries that aren’t part of this app’s localization." : {
+      "comment" : "Language preferences tab import result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %@ entries that aren’t part of this app’s localization."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过 %@ 条不属于本应用本地化的条目。"
+          }
+        }
+      }
+    },
     "Splitter color" : {
       "comment" : "Theme settings entry title",
       "localizations" : {

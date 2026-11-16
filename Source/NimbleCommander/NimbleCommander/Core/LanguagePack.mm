@@ -21,6 +21,13 @@ namespace {
 
 NSString *const kPackFormat = @"nimble-commander-language-pack";
 const long kPackFormatVersion = 1;
+
+// A pack is a plain JSON file written by this app; anything past these limits is treated as hostile
+// rather than as a big translation.
+constexpr unsigned long long kMaxPackFileSize = 64ull * 1024 * 1024;
+constexpr NSUInteger kMaxPackEntries = 200'000;
+constexpr NSUInteger kMaxPackKeyLength = 8ul * 1024;
+constexpr NSUInteger kMaxPackTranslationLength = 64ul * 1024;
 NSString *const kManifestFileName = @"LocalizationManifest.json";
 NSString *const kActiveFileName = @"active.txt";
 NSString *const kDefaultTable = @"Localizable";
@@ -812,6 +819,17 @@ bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::strin
 bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::string &_error)
 {
     @autoreleasepool {
+        NSDictionary *const attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:FromPath(_source)
+                                                                                          error:nil];
+        if( attributes == nil ) {
+            _error = "unable to read the file";
+            return false;
+        }
+        if( [attributes[NSFileSize] unsignedLongLongValue] > kMaxPackFileSize ) {
+            _error = "the file is too large to be a language pack";
+            return false;
+        }
+
         NSData *const data = [NSData dataWithContentsOfFile:FromPath(_source)];
         if( data.length == 0 ) {
             _error = "unable to read the file";
@@ -823,9 +841,28 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
             return false;
         }
         NSDictionary *const pack = root;
+
+        // The exporter always writes these; a hand-written pack may omit them, but a pack that
+        // claims a different format or a newer version must not be interpreted as if it were ours.
+        NSString *const format = [pack[@"format"] isKindOfClass:NSString.class] ? pack[@"format"] : nil;
+        if( format != nil && ![format isEqualToString:kPackFormat] ) {
+            _error = "the file is not a Nimble Commander language pack";
+            return false;
+        }
+        NSNumber *const format_version =
+            [pack[@"formatVersion"] isKindOfClass:NSNumber.class] ? pack[@"formatVersion"] : nil;
+        if( format_version != nil && format_version.longValue > kPackFormatVersion ) {
+            _error = "the pack was made by a newer version of the app";
+            return false;
+        }
+
         NSArray *const entries = pack[@"entries"];
         if( ![entries isKindOfClass:NSArray.class] || entries.count == 0 ) {
             _error = "the file doesn't contain any entries";
+            return false;
+        }
+        if( entries.count > kMaxPackEntries ) {
+            _error = "the pack contains too many entries";
             return false;
         }
 
@@ -859,8 +896,17 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
             NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
             NSString *const translation =
                 [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
-            if( key.length == 0 || table.length == 0 ) {
+            NSString *const bundle_key = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+            if( key.length == 0 || table.length == 0 || key.length > kMaxPackKeyLength ||
+                bundle_key.length > kMaxPackKeyLength || translation.length > kMaxPackTranslationLength ) {
                 ++_stats.skipped_malformed;
+                continue;
+            }
+            // A pack may only translate strings this app actually has; anything else would let it
+            // put arbitrary text into tables the app doesn't know about.
+            if( NSDictionary *const manifest_index = ManifestIndex();
+                manifest_index != nil && manifest_index[EntryKey(bundle_key, table, key)] == nil ) {
+                ++_stats.skipped_unknown;
                 continue;
             }
             if( translation.length == 0 ) {
@@ -875,7 +921,6 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
                 ++_stats.skipped_placeholders;
                 continue;
             }
-            NSString *const bundle_key = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
             if( native ) {
                 NSString *const built_in = native[EntryKey(bundle_key, table, key)];
                 if( built_in && [built_in isEqualToString:translation] )
