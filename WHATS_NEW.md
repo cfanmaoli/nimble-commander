@@ -59,7 +59,7 @@
 - The first screen of a large directory now appears while the rest is still being read (a 1,000,000-entry directory paints in ~34 ms instead of ~2.2 s).
 - A single change in a directory of that size is applied as an incremental listing patch driven by path-level FSEvents: ~40 ms instead of a full 2.4 s reload.
 - Enumeration itself dropped from ~5.7 s of CPU to ~2.4 s, of which the kernel enumeration is ~2.2 s.
-- Resident memory for a million entries went from ~650 MB to ~283 MB, or ~252 MB with the optional lazy modes (`filePanel.general.lazyDates`, `filePanel.general.lazySizes`), which skip the timestamp and size columns and fill them in for the rows as you scroll.
+- Resident memory for a million entries went from ~650 MB to ~283 MB.
 - The find-files dialog uses parallel search engines for local directories when the filters allow it: ~20x faster filename search and ~9x faster content search than the previous per-entry VFS walk.
 - Scrolling a directory that was opened through the preview listing works again.
 

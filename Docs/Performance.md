@@ -790,8 +790,8 @@ materialize 的 CFString），并打进 `NC_PERF_LOG` 的 build 行：
 > 注（第十九轮之后补记）：上表的“目录变动响应”是**默认视图选项**下的数字。第十六轮之前，默认选项下
 > （隐藏文件不显示）增量路径其实一直被 `HardFiltering().IsFiltering()` 挡掉、退化成 2.4 s 的全量刷新，
 > 之前测到的 40 ms 是在“显示隐藏文件”时测的——该问题已在第 22 章修复，上表是修复后的数字。
-> 惰性模式（`lazyDates`/`lazySizes`，默认关）把 listing 数据从 92.9 MB 降到 61.8 MB，整机因此从
-> ~283 MB 降到 ~252 MB，代价是大小/日期列要滚动到才显示、按这两列排序会先做一次全量属性重读。
+> 惰性模式（`lazyDates`/`lazySizes`）当年把 listing 数据从 92.9 MB 降到 61.8 MB，整机因此从
+> ~283 MB 降到 ~252 MB；该模式后来被移除，枚举始终带回完整属性。
 
 最近一次实测：
 
@@ -841,6 +841,10 @@ aeacf91b4 listing 内存账本（mem=92.9MB）
 ---
 
 ## 21. 第十五轮：F_NoTimes（惰性日期列的地基）
+
+> **已移除**：第十五/十八轮的惰性日期与惰性大小（`F_NoTimes`/`F_NoSizes`、`lazyDates`/`lazySizes`）
+> 后来被整体删除——枚举始终带回完整的属性，面板不再有“属性未就绪”的列。本章保留为历史记录，
+> 其中的标志与配置项已不在代码里。
 
 目标是把五个时间列从常驻内存里拿掉（1M 项 = 20 MB），同时保留大小/inode/uid/gid/flags。
 新增 VFSFlags::F_NoTimes：
@@ -936,6 +940,8 @@ listing mem=69.5MB   （完整属性时 92.9MB，-23.4 MB）
 ---
 
 ## 24. 第十八轮：`F_NoSizes` —— 完全惰性模式把数据面压到 ~98 MB
+
+> **已移除**：与第 21 章相同的理由，`F_NoSizes` 与 `filePanel.general.lazySizes` 已从代码中删除。
 
 ### 24.1 改动
 

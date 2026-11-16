@@ -24,8 +24,8 @@ static uint64_t ExtractSizeFromInfos(const VFSListingItem &_dirent, const data::
             return _dirent.IsDotDot() ? g_NonCalculatedSizeForDotDot : g_NonCalculatedSizeForDir;
     }
     else {
-        // the listing may not carry the sizes at all (VFSFlags::F_NoSizes) - then it's the
-        // volatile data that has the fetched one, or nothing yet
+        // a listing may not carry the sizes at all (e.g. a names-only enumeration) - then it's the
+        // volatile data that has the calculated one, or nothing yet
         if( _dirent.HasSize() )
             return _dirent.Size();
         if( _vd.is_size_calculated() )

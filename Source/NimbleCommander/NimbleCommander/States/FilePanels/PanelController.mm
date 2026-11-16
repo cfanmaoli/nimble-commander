@@ -124,8 +124,6 @@ struct CalculatedSizesBatch {
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowDotDotEntry, g_ConfigShowDotDotEntry);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigShowLocalizedFilenames, g_ConfigShowLocalizedFilenames);
 MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigEnableFinderTags, g_ConfigEnableFinderTags);
-MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazyDates, "filePanel.general.lazyDates");
-MAKE_AUTO_UPDATING_BOOL_CONFIG_VALUE(ConfigLazySizes, "filePanel.general.lazySizes");
 
 #define MAKE_AUTO_UPDATING_INT_CONFIG_VALUE(_name, _path, _fallback)                                                   \
     static long _name()                                                                                                \
@@ -222,8 +220,6 @@ static void HeatUpConfigValues()
                       appended:(unsigned)_appended
     cancelBackgroundOperations:(bool)_cancel_background;
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared;
-- (void)fetchLazyDatesForTopEntries;
-- (void)fetchLazyDatesForSortedRange:(NSRange)_range;
 - (void)reportFlatViewTruncation:(size_t)_scanned_items
                      directories:(size_t)_scanned_directories
                        timed_out:(bool)_timed_out
@@ -448,18 +444,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_DirectorySizeCountingQ;
     nc::base::SerialQueue m_DirectoryLoadingQ;
     nc::base::SerialQueue m_DirectoryReLoadingQ;
-    nc::base::SerialQueue m_LazyDatesQ;
-    bool m_LazyDates;
-    bool m_LazySizes;
-    // Bumped whenever a whole new listing is installed. The lazy attribute fetching runs off the
-    // main queue, so its results are only applied when the listing they were requested for is
-    // still the one on screen.
-    unsigned long m_LazyEpoch;
     bool m_FlatTruncationReported;
-    // raw indices whose attributes are being fetched right now - the scroll notifications can
-    // fire many times before the first result lands, so this keeps the work bounded
-    ankerl::unordered_dense::set<unsigned> m_LazyPending;
-
     NCPanelQuickSearch *m_QuickSearch;
 
     // navigation support
@@ -542,9 +527,6 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_DataGeneration = 0;
         m_IsAnythingWorksInBackground = false;
         m_PendingRefreshScheduled = false;
-        m_LazyDates = false;
-        m_LazySizes = false;
-        m_LazyEpoch = 0;
         m_FlatTruncationReported = false;
         m_ViewLayoutIndex = m_Layouts->DefaultLayoutIndex();
         m_AssignedViewLayout = m_Layouts->DefaultLayout();
@@ -671,28 +653,6 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 
 namespace {
 
-// True when the sort order is derived from the timestamps or the sizes - the lazy modes don't
-// carry them, so a full attribute pass is needed before such a sort can make sense.
-bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
-{
-    using M = nc::panel::data::SortMode;
-    switch( _mode.sort ) {
-        case M::SortBySize:
-        case M::SortBySizeRev:
-        case M::SortByModTime:
-        case M::SortByModTimeRev:
-        case M::SortByBirthTime:
-        case M::SortByBirthTimeRev:
-        case M::SortByAddTime:
-        case M::SortByAddTimeRev:
-        case M::SortByAccessTime:
-        case M::SortByAccessTimeRev:
-            return true;
-        default:
-            return false;
-    }
-}
-
 } // namespace
 - (void)changeSortingModeTo:(data::SortMode)_mode
 {
@@ -706,13 +666,6 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
         [m_View dataSortingHasChanged];
         [m_View dataUpdated];
         [self markRestorableStateAsInvalid];
-
-        if( SortModeNeedsAttributes(_mode) && (m_LazyDates || m_LazySizes) ) {
-            // the listing doesn't carry what this sort needs - reload it with the full attributes
-            m_LazyDates = false;
-            m_LazySizes = false;
-            [self refreshPanel];
-        }
     }
 }
 
@@ -983,108 +936,6 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     }
 }
 
-- (void)fetchLazyDatesForTopEntries
-{
-    [self fetchLazyDatesForSortedRange:NSMakeRange(0, 200)];
-}
-
-- (void)fetchLazyDatesForSortedRange:(NSRange)_range
-{
-    assert(dispatch_is_main_queue());
-    if( !m_LazyDates && !m_LazySizes )
-        return;
-    const VFSListingPtr listing = m_Data.ListingPtr();
-    if( !listing || listing->Count() == 0 )
-        return;
-
-    std::vector<unsigned> raw_indices;
-    const int total = m_Data.SortedEntriesCount();
-    const int begin = static_cast<int>(std::min<NSUInteger>(_range.location, static_cast<NSUInteger>(total)));
-    const int end =
-        static_cast<int>(std::min<NSUInteger>(_range.location + _range.length, static_cast<NSUInteger>(total)));
-    raw_indices.reserve(static_cast<size_t>(std::max(0, end - begin)));
-    for( int i = begin; i < end; ++i ) {
-        const int raw_index = m_Data.RawIndexForSortIndex(i);
-        if( raw_index < 0 )
-            continue;
-        if( m_LazyPending.contains(static_cast<unsigned>(raw_index)) )
-            continue;
-        const bool need_dates = m_LazyDates && !m_Data.FetchedTimesAtRawPos(raw_index).has_value();
-        const bool need_size = m_LazySizes && !m_Data.HasFetchedSize(static_cast<unsigned>(raw_index));
-        if( !need_dates && !need_size )
-            continue;
-        raw_indices.push_back(static_cast<unsigned>(raw_index));
-    }
-    if( raw_indices.empty() )
-        return;
-    for( const unsigned raw_index : raw_indices )
-        m_LazyPending.insert(raw_index);
-
-    const auto host = listing->Host();
-    const auto directory = listing->Directory();
-    std::vector<std::string> paths;
-    paths.reserve(raw_indices.size());
-    for( auto raw_index : raw_indices )
-        paths.emplace_back(directory + listing->Filename(raw_index));
-
-    // The results are only meaningful for the listing they were requested for - the panel may have
-    // moved to another directory (or reloaded the same one) by the time they arrive.
-    const unsigned long epoch = m_LazyEpoch;
-    m_LazyDatesQ.Run([self, paths = std::move(paths), raw_indices = std::move(raw_indices), host, epoch] {
-        struct FetchedEntry {
-            unsigned raw_index;
-            data::Model::FetchedTimes times;
-            uint64_t size;
-        };
-        std::vector<FetchedEntry> fetched;
-        fetched.reserve(paths.size());
-        for( size_t i = 0; i != paths.size(); ++i ) {
-            if( m_LazyDatesQ.IsStopped() )
-                return;
-            const auto item = host->FetchSingleItemListing(paths[i], VFSFlags::F_NoFollow, {});
-            if( !item || (*item)->Count() != 1 )
-                continue;
-            const auto &entry = **item;
-            data::Model::FetchedTimes times;
-            times.atime = entry.HasATime(0) ? entry.ATime(0) : 0;
-            times.mtime = entry.HasMTime(0) ? entry.MTime(0) : 0;
-            times.ctime = entry.HasCTime(0) ? entry.CTime(0) : 0;
-            times.btime = entry.HasBTime(0) ? entry.BTime(0) : 0;
-            times.addtime = entry.HasAddTime(0) ? entry.AddTime(0) : -1;
-            const uint64_t size = entry.HasSize(0) ? entry.Size(0) : std::numeric_limits<uint64_t>::max();
-            fetched.emplace_back(raw_indices[i], times, size);
-        }
-        if( fetched.empty() ) {
-            // Nothing could be read - release the indices, otherwise these rows would never be
-            // requested again and would keep showing placeholders.
-            dispatch_to_main_queue([self, raw_indices = raw_indices] {
-                for( const unsigned raw_index : raw_indices )
-                    m_LazyPending.erase(raw_index);
-            });
-            return;
-        }
-        dispatch_to_main_queue([self, fetched = std::move(fetched), raw_indices = raw_indices, epoch] {
-            if( m_LazyEpoch != epoch )
-                return; // the listing was replaced - these values belong to a different directory
-            for( const unsigned raw_index : raw_indices )
-                m_LazyPending.erase(raw_index);
-            if( !m_LazyDates && !m_LazySizes )
-                return;
-            for( const auto &i : fetched ) {
-                if( m_LazyDates )
-                    m_Data.SetFetchedTimes(i.raw_index, i.times);
-                if( m_LazySizes && i.size != std::numeric_limits<uint64_t>::max() )
-                    m_Data.SetFetchedSize(i.raw_index, i.size);
-            }
-            // Repaint only the rows that are on screen. A full dataUpdated() here would rebuild the
-            // view's contents (the brief view even reloads its collection view), which resets the
-            // scroll position - i.e. the view would refuse to scroll while the dates are being
-            // pulled in.
-            [m_View volatileDataChanged];
-        });
-    });
-}
-
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared
 {
     assert(dispatch_is_main_queue());
@@ -1092,8 +943,6 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     const auto pers = CursorBackup{m_View.curpos, m_Data};
     m_Data.InstallLoad(std::move(_prepared));
     m_DataGeneration++;
-    m_LazyEpoch++;
-    m_LazyPending.clear();
     [m_View dataUpdated];
     [m_QuickSearch dataUpdated];
     if( [self checkAgainstRequestedFocusing] ) {
@@ -1134,8 +983,7 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     }
 
     if( self.isUniform ) {
-        const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0) |
-                                 (m_LazyDates ? VFSFlags::F_NoTimes : 0) | (m_LazySizes ? VFSFlags::F_NoSizes : 0);
+        const auto fetch_flags = m_VFSFetchingFlags | (_force ? VFSFlags::F_ForceRefresh : 0);
         const auto dirpath = m_Data.DirectoryPathWithTrailingSlash();
         const auto vfs = self.vfs;
         // the model is main-thread-only, so its state is captured here and the heavy merging is
@@ -1325,7 +1173,6 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
     m_DirectorySizeCountingQ.Stop();
     m_DirectoryLoadingQ.Stop();
     m_DirectoryReLoadingQ.Stop();
-    m_LazyDatesQ.Stop();
 }
 
 - (void)updateSpinningIndicator
@@ -1431,26 +1278,9 @@ bool SortModeNeedsAttributes(const nc::panel::data::SortMode &_mode) noexcept
         [wc invalidateRestorableState];
 }
 
-- (void)panelView:(PanelView *) [[maybe_unused]] _view visibleSortedRangeChangedTo:(NSRange)_range
-{
-    if( (!m_LazyDates && !m_LazySizes) || _range.location == NSNotFound )
-        return;
-    // pull in a bit more than what's visible, so that a small scroll doesn't need a round trip
-    const NSUInteger margin = 100;
-    const NSUInteger begin = _range.location > margin ? _range.location - margin : 0;
-    [self fetchLazyDatesForSortedRange:NSMakeRange(begin, _range.length + (2 * margin))];
-}
-
 - (void)onCursorChanged
 {
     [self updateAttachedQuickLook];
-    if( m_LazyDates || m_LazySizes ) {
-        // the attributes are fetched on demand - top up the area around the cursor, so that moving
-        // through the list with the keyboard or clicking does pull them in
-        const int cursor = m_View.curpos;
-        if( cursor >= 0 )
-            [self fetchLazyDatesForSortedRange:NSMakeRange(std::max(0, cursor - 20), 220)];
-    }
 }
 
 - (void)updateAttachedQuickLook
@@ -1684,27 +1514,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         auto &vfs = *_request->VFS;
         const auto canceller = VFSCancelChecker([&] { return m_DirectoryLoadingQ.IsStopped(); });
 
-        bool big_directory = false;
-        // Classify the directory without building a listing for it - a plain entry count is all
-        // that is needed. Hosts that can't count cheaply fall back to the preview enumeration.
-        {
-            static constexpr size_t preview_items = 4096;
-            if( const std::optional<size_t> count =
-                    vfs.FetchDirectoryEntryCount(directory, preview_items, canceller) ) {
-                big_directory = *count >= preview_items;
-            }
-            else if( const std::expected<VFSListingPtr, Error> preview =
-                         vfs.FetchDirectoryListingPreview(directory, preview_items, m_VFSFetchingFlags, canceller) ) {
-                big_directory = (*preview)->Count() >= preview_items;
-            }
-        }
-
-        // Only the huge directories benefit from lazy dates, and the probe has just told us
-        // whether this one is big.
-        const bool lazy_dates = big_directory && ConfigLazyDates();
-        const bool lazy_sizes = big_directory && ConfigLazySizes();
-        const unsigned long fetch_flags =
-            m_VFSFetchingFlags | (lazy_dates ? VFSFlags::F_NoTimes : 0) | (lazy_sizes ? VFSFlags::F_NoSizes : 0);
+        const unsigned long fetch_flags = m_VFSFetchingFlags;
 
         // Deliver the listing to the panel chunk by chunk instead of producing a preview listing
         // and then replacing it with an unrelated full one: the first chunk is the first screenful,
@@ -1756,8 +1566,6 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                                pending_count,
                                last_flush,
                                flush_pending,
-                               lazy_dates,
-                               lazy_sizes,
                                _request,
                                _sort_mode,
                                _hard_filter,
@@ -1769,7 +1577,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 // the expensive part of the model setup happens here, on the fetching queue
                 auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
                     _chunk, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
-                dispatch_to_main_queue([self, stream_id, prepared, lazy_dates, lazy_sizes, _request] {
+                dispatch_to_main_queue([self, stream_id, prepared, _request] {
                     if( m_StreamingLoadId.load() != stream_id )
                         return;
                     const auto perf_begin = std::chrono::steady_clock::now();
@@ -1778,17 +1586,12 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                     m_FlatViewHost.reset();
                     m_FlatViewRoot.clear();
                     ++m_FlatViewGeneration;
-                    m_LazyDates = lazy_dates;
-                    m_LazySizes = lazy_sizes;
                     m_Data.InstallLoad(std::move(*prepared));
                     const auto perf_loaded = std::chrono::steady_clock::now();
                     for( const auto &i : _request->RequestSelectedEntries )
                         m_Data.CustomFlagsSelectSorted(m_Data.SortedIndexForName(i), true);
                     m_DataGeneration++;
-                    m_LazyEpoch++;
-                    m_LazyPending.clear();
                     [m_View dataUpdated];
-                    [self fetchLazyDatesForTopEntries];
                     const auto perf_updated = std::chrono::steady_clock::now();
                     [m_View panelChangedWithFocusedFilename:_request->RequestFocusedEntry
                                           loadPreviousState:_request->LoadPreviousViewState];
@@ -1903,8 +1706,6 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_Data.Load(_listing, data::Model::PanelType::Temporary);
         const auto perf_loaded = std::chrono::steady_clock::now();
         m_DataGeneration++;
-        m_LazyEpoch++;
-        m_LazyPending.clear();
         [m_View dataUpdated];
         const auto perf_updated = std::chrono::steady_clock::now();
         [m_View panelChangedWithFocusedFilename:"" loadPreviousState:false];

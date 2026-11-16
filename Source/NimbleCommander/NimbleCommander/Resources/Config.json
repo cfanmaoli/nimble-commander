@@ -76,19 +76,6 @@
             "showDotDotEntry": true,
 
             /**
-             * Load the date columns lazily for the huge directories: the enumeration then skips the
-             * timestamps (20MB per million entries) and the panel fetches them for the rows it shows.
-             * Off by default - the date columns are then empty until a row is scrolled into view.
-             */
-            "lazyDates": false,
-
-            /**
-             * Same for the sizes: the enumeration then skips them and the panel fetches the ones it
-             * shows. Takes another 8MB off a million-entry listing.
-             */
-            "lazySizes": false,
-
-            /**
              * Safety limits for the flat view, which lists the whole subtree of the current
              * directory. Entries beyond these are not shown and the user is told about it.
              */

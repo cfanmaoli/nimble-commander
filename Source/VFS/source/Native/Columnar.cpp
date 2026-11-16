@@ -52,7 +52,6 @@ struct SharedState {
 // itself can't be read any further.
 void AppendDirectory(SharedState &_state,
                      const std::string &_dir,
-                     const unsigned long _fetch_flags,
                      const size_t _max_items,
                      std::vector<std::string> &_subdirs,
                      const std::vector<std::string> &_skip_prefixes,
@@ -66,9 +65,6 @@ void AppendDirectory(SharedState &_state,
     const int fd = io.open(dir.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
     if( fd < 0 )
         return;
-
-    const bool with_times = (_fetch_flags & VFSFlags::F_NoTimes) == 0;
-    const bool with_sizes = (_fetch_flags & VFSFlags::F_NoSizes) == 0;
 
     std::vector<std::string> subdirs;
     const auto on_entry = [&](const native::Fetching::CallbackParams &_params) {
@@ -103,17 +99,14 @@ void AppendDirectory(SharedState &_state,
             dtype = DT_BLK;
         _state.input.unix_types.emplace_back(dtype);
         _state.input.directories.insert(index, dir);
-        if( with_sizes )
-            _state.input.sizes.insert(
-                index, _params.size >= 0 ? static_cast<uint64_t>(_params.size) : std::numeric_limits<uint64_t>::max());
-        if( with_times ) {
-            _state.input.btimes.insert(index, _params.crt_time);
-            _state.input.mtimes.insert(index, _params.mod_time);
-            _state.input.ctimes.insert(index, _params.chg_time);
-            _state.input.atimes.insert(index, _params.acc_time);
-            if( _params.add_time >= 0 )
-                _state.input.add_times.insert(index, _params.add_time);
-        }
+        _state.input.sizes.insert(
+            index, _params.size >= 0 ? static_cast<uint64_t>(_params.size) : std::numeric_limits<uint64_t>::max());
+        _state.input.btimes.insert(index, _params.crt_time);
+        _state.input.mtimes.insert(index, _params.mod_time);
+        _state.input.ctimes.insert(index, _params.chg_time);
+        _state.input.atimes.insert(index, _params.acc_time);
+        if( _params.add_time >= 0 )
+            _state.input.add_times.insert(index, _params.add_time);
         if( _params.inode != 0 )
             _state.input.inodes.insert(index, _params.inode);
         _state.input.uids.insert(index, _params.uid);
@@ -152,8 +145,7 @@ void AppendDirectory(SharedState &_state,
     };
 
     const auto begin = std::chrono::steady_clock::now();
-    std::ignore =
-        native::Fetching::ReadDirAttributesBulk(fd, on_batch, on_entry, remaining_items, with_times, with_sizes);
+    std::ignore = native::Fetching::ReadDirAttributesBulk(fd, on_batch, on_entry, remaining_items);
     ::close(fd);
     // The bulk call also stops when it runs into the entry cap - the listing is incomplete then,
     // whether or not the item counter happens to land exactly on the limit.
@@ -177,7 +169,7 @@ void AppendDirectory(SharedState &_state,
 
 ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const std::string &_root,
-                                           const unsigned long _fetch_flags,
+                                           [[maybe_unused]] const unsigned long _fetch_flags,
                                            const VFSCancelChecker &_cancel_checker,
                                            const size_t _max_items,
                                            const size_t _max_directories,
@@ -248,7 +240,7 @@ ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                     return;
                 state.directories.fetch_add(1, std::memory_order_relaxed);
                 std::vector<std::string> subdirs;
-                AppendDirectory(state, level[i], _fetch_flags, _max_items, subdirs, _skip_prefixes, [&] {
+                AppendDirectory(state, level[i], _max_items, subdirs, _skip_prefixes, [&] {
                     return (_cancel_checker && _cancel_checker()) || out_of_time();
                 });
                 if( state.truncated )

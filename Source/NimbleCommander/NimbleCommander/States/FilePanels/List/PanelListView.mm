@@ -577,8 +577,6 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     _view.style = m_DateCreatedFormattingStyle;
     if( _item.HasBTime() )
         _view.time = _item.BTime();
-    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
-        _view.time = fetched->btime;
     else
         _view.time = -1; // not loaded yet
 }
@@ -588,8 +586,6 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     _view.style = m_DateAddedFormattingStyle;
     if( _item.HasAddTime() )
         _view.time = _item.AddTime();
-    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
-        _view.time = fetched->addtime;
     else
         _view.time = -1;
 }
@@ -599,8 +595,6 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     _view.style = m_DateModifiedFormattingStyle;
     if( _item.HasMTime() )
         _view.time = _item.MTime();
-    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
-        _view.time = fetched->mtime;
     else
         _view.time = -1;
 }
@@ -610,8 +604,6 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     _view.style = m_DateAccessedFormattingStyle;
     if( _item.HasATime() )
         _view.time = _item.ATime();
-    else if( const auto fetched = m_Data->FetchedTimesAtRawPos(static_cast<int>(_item.Index())) )
-        _view.time = fetched->atime;
     else
         _view.time = -1;
 }

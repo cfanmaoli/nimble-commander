@@ -58,10 +58,6 @@ public:
                                                                      unsigned long _flags,
                                                                      const VFSCancelChecker &_cancel_checker) override;
 
-    std::optional<size_t> FetchDirectoryEntryCount(std::string_view _path,
-                                                   size_t _max_items,
-                                                   const VFSCancelChecker &_cancel_checker) override;
-
     std::expected<void, Error> FetchDirectoryListingIncremental(std::string_view _path,
                                                                 unsigned long _flags,
                                                                 const VFSCancelChecker &_cancel_checker,

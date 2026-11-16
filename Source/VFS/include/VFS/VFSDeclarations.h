@@ -177,19 +177,6 @@ struct Flags {
      * client is then expected to fetch the attributes of the entries it actually needs.
      */
     static constexpr uint64_t F_NamesOnly = 0x200000000ull;
-
-    /**
-     * For listing. Fetch everything except the timestamps - the panel can show the sizes and the
-     * types right away and get the dates of the rows it actually displays on demand. Saves the five
-     * time columns (20MB per million entries) at the cost of the not-yet-loaded date columns.
-     */
-    static constexpr uint64_t F_NoTimes = 0x400000000ull;
-
-    /**
-     * For listing. Same idea as F_NoTimes, but for the sizes: the panel then shows the sizes of the
-     * rows it has actually looked at, in exchange for not keeping the size column in memory.
-     */
-    static constexpr uint64_t F_NoSizes = 0x800000000ull;
 };
 
 class Listing;

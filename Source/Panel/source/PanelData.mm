@@ -187,7 +187,6 @@ void Model::InstallLoad(PreparedLoad &&_prepared)
     m_ReverseToCustomSort = std::move(_prepared.reverse_to_custom_sort);
     m_EntriesBySoftFiltering = std::move(_prepared.entries_by_soft_filtering);
     m_Stats = _prepared.statistics;
-    m_FetchedTimes.clear();
 }
 
 void Model::Load(const VFSListingPtr &_listing, PanelType _type)
@@ -372,7 +371,6 @@ void Model::ApplyPatchedListing(const VFSListingPtr &_listing,
     m_EntriesByRawName = std::move(new_by_raw_name);
     m_EntriesByCustomSort = std::move(new_by_custom_sort);
     // the raw indices changed, the fetched times can't be mapped anymore
-    m_FetchedTimes.clear();
 
     m_ReverseToCustomSort.resize(new_count);
     std::ranges::fill(m_ReverseToCustomSort, invalid);
@@ -1198,13 +1196,6 @@ void Model::BuildSoftFilteringIndeces()
     }
 }
 
-void Model::SetFetchedTimes(unsigned _raw_index, const FetchedTimes &_times)
-{
-    if( _raw_index >= m_Listing->Count() )
-        return;
-    m_FetchedTimes[_raw_index] = _times;
-}
-
 QuickSearchHighlight Model::HighlightForRawIndex(unsigned _raw_index) const noexcept
 {
     if( _raw_index >= m_Highlights.size() )
@@ -1373,33 +1364,6 @@ void Model::ResetHighlights()
 {
     m_Highlights.clear();
     m_Highlights.shrink_to_fit();
-}
-
-void Model::SetFetchedSize(unsigned _raw_index, uint64_t _size)
-{
-    if( _raw_index >= m_VolatileData.size() )
-        return;
-    m_VolatileData[_raw_index].size = _size;
-}
-
-bool Model::HasFetchedSize(unsigned _raw_index) const noexcept
-{
-    return _raw_index < m_VolatileData.size() && m_VolatileData[_raw_index].is_size_calculated();
-}
-
-std::optional<Model::FetchedTimes> Model::FetchedTimesAtRawPos(int _raw_pos) const
-{
-    if( _raw_pos < 0 || m_FetchedTimes.empty() )
-        return std::nullopt;
-    const auto it = m_FetchedTimes.find(static_cast<unsigned>(_raw_pos));
-    if( it == m_FetchedTimes.end() )
-        return std::nullopt;
-    return it->second;
-}
-
-void Model::ClearFetchedTimes()
-{
-    m_FetchedTimes.clear();
 }
 
 int Model::SoftFilteredCount() const noexcept
