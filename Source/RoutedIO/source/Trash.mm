@@ -672,6 +672,54 @@ std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &
     return result;
 }
 
+// Deletes one trashed entry without following symlinks and without crossing a device boundary: a
+// directory that sits on another device is a mounted volume inside the trash, not a trashed item.
+// The recursion checks every nested entry, so a volume mounted below the top level is refused too.
+static bool RemoveTrashTree(const std::string &_path, const dev_t _trash_dev, const uid_t _owner) noexcept
+{
+    struct stat st;
+    if( ::lstat(_path.c_str(), &st) != 0 )
+        return false;
+    if( st.st_uid != _owner )
+        return false;
+    if( !S_ISDIR(st.st_mode) )
+        return ::unlink(_path.c_str()) == 0;
+
+    if( st.st_dev != _trash_dev )
+        return false;
+
+    DIR *const dir = opendir(_path.c_str());
+    if( dir == nullptr )
+        return false;
+    std::vector<std::string> children;
+    bool read_ok = true;
+    for( ;; ) {
+        errno = 0;
+        const dirent *const entry = readdir(dir);
+        if( entry == nullptr ) {
+            if( errno != 0 )
+                read_ok = false;
+            break;
+        }
+        const std::string name = entry->d_name;
+        if( name == "." || name == ".." )
+            continue;
+        std::string child = _path;
+        child += '/';
+        child += name;
+        children.push_back(std::move(child));
+    }
+    closedir(dir);
+
+    bool ok = read_ok;
+    for( const std::string &child : children )
+        if( !RemoveTrashTree(child, _trash_dev, _owner) )
+            ok = false;
+    if( ok && ::rmdir(_path.c_str()) != 0 )
+        ok = false;
+    return ok;
+}
+
 EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
 {
     EmptyTrashResult result;
@@ -728,12 +776,10 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
             ++result.failed;
             continue;
         }
-        std::error_code ec;
-        std::filesystem::remove_all(path, ec);
-        if( ec )
-            ++result.failed;
-        else
+        if( RemoveTrashTree(path, trash_stat.st_dev, trash_stat.st_uid) )
             ++result.deleted;
+        else
+            ++result.failed;
     }
     return result;
 }
@@ -792,7 +838,7 @@ PutBackResult PutBackTrashedItem(const std::string &_trash_item_path, const std:
     // are writable by anything running as this user, and the latter also comes from whatever volume
     // the trash folder belongs to. Only a normalized absolute path outside of every trash folder is
     // accepted, so a crafted marker can't "restore" an item to an arbitrary relative location.
-    const std::filesystem::path target_path = std::filesystem::path(*original).lexically_normal();
+    std::filesystem::path target_path = std::filesystem::path(*original).lexically_normal();
     const std::string target_string = target_path.string();
     if( !target_path.is_absolute() || target_string == target_path.root_path().string() ||
         IsInsideTrash(target_string) || target_string == _trash_item_path ||
@@ -811,6 +857,21 @@ PutBackResult PutBackTrashedItem(const std::string &_trash_item_path, const std:
         std::filesystem::create_directories(target_path.parent_path(), ec);
         if( ec ) {
             result.error = ec.value() != 0 ? ec.value() : EIO;
+            return result;
+        }
+        // The lexical check above can be fooled by a symlinked path component: resolve the parent -
+        // it exists now - and check where the item would really land. The resolved path is also what
+        // the rename is given, so the validated location is the written one.
+        std::error_code canonical_ec;
+        const std::filesystem::path resolved_parent =
+            std::filesystem::canonical(target_path.parent_path(), canonical_ec);
+        if( canonical_ec ) {
+            result.error = canonical_ec.value() != 0 ? canonical_ec.value() : EIO;
+            return result;
+        }
+        target_path = resolved_parent / target_path.filename();
+        if( IsInsideTrash(target_path.string()) ) {
+            result.error = EINVAL;
             return result;
         }
     }

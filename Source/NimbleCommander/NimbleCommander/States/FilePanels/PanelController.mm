@@ -286,7 +286,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     in.directories.insert(0, _base.Directory(0));
     in.sizes.reset(variable_container<>::type::dense);
     in.inodes.reset(variable_container<>::type::dense);
-    // a listing may simply not carry the timestamps (lazy dates) - keep them absent instead of
+    // a listing may simply not carry the timestamps - keep them absent instead of
     // filling in zeros, the panel would otherwise show 1970 for every entry
     const bool base_has_times = _base.HasAnyTimes();
     const auto times_type = base_has_times ? variable_container<>::type::dense : variable_container<>::type::sparse;
@@ -352,7 +352,7 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
             in.ctimes[n] = _l.HasCTime(_i) ? _l.CTime(_i) : 0;
             in.btimes[n] = _l.HasBTime(_i) ? _l.BTime(_i) : 0;
         }
-        else { // lazy dates - only the items that actually have them (the freshly fetched ones)
+        else { // only the items that actually carry them
             if( _l.HasATime(_i) )
                 in.atimes.insert(n, _l.ATime(_i));
             if( _l.HasMTime(_i) )

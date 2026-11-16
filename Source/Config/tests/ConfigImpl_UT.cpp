@@ -112,6 +112,20 @@ TEST_CASE("Config returns a valid string value or an empty string")
     CHECK(config.GetString("foobar").empty());
 }
 
+TEST_CASE("Config loads a user document that still names removed keys")
+{
+    // The shipped defaults no longer describe the retired lazy date/size modes, but a user's
+    // Config.json may still carry them. Loading must succeed and the values that still exist must
+    // come from the user's document.
+    const auto defaults = R"({"filePanel": {"general": {"showDotDotEntry": true}}})";
+    const auto overwrites =
+        R"({"filePanel": {"general": {"lazyDates": true, "lazySizes": true, "showDotDotEntry": false}}})";
+    const ConfigImpl config{defaults, MakeDummyStorage(overwrites)};
+
+    CHECK(config.GetBool("filePanel.general.showDotDotEntry") == false);
+    CHECK(config.GetBool("filePanel.general.showDotDotEntry2") == false); // unknown -> default
+}
+
 TEST_CASE("Config overwrites existing values with proper types and values")
 {
     auto json = "{\"abra\": 42}";

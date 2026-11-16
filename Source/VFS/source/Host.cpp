@@ -224,15 +224,6 @@ HostDirObservationTicket Host::ObserveDirectoryChanges([[maybe_unused]] std::str
     return {};
 }
 
-std::expected<VFSListingPtr, Error>
-Host::FetchDirectoryListingPreview([[maybe_unused]] std::string_view _path,
-                                   [[maybe_unused]] size_t _max_items,
-                                   [[maybe_unused]] unsigned long _flags,
-                                   [[maybe_unused]] const VFSCancelChecker &_cancel_checker)
-{
-    return std::unexpected(Error{Error::POSIX, ENOTSUP});
-}
-
 std::expected<void, Error> Host::FetchDirectoryListingIncremental(std::string_view _path,
                                                                   unsigned long _flags,
                                                                   const VFSCancelChecker &_cancel_checker,

@@ -15,7 +15,7 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | Flag                       | Comments
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
-| -arch arm64                | Build for Apple Silicon (the only supported architecture)
+| -arch arm64                | Build for Apple Silicon (the only architecture the app uses; Sparkle and LetsMove are still built as universal binaries)
 | -mmacosx-version-min=12.0  | Minimum supported target version of macOS is 12.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden

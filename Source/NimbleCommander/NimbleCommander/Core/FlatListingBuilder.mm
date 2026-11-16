@@ -258,15 +258,8 @@ FlatListingResult BuildFlatListingColumnar(const VFSHostPtr &_host,
                                         _skip_prefixes);
 
     const auto begin = std::chrono::steady_clock::now();
-    const vfs::ColumnarListingResult enumerated = vfs::BuildColumnarListing(_host,
-                                                                            _root,
-                                                                            _fetch_flags,
-                                                                            _cancel_checker,
-                                                                            _max_items,
-                                                                            _max_directories,
-                                                                            _threads,
-                                                                            _max_seconds,
-                                                                            _skip_prefixes);
+    const vfs::ColumnarListingResult enumerated = vfs::BuildColumnarListing(
+        _host, _root, _cancel_checker, _max_items, _max_directories, _threads, _max_seconds, _skip_prefixes);
     result.scan_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
     result.scanned_items = enumerated.items;

@@ -22,6 +22,5 @@ class DragReceiver;
 
 @optional
 // The range of the sorted positions that are currently on screen has changed (scrolling).
-- (void)panelView:(PanelView *)_view visibleSortedRangeChangedTo:(NSRange)_range;
 
 @end

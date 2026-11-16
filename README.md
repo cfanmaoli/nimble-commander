@@ -19,9 +19,9 @@ The project website, with downloads and release notes, is
 
 ## What this fork changes
 
-- **Apple Silicon only** — the app is built for arm64 only and Intel support was dropped. One
-  bundled third-party framework (LetsMove) is still shipped as a universal binary, but its x86_64
-  slice is never used.
+- **Apple Silicon only** — the app is built for arm64 only and Intel support was dropped. Two
+  bundled third-party frameworks (Sparkle and LetsMove) still ship as universal binaries, but their
+  x86_64 slices are never used.
 - **Language packs** — the app ships English and Simplified Chinese only; translations for other
   languages are collected in [nc-language](https://github.com/cfanmaoli/nc-language) and can be
   imported at any time. *Preferences → Language* switches between the built-in languages and the

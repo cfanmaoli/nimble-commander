@@ -14,6 +14,9 @@
   `/Applications` on every archive open, so installing or removing it takes effect immediately.
 
 ### Under the hood
+- The optional lazyDates/lazySizes modes are gone: listings always carry the full attributes again,
+  so a million-entry directory costs ~283 MB (it was ~252 MB with the lazy mode on), but the date
+  and size columns are always populated and sorting by them never triggers a reload.
 - Rebuilt every third-party library with the system toolchain; zlib was updated from 1.3.2 to 1.4
   (fixes a `gzwrite()` buffer overflow, CVE-2026-85091, and several other issues).
 - Raised the timeout of the parallel-shell integration test, which had made a nightly run flaky.
@@ -59,7 +62,7 @@
 - The first screen of a large directory now appears while the rest is still being read (a 1,000,000-entry directory paints in ~34 ms instead of ~2.2 s).
 - A single change in a directory of that size is applied as an incremental listing patch driven by path-level FSEvents: ~40 ms instead of a full 2.4 s reload.
 - Enumeration itself dropped from ~5.7 s of CPU to ~2.4 s, of which the kernel enumeration is ~2.2 s.
-- Resident memory for a million entries went from ~650 MB to ~283 MB.
+- Resident memory for a million entries went from ~650 MB to ~283 MB, or ~252 MB with the optional lazy modes (`filePanel.general.lazyDates`, `filePanel.general.lazySizes`), which skip the timestamp and size columns and fill them in for the rows as you scroll.
 - The find-files dialog uses parallel search engines for local directories when the filters allow it: ~20x faster filename search and ~9x faster content search than the previous per-entry VFS walk.
 - Scrolling a directory that was opened through the preview listing works again.
 

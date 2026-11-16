@@ -53,11 +53,6 @@ public:
 
     HostDirObservationTicket ObserveDirectoryChanges(std::string_view _path, std::function<void()> _handler) override;
 
-    std::expected<VFSListingPtr, Error> FetchDirectoryListingPreview(std::string_view _path,
-                                                                     size_t _max_items,
-                                                                     unsigned long _flags,
-                                                                     const VFSCancelChecker &_cancel_checker) override;
-
     std::expected<void, Error> FetchDirectoryListingIncremental(std::string_view _path,
                                                                 unsigned long _flags,
                                                                 const VFSCancelChecker &_cancel_checker,
@@ -129,7 +124,6 @@ private:
     FetchDirectoryListingImpl(std::string_view _path,
                               unsigned long _flags,
                               const VFSCancelChecker &_cancel_checker,
-                              size_t _max_items,
                               const DirectoryListingChunkHandler *_on_chunk = nullptr);
     static uint32_t MergeUnixFlags(uint32_t _symlink_flags, uint32_t _target_flags) noexcept;
 

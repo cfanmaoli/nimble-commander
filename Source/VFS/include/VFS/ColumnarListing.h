@@ -30,7 +30,6 @@ struct ColumnarListingResult {
 // costs a network round trip.
 ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const std::string &_root,
-                                           unsigned long _fetch_flags,
                                            const VFSCancelChecker &_cancel_checker,
                                            size_t _max_items,
                                            size_t _max_directories,

@@ -3,6 +3,7 @@
 #include <VFS/VFS.h>
 #include <VFS/VFSListingInput.h>
 #include "PanelData.h"
+#include "PanelDataEntriesComparator.h"
 #include "PanelDataItemVolatileData.h"
 #include "PanelDataSelection.h"
 #include <memory>
@@ -33,6 +34,29 @@ VFSListingPtr ProduceDummyListing(const std::vector<std::string> &_filenames)
         l.filenames.emplace_back(i);
         l.unix_modes.emplace_back(0);
         l.unix_types.emplace_back(0);
+    }
+
+    return VFSListing::Build(std::move(l));
+}
+
+// raw filename, display name (an empty display name means "no localized name")
+VFSListingPtr ProduceDummyListingWithDisplayNames(const std::vector<std::tuple<std::string, std::string>> &_entries)
+{
+    vfs::ListingInput l;
+
+    l.directories.reset(variable_container<>::type::common);
+    l.directories[0] = "/";
+
+    l.hosts.reset(variable_container<>::type::common);
+    l.hosts[0] = VFSHost::DummyHost();
+
+    l.display_filenames.reset(variable_container<>::type::sparse);
+    for( size_t i = 0; i != _entries.size(); ++i ) {
+        l.filenames.emplace_back(std::get<0>(_entries[i]));
+        l.unix_modes.emplace_back(0);
+        l.unix_types.emplace_back(0);
+        if( !std::get<1>(_entries[i]).empty() )
+            l.display_filenames.insert(static_cast<unsigned>(i), std::get<1>(_entries[i]));
     }
 
     return VFSListing::Build(std::move(l));
@@ -955,6 +979,26 @@ TEST_CASE("ApplyAppendedListing merges appended entries with the case-insensitiv
     for( int i = 0; i != data.SortedEntriesCount(); ++i )
         order.emplace_back(data.EntryAtSortPosition(i).Filename());
     CHECK(order == std::vector<std::string>{"a", "B", "c"});
+}
+
+TEST_CASE("ApplyAppendedListing sorts the appended run with the display comparator")
+{
+    // The comparator orders by the localized display name when there is one, while the lookup order
+    // is built from the raw filenames - the appended run must be sorted by the comparator itself.
+    // "z" carries the display name "aaa" and "a" carries "zzz", so the raw order and the display
+    // order are the opposite of each other.
+    Model data;
+    data.SetSortMode(
+        SortMode{.sort = SortMode::SortByName, .sep_dirs = false, .collation = SortMode::Collation::CaseSensitive});
+    data.Load(ProduceDummyListingWithDisplayNames({{"m", "m"}}), Model::PanelType::Directory);
+
+    const VFSListingPtr l2 = ProduceDummyListingWithDisplayNames({{"m", "m"}, {"z", "aaa"}, {"a", "zzz"}});
+    data.ApplyPatchedListing(l2, {}, 2);
+
+    REQUIRE(data.SortedEntriesCount() == 3);
+    CHECK(data.EntryAtSortPosition(0).Filename() == "z"); // shows "aaa"
+    CHECK(data.EntryAtSortPosition(1).Filename() == "m"); // shows "m"
+    CHECK(data.EntryAtSortPosition(2).Filename() == "a"); // shows "zzz"
 }
 
 TEST_CASE("ApplyAppendedListing merges appended entries with the folders-first order")

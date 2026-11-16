@@ -61,9 +61,7 @@ public:
     static int ReadDirAttributesBulk(const int _dir_fd,
                                      const std::function<bool(size_t _fetched_now)> &_cb_fetch,
                                      const Callback &_cb_param,
-                                     size_t _max_entries = 0,
-                                     bool _with_times = true,
-                                     bool _with_sizes = true);
+                                     size_t _max_entries = 0);
 };
 
 } // namespace nc::vfs::native

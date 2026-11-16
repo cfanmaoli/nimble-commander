@@ -569,8 +569,9 @@ Please note that changing certain attributes requires administrator rights and w
 
 ## Compress
 Nimble Commander-Fork includes a built-in compression tool that allows you to archive files.
-Currently, only the ZIP archive format is supported.
-Archives can be password-protected using AES-256 encryption.
+The ZIP, 7z and tar containers are supported; the format, the method and the level are chosen in
+**Preferences → Compression**. Only the ZIP container can protect the archive with a password
+(AES-256) - the password controls are disabled for the other formats.
 
 To create an archive in the same location as the source items, press `F9` or select `Command > Compress...` from the menu.
 To place the resulting archive in the location of the opposite panel, press `Shift + F9` or select `Command > Compress To...`.

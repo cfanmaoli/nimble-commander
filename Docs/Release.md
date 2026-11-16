@@ -47,12 +47,15 @@ Nightly builds are already published automatically: every scheduled run that act
 the preflight in `Docs/CI.md`) replaces the `nightly` pre-release with the unsigned DMG
 `nimble-commander-fork-nightly.dmg`. The steps below are for a versioned release.
 
-The fork deliberately doesn't distribute prebuilt binaries that contain the UnRAR library, and the
-clean variant is built locally by whoever needs it - see the README. Should that policy ever change:
+The fork deliberately doesn't distribute prebuilt binaries that contain the UnRAR library; the
+clean variant is built locally by whoever needs it - see the README.
+
+For a versioned release:
 - Releases -> Draft a new release
 - Create new tag: `vX.Y.Z` (the new version)
 - Target: `main`
-- Add the changelog and attach the DMG from the CI artifact.
+- Add the changelog and attach the DMG from the `Release Build` workflow (it also attaches an
+  `UNSIGNED-BUILD.txt` notice - the artifact is unsigned and not notarised).
 
 ## Step 9: Update the Sparkle feed
 The application reads its update feed from the root of the `main` branch - see `SUFeedURL` in

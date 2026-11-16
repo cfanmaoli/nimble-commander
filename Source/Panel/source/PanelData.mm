@@ -100,7 +100,7 @@ static void InitVolatileDataWithListing(std::vector<ItemVolatileData> &_vd, cons
             }
         }
         else if( _listing.HasSize(i) ) {
-            // the listings built with F_NamesOnly simply don't have the sizes
+            // a listing may simply not carry the sizes
             _vd[i].size = _listing.Size(i);
         }
     }
@@ -1284,32 +1284,17 @@ void Model::ApplyAppendedListing(const VFSListingPtr &_listing, const unsigned _
         const auto appended_less = [&](unsigned _lhs, unsigned _rhs) { return cmp(_lhs, _rhs); };
         std::vector<unsigned> appended_sorted;
         appended_sorted.reserve(_appended_count);
-        // The raw name order that was built for the lookups can only double as the display order
-        // when it is exactly the order of the comparator: the plain name sort of SortByName is
-        // byte-wise, while the comparator may fold case and/or separate folders.
-        const bool raw_name_order_matches =
-            !m_CustomSortMode.sep_dirs && m_CustomSortMode.collation == SortMode::Collation::CaseSensitive;
-        if( m_CustomSortMode.sort == SortMode::SortByName && raw_name_order_matches ) {
-            // The display order is the very same name order that has just been built for the
-            // lookups - no need to sort the appended entries a second time.
-            for( const unsigned i : appended_by_name )
-                if( visible(i) )
-                    appended_sorted.emplace_back(i);
-        }
-        else if( m_CustomSortMode.sort == SortMode::SortByNameRev && raw_name_order_matches ) {
-            for( auto it = appended_by_name.rbegin(); it != appended_by_name.rend(); ++it )
-                if( visible(*it) )
-                    appended_sorted.emplace_back(*it);
-        }
-        else {
-            for( unsigned i = old_count; i != new_count; ++i )
-                if( visible(i) )
-                    appended_sorted.emplace_back(i);
-            if( appended_sorted.size() >= g_ParallelSortThresh )
-                pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
-            else
-                std::ranges::sort(appended_sorted, appended_less);
-        }
+        // The appended run is always sorted with the comparator itself. The name order built for the
+        // lookups is byte-wise over the raw filenames, while the display order folds case, separates
+        // folders, uses localized display names and falls back to CFStringCompare for anything
+        // non-ASCII - the two only coincide by accident, and merging them mixed the orders.
+        for( unsigned i = old_count; i != new_count; ++i )
+            if( visible(i) )
+                appended_sorted.emplace_back(i);
+        if( appended_sorted.size() >= g_ParallelSortThresh )
+            pstld::sort(appended_sorted.begin(), appended_sorted.end(), appended_less);
+        else
+            std::ranges::sort(appended_sorted, appended_less);
         if( !appended_sorted.empty() ) {
             m_EntriesByCustomSort.insert(m_EntriesByCustomSort.end(), appended_sorted.begin(), appended_sorted.end());
             // The retained prefix keeps its order and the appended run is merged into it. The

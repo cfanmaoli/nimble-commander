@@ -3,7 +3,7 @@
 **Fork-only feature.** It was offered upstream in
 [#746](https://github.com/mikekazakov/nimble-commander/issues/746) and declined — the author prefers
 the app to ship a fixed set of translations and let macOS choose the language. It is therefore *not*
-a candidate for a pull request; the whole thing lives on the `language-packs` branch of this fork.
+a candidate for a pull request; it lives on `main` in this fork.
 
 ---
 
@@ -63,7 +63,7 @@ The **interface language** popup lists *follow the system*, every language the a
 imported pack. Changing it does not take effect until the app restarts — the **Restart to Apply**
 button next to the popup does that, after asking once.
 
-The selection is stored in `~/Library/Application Support/Nimble Commander/LanguagePacks/active.txt`:
+The selection is stored in `~/Library/Application Support/Nimble Commander-Fork/LanguagePacks/active.txt`:
 
     builtin:zh-Hans one of the bundled languages
     pack:ja         an imported pack

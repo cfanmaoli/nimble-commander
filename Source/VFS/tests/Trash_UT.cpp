@@ -470,11 +470,11 @@ TEST_CASE(PREFIX "a trash folder that is a symlink is refused")
     CHECK(ReadFile(external + "/keep.txt") == "keep");
 }
 
-TEST_CASE(PREFIX "emptying a trash folder never deletes into a mounted volume")
+TEST_CASE(PREFIX "emptying a trash folder never deletes into a volume mounted below an item")
 {
     TestDir dir;
     const std::string trash = (dir.directory / "trash").string();
-    const std::string mount = trash + "/mounted";
+    const std::string mount = trash + "/sub/nested";
     WriteFile(trash + "/item.txt", "x");
     std::filesystem::create_directories(mount);
 
@@ -490,8 +490,9 @@ TEST_CASE(PREFIX "emptying a trash folder never deletes into a mounted volume")
     const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(trash);
     CHECK(result.error == 0);
     CHECK(result.deleted == 1); // just item.txt
-    CHECK(result.failed == 1);  // the mounted volume is left alone
+    CHECK(result.failed == 1);  // 'sub' is left alone because it contains a mounted volume
     CHECK(ReadFile(mount + "/keep.txt") == "keep");
+    CHECK(std::filesystem::exists(trash + "/sub"));
 }
 
 TEST_CASE(PREFIX "a put-back can be cancelled before it starts")
@@ -506,6 +507,35 @@ TEST_CASE(PREFIX "a put-back can be cancelled before it starts")
     const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item, [] { return true; });
     CHECK(outcome.error == ECANCELED);
     CHECK(!outcome.restored);
+    CHECK(std::filesystem::exists(item));
+}
+
+TEST_CASE(PREFIX "put-back refuses a destination that resolves into a trash folder")
+{
+    const std::vector<std::string> locations = nc::routedio::TrashLocations();
+    if( locations.empty() )
+        SKIP("no trash folder is available");
+
+    TestDir dir;
+    const std::string trash = (dir.directory / "trash").string();
+    std::filesystem::create_directories(trash);
+    const std::string item = trash + "/item.txt";
+    WriteFile(item, "x");
+
+    // A symlink that points into the real trash folder: the recorded location looks harmless, but
+    // what it resolves to does not.
+    const std::string link = (dir.directory / "link").string();
+    REQUIRE(::symlink(locations.front().c_str(), link.c_str()) == 0);
+    const std::string recorded = link + "/item.txt";
+    REQUIRE(::setxattr(item.c_str(),
+                       nc::routedio::detail::kOriginalLocationAttribute,
+                       recorded.c_str(),
+                       recorded.size(),
+                       0,
+                       XATTR_NOFOLLOW) == 0);
+
+    const nc::routedio::PutBackResult outcome = nc::routedio::PutBackTrashedItem(item);
+    CHECK(outcome.error == EINVAL);
     CHECK(std::filesystem::exists(item));
 }
 

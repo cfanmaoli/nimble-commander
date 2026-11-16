@@ -227,7 +227,12 @@ bool CompressionJob::BuildArchive()
             }
         }
 
-        archive_write_open(m_Archive, this, nullptr, WriteCallback, nullptr);
+        if( archive_write_open(m_Archive, this, nullptr, WriteCallback, nullptr) != ARCHIVE_OK ) {
+            m_TargetWriteError(
+                m_TargetFileLastError.value_or(Error{Error::POSIX, EIO}), m_TargetArchivePath, *m_DstVFS);
+            Stop();
+            return false;
+        }
         archive_write_set_bytes_in_last_block(m_Archive, 1);
 
         ProcessItems();

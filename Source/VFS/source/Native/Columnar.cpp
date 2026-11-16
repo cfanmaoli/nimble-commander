@@ -169,7 +169,6 @@ void AppendDirectory(SharedState &_state,
 
 ColumnarListingResult BuildColumnarListing(const VFSHostPtr &_host,
                                            const std::string &_root,
-                                           [[maybe_unused]] const unsigned long _fetch_flags,
                                            const VFSCancelChecker &_cancel_checker,
                                            const size_t _max_items,
                                            const size_t _max_directories,

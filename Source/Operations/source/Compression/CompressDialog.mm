@@ -86,8 +86,7 @@
         // the password, so it must not be offered for them.
         self.protectWithPasswordCheckbox.enabled = NO;
         self.protectWithPasswordCheckbox.state = NSControlStateValueOff;
-        self.protectWithPasswordCheckbox.toolTip =
-            @"Only the Zip format can protect the archive with a password - choose Zip in Preferences → Compression.";
+        self.protectWithPasswordCheckbox.toolTip = localizable::CompressionDiaglogPasswordRequiresZip();
         self.passwordTextField.enabled = NO;
         self.passwordTextField.stringValue = @"";
         self.protectWithPassword = false;

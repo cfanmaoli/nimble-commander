@@ -242,7 +242,7 @@ Listing::ProducePatchedListing(const Listing &_base,
     const auto is_dense_or_common = [](const auto &_c) {
         return _c.mode() == variable_container<>::type::dense || _c.mode() == variable_container<>::type::common;
     };
-    // An empty container simply means "the listing doesn't carry this attribute" (lazy dates) -
+    // An empty container simply means "the listing doesn't carry this attribute" -
     // that's patchable, the result just stays empty.
     const auto is_patchable = [&](const auto &_c) { return _c.empty() || is_dense_or_common(_c); };
 
@@ -370,7 +370,7 @@ Listing::ProducePatchedListing(const Listing &_base,
                 l->m_Sizes[appended_dst] = al.HasSize(i) ? al.Size(i) : uint64_t(-1);
             if( l->m_Inodes.mode() == variable_container<>::type::dense )
                 l->m_Inodes[appended_dst] = al.HasInode(i) ? al.Inode(i) : 0;
-            // the times may be absent from the base listing (lazy dates) - then only the ones the
+            // the times may be absent from the base listing - then only the ones the
             // appended entry actually carries are stored, sparsely
             const auto put_time = [&](auto &_dst, const bool _has, const auto _value) {
                 if( _dst.mode() == variable_container<>::type::dense )
