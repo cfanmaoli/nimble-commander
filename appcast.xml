@@ -7,30 +7,30 @@
       the GitHub releases of the fork; the nightly pre-release is kept in its own channel.</description>
     <language>en</language>
     <item>
-      <title>Nimble Commander-Fork 1.9.3</title>
-      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3</link>
-      <pubDate>Sat, 14 Nov 2026 04:05:59 +0000</pubDate>
-      <sparkle:version>4491</sparkle:version>
-      <sparkle:shortVersionString>1.9.3</sparkle:shortVersionString>
+      <title>Nimble Commander-Fork 1.9.3a</title>
+      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3a</link>
+      <pubDate>Tue, 17 Nov 2026 13:07:01 +0000</pubDate>
+      <sparkle:version>4527</sparkle:version>
+      <sparkle:shortVersionString>1.9.3a</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3</sparkle:releaseNotesLink>
-      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3/nimble-commander-fork-1.9.3.dmg"
-                 sparkle:edSignature="XqE12RMLjasykCSlsVsUQD4y3WTzSzZTP6I++Q+kwIAregBxJSFRvjPKBlWfMffGbdc5Ac8fPdJp28Ibwo3sAw=="
-                 length="11569612"
+      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3a</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3a/nimble-commander-fork-1.9.3a.dmg"
+                 sparkle:edSignature="hM0vmoR2MhaD1p0o+e292hkUM/i3mS0LHBg4jzPgWFeA8uDtFkKybcamnBhlAivJ3tlxvofw2HbcpJQAOIfdDA=="
+                 length="13211111"
                  type="application/octet-stream" />
     </item>
     <item>
       <title>Nightly build</title>
       <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly</link>
-      <pubDate>Fri, 13 Nov 2026 00:06:45 +0000</pubDate>
-      <sparkle:version>4483</sparkle:version>
-      <sparkle:shortVersionString>1.9.2</sparkle:shortVersionString>
+      <pubDate>Tue, 17 Nov 2026 02:16:46 +0000</pubDate>
+      <sparkle:version>4509</sparkle:version>
+      <sparkle:shortVersionString>1.9.3</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
       <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly</sparkle:releaseNotesLink>
       <sparkle:channel>nightly</sparkle:channel>
       <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/nightly/nimble-commander-fork-nightly.dmg"
-                 sparkle:edSignature="UbNcljxGoPPAHv9yJDI4HLxw5cXF3WZ3DGuMoZV2S/P/PgypYr/wmTCbCPkSWRXk7BlKP1wtwDVg2Y3A9MQiAw=="
-                 length="12418397"
+                 sparkle:edSignature="FXQVgVYsQ7/e+HLBCEp8qzCthn4dyvMcf12I5mJuwFYwgyGirrsQmupOSRchBPgK1WysdxnVsmgr/i/7ssHpBw=="
+                 length="12841845"
                  type="application/octet-stream" />
     </item>
   </channel>
