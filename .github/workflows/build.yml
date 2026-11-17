@@ -1,12 +1,10 @@
 name: Build and Test
 
 on:
-  # Pushes to the main branch and pull requests run the cheap gate - the Debug configuration with
-  # clang-format and clang-tidy. The full matrix, the integration tests and the packaging stay on
-  # the nightly schedule and on manual dispatches, so that the shared macOS runner pool isn't
-  # burned on every commit.
-  push:
-    branches: [main]
+  # A push does not start anything: the maintainer runs the gate manually when needed, and the
+  # nightly schedule covers the repository on its own. Pull requests still run the cheap Debug gate
+  # (clang-format and clang-tidy) so that outside contributions are checked, and the full matrix,
+  # the integration tests and the packaging stay on the nightly schedule and manual dispatches.
   pull_request:
   schedule:
     # Nightly, 18:17 UTC. The minute is deliberately not :00 - GitHub's scheduler is heavily

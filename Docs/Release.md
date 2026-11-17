@@ -42,8 +42,9 @@ explaining that Administrator Mode and the privileged helper need a signed build
 Update 'WHATS_NEW.md' with the list of changes since the last release.
 
 ## Step 7: Make the build
-Pushes to `main` and pull requests run the gate (Debug tests with clang-format and clang-tidy) and
-stop there. The unsigned DMG is produced by the nightly run or by a manual dispatch of
+Pushes to `main` don't start CI; pull requests run the gate (Debug tests with clang-format and
+clang-tidy) and stop there. Run the gate by hand when a commit is worth checking: `gh workflow run
+build.yml --ref main`. The unsigned DMG is produced by the nightly run or by a manual dispatch of
 `Build and Test` (`nimble-commander-fork-unsigned` artifact); tick `full` for the complete matrix,
 the full clang-tidy and the integration tests. A versioned release is packaged locally with
 `Scripts/build_release.sh` from the tagged commit - it stays unsigned unless `NC_CODESIGN_IDENTITY`

@@ -1,16 +1,18 @@
 # Continuous integration
 
 Everything is driven by a single workflow, [`.github/workflows/build.yml`](../.github/workflows/build.yml).
-Pushes to `main` and pull requests run a **cheap gate only** - the Debug configuration with
-clang-format and clang-tidy, roughly a tenth of a full run. The full matrix, the integration tests
-and the packaging stay on the nightly schedule and on manual dispatches, because a full run on
-every commit only burns the shared macOS runner pool and starves the queue.
+A push to `main` starts nothing - the maintainer triggers the gate by hand when it is wanted.
+Pull requests still run a **cheap gate only** - the Debug configuration with clang-format and
+clang-tidy, roughly a tenth of a full run. The full matrix, the integration tests and the packaging
+stay on the nightly schedule and on manual dispatches, because a run on every commit only burns the
+shared macOS runner pool and starves the queue.
 
 ## What runs when
 
 | Event | Jobs |
 |---|---|
-| `push` to `main`, `pull_request` | gate only: Debug tests with clang-format and clang-tidy, no packaging |
+| `pull_request` | gate only: Debug tests with clang-format and clang-tidy, no packaging |
+| `push` to `main` | nothing - run the gate manually (see below) |
 | `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG - **skipped when `main` has not moved since the last successful nightly** |
 | `workflow_dispatch` | Debug tests with clang-format and clang-tidy, DMG; tick `full` to get the nightly set |
 
