@@ -1,5 +1,31 @@
 # What's New in Nimble Commander-Fork
 
+## Version 1.9.3a (17 Nov 2026)
+
+A follow-up to 1.9.3 with the fixes from the code audit - same features, fewer sharp edges.
+
+### Fixes
+- Appended listings are always sorted with the display comparator, so a directory that changes
+  while it is being read can no longer misplace names with non-ASCII characters or a different
+  display form.
+- Emptying the Trash refuses a `.Trashes`/uid chain that leads through a symlink or a mount point,
+  and deletes through pinned directory descriptors - a crafted volume can't redirect the deletion
+  into an ordinary folder.
+- Put Back resolves the destination parent after creating it and re-checks that the real path stays
+  outside the Trash.
+- The volume-unmount handler and background watch registration no longer deadlock: the event stream
+  is created without a synchronous hop to the main thread.
+- The optional ncrar-helper is asked which protocol it speaks, gets bounded list/link/read timeouts
+  and starts without the application's inherited file descriptors; a helper that fails falls back
+  to the libarchive reader.
+- Compression setup failures release the archive object and remove the half-written file.
+- Imported language packs are validated by argument position and exact conversion type: a literal
+  `%` in the text no longer makes valid translations get skipped, while `%n`, a wrong argument
+  index or a type change is still refused.
+- The NonMAS build is signed with the maintainer's Apple Development identity (team 359W39ZS37),
+  so a locally packaged release can use Administrator Mode. Public distribution still needs a
+  Developer ID certificate and notarisation.
+
 ## Version 1.9.3 (14 Nov 2026)
 
 ### Optional RAR support
