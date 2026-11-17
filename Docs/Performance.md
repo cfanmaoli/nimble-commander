@@ -4,6 +4,11 @@
 > 评估日期：2026-11-06
 > 环境：macOS 27.2，30 核 Apple Silicon，外置 NVMe（APFS），1.5 TB 空闲
 
+> **这是一份按轮次记录的历史日志。** 文中提到的部分 API 和模式——`F_NamesOnly`、
+> `FetchDirectoryListingPreview`、`F_NoTimes`/`F_NoSizes` 惰性日期/大小模式、可见行回调等——
+> 已在 1.9.3 中整体删除（见 §20.2 与 §19 的说明），保留这些章节是为了记录当时的测量数据与取舍过程，
+> 不代表代码里还有这些接口。
+
 ## 0. 结论速览
 
 渲染不是瓶颈。面板是 view-based NSTableView，只物化可见的 30–50 行，图标按可见区懒加载，
