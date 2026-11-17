@@ -595,4 +595,25 @@ TEST_CASE(PREFIX "put-back refuses a recorded location that isn't a sane absolut
     }
 }
 
+TEST_CASE(PREFIX "emptying a trash folder behind a symlinked .Trashes is refused")
+{
+    TestDir dir;
+    // The documented layout is '<volume>/.Trashes/<uid>', but here '.Trashes' is a symlink to an
+    // ordinary directory that happens to contain a folder named like the uid. lstat() on the final
+    // component alone resolves the link and accepts it - the same-device redirection that must be
+    // refused before anything is deleted.
+    const std::string drive = (dir.directory / "drive").string();
+    std::filesystem::create_directories(drive);
+    const std::string unrelated = (dir.directory / "unrelated").string();
+    const std::string uid_dir = unrelated + "/" + std::to_string(getuid());
+    WriteFile(uid_dir + "/keep.txt", "keep");
+    REQUIRE(::symlink(unrelated.c_str(), (drive + "/.Trashes").c_str()) == 0);
+
+    const nc::routedio::EmptyTrashResult result =
+        nc::routedio::EmptyTrashDirectory(drive + "/.Trashes/" + std::to_string(getuid()));
+    CHECK(result.error != 0);
+    CHECK(result.deleted == 0);
+    CHECK(ReadFile(uid_dir + "/keep.txt") == "keep");
+}
+
 #undef PREFIX

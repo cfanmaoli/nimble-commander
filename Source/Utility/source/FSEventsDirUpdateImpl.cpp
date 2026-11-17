@@ -170,10 +170,11 @@ FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &pat
         }
     };
 
-    if( dispatch_is_main_queue() )
-        create_stream();
-    else
-        dispatch_sync(dispatch_get_main_queue(), create_stream);
+    // The stream is created on the calling thread: AddWatchPathImpl() holds m_Lock while creating
+    // it, and a synchronous hop to the main queue here could deadlock against a main-thread
+    // OnVolumeDidUnmount() that is waiting for the same lock. Only scheduling and starting have to
+    // happen on the main run loop, and StartStream() already dispatches there asynchronously.
+    create_stream();
 
     CFRelease(pathsToWatch);
     CFRelease(cf_path);

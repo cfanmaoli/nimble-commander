@@ -9,6 +9,7 @@
 #include <cstring>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <unistd.h>
 #include <set>
 #include <string>
@@ -123,15 +124,27 @@ BOOL LooksLikeObjectIdentifier(NSString *_key)
            [ib_identifier firstMatchInString:_key options:0 range:range] != nil;
 }
 
-std::multiset<char> Placeholders(NSString *_string)
+// One printf-style conversion: which argument it consumes and what kind it expects.
+struct Placeholder {
+    int position = 0; // 1-based argument index, explicit ("%2$@") or sequential
+    char kind = '?';  // O = object, I = integer, F = float, S = C string, P = pointer, ? = unknown
+};
+
+struct PlaceholderList {
+    std::vector<Placeholder> items;
+    bool has_unknown = false;     // a conversion that can't be parsed or isn't on the allowlist
+    bool mixed_positions = false; // some conversions are positional, some are not (undefined in printf)
+};
+
+PlaceholderList ParsePlaceholders(NSString *_string)
 {
-    // Only the *kind* of every conversion is compared: a translation is free to switch to
-    // positional arguments ("%@ ... %@" -> "%1$@ ... %2$@") or to tweak flags and precision,
-    // but a placeholder that appears or disappears would make the app print garbage.
-    std::multiset<char> result;
+    PlaceholderList result;
     if( _string.length == 0 )
         return result;
     const std::string s = _string.UTF8String;
+    int next_sequential = 1;
+    bool saw_positional = false;
+    bool saw_sequential = false;
     for( std::size_t i = 0; i < s.size(); ) {
         if( s[i] != '%' ) {
             ++i;
@@ -145,8 +158,19 @@ std::multiset<char> Placeholders(NSString *_string)
         const std::size_t position_start = j;
         while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
             ++j;
-        if( j > position_start && j < s.size() && s[j] == '$' )
-            ++j; // positional argument
+        int position = 0;
+        bool positional = false;
+        if( j > position_start && j < s.size() && s[j] == '$' ) {
+            positional = true;
+            const std::string digits = s.substr(position_start, j - position_start);
+            if( digits.size() > 6 ) {
+                result.has_unknown = true;
+            }
+            else {
+                position = std::stoi(digits);
+            }
+            ++j;
+        }
         while( j < s.size() && std::strchr("-+ #0", s[j]) )
             ++j; // flags
         while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
@@ -158,8 +182,10 @@ std::multiset<char> Placeholders(NSString *_string)
         }
         while( j < s.size() && std::strchr("hlqLjzt", s[j]) )
             ++j; // length modifier
-        if( j >= s.size() )
+        if( j >= s.size() ) {
+            result.has_unknown = true;
             break;
+        }
         const char conversion = s[j++];
         char kind = '?';
         switch( conversion ) {
@@ -207,27 +233,62 @@ std::multiset<char> Placeholders(NSString *_string)
                 kind = '?';
                 break;
         }
-        result.insert(kind);
+        if( kind == '?' )
+            result.has_unknown = true;
+        if( positional ) {
+            saw_positional = true;
+            if( position <= 0 )
+                result.has_unknown = true;
+        }
+        else {
+            saw_sequential = true;
+            position = next_sequential++;
+        }
+        result.items.push_back({.position = position, .kind = kind});
         i = j;
     }
+    result.mixed_positions = saw_positional && saw_sequential;
     return result;
+}
+
+bool CompareArguments(const PlaceholderList &_source, const PlaceholderList &_translation)
+{
+    std::map<int, char> expected;
+    for( const Placeholder &p : _source.items ) {
+        const auto [it, inserted] = expected.emplace(p.position, p.kind);
+        if( !inserted && it->second != p.kind )
+            return false; // one argument used with two different kinds
+    }
+    std::map<int, char> actual;
+    for( const Placeholder &p : _translation.items ) {
+        const auto [it, inserted] = actual.emplace(p.position, p.kind);
+        if( !inserted && it->second != p.kind )
+            return false;
+    }
+    return expected == actual;
 }
 
 bool PlaceholdersCompatible(NSString *_source, NSString *_key, NSString *_translation)
 {
-    const std::multiset<char> source = Placeholders(_source);
-    const std::multiset<char> translation = Placeholders(_translation);
-    if( source == translation )
+    const PlaceholderList source = ParsePlaceholders(_source);
+    const PlaceholderList translation = ParsePlaceholders(_translation);
+    // The reference string comes from the app, so if it can't be parsed the translation can't be
+    // judged - don't reject a perfectly good pack over it.
+    if( source.has_unknown || source.mixed_positions )
         return true;
-    // Strings with a stray '%' ("%% Insert the % character") can't be parsed unambiguously -
-    // rather than rejecting a perfectly good translation, let those through unchecked.
-    if( source.contains('?') || translation.contains('?') )
-        return true;
-    // A plural source ("Compressing %#@items@") may legitimately be spelled out with a plain
-    // numeric placeholder - compare against the key, which holds the non-plural form.
-    if( [_source rangeOfString:@"%#@"].location != NSNotFound && !LooksLikeObjectIdentifier(_key) )
-        return Placeholders(_key) == Placeholders(_translation);
-    return false;
+    // A translation with an unparsable conversion ("%n"), an out-of-range argument or a mix of
+    // positional and sequential ones is never accepted.
+    if( translation.has_unknown || translation.mixed_positions )
+        return false;
+    // A plural source ("Compressing %#@items@") consumes the count and expands it to a localized
+    // string; a translation written as a plain format must therefore use the *non-plural* form from
+    // the key ("%d"), not an object placeholder.
+    if( [_source rangeOfString:@"%#@"].location != NSNotFound && !LooksLikeObjectIdentifier(_key) ) {
+        const PlaceholderList key_placeholders = ParsePlaceholders(_key);
+        if( !key_placeholders.has_unknown && !key_placeholders.mixed_positions )
+            return CompareArguments(key_placeholders, translation);
+    }
+    return CompareArguments(source, translation);
 }
 
 NSArray<NSBundle *> *RelevantBundles()
@@ -882,6 +943,7 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
             built_in_language.length &&
             ![built_in_language isEqualToString:[NSString stringWithUTF8String:identifier.c_str()]];
         NSDictionary<NSString *, NSString *> *const native = measure_untranslated ? NativeStringsIndex() : nil;
+        NSDictionary *const manifest_index = ManifestIndex();
         _stats.measured_untranslated = measure_untranslated;
 
         NSMutableArray *const normalized = [NSMutableArray array];
@@ -903,9 +965,12 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
                 continue;
             }
             // A pack may only translate strings this app actually has; anything else would let it
-            // put arbitrary text into tables the app doesn't know about.
-            if( NSDictionary *const manifest_index = ManifestIndex();
-                manifest_index != nil && manifest_index[EntryKey(bundle_key, table, key)] == nil ) {
+            // put arbitrary text into tables the app doesn't know about. The manifest entry also
+            // carries the original text, which is the trustworthy base for the format check below -
+            // the pack's own "source" field is written by whoever produced the file.
+            NSDictionary *const manifest_entry =
+                manifest_index != nil ? manifest_index[EntryKey(bundle_key, table, key)] : nil;
+            if( manifest_index != nil && manifest_entry == nil ) {
                 ++_stats.skipped_unknown;
                 continue;
             }
@@ -913,7 +978,9 @@ bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::
                 ++_stats.skipped_empty;
                 continue;
             }
-            NSString *reference = [entry[@"source"] isKindOfClass:NSString.class] ? entry[@"source"] : nil;
+            NSString *reference = [manifest_entry[@"en"] isKindOfClass:NSString.class] ? manifest_entry[@"en"] : nil;
+            if( reference.length == 0 )
+                reference = [entry[@"source"] isKindOfClass:NSString.class] ? entry[@"source"] : nil;
             if( reference.length == 0 && !LooksLikeObjectIdentifier(key) )
                 reference = key;
             if( reference.length && !PlaceholdersCompatible(reference, key, translation) ) {

@@ -4,6 +4,7 @@
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <Base/CFPtr.h>
+#include <Base/algo.h>
 #include <cerrno>
 #include <copyfile.h>
 #include <cstdint>
@@ -255,12 +256,17 @@ bool IsValidTrashDirectory(const std::string &_path)
         return false;
     if( st.st_uid != getuid() )
         return false;
+    // The parent has to be a real directory as well. lstat() on the final component alone resolves
+    // intermediate links, so a symlinked '.Trashes' would otherwise pass every check while pointing
+    // at an ordinary same-device directory that happens to contain a folder named like the uid.
     const std::filesystem::path parent_path = std::filesystem::path(_path).parent_path();
-    if( !parent_path.empty() ) {
-        struct stat parent_st;
-        if( ::lstat(parent_path.c_str(), &parent_st) == 0 && parent_st.st_dev != st.st_dev )
-            return false; // a mount point, not a folder
-    }
+    if( parent_path.empty() )
+        return false;
+    struct stat parent_st;
+    if( ::lstat(parent_path.c_str(), &parent_st) != 0 || !S_ISDIR(parent_st.st_mode) )
+        return false;
+    if( parent_st.st_dev != st.st_dev )
+        return false; // a mount point, not a folder
     return true;
 }
 
@@ -672,30 +678,42 @@ std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &
     return result;
 }
 
-// Deletes one trashed entry without following symlinks and without crossing a device boundary: a
-// directory that sits on another device is a mounted volume inside the trash, not a trashed item.
-// The recursion checks every nested entry, so a volume mounted below the top level is refused too.
-static bool RemoveTrashTree(const std::string &_path, const dev_t _trash_dev, const uid_t _owner) noexcept
+// Deletes one entry relative to '_dir_fd'. Every level is opened with O_NOFOLLOW and checked with
+// fstat(), so validation and deletion are bound to the very same object: a symlink can't be swapped
+// in between, and a directory on another device (a mounted volume inside the trash) is refused.
+static bool RemoveTrashEntry(const int _dir_fd, const char *_name, const dev_t _trash_dev, const uid_t _owner) noexcept
 {
     struct stat st;
-    if( ::lstat(_path.c_str(), &st) != 0 )
+    if( ::fstatat(_dir_fd, _name, &st, AT_SYMLINK_NOFOLLOW) != 0 )
         return false;
     if( st.st_uid != _owner )
         return false;
     if( !S_ISDIR(st.st_mode) )
-        return ::unlink(_path.c_str()) == 0;
+        return ::unlinkat(_dir_fd, _name, 0) == 0; // a symlink is removed as a link, never followed
 
     if( st.st_dev != _trash_dev )
         return false;
 
-    DIR *const dir = opendir(_path.c_str());
+    const int fd = ::openat(_dir_fd, _name, O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if( fd < 0 )
+        return false;
+    const auto close_fd = at_scope_end([fd] { ::close(fd); });
+
+    struct stat opened;
+    if( ::fstat(fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_dev != _trash_dev ||
+        opened.st_uid != _owner )
+        return false;
+
+    DIR *const dir = ::fdopendir(dup(fd));
     if( dir == nullptr )
         return false;
+    const auto close_dir = at_scope_end([dir] { ::closedir(dir); });
+
     std::vector<std::string> children;
     bool read_ok = true;
     for( ;; ) {
         errno = 0;
-        const dirent *const entry = readdir(dir);
+        const dirent *const entry = ::readdir(dir);
         if( entry == nullptr ) {
             if( errno != 0 )
                 read_ok = false;
@@ -704,18 +722,14 @@ static bool RemoveTrashTree(const std::string &_path, const dev_t _trash_dev, co
         const std::string name = entry->d_name;
         if( name == "." || name == ".." )
             continue;
-        std::string child = _path;
-        child += '/';
-        child += name;
-        children.push_back(std::move(child));
+        children.push_back(name);
     }
-    closedir(dir);
 
     bool ok = read_ok;
     for( const std::string &child : children )
-        if( !RemoveTrashTree(child, _trash_dev, _owner) )
+        if( !RemoveTrashEntry(fd, child.c_str(), _trash_dev, _owner) )
             ok = false;
-    if( ok && ::rmdir(_path.c_str()) != 0 )
+    if( ok && ::unlinkat(_dir_fd, _name, AT_REMOVEDIR) != 0 )
         ok = false;
     return ok;
 }
@@ -733,17 +747,37 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
         result.error = ENOTDIR;
         return result;
     }
+    if( !IsValidTrashDirectory(_trash_directory) ) {
+        result.error = EINVAL;
+        return result;
+    }
 
-    DIR *const dir = opendir(_trash_directory.c_str());
+    // The directory is opened once and everything below is deleted relative to that descriptor, so
+    // the objects that were validated are the ones that get removed.
+    const int dir_fd = ::open(_trash_directory.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if( dir_fd < 0 ) {
+        result.error = errno;
+        return result;
+    }
+    const auto close_fd = at_scope_end([dir_fd] { ::close(dir_fd); });
+
+    struct stat opened;
+    if( ::fstat(dir_fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_uid != getuid() ) {
+        result.error = EINVAL;
+        return result;
+    }
+
+    DIR *const dir = ::fdopendir(dup(dir_fd));
     if( dir == nullptr ) {
         result.error = errno;
         return result;
     }
+    const auto close_dir = at_scope_end([dir] { ::closedir(dir); });
     std::vector<std::string> names;
     int read_error = 0;
     for( ;; ) {
         errno = 0;
-        const dirent *const entry = readdir(dir);
+        const dirent *const entry = ::readdir(dir);
         if( entry == nullptr ) {
             if( errno != 0 )
                 read_error = errno;
@@ -754,29 +788,13 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
             continue;
         names.emplace_back(name);
     }
-    closedir(dir);
     if( read_error != 0 ) {
         result.error = read_error;
         return result;
     }
 
-    std::string prefix = _trash_directory;
-    if( prefix.empty() || prefix.back() != '/' )
-        prefix += '/';
     for( const std::string &name : names ) {
-        const std::string path = prefix + name;
-        struct stat st;
-        if( ::lstat(path.c_str(), &st) != 0 ) {
-            ++result.failed;
-            continue;
-        }
-        // Only this user's items, and never a directory that lives on another device - that is a
-        // mounted volume sitting in the trash, not a trashed item.
-        if( st.st_uid != trash_stat.st_uid || (S_ISDIR(st.st_mode) && st.st_dev != trash_stat.st_dev) ) {
-            ++result.failed;
-            continue;
-        }
-        if( RemoveTrashTree(path, trash_stat.st_dev, trash_stat.st_uid) )
+        if( RemoveTrashEntry(dir_fd, name.c_str(), opened.st_dev, opened.st_uid) )
             ++result.deleted;
         else
             ++result.failed;
