@@ -3025,7 +3025,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ $CODE_SIGNING_ALLOWED == NO ]] ; then exit ; fi\ncodesign \\\n --verbose \\\n --sign 'Developer ID Application' \\\n --force \\\n --deep \\\n --timestamp \\\n --entitlements \"${PROJECT_DIR}/../Viewer/resources/Highlighter.entitlements\" \\\n --options runtime \\\n \"${TARGET_BUILD_DIR}/${XPCSERVICES_FOLDER_PATH}/Highlighter.xpc/Contents/MacOS/Highlighter\"\n";
+			shellScript = "if [[ $CODE_SIGNING_ALLOWED == NO ]] ; then exit ; fi\ncodesign \\\n --verbose \\\n --sign \"${CODE_SIGN_IDENTITY}\" \\\n --force \\\n --deep \\\n --timestamp \\\n --entitlements \"${PROJECT_DIR}/../Viewer/resources/Highlighter.entitlements\" \\\n --options runtime \\\n \"${TARGET_BUILD_DIR}/${XPCSERVICES_FOLDER_PATH}/Highlighter.xpc/Contents/MacOS/Highlighter\"\n";
 		};
 		CF9EEB3E17256372001443FA /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3871,10 +3871,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "NimbleCommander/Resources/NimbleCommander-NonMAS.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)_NonMAS_Trial";
-				DEVELOPMENT_TEAM = AC5SJT236H;
+				DEVELOPMENT_TEAM = 359W39ZS37;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -3883,7 +3883,6 @@
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
 				PRODUCT_NAME = "Nimble Commander-Fork";
-				PROVISIONING_PROFILE_SPECIFIER = "NC NonMAS Developer ID";
 			};
 			name = Debug;
 		};
@@ -3891,10 +3890,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "NimbleCommander/Resources/NimbleCommander-NonMAS.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)_NonMAS_Trial";
-				DEVELOPMENT_TEAM = AC5SJT236H;
+				DEVELOPMENT_TEAM = 359W39ZS37;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -3903,7 +3902,6 @@
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
 				PRODUCT_NAME = "Nimble Commander-Fork";
-				PROVISIONING_PROFILE_SPECIFIER = "NC NonMAS Developer ID";
 			};
 			name = Release;
 		};

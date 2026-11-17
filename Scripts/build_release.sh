@@ -1,9 +1,12 @@
 #!/bin/sh
 
-# Packaging for a signed release. Signing and notarisation are opt-in and have to be provided by the
-# maintainer: set NC_CODESIGN_IDENTITY to a Developer ID Application identity and NC_NOTARY_PROFILE
-# to a 'notarytool' keychain profile (see 'xcrun notarytool store-credentials'). Without them the DMG
-# is built unsigned, and the script says so at the end.
+# Packaging for a signed release. The app itself (and the privileged helper inside it) is signed by
+# the Xcode archive/export with the NonMAS configuration's identity - by default the maintainer's
+# Apple Development certificate of team 359W39ZS37, which is enough for Administrator Mode.
+# Distribution-related signing is opt-in: set NC_CODESIGN_IDENTITY to the identity that should sign
+# the DMG and NC_NOTARY_PROFILE to a 'notarytool' keychain profile (see
+# 'xcrun notarytool store-credentials'). Without them the DMG is not signed/notarised, and the
+# script says so at the end.
 
 set -e
 set -o pipefail
@@ -88,7 +91,7 @@ else
     echo 'NC_NOTARY_PROFILE is not set - the DMG was not notarised.'
 fi
 if [ -z "${CODESIGN_IDENTITY}" ]; then
-    echo 'NC_CODESIGN_IDENTITY is not set - the application inside the DMG is not signed.'
+    echo 'NC_CODESIGN_IDENTITY is not set - the DMG itself is not signed.'
 fi
 
 # Done!

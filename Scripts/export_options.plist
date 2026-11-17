@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Used by build_release.sh / build_nightly.sh for signed packaging only. The provisioning profile
-     name below belongs to the upstream project - replace it with your own, or point
-     NC_EXPORT_OPTIONS at a different file. CI does not use this file: it builds unsigned. -->
+<!-- Used by build_release.sh / build_nightly.sh for signed packaging only. The app itself is signed
+     by the archive/export with the NonMAS configuration's identity (currently the maintainer's
+     Apple Development certificate of team 359W39ZS37). A development export needs no provisioning
+     profile; for a notarised public release switch the project to a Developer ID Application
+     certificate and use NC_EXPORT_OPTIONS with method=developer-id instead. -->
 <plist version="1.0">
 <dict>
-	<key>provisioningProfiles</key>
-	<dict>
-		<key>info.filesmanager.Files</key>
-		<string>NC NonMAS Developer ID</string>
-	</dict>
 	<key>method</key>
-	<string>developer-id</string>
+	<string>development</string>
 	<key>embedOnDemandResourcesAssetPacksInBundle</key>
 	<false/>
 	<key>compileBitcode</key>

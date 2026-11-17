@@ -21,12 +21,19 @@ Go through the commits since the last release, and update `Docs/Help.md` accordi
 ## Step 4: Check the version works on the lowest supported macOS version
 
 ## Step 5: Check the signing configuration
-Signed packaging is opt-in and driven by environment variables - without them the DMG is unsigned:
-- `NC_CODESIGN_IDENTITY` - a Developer ID Application identity for `create-dmg --codesign`.
+The NonMAS build configuration signs the app and the embedded privileged helper with the
+maintainer's Apple Development identity (team `359W39ZS37`) by default - that is what makes
+Administrator Mode work in a locally built release. `Scripts/export_options.plist` uses the
+`development` export method, which needs no provisioning profile.
+
+Distribution is a separate decision, driven by environment variables:
+- `NC_CODESIGN_IDENTITY` - an identity (a Developer ID Application one for public releases) for
+  `create-dmg --codesign`; without it the DMG itself is unsigned, the app inside is not affected.
 - `NC_NOTARY_PROFILE` - a `notarytool` keychain profile; when set, `build_release.sh`/
-  `build_nightly.sh` submit and staple the DMG.
-- `NC_EXPORT_OPTIONS` - your own export options plist; the checked-in one references the upstream
-  provisioning profile name.
+  `build_nightly.sh` submit and staple the DMG. Notarisation requires Developer ID Application
+  signing of the app and its nested code, so switch the project's NonMAS configuration to that
+  identity first and point `NC_EXPORT_OPTIONS` at a `developer-id` export plist.
+- `NC_EXPORT_OPTIONS` - your own export options plist.
 
 CI does not sign anything: it builds unsigned DMGs, and the release attaches `UNSIGNED-BUILD.txt`
 explaining that Administrator Mode and the privileged helper need a signed build.
