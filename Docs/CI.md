@@ -54,8 +54,9 @@ A newer run on the same branch cancels the stale one (`concurrency`), and every 
   with the freshly built DMG as `nimble-commander-fork-nightly.dmg` plus its `.sha256`, moves the
   `nightly` tag to the built commit, and writes the commit list since the previous nightly into the
   release notes. The DMG is unsigned and not notarised: the notes say so and point at System
-  Settings → Privacy & Security instead of teaching a `xattr -dr com.apple.quarantine` bypass, and
-  they warn that Administrator Mode and its privileged helper don't work in an unsigned build.
+  Settings → Privacy & Security and also give the `xattr -dr com.apple.quarantine` alternative
+  together with the SHA256 that should be checked first, and they warn that Administrator Mode and
+  its privileged helper don't work in an unsigned build.
 
 There is no separate release workflow: a versioned release is packaged locally with
 `Scripts/build_release.sh` - unsigned unless `NC_CODESIGN_IDENTITY` and `NC_NOTARY_PROFILE` are set -

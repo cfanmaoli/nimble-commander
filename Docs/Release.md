@@ -47,19 +47,24 @@ Every release note must state the signing status of *that* build and what it mea
 Administrator Mode, with the same wording everywhere:
 
 - Unsigned build: "This build is unsigned and not notarised. On the first launch allow it in
-  System Settings -> Privacy & Security ("Open Anyway"). Administrator Mode is unavailable in an
-  unsigned build: macOS installs the privileged helper only for an application signed with an
-  Apple-issued certificate of team 359W39ZS37 - an Apple Development or a Developer ID
-  certificate."
+  System Settings -> Privacy & Security ("Open Anyway"), or remove the quarantine attribute after
+  verifying the SHA256 below. Administrator Mode is unavailable in an unsigned build: macOS
+  installs the privileged helper only for an application signed with an Apple-issued certificate
+  of team 359W39ZS37 - an Apple Development or a Developer ID certificate."
 - Apple Development / Developer ID signed build: "This build is signed with an Apple Development
   certificate (team 359W39ZS37) and is not notarised. On the first launch allow it in System
-  Settings -> Privacy & Security ("Open Anyway"). Administrator Mode works: the privileged helper
-  is signed with the same certificate."
+  Settings -> Privacy & Security ("Open Anyway"), or remove the quarantine attribute after
+  verifying the SHA256 below. Administrator Mode works: the privileged helper is signed with the
+  same certificate."
 
-Never tell users to strip the quarantine attribute with `xattr`: the attribute records where the
-binary came from, and the system dialog is the supported one-time approval. Do not claim that a
-Developer ID certificate is required for Administrator Mode - a team-signed Apple Development
-certificate satisfies the same requirement.
+Every note offers both routes, followed by the command:
+
+    xattr -dr com.apple.quarantine "/Applications/Nimble Commander-Fork.app"
+
+(the helper's notes use `/Applications/ncrar-helper.app`). Say that the attribute records where the
+download came from, so it should only be removed after the published SHA256 has been checked. Do
+not claim that a Developer ID certificate is required for Administrator Mode - a team-signed Apple
+Development certificate satisfies the same requirement.
 
 ## Step 7: Make the build
 Pushes to `main` don't start CI; pull requests run the gate (Debug tests with clang-format and

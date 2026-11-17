@@ -214,8 +214,14 @@ jobs:
           echo "Nightly build of `$REF_NAME` at commit [`$SHA`](https://github.com/$GITHUB_REPOSITORY/commit/$SHA) ($(date -u +%Y-%m-%d))."
           echo
           echo '**This build is unsigned and not notarised.** On the first launch allow it in'
-          echo 'System Settings -> Privacy & Security ("Open Anyway"). Nightly builds are meant for'
-          echo 'testing.'
+          echo 'System Settings -> Privacy & Security ("Open Anyway"), or remove the quarantine'
+          echo 'attribute (only after checking the sha256 below):'
+          echo
+          echo '```sh'
+          echo 'xattr -dr com.apple.quarantine "/Applications/Nimble Commander-Fork.app"'
+          echo '```'
+          echo
+          echo 'Nightly builds are meant for testing.'
           echo
           echo 'Administrator Mode is unavailable in an unsigned build: macOS installs the privileged'
           echo 'helper only for an application signed with an Apple-issued certificate of team'

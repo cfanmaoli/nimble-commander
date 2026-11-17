@@ -40,7 +40,10 @@ once (or restarting the application) to be noticed. The same pane shows whether 
 installed and its version.
 
 The component is ad-hoc signed and not notarised. macOS will refuse to launch it on the first run
-until you allow it explicitly in **System Settings → Privacy & Security** ("Open Anyway").
+until you allow it explicitly in **System Settings → Privacy & Security** ("Open Anyway"), or
+remove the quarantine attribute after verifying the SHA256 from the release page:
+
+    xattr -dr com.apple.quarantine /Applications/ncrar-helper.app
 Administrator Mode is unrelated: it runs the application's own privileged helper, which comes from
 the signed build.
 
