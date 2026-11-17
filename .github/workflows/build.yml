@@ -213,12 +213,14 @@ jobs:
         {
           echo "Nightly build of `$REF_NAME` at commit [`$SHA`](https://github.com/$GITHUB_REPOSITORY/commit/$SHA) ($(date -u +%Y-%m-%d))."
           echo
-          echo '**This build is unsigned and not notarised.** macOS will refuse to open it on the first'
-          echo 'launch; if you want to run it anyway, allow it explicitly in System Settings ->'
-          echo 'Privacy & Security ("Open Anyway"). Nightly builds are meant for testing.'
+          echo '**This build is unsigned and not notarised.** On the first launch allow it in'
+          echo 'System Settings -> Privacy & Security ("Open Anyway"). Nightly builds are meant for'
+          echo 'testing.'
           echo
-          echo 'Administrator Mode and its privileged helper do not work in an unsigned build - the'
-          echo 'helper has to be signed with a Developer ID to be installed as a launch service.'
+          echo 'Administrator Mode is unavailable in an unsigned build: macOS installs the privileged'
+          echo 'helper only for an application signed with an Apple-issued certificate of team'
+          echo '359W39ZS37 - an Apple Development or a Developer ID certificate. A signed build (such'
+          echo 'as the stable releases) can use it.'
           echo
           echo 'Requires macOS 12 Monterey or newer, Apple Silicon only.'
           echo

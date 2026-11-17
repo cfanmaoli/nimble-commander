@@ -41,6 +41,26 @@ explaining that Administrator Mode and the privileged helper need a signed build
 ## Step 6: Write "What's New"
 Update 'WHATS_NEW.md' with the list of changes since the last release.
 
+### Release notes: signing and permissions
+
+Every release note must state the signing status of *that* build and what it means for
+Administrator Mode, with the same wording everywhere:
+
+- Unsigned build: "This build is unsigned and not notarised. On the first launch allow it in
+  System Settings -> Privacy & Security ("Open Anyway"). Administrator Mode is unavailable in an
+  unsigned build: macOS installs the privileged helper only for an application signed with an
+  Apple-issued certificate of team 359W39ZS37 - an Apple Development or a Developer ID
+  certificate."
+- Apple Development / Developer ID signed build: "This build is signed with an Apple Development
+  certificate (team 359W39ZS37) and is not notarised. On the first launch allow it in System
+  Settings -> Privacy & Security ("Open Anyway"). Administrator Mode works: the privileged helper
+  is signed with the same certificate."
+
+Never tell users to strip the quarantine attribute with `xattr`: the attribute records where the
+binary came from, and the system dialog is the supported one-time approval. Do not claim that a
+Developer ID certificate is required for Administrator Mode - a team-signed Apple Development
+certificate satisfies the same requirement.
+
 ## Step 7: Make the build
 Pushes to `main` don't start CI; pull requests run the gate (Debug tests with clang-format and
 clang-tidy) and stop there. Run the gate by hand when a commit is worth checking: `gh workflow run
