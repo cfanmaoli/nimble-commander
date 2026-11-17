@@ -55,8 +55,9 @@ A newer run on the same branch cancels the stale one (`concurrency`), and every 
   Settings → Privacy & Security instead of teaching a `xattr -dr com.apple.quarantine` bypass, and
   they warn that Administrator Mode and its privileged helper don't work in an unsigned build.
 
-The versioned release workflow ([`release.yml`](../.github/workflows/release.yml)) attaches the same
-unsigned DMG plus a `UNSIGNED-BUILD.txt` notice to the release.
+There is no separate release workflow: a versioned release is packaged locally with
+`Scripts/build_release.sh` - unsigned unless `NC_CODESIGN_IDENTITY` and `NC_NOTARY_PROFILE` are set -
+and its DMG is attached to the release by hand (see [Release.md](Release.md) step 8).
 
 ## Running the same checks locally
 

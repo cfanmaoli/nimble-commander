@@ -38,8 +38,9 @@ Update 'WHATS_NEW.md' with the list of changes since the last release.
 Pushes to `main` and pull requests run the gate (Debug tests with clang-format and clang-tidy) and
 stop there. The unsigned DMG is produced by the nightly run or by a manual dispatch of
 `Build and Test` (`nimble-commander-fork-unsigned` artifact); tick `full` for the complete matrix,
-the full clang-tidy and the integration tests. A versioned release is built by the `Release Build`
-workflow from the tag.
+the full clang-tidy and the integration tests. A versioned release is packaged locally with
+`Scripts/build_release.sh` from the tagged commit - it stays unsigned unless `NC_CODESIGN_IDENTITY`
+and `NC_NOTARY_PROFILE` are provided (see step 5).
 
 ## Step 8: Create a GitHub Release (only if binaries are to be published)
 
@@ -54,8 +55,9 @@ For a versioned release:
 - Releases -> Draft a new release
 - Create new tag: `vX.Y.Z` (the new version)
 - Target: `main`
-- Add the changelog and attach the DMG from the `Release Build` workflow (it also attaches an
-  `UNSIGNED-BUILD.txt` notice - the artifact is unsigned and not notarised).
+- Add the changelog and attach the DMG built by `Scripts/build_release.sh` in step 7. If it was
+  built unsigned, write the same notice the nightly carries: the app is unsigned and not notarised,
+  Administrator Mode and its privileged helper need a signed build.
 
 ## Step 9: Update the Sparkle feed
 The application reads its update feed from the root of the `main` branch - see `SUFeedURL` in
