@@ -10,10 +10,6 @@ namespace nc::vfs::rar {
 
 namespace {
 
-// How long to wait for the helper to report its verdict once the payload has been fully read. At
-// this point the child has nothing left to do but exit, so the wait is only a safety net.
-constexpr std::chrono::seconds kExitTimeout{5};
-
 std::optional<std::string> PasswordForHost(const RarHelperHost &_host)
 {
     const std::string_view password = _host.Password();
@@ -164,7 +160,7 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
     if( *read == 0 ) {
         // The helper has stopped before producing the whole payload - the archive is broken or the
         // helper died. WaitFor() keeps this from blocking on a helper that never exits.
-        const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kExitTimeout);
+        const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kHelperExitTimeout);
         TerminateStream();
         if( exit_code && exit_code->has_value() && **exit_code != 0 )
             return std::unexpected(ErrorForHelperExitCode(**exit_code));
@@ -178,7 +174,7 @@ std::expected<size_t, Error> File::Read(void *_buf, const size_t _size)
     // The payload is complete, but a complete length is not proof of a successful read: a helper
     // that ran into a checksum mismatch or a damaged block reports it through its exit status
     // after handing out the data. Only a zero status makes this stream valid.
-    const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kExitTimeout);
+    const std::expected<std::optional<int>, Error> exit_code = m_Process->WaitFor(kHelperExitTimeout);
     TerminateStream(); // the verdict is in - don't keep the child around
 
     if( !exit_code || !exit_code->has_value() ) {

@@ -56,4 +56,17 @@ struct Listing {
 // isn't a well-formed target response.
 [[nodiscard]] std::optional<std::string> ParseLinkResponse(std::string_view _json);
 
+// The helper's self-description, printed by its "version" command.
+struct HelperVersion {
+    int protocol = 0; // the protocol this helper speaks, the app only accepts the one it knows
+    int unrar = 0;    // the UnRAR library version, for diagnostics
+};
+
+// The protocol version this build of the app implements.
+inline constexpr int kSupportedProtocolVersion = 1;
+
+// Parses the one-line JSON that the helper's "version" command prints:
+// {"protocol":1,"unrar":700}. Returns nullopt when the text isn't a well-formed response.
+[[nodiscard]] std::optional<HelperVersion> ParseVersionResponse(std::string_view _json);
+
 } // namespace nc::vfs::rar

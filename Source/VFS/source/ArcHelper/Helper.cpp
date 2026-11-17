@@ -1,5 +1,6 @@
 // Copyright (C) 2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "Helper.h"
+#include "Protocol.h"
 #include <Base/CommonPaths.h>
 #include <Base/algo.h>
 #include <Security/Security.h>
@@ -10,7 +11,9 @@
 #include <chrono>
 #include <csignal>
 #include <cstring>
+#include <memory>
 #include <mutex>
+#include <poll.h>
 #include <tuple>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -41,13 +44,37 @@ bool IsExecutable(const std::string &_path) noexcept
     return !_path.empty() && ::access(_path.c_str(), X_OK) == 0;
 }
 
+// A listing of a million entries is well under a hundred megabytes - anything past this is a sign
+// of a broken helper rather than of a real archive.
+constexpr size_t kMaxHelperOutputSize = size_t{512} * 1024 * 1024;
+
+// The helper is a separate component and may be older or newer than the app: ask it which protocol
+// it speaks and only use it when this build understands the answer.
+bool HelperProtocolIsSupported(const std::string &_helper_path) noexcept
+{
+    std::expected<ChildProcess, Error> process = ChildProcess::Spawn(_helper_path, {"version"}, std::nullopt);
+    if( !process )
+        return false;
+    const auto terminate_process = at_scope_end([&] { process->Terminate(); });
+
+    const std::expected<std::string, Error> output = ReadChildOutput(*process, {}, std::chrono::seconds{10});
+    if( !output )
+        return false;
+    const std::expected<std::optional<int>, Error> exit_code = process->WaitFor(kHelperExitTimeout);
+    if( !exit_code || !exit_code->has_value() || **exit_code != 0 )
+        return false;
+
+    const std::optional<HelperVersion> version = ParseVersionResponse(*output);
+    return version && version->protocol == kSupportedProtocolVersion;
+}
+
 std::optional<std::string> FindHelperUncached()
 {
     // The component is distributed as an application bundle that the user drags into Applications.
     for( const std::string &candidate :
          {nc::base::CommonPaths::Home() + "Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper",
           std::string{"/Applications/ncrar-helper.app/Contents/MacOS/ncrar-helper"}} )
-        if( IsExecutable(candidate) && HasValidCodeSignature(candidate) )
+        if( IsExecutable(candidate) && HasValidCodeSignature(candidate) && HelperProtocolIsSupported(candidate) )
             return candidate;
 
     return std::nullopt;
@@ -205,6 +232,12 @@ std::expected<ChildProcess, Error> ChildProcess::Spawn(const std::string &_helpe
             ::_exit(126);
         if( fds[1] != STDOUT_FILENO )
             ::close(fds[1]);
+        // Close everything else inherited from the application: the helper has no business seeing
+        // its archives, sockets or database handles. macOS has no closefrom(), and only async-signal
+        // safe calls are allowed between fork() and execve().
+        const int max_fds = ::getdtablesize();
+        for( int fd = STDERR_FILENO + 1; fd < max_fds; ++fd )
+            ::close(fd);
         ::execve(_helper_path.c_str(), argv.data(), envp.empty() ? ::environ : envp.data());
         ::_exit(127);
     }
@@ -227,10 +260,28 @@ int ChildProcess::StdoutFD() const noexcept
     return m_Fd;
 }
 
-std::expected<size_t, Error> ChildProcess::Read(void *_buf, const size_t _size)
+std::expected<size_t, Error>
+ChildProcess::Read(void *_buf, const size_t _size, std::chrono::milliseconds _stall_timeout)
 {
     if( m_Fd < 0 )
         return std::unexpected(Error{Error::POSIX, EBADF});
+
+    // Wait for data with a timeout: a helper that stops writing without exiting would otherwise
+    // block the reader (and the VFS worker thread behind it) forever.
+    while( true ) {
+        pollfd pfd{};
+        pfd.fd = m_Fd;
+        pfd.events = POLLIN;
+        const int poll_rc = ::poll(&pfd, 1, static_cast<int>(_stall_timeout.count()));
+        if( poll_rc < 0 ) {
+            if( errno == EINTR )
+                continue;
+            return std::unexpected(Error{Error::POSIX, errno});
+        }
+        if( poll_rc == 0 )
+            return std::unexpected(Error{Error::POSIX, ETIMEDOUT});
+        break;
+    }
 
     while( true ) {
         const ssize_t read = ::read(m_Fd, _buf, _size);
@@ -319,6 +370,45 @@ void ChildProcess::Reset() noexcept
         }
         m_Pid = -1;
     }
+}
+
+std::expected<std::string, Error> ReadChildOutput(ChildProcess &_process,
+                                                  const VFSCancelChecker &_cancel_checker,
+                                                  const std::chrono::milliseconds _timeout)
+{
+    std::string output;
+    const std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size_t{64} * 1024);
+    const auto deadline = std::chrono::steady_clock::now() + _timeout;
+    while( true ) {
+        if( _cancel_checker && _cancel_checker() )
+            return std::unexpected(Error{Error::POSIX, ECANCELED});
+        if( std::chrono::steady_clock::now() >= deadline ) {
+            _process.Terminate();
+            return std::unexpected(Error{Error::POSIX, ETIMEDOUT});
+        }
+
+        pollfd pfd{};
+        pfd.fd = _process.StdoutFD();
+        pfd.events = POLLIN;
+        const int poll_rc = ::poll(&pfd, 1, 100);
+        if( poll_rc < 0 ) {
+            if( errno == EINTR )
+                continue;
+            return std::unexpected(Error{Error::POSIX, errno});
+        }
+        if( poll_rc == 0 )
+            continue; // the timeout expired, check for cancellation and the deadline again
+
+        const std::expected<size_t, Error> read = _process.Read(buffer.get(), size_t{64} * 1024);
+        if( !read )
+            return std::unexpected(read.error());
+        if( *read == 0 )
+            break;
+        if( output.size() + *read > kMaxHelperOutputSize )
+            return std::unexpected(Error{Error::POSIX, EFBIG});
+        output.append(buffer.get(), *read);
+    }
+    return output;
 }
 
 } // namespace nc::vfs::rar

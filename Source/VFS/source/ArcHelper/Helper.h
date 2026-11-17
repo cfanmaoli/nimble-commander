@@ -18,9 +18,17 @@ class Host;
 
 namespace nc::vfs::rar {
 
+// The helper prints its output and exits; a stuck or hostile helper must not block the VFS worker
+// threads forever. '_operation' bounds a whole list/link conversation, '_exit' bounds the final
+// wait for the exit status and '_stall' bounds the gap between two chunks of a payload.
+inline constexpr std::chrono::milliseconds kHelperOperationTimeout{120'000};
+inline constexpr std::chrono::seconds kHelperExitTimeout{5};
+inline constexpr std::chrono::milliseconds kHelperReadStallTimeout{60'000};
+
 // Locates the ncrar-helper executable inside the ncrar-helper.app bundle in ~/Applications or
 // /Applications. Returns nullopt when no usable helper is installed - the RAR support is optional
-// and the app must work without it.
+// and the app must work without it. A candidate must also answer its "version" command with a
+// protocol this build understands.
 [[nodiscard]] std::optional<std::string> FindHelper();
 
 // Returns true when the first bytes of the file at _path carry the RAR signature, i.e. when the
@@ -53,7 +61,10 @@ public:
     [[nodiscard]] int StdoutFD() const noexcept;
 
     // Reads up to _size bytes from the child's stdout. Returns 0 at the end of the stream.
-    [[nodiscard]] std::expected<size_t, Error> Read(void *_buf, size_t _size);
+    // '_stall_timeout' bounds how long the call waits for the next chunk, so a helper that stops
+    // writing without exiting can't block the reader forever.
+    [[nodiscard]] std::expected<size_t, Error>
+    Read(void *_buf, size_t _size, std::chrono::milliseconds _stall_timeout = kHelperReadStallTimeout);
 
     // Waits for the child to exit and returns its exit code. Should be called at most once.
     [[nodiscard]] std::expected<int, Error> Wait();
@@ -71,5 +82,13 @@ private:
     pid_t m_Pid = -1;
     int m_Fd = -1;
 };
+
+// Reads everything the child writes to stdout, checking for cancellation and for the total timeout
+// while waiting. On a timeout the child is terminated. The output is capped at 512 MB - a listing of
+// a million entries is well under a hundred.
+[[nodiscard]] std::expected<std::string, Error>
+ReadChildOutput(ChildProcess &_process,
+                const VFSCancelChecker &_cancel_checker,
+                std::chrono::milliseconds _timeout = kHelperOperationTimeout);
 
 } // namespace nc::vfs::rar

@@ -168,4 +168,23 @@ std::optional<std::string> ParseLinkResponse(const std::string_view _json)
     return std::string{*target};
 }
 
+std::optional<HelperVersion> ParseVersionResponse(const std::string_view _json)
+{
+    rapidjson::Document document;
+    document.Parse(_json.data(), _json.size());
+    if( document.HasParseError() || !document.IsObject() )
+        return std::nullopt;
+
+    const std::optional<uint64_t> protocol = ReadUint(document, "protocol");
+    if( !protocol || *protocol > std::numeric_limits<int>::max() )
+        return std::nullopt;
+
+    HelperVersion version;
+    version.protocol = static_cast<int>(*protocol);
+    if( const std::optional<uint64_t> unrar = ReadUint(document, "unrar");
+        unrar && *unrar <= static_cast<uint64_t>(std::numeric_limits<int>::max()) )
+        version.unrar = static_cast<int>(*unrar);
+    return version;
+}
+
 } // namespace nc::vfs::rar

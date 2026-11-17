@@ -48,6 +48,10 @@ A binary is only built for arm64; the helper is a plain command line tool and ca
 from source (see the project's README: `scripts/bootstrap-unrar.sh`, then CMake, then
 `scripts/package.sh`).
 
+The signature check is about integrity, not identity: any validly signed helper at that path is
+accepted (the packaged one is ad-hoc signed), and the application does not pin a team or a
+designated requirement - a locally built helper keeps working.
+
 ## How the application uses it
 
 When opening a file as an archive, the application:
@@ -64,6 +68,17 @@ The helper is invoked as a plain command line tool: the listing is fetched once 
 `ncrar-helper list` when the archive is opened, every entry read starts a fresh
 `ncrar-helper read`, and a RAR4 symlink target is requested with `ncrar-helper link`. No helper
 process is kept alive between operations.
+
+The helper is a separate component and may be older or newer than the application, so the first
+lookup asks it with `ncrar-helper version` which protocol it speaks (`{"protocol":1,...}`). A
+helper that reports an unknown protocol - or doesn't answer within a few seconds - is treated as
+unusable and the libarchive reader takes over.
+
+Every conversation is bounded: a listing or a link request gets 120 seconds in total, the wait for
+the final exit status is 5 seconds, and a payload read fails if the helper stops writing for 60
+seconds. A helper that hits any of these limits is terminated, so a stuck or hostile component
+can't pin a VFS worker thread forever. The helper also starts with every file descriptor above
+stderr closed - it never inherits the application's archives, sockets or database handles.
 
 A read is validated against the helper's **exit status**, not just against the entry's declared
 size. UnRAR reports a checksum mismatch or a damaged block only after the entry's bytes have been

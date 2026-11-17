@@ -67,45 +67,6 @@ std::string JoinArchivePath(const std::vector<std::string> &_components)
     return path;
 }
 
-// A listing of a million entries is well under a hundred megabytes - anything past this is a sign
-// of a broken helper rather than of a real archive, and must not make us allocate without a limit.
-constexpr size_t g_MaxHelperOutputSize = size_t{512} * 1024 * 1024;
-
-// Reads everything the child writes to stdout, checking for cancellation while waiting. Keep the
-// buffer off the stack - the VFS code has a tight stack frame budget.
-std::expected<std::string, Error> ReadChildOutput(rar::ChildProcess &_process, const VFSCancelChecker &_cancel_checker)
-{
-    std::string output;
-    const std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size_t{64} * 1024);
-    while( true ) {
-        if( _cancel_checker && _cancel_checker() )
-            return std::unexpected(Error{Error::POSIX, ECANCELED});
-
-        pollfd pfd{};
-        pfd.fd = _process.StdoutFD();
-        pfd.events = POLLIN;
-        const int poll_rc = ::poll(&pfd, 1, 100);
-        if( poll_rc < 0 ) {
-            if( errno == EINTR )
-                continue;
-            return std::unexpected(Error{Error::POSIX, errno});
-        }
-        if( poll_rc == 0 )
-            continue; // the timeout expired, check for cancellation again
-
-        const std::expected<size_t, Error> read = _process.Read(buffer.get(), size_t{64} * 1024);
-        if( !read )
-            return std::unexpected(read.error());
-        if( *read == 0 )
-            break;
-        // A corrupt or hostile helper must not be able to make us allocate without a limit.
-        if( output.size() + *read > g_MaxHelperOutputSize )
-            return std::unexpected(Error{Error::POSIX, EFBIG});
-        output.append(buffer.get(), *read);
-    }
-    return output;
-}
-
 // The one-shot "link" command, used for RAR4 symlinks whose target isn't in the listing.
 std::expected<std::string, Error> FetchLinkTargetOneShot(const std::string &_helper_path,
                                                          const std::string &_archive_path,
@@ -119,15 +80,17 @@ std::expected<std::string, Error> FetchLinkTargetOneShot(const std::string &_hel
         return std::unexpected(process.error());
     const auto terminate_process = at_scope_end([&] { process->Terminate(); });
 
-    const std::expected<std::string, Error> output = ReadChildOutput(*process, _cancel_checker);
+    const std::expected<std::string, Error> output = rar::ReadChildOutput(*process, _cancel_checker);
     if( !output )
         return std::unexpected(output.error());
 
-    const std::expected<int, Error> exit_code = process->Wait();
-    if( !exit_code )
-        return std::unexpected(exit_code.error());
-    if( *exit_code != 0 )
-        return std::unexpected(rar::ErrorForHelperExitCode(*exit_code));
+    // The status is the verdict on the payload, so it has to be observed - but a helper that never
+    // exits must not block the VFS worker thread forever.
+    const std::expected<std::optional<int>, Error> exit_code = process->WaitFor(rar::kHelperExitTimeout);
+    if( !exit_code || !exit_code->has_value() )
+        return std::unexpected(Error{Error::POSIX, ETIMEDOUT});
+    if( **exit_code != 0 )
+        return std::unexpected(rar::ErrorForHelperExitCode(**exit_code));
 
     std::optional<std::string> target = rar::ParseLinkResponse(*output);
     if( !target )
@@ -369,15 +332,17 @@ std::expected<void, Error> RarHelperHost::ReadListing(const VFSCancelChecker &_c
         return std::unexpected(process.error());
     const auto terminate_process = at_scope_end([&] { process->Terminate(); });
 
-    const std::expected<std::string, Error> output = ReadChildOutput(*process, _cancel_checker);
+    const std::expected<std::string, Error> output = rar::ReadChildOutput(*process, _cancel_checker);
     if( !output )
         return std::unexpected(output.error());
 
-    const std::expected<int, Error> exit_code = process->Wait();
-    if( !exit_code )
-        return std::unexpected(exit_code.error());
-    if( *exit_code != 0 )
-        return std::unexpected(rar::ErrorForHelperExitCode(*exit_code));
+    // The status is the verdict on the payload, so it has to be observed - but a helper that never
+    // exits must not block the VFS worker thread forever.
+    const std::expected<std::optional<int>, Error> exit_code = process->WaitFor(rar::kHelperExitTimeout);
+    if( !exit_code || !exit_code->has_value() )
+        return std::unexpected(Error{Error::POSIX, ETIMEDOUT});
+    if( **exit_code != 0 )
+        return std::unexpected(rar::ErrorForHelperExitCode(**exit_code));
 
     const std::optional<rar::Listing> listing = rar::ParseListing(*output);
     if( !listing )
