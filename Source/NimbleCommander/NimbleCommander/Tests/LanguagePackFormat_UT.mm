@@ -35,6 +35,17 @@ TEST_CASE("LanguagePack format validation preserves argument types")
         {.source = @"%@", .translation = @"%1$@ %1$@", .compatible = true},
         {.source = @"%f", .translation = @"%lf", .compatible = true},
         {.source = @"Progress 100%%", .translation = @"100%% complete", .compatible = true},
+        {.source = @"Percentage (%)", .translation = @"\u767e\u5206\u6bd4 (%)", .compatible = true},
+        {.source = @"Secondary text opacity (%)",
+         .translation = @"\u6b21\u8981\u6587\u5b57\u4e0d\u900f\u660e\u5ea6 (%)",
+         .compatible = true},
+        {.source = @"%? Enter the value of the parameter",
+         .translation = @"%? \u8f93\u5165\u53c2\u6570\u7684\u503c",
+         .compatible = true},
+        // A stray percent is literal text, but it still can't smuggle in an argument or %n.
+        {.source = @"%@", .translation = @"50% %@", .compatible = true},
+        {.source = @"Intro", .translation = @"50% done %d", .compatible = false},
+        {.source = @"Progress 100%%", .translation = @"\u8fdb\u5ea6 %n", .compatible = false},
     };
     for( const auto &tc : cases ) {
         INFO(tc.source.UTF8String);

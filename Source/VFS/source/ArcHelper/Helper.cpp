@@ -7,6 +7,7 @@
 #include <VFS/Host.h>
 #include <VFS/VFSFile.h>
 #include <Base/CFPtr.h>
+#include <algorithm>
 #include <cerrno>
 #include <chrono>
 #include <csignal>
@@ -57,7 +58,8 @@ bool HelperProtocolIsSupported(const std::string &_helper_path) noexcept
         return false;
     const auto terminate_process = at_scope_end([&] { process->Terminate(); });
 
-    const std::expected<std::string, Error> output = ReadChildOutput(*process, {}, std::chrono::seconds{10});
+    // The helper answers "version" immediately; don't give a broken one the full operation budget.
+    const std::expected<std::string, Error> output = ReadChildOutput(*process, {}, kHelperProbeTimeout);
     if( !output )
         return false;
     const std::expected<std::optional<int>, Error> exit_code = process->WaitFor(kHelperExitTimeout);
@@ -112,13 +114,26 @@ std::optional<std::string> HelperPath()
 
 std::optional<std::string> FindHelper()
 {
-    const std::lock_guard lock(g_HelperMutex);
-    if( !g_HelperEnabled )
-        return std::nullopt;
-    if( !g_HelperLookupDone ) {
-        g_HelperPath = FindHelperUncached();
-        g_HelperLookupDone = true;
+    {
+        const std::lock_guard lock(g_HelperMutex);
+        if( !g_HelperEnabled )
+            return std::nullopt;
+        if( g_HelperLookupDone )
+            return g_HelperPath;
     }
+
+    // The lookup spawns the helper and waits for its answer - that must not happen under the lock,
+    // or a slow component would block every other caller (the preferences window includes calls
+    // from the main thread).
+    std::optional<std::string> found = FindHelperUncached();
+
+    const std::lock_guard lock(g_HelperMutex);
+    if( g_HelperLookupDone )
+        return g_HelperPath; // another thread has finished first - its answer stands
+    if( !g_HelperEnabled )
+        return std::nullopt; // disabled while probing; the next enable will look again
+    g_HelperPath = std::move(found);
+    g_HelperLookupDone = true;
     return g_HelperPath;
 }
 
@@ -209,6 +224,12 @@ std::expected<ChildProcess, Error> ChildProcess::Spawn(const std::string &_helpe
         envp.push_back(nullptr);
     }
 
+    // getdtablesize() is not async-signal-safe and the child may only use such calls between fork()
+    // and execve(), so it is evaluated here and passed down as a plain number. macOS has neither
+    // closefrom() nor F_CLOSEM to do this with one call - the loop below is bounded by the soft
+    // RLIMIT_NOFILE, which this process never raises.
+    const int max_fds = ::getdtablesize();
+
     int fds[2] = {-1, -1};
     if( ::pipe(fds) != 0 )
         return std::unexpected(Error{Error::POSIX, errno});
@@ -233,9 +254,8 @@ std::expected<ChildProcess, Error> ChildProcess::Spawn(const std::string &_helpe
         if( fds[1] != STDOUT_FILENO )
             ::close(fds[1]);
         // Close everything else inherited from the application: the helper has no business seeing
-        // its archives, sockets or database handles. macOS has no closefrom(), and only async-signal
-        // safe calls are allowed between fork() and execve().
-        const int max_fds = ::getdtablesize();
+        // its archives, sockets or database handles. Only async-signal-safe calls are allowed here,
+        // which is why max_fds was computed before the fork.
         for( int fd = STDERR_FILENO + 1; fd < max_fds; ++fd )
             ::close(fd);
         ::execve(_helper_path.c_str(), argv.data(), envp.empty() ? ::environ : envp.data());
@@ -382,15 +402,20 @@ std::expected<std::string, Error> ReadChildOutput(ChildProcess &_process,
     while( true ) {
         if( _cancel_checker && _cancel_checker() )
             return std::unexpected(Error{Error::POSIX, ECANCELED});
-        if( std::chrono::steady_clock::now() >= deadline ) {
+        const auto now = std::chrono::steady_clock::now();
+        if( now >= deadline ) {
             _process.Terminate();
             return std::unexpected(Error{Error::POSIX, ETIMEDOUT});
         }
+        // The whole conversation is bounded by the deadline, so a single wait for the next chunk
+        // must not outlive it - otherwise a helper that stalls near the end would stretch the
+        // advertised 120 seconds by another 60.
+        const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now);
 
         pollfd pfd{};
         pfd.fd = _process.StdoutFD();
         pfd.events = POLLIN;
-        const int poll_rc = ::poll(&pfd, 1, 100);
+        const int poll_rc = ::poll(&pfd, 1, static_cast<int>(std::min<int64_t>(remaining.count(), 100)));
         if( poll_rc < 0 ) {
             if( errno == EINTR )
                 continue;
@@ -399,7 +424,7 @@ std::expected<std::string, Error> ReadChildOutput(ChildProcess &_process,
         if( poll_rc == 0 )
             continue; // the timeout expired, check for cancellation and the deadline again
 
-        const std::expected<size_t, Error> read = _process.Read(buffer.get(), size_t{64} * 1024);
+        const std::expected<size_t, Error> read = _process.Read(buffer.get(), size_t{64} * 1024, remaining);
         if( !read )
             return std::unexpected(read.error());
         if( *read == 0 )

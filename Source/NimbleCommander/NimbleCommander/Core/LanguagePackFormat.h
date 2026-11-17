@@ -90,8 +90,10 @@ inline PlaceholderList ParsePlaceholders(NSString *_string)
         if( length == "q" )
             length = "ll"; // documented synonym for long long
         if( j >= s.size() ) {
-            result.has_unknown = true;
-            break;
+            // A trailing '%', or a '%' followed by modifiers that never reach a conversion, is
+            // ordinary text ("Progress 100%"). It consumes no argument.
+            ++i;
+            continue;
         }
         const char conversion = s[j++];
         std::string kind;
@@ -144,8 +146,18 @@ inline PlaceholderList ParsePlaceholders(NSString *_string)
             default:
                 break;
         }
-        if( kind.empty() )
+        if( kind.empty() ) {
+            // A '%' followed by a character that can't start a conversion is a literal percent sign
+            // in the original text ("Percentage (%)", "%? Enter the value of the parameter"): it
+            // consumes no argument and doesn't invalidate the string. A conversion that printf does
+            // know but this validator refuses - %n, a bogus length modifier like %l@ or %hs - stays
+            // an error.
+            if( std::strchr("diouxXeEfFgGaAcsSpnC@", conversion) == nullptr ) {
+                ++i; // only the '%' is literal - the rest has to be parsed again
+                continue;
+            }
             result.has_unknown = true;
+        }
         if( positional ) {
             saw_positional = true;
             if( position <= 0 )

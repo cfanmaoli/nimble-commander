@@ -170,6 +170,16 @@ bool CompressionJob::BuildArchive()
         return false; // TODO: use error from exp_file
 
     m_TargetFile = *exp_file;
+    // Every setup failure below has to release the archive object and the half-created target file,
+    // otherwise each attempt leaks libarchive state and leaves an unreadable file behind.
+    const auto cleanup_failed_archive = [&] {
+        if( m_Archive != nullptr ) {
+            archive_write_free(m_Archive);
+            m_Archive = nullptr;
+        }
+        std::ignore = m_TargetFile->Close();
+        std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+    };
     const std::expected<void, Error> open_rc = m_TargetFile->Open(flags);
     if( open_rc ) {
         m_Archive = archive_write_new();
@@ -214,14 +224,17 @@ bool CompressionJob::BuildArchive()
 
         if( !m_Password.empty() ) {
             if( archive_write_set_options(m_Archive, "zip:encryption=aes256") != ARCHIVE_OK ) {
+                cleanup_failed_archive();
                 Stop();
                 return false;
             }
             if( archive_write_set_options(m_Archive, "zip:experimental") != ARCHIVE_OK ) {
+                cleanup_failed_archive();
                 Stop();
                 return false;
             }
             if( archive_write_set_passphrase(m_Archive, m_Password.c_str()) != ARCHIVE_OK ) {
+                cleanup_failed_archive();
                 Stop();
                 return false;
             }
@@ -230,6 +243,7 @@ bool CompressionJob::BuildArchive()
         if( archive_write_open(m_Archive, this, nullptr, WriteCallback, nullptr) != ARCHIVE_OK ) {
             m_TargetWriteError(
                 m_TargetFileLastError.value_or(Error{Error::POSIX, EIO}), m_TargetArchivePath, *m_DstVFS);
+            cleanup_failed_archive();
             Stop();
             return false;
         }

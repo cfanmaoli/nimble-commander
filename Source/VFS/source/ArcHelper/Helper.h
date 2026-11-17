@@ -24,6 +24,7 @@ namespace nc::vfs::rar {
 inline constexpr std::chrono::milliseconds kHelperOperationTimeout{120'000};
 inline constexpr std::chrono::seconds kHelperExitTimeout{5};
 inline constexpr std::chrono::milliseconds kHelperReadStallTimeout{60'000};
+inline constexpr std::chrono::milliseconds kHelperProbeTimeout{5'000};
 
 // Locates the ncrar-helper executable inside the ncrar-helper.app bundle in ~/Applications or
 // /Applications. Returns nullopt when no usable helper is installed - the RAR support is optional
