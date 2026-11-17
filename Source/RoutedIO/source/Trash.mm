@@ -251,22 +251,10 @@ std::string JoinPath(const std::string &_parent, const std::string &_name)
 // through to an arbitrary directory.
 bool IsValidTrashDirectory(const std::string &_path)
 {
-    struct stat st;
-    if( ::lstat(_path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode) )
+    const int fd = detail::OpenTrashDirectory(_path, false);
+    if( fd < 0 )
         return false;
-    if( st.st_uid != getuid() )
-        return false;
-    // The parent has to be a real directory as well. lstat() on the final component alone resolves
-    // intermediate links, so a symlinked '.Trashes' would otherwise pass every check while pointing
-    // at an ordinary same-device directory that happens to contain a folder named like the uid.
-    const std::filesystem::path parent_path = std::filesystem::path(_path).parent_path();
-    if( parent_path.empty() )
-        return false;
-    struct stat parent_st;
-    if( ::lstat(parent_path.c_str(), &parent_st) != 0 || !S_ISDIR(parent_st.st_mode) )
-        return false;
-    if( parent_st.st_dev != st.st_dev )
-        return false; // a mount point, not a folder
+    ::close(fd);
     return true;
 }
 
@@ -547,6 +535,65 @@ void RemoveOriginalPathAttribute(const std::string &_path) noexcept
 
 namespace detail {
 
+int OpenTrashDirectory(const std::string &_path, const bool _read_contents)
+{
+    std::filesystem::path path(_path);
+    // Discard trailing separators without normalizing away a component that could be a link.
+    while( path != path.root_path() && path.filename().empty() )
+        path = path.parent_path();
+    if( !path.is_absolute() || path == path.root_path() || path.filename() == "." || path.filename() == ".." ) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    const auto parent = path.parent_path();
+    const auto ancestor = parent == parent.root_path() ? parent : parent.parent_path();
+    constexpr int flags = O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC;
+    // The shared .Trashes directory normally grants search but not read access (01333).
+    // Only the user's final trash directory needs to be readable for enumeration.
+    constexpr int search_flags = O_SEARCH | O_NONBLOCK | O_NOFOLLOW | O_CLOEXEC;
+    const int ancestor_fd = ::open(ancestor.c_str(), search_flags);
+    if( ancestor_fd < 0 )
+        return -1;
+    // close() must not overwrite the error reported by a failed openat()/fstat().
+    const auto close_ancestor = at_scope_end([ancestor_fd] {
+        const int error = errno;
+        ::close(ancestor_fd);
+        errno = error;
+    });
+    const std::string parent_name = parent == parent.root_path() ? "." : parent.filename().string();
+    if( parent_name == ".." ) {
+        errno = EINVAL;
+        return -1;
+    }
+    const int parent_fd = ::openat(ancestor_fd, parent_name.c_str(), search_flags);
+    if( parent_fd < 0 )
+        return -1;
+    const auto close_parent = at_scope_end([parent_fd] {
+        const int error = errno;
+        ::close(parent_fd);
+        errno = error;
+    });
+
+    const int fd = ::openat(parent_fd, path.filename().c_str(), _read_contents ? flags : search_flags);
+    if( fd < 0 )
+        return -1;
+    struct stat parent_st;
+    struct stat st;
+    if( ::fstat(parent_fd, &parent_st) != 0 || ::fstat(fd, &st) != 0 ) {
+        const int error = errno;
+        ::close(fd);
+        errno = error;
+        return -1;
+    }
+    if( st.st_uid != getuid() || st.st_dev != parent_st.st_dev ) {
+        ::close(fd);
+        errno = EINVAL;
+        return -1;
+    }
+    return fd;
+}
+
 const char *const kOriginalLocationAttribute = g_OriginalPathAttr;
 
 int RemoveStagingTree(const std::string &_staging) noexcept
@@ -738,23 +785,9 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
 {
     EmptyTrashResult result;
 
-    struct stat trash_stat;
-    if( ::lstat(_trash_directory.c_str(), &trash_stat) != 0 ) {
-        result.error = errno;
-        return result;
-    }
-    if( !S_ISDIR(trash_stat.st_mode) ) {
-        result.error = ENOTDIR;
-        return result;
-    }
-    if( !IsValidTrashDirectory(_trash_directory) ) {
-        result.error = EINVAL;
-        return result;
-    }
-
-    // The directory is opened once and everything below is deleted relative to that descriptor, so
-    // the objects that were validated are the ones that get removed.
-    const int dir_fd = ::open(_trash_directory.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    // Opening and validation share pinned descriptors all the way through the trash parent; a
+    // replacement of '.Trashes' cannot redirect the later lookup of the uid directory.
+    const int dir_fd = detail::OpenTrashDirectory(_trash_directory);
     if( dir_fd < 0 ) {
         result.error = errno;
         return result;

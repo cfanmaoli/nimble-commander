@@ -616,4 +616,64 @@ TEST_CASE(PREFIX "emptying a trash folder behind a symlinked .Trashes is refused
     CHECK(ReadFile(uid_dir + "/keep.txt") == "keep");
 }
 
+TEST_CASE(PREFIX "emptying a trash folder only needs search access to its parent")
+{
+    TestDir dir;
+    const auto parent = dir.directory / ".Trashes";
+    const auto trash = parent / std::to_string(getuid());
+    WriteFile((trash / "item.txt").string(), "trash");
+    REQUIRE(::chmod(parent.c_str(), 01333) == 0);
+    const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(parent.c_str(), 0700); });
+
+    const auto result = nc::routedio::EmptyTrashDirectory(trash.string());
+    CHECK(result.error == 0);
+    CHECK(result.deleted == 1);
+    CHECK(result.failed == 0);
+    CHECK(!std::filesystem::exists(trash / "item.txt"));
+}
+
+TEST_CASE(PREFIX "an opened trash stays bound when its parent name is replaced")
+{
+    TestDir dir;
+    const auto drive = dir.directory / "drive";
+    const auto parent = drive / ".Trashes";
+    const auto uid = std::to_string(getuid());
+    const auto trash = parent / uid;
+    const auto unrelated = dir.directory / "unrelated";
+    WriteFile((trash / "keep.txt").string(), "original");
+    WriteFile((unrelated / uid / "keep.txt").string(), "external");
+
+    const int fd = nc::routedio::detail::OpenTrashDirectory(trash.string());
+    REQUIRE(fd >= 0);
+    const auto close_fd = at_scope_end([fd] { ::close(fd); });
+    std::filesystem::rename(parent, drive / "saved");
+    REQUIRE(::symlink(unrelated.c_str(), parent.c_str()) == 0);
+
+    // Relative operations stay on the opened original; reopening the full pathname is refused.
+    struct stat actual;
+    struct stat expected;
+    REQUIRE(::fstatat(fd, "keep.txt", &actual, AT_SYMLINK_NOFOLLOW) == 0);
+    REQUIRE(::lstat((drive / "saved" / uid / "keep.txt").c_str(), &expected) == 0);
+    CHECK(actual.st_ino == expected.st_ino);
+    CHECK(actual.st_dev == expected.st_dev);
+    CHECK(nc::routedio::EmptyTrashDirectory(trash.string()).error != 0);
+    CHECK(ReadFile((unrelated / uid / "keep.txt").string()) == "external");
+    CHECK(ReadFile((drive / "saved" / uid / "keep.txt").string()) == "original");
+}
+
+TEST_CASE(PREFIX "trash discovery does not require permission to read its contents")
+{
+    TestDir dir;
+    const auto trash = dir.directory / "trash";
+    WriteFile((trash / "item.txt").string(), "trash");
+    REQUIRE(::chmod(trash.c_str(), 0100) == 0);
+    const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(trash.c_str(), 0700); });
+    const int fd = nc::routedio::detail::OpenTrashDirectory(trash.string(), false);
+    REQUIRE(fd >= 0);
+    ::close(fd);
+
+    // It is still a known trash location, but an attempt to enumerate/delete it must report denial.
+    CHECK(nc::routedio::EmptyTrashDirectory(trash.string()).error == EACCES);
+}
+
 #undef PREFIX

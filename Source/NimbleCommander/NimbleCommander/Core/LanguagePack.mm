@@ -1,5 +1,6 @@
 // Copyright (C) 2026 cfanmaoli. Subject to GNU General Public License version 3.
 #include "LanguagePack.h"
+#include "LanguagePackFormat.h"
 
 #include <Cocoa/Cocoa.h>
 #include <objc/runtime.h>
@@ -9,9 +10,7 @@
 #include <cstring>
 #include <fstream>
 #include <limits>
-#include <map>
 #include <unistd.h>
-#include <set>
 #include <string>
 
 @interface NSBundle (NCLanguagePack)
@@ -108,188 +107,8 @@ NSString *EntryKey(NSString *_bundle, NSString *_table, NSString *_key)
         [NSString stringWithFormat:@"%@%@%@%@%@", _bundle ?: @"", kSeparator, _table ?: @"", kSeparator, _key ?: @""];
 }
 
-BOOL LooksLikeObjectIdentifier(NSString *_key)
-{
-    if( _key.length == 0 )
-        return NO;
-    static NSRegularExpression *const dot_number = [NSRegularExpression regularExpressionWithPattern:@"^[0-9]+\\."
-                                                                                             options:0
-                                                                                               error:nil];
-    static NSRegularExpression *const ib_identifier =
-        [NSRegularExpression regularExpressionWithPattern:@"^[0-9A-Za-z]{3}-[0-9A-Za-z]{3}-[0-9A-Za-z]{3}\\."
-                                                  options:0
-                                                    error:nil];
-    const NSRange range = NSMakeRange(0, _key.length);
-    return [dot_number firstMatchInString:_key options:0 range:range] != nil ||
-           [ib_identifier firstMatchInString:_key options:0 range:range] != nil;
-}
-
-// One printf-style conversion: which argument it consumes and what kind it expects.
-struct Placeholder {
-    int position = 0; // 1-based argument index, explicit ("%2$@") or sequential
-    char kind = '?';  // O = object, I = integer, F = float, S = C string, P = pointer, ? = unknown
-};
-
-struct PlaceholderList {
-    std::vector<Placeholder> items;
-    bool has_unknown = false;     // a conversion that can't be parsed or isn't on the allowlist
-    bool mixed_positions = false; // some conversions are positional, some are not (undefined in printf)
-};
-
-PlaceholderList ParsePlaceholders(NSString *_string)
-{
-    PlaceholderList result;
-    if( _string.length == 0 )
-        return result;
-    const std::string s = _string.UTF8String;
-    int next_sequential = 1;
-    bool saw_positional = false;
-    bool saw_sequential = false;
-    for( std::size_t i = 0; i < s.size(); ) {
-        if( s[i] != '%' ) {
-            ++i;
-            continue;
-        }
-        std::size_t j = i + 1;
-        if( j < s.size() && s[j] == '%' ) { // literal per cent
-            i = j + 1;
-            continue;
-        }
-        const std::size_t position_start = j;
-        while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
-            ++j;
-        int position = 0;
-        bool positional = false;
-        if( j > position_start && j < s.size() && s[j] == '$' ) {
-            positional = true;
-            const std::string digits = s.substr(position_start, j - position_start);
-            if( digits.size() > 6 ) {
-                result.has_unknown = true;
-            }
-            else {
-                position = std::stoi(digits);
-            }
-            ++j;
-        }
-        while( j < s.size() && std::strchr("-+ #0", s[j]) )
-            ++j; // flags
-        while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
-            ++j; // field width
-        if( j < s.size() && s[j] == '.' ) {
-            ++j;
-            while( j < s.size() && std::isdigit(static_cast<unsigned char>(s[j])) )
-                ++j;
-        }
-        while( j < s.size() && std::strchr("hlqLjzt", s[j]) )
-            ++j; // length modifier
-        if( j >= s.size() ) {
-            result.has_unknown = true;
-            break;
-        }
-        const char conversion = s[j++];
-        char kind = '?';
-        switch( conversion ) {
-            case '@':
-                kind = 'O';
-                break;
-            case 'd':
-            case 'i':
-            case 'u':
-            case 'x':
-            case 'X':
-            case 'o':
-            case 'c':
-            case 'C':
-                kind = 'I';
-                break;
-            case 'f':
-            case 'F':
-            case 'e':
-            case 'E':
-            case 'g':
-            case 'G':
-            case 'a':
-            case 'A':
-                kind = 'F';
-                break;
-            case 's':
-            case 'S':
-                kind = 'S';
-                break;
-            case 'p':
-                kind = 'P';
-                break;
-            case '#': // the "%#@name@" plural form stands for the number of items
-                if( j < s.size() && s[j] == '@' ) {
-                    ++j;
-                    while( j < s.size() && s[j] != '@' )
-                        ++j;
-                    if( j < s.size() )
-                        ++j;
-                }
-                kind = 'O';
-                break;
-            default:
-                kind = '?';
-                break;
-        }
-        if( kind == '?' )
-            result.has_unknown = true;
-        if( positional ) {
-            saw_positional = true;
-            if( position <= 0 )
-                result.has_unknown = true;
-        }
-        else {
-            saw_sequential = true;
-            position = next_sequential++;
-        }
-        result.items.push_back({.position = position, .kind = kind});
-        i = j;
-    }
-    result.mixed_positions = saw_positional && saw_sequential;
-    return result;
-}
-
-bool CompareArguments(const PlaceholderList &_source, const PlaceholderList &_translation)
-{
-    std::map<int, char> expected;
-    for( const Placeholder &p : _source.items ) {
-        const auto [it, inserted] = expected.emplace(p.position, p.kind);
-        if( !inserted && it->second != p.kind )
-            return false; // one argument used with two different kinds
-    }
-    std::map<int, char> actual;
-    for( const Placeholder &p : _translation.items ) {
-        const auto [it, inserted] = actual.emplace(p.position, p.kind);
-        if( !inserted && it->second != p.kind )
-            return false;
-    }
-    return expected == actual;
-}
-
-bool PlaceholdersCompatible(NSString *_source, NSString *_key, NSString *_translation)
-{
-    const PlaceholderList source = ParsePlaceholders(_source);
-    const PlaceholderList translation = ParsePlaceholders(_translation);
-    // The reference string comes from the app, so if it can't be parsed the translation can't be
-    // judged - don't reject a perfectly good pack over it.
-    if( source.has_unknown || source.mixed_positions )
-        return true;
-    // A translation with an unparsable conversion ("%n"), an out-of-range argument or a mix of
-    // positional and sequential ones is never accepted.
-    if( translation.has_unknown || translation.mixed_positions )
-        return false;
-    // A plural source ("Compressing %#@items@") consumes the count and expands it to a localized
-    // string; a translation written as a plain format must therefore use the *non-plural* form from
-    // the key ("%d"), not an object placeholder.
-    if( [_source rangeOfString:@"%#@"].location != NSNotFound && !LooksLikeObjectIdentifier(_key) ) {
-        const PlaceholderList key_placeholders = ParsePlaceholders(_key);
-        if( !key_placeholders.has_unknown && !key_placeholders.mixed_positions )
-            return CompareArguments(key_placeholders, translation);
-    }
-    return CompareArguments(source, translation);
-}
+using nc::lang::detail::LooksLikeObjectIdentifier;
+using nc::lang::detail::PlaceholdersCompatible;
 
 NSArray<NSBundle *> *RelevantBundles()
 {

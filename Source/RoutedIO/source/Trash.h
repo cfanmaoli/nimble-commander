@@ -6,6 +6,11 @@
 
 namespace nc::routedio::detail {
 
+// Opens and validates the trash and its parent relative to a pinned ancestor directory. The caller
+// owns the returned descriptor; failures return -1 and set errno. No parent/leaf symlink is followed.
+// Discovery only needs a searchable descriptor; deletion also needs read access to enumerate it.
+int OpenTrashDirectory(const std::string &_path, bool _read_contents = true);
+
 // Removes a staging copy created by a cross-volume put-back: restores owner write access on every
 // directory inside it and then deletes the tree. Returns 0, or the errno when the staging entry
 // still couldn't be removed. Exposed mainly for testing.
