@@ -4,7 +4,6 @@
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <Base/CFPtr.h>
-#include <Base/algo.h>
 #include <cerrno>
 #include <copyfile.h>
 #include <cstdint>
@@ -24,6 +23,52 @@
 namespace nc::routedio {
 
 namespace {
+// Closes a descriptor or a directory on scope exit. The errno of a failed operation is kept
+// intact: close() itself may fail and overwrite it, and the callers report the original error.
+class ScopedFd
+{
+public:
+    explicit ScopedFd(const int _fd) noexcept : m_Fd(_fd) {}
+    ScopedFd(const ScopedFd &) = delete;
+    ScopedFd &operator=(const ScopedFd &) = delete;
+    ~ScopedFd() noexcept { Reset(); }
+
+    void Reset() noexcept
+    {
+        if( m_Fd < 0 )
+            return;
+        const int error = errno;
+        ::close(m_Fd);
+        errno = error;
+        m_Fd = -1;
+    }
+
+    [[nodiscard]] int Release() noexcept
+    {
+        const int fd = m_Fd;
+        m_Fd = -1;
+        return fd;
+    }
+
+private:
+    int m_Fd;
+};
+
+class ScopedDir
+{
+public:
+    explicit ScopedDir(DIR *_dir) noexcept : m_Dir(_dir) {}
+    ScopedDir(const ScopedDir &) = delete;
+    ScopedDir &operator=(const ScopedDir &) = delete;
+    ~ScopedDir() noexcept
+    {
+        if( m_Dir )
+            ::closedir(m_Dir);
+    }
+
+private:
+    DIR *m_Dir;
+};
 
 constexpr const char *g_OriginalPathAttr = "info.filesmanager.trash.originalPath";
 
@@ -556,11 +601,7 @@ int OpenTrashDirectory(const std::string &_path, const bool _read_contents)
     if( ancestor_fd < 0 )
         return -1;
     // close() must not overwrite the error reported by a failed openat()/fstat().
-    const auto close_ancestor = at_scope_end([ancestor_fd] {
-        const int error = errno;
-        ::close(ancestor_fd);
-        errno = error;
-    });
+    const ScopedFd close_ancestor{ancestor_fd};
     const std::string parent_name = parent == parent.root_path() ? "." : parent.filename().string();
     if( parent_name == ".." ) {
         errno = EINVAL;
@@ -569,11 +610,7 @@ int OpenTrashDirectory(const std::string &_path, const bool _read_contents)
     const int parent_fd = ::openat(ancestor_fd, parent_name.c_str(), search_flags);
     if( parent_fd < 0 )
         return -1;
-    const auto close_parent = at_scope_end([parent_fd] {
-        const int error = errno;
-        ::close(parent_fd);
-        errno = error;
-    });
+    const ScopedFd close_parent{parent_fd};
 
     const int fd = ::openat(parent_fd, path.filename().c_str(), _read_contents ? flags : search_flags);
     if( fd < 0 )
@@ -744,7 +781,7 @@ static bool RemoveTrashEntry(const int _dir_fd, const char *_name, const dev_t _
     const int fd = ::openat(_dir_fd, _name, O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
     if( fd < 0 )
         return false;
-    const auto close_fd = at_scope_end([fd] { ::close(fd); });
+    const ScopedFd close_fd{fd};
 
     struct stat opened;
     if( ::fstat(fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_dev != _trash_dev ||
@@ -754,7 +791,7 @@ static bool RemoveTrashEntry(const int _dir_fd, const char *_name, const dev_t _
     DIR *const dir = ::fdopendir(dup(fd));
     if( dir == nullptr )
         return false;
-    const auto close_dir = at_scope_end([dir] { ::closedir(dir); });
+    const ScopedDir close_dir{dir};
 
     std::vector<std::string> children;
     bool read_ok = true;
@@ -792,7 +829,7 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
         result.error = errno;
         return result;
     }
-    const auto close_fd = at_scope_end([dir_fd] { ::close(dir_fd); });
+    const ScopedFd close_fd{dir_fd};
 
     struct stat opened;
     if( ::fstat(dir_fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_uid != getuid() ) {
@@ -805,7 +842,7 @@ EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
         result.error = errno;
         return result;
     }
-    const auto close_dir = at_scope_end([dir] { ::closedir(dir); });
+    const ScopedDir close_dir{dir};
     std::vector<std::string> names;
     int read_error = 0;
     for( ;; ) {
