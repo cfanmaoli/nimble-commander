@@ -158,18 +158,54 @@ void CompressionJob::Perform()
     else
         return;
 
-    BuildArchive();
+    BuildArchive(proposed_arcname);
 }
 
-bool CompressionJob::BuildArchive()
+bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
 {
-    const auto flags =
-        VFSFlags::OF_Write | VFSFlags::OF_Create | VFSFlags::OF_IRUsr | VFSFlags::OF_IWUsr | VFSFlags::OF_IRGrp;
-    const std::expected<std::shared_ptr<VFSFile>, Error> exp_file = m_DstVFS->CreateFile(m_TargetArchivePath);
-    if( !exp_file )
-        return false; // TODO: use error from exp_file
+    // FindSuitableFilename() looked at the directory before the source scan, so the name it picked
+    // can be taken by now. Claim it atomically (OF_NoExist is O_EXCL on the native host) and pick
+    // another free name when that fails, instead of silently opening and overwriting whatever now
+    // sits there. Without O_EXCL the old code would also have corrupted an existing file - the
+    // open does not truncate and libarchive starts writing at offset zero.
+    const auto flags = VFSFlags::OF_Write | VFSFlags::OF_Create | VFSFlags::OF_NoExist | VFSFlags::OF_IRUsr |
+                       VFSFlags::OF_IWUsr | VFSFlags::OF_IRGrp;
+    std::expected<void, Error> open_rc = std::unexpected(Error{Error::POSIX, EIO});
+    for( int attempt = 0; attempt != 16; ++attempt ) {
+        const std::expected<std::shared_ptr<VFSFile>, Error> exp_file = m_DstVFS->CreateFile(m_TargetArchivePath);
+        if( !exp_file ) {
+            m_TargetWriteError(exp_file.error(), m_TargetArchivePath, *m_DstVFS);
+            Stop();
+            return false;
+        }
+        m_TargetFile = *exp_file;
+        open_rc = m_TargetFile->Open(flags);
+        if( open_rc ) {
+            m_TargetCreated = true;
+            break;
+        }
+        if( open_rc.error() != Error{Error::POSIX, EEXIST} ) {
+            m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
+            Stop();
+            return false;
+        }
+        // The name is gone - try the next candidate the naming scheme offers.
+        m_TargetFile.reset();
+        const std::string next_path = FindSuitableFilename(_proposed_arcname);
+        if( next_path.empty() || next_path == m_TargetArchivePath ) {
+            m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
+            Stop();
+            return false;
+        }
+        m_TargetArchivePath = next_path;
+        m_TargetPathDefined();
+    }
+    if( !open_rc ) {
+        m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
+        Stop();
+        return false;
+    }
 
-    m_TargetFile = *exp_file;
     // Every setup failure below has to release the archive object and the half-created target file,
     // otherwise each attempt leaks libarchive state and leaves an unreadable file behind.
     const auto cleanup_failed_archive = [&] {
@@ -178,101 +214,92 @@ bool CompressionJob::BuildArchive()
             m_Archive = nullptr;
         }
         std::ignore = m_TargetFile->Close();
-        std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+        if( m_TargetCreated )
+            std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
     };
-    const std::expected<void, Error> open_rc = m_TargetFile->Open(flags);
-    if( open_rc ) {
-        m_Archive = archive_write_new();
-        switch( m_Options.format ) {
-            case CompressionFormat::zip:
-                archive_write_set_format_zip(m_Archive);
-                archive_write_add_filter_none(m_Archive);
-                SetWriteOptions(m_Archive, fmt::format("zip:compression={}", ZipCompressionName(m_Options.method)));
-                SetWriteOptions(m_Archive, fmt::format("zip:compression-level={}", m_Options.level));
-                break;
-            case CompressionFormat::sevenzip:
-                archive_write_set_format_7zip(m_Archive);
-                archive_write_add_filter_none(m_Archive);
-                SetWriteOptions(m_Archive,
-                                fmt::format("7zip:compression={}", SevenZipCompressionName(m_Options.method)));
-                SetWriteOptions(m_Archive, fmt::format("7zip:compression-level={}", m_Options.level));
-                break;
-            case CompressionFormat::tar: {
-                archive_write_set_format_pax(m_Archive);
-                switch( m_Options.method ) {
-                    case CompressionMethod::gzip:
-                        archive_write_add_filter_gzip(m_Archive);
-                        break;
-                    case CompressionMethod::bzip2:
-                        archive_write_add_filter_bzip2(m_Archive);
-                        break;
-                    case CompressionMethod::xz:
-                        archive_write_add_filter_xz(m_Archive);
-                        break;
-                    case CompressionMethod::zstd:
-                        archive_write_add_filter_zstd(m_Archive);
-                        break;
-                    default:
-                        archive_write_add_filter_none(m_Archive);
-                        break;
-                }
-                if( const char *filter = TarFilterOptionName(m_Options.method) )
-                    SetWriteOptions(m_Archive, fmt::format("{}:compression-level={}", filter, m_Options.level));
-                break;
+    m_Archive = archive_write_new();
+    switch( m_Options.format ) {
+        case CompressionFormat::zip:
+            archive_write_set_format_zip(m_Archive);
+            archive_write_add_filter_none(m_Archive);
+            SetWriteOptions(m_Archive, fmt::format("zip:compression={}", ZipCompressionName(m_Options.method)));
+            SetWriteOptions(m_Archive, fmt::format("zip:compression-level={}", m_Options.level));
+            break;
+        case CompressionFormat::sevenzip:
+            archive_write_set_format_7zip(m_Archive);
+            archive_write_add_filter_none(m_Archive);
+            SetWriteOptions(m_Archive, fmt::format("7zip:compression={}", SevenZipCompressionName(m_Options.method)));
+            SetWriteOptions(m_Archive, fmt::format("7zip:compression-level={}", m_Options.level));
+            break;
+        case CompressionFormat::tar: {
+            archive_write_set_format_pax(m_Archive);
+            switch( m_Options.method ) {
+                case CompressionMethod::gzip:
+                    archive_write_add_filter_gzip(m_Archive);
+                    break;
+                case CompressionMethod::bzip2:
+                    archive_write_add_filter_bzip2(m_Archive);
+                    break;
+                case CompressionMethod::xz:
+                    archive_write_add_filter_xz(m_Archive);
+                    break;
+                case CompressionMethod::zstd:
+                    archive_write_add_filter_zstd(m_Archive);
+                    break;
+                default:
+                    archive_write_add_filter_none(m_Archive);
+                    break;
             }
+            if( const char *filter = TarFilterOptionName(m_Options.method) )
+                SetWriteOptions(m_Archive, fmt::format("{}:compression-level={}", filter, m_Options.level));
+            break;
         }
+    }
 
-        if( !m_Password.empty() ) {
-            if( archive_write_set_options(m_Archive, "zip:encryption=aes256") != ARCHIVE_OK ) {
-                cleanup_failed_archive();
-                Stop();
-                return false;
-            }
-            if( archive_write_set_options(m_Archive, "zip:experimental") != ARCHIVE_OK ) {
-                cleanup_failed_archive();
-                Stop();
-                return false;
-            }
-            if( archive_write_set_passphrase(m_Archive, m_Password.c_str()) != ARCHIVE_OK ) {
-                cleanup_failed_archive();
-                Stop();
-                return false;
-            }
-        }
-
-        if( archive_write_open(m_Archive, this, nullptr, WriteCallback, nullptr) != ARCHIVE_OK ) {
-            m_TargetWriteError(
-                m_TargetFileLastError.value_or(Error{Error::POSIX, EIO}), m_TargetArchivePath, *m_DstVFS);
+    if( !m_Password.empty() ) {
+        if( archive_write_set_options(m_Archive, "zip:encryption=aes256") != ARCHIVE_OK ) {
             cleanup_failed_archive();
             Stop();
             return false;
         }
-        archive_write_set_bytes_in_last_block(m_Archive, 1);
-
-        ProcessItems();
-
-        const int close_rc = archive_write_close(m_Archive);
-        archive_write_free(m_Archive);
-        m_Archive = nullptr;
-
-        const std::expected<void, Error> target_close_rc = m_TargetFile->Close();
-
-        // A failed close leaves an incomplete archive behind - a full disk or a central directory
-        // that couldn't be written must not be reported as a successful operation.
-        if( close_rc != ARCHIVE_OK || !target_close_rc ) {
-            m_TargetWriteError(
-                target_close_rc ? Error{Error::POSIX, EIO} : target_close_rc.error(), m_TargetArchivePath, *m_DstVFS);
+        if( archive_write_set_options(m_Archive, "zip:experimental") != ARCHIVE_OK ) {
+            cleanup_failed_archive();
             Stop();
+            return false;
         }
-
-        if( IsStopped() ) {
-            std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+        if( archive_write_set_passphrase(m_Archive, m_Password.c_str()) != ARCHIVE_OK ) {
+            cleanup_failed_archive();
+            Stop();
+            return false;
         }
     }
-    else {
-        m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
+
+    if( archive_write_open(m_Archive, this, nullptr, WriteCallback, nullptr) != ARCHIVE_OK ) {
+        m_TargetWriteError(m_TargetFileLastError.value_or(Error{Error::POSIX, EIO}), m_TargetArchivePath, *m_DstVFS);
+        cleanup_failed_archive();
         Stop();
         return false;
+    }
+    archive_write_set_bytes_in_last_block(m_Archive, 1);
+
+    ProcessItems();
+
+    const int close_rc = archive_write_close(m_Archive);
+    archive_write_free(m_Archive);
+    m_Archive = nullptr;
+
+    const std::expected<void, Error> target_close_rc = m_TargetFile->Close();
+
+    // A failed close leaves an incomplete archive behind - a full disk or a central directory
+    // that couldn't be written must not be reported as a successful operation.
+    if( close_rc != ARCHIVE_OK || !target_close_rc ) {
+        m_TargetWriteError(
+            target_close_rc ? Error{Error::POSIX, EIO} : target_close_rc.error(), m_TargetArchivePath, *m_DstVFS);
+        Stop();
+    }
+
+    if( IsStopped() && m_TargetCreated ) {
+        std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
     }
 
     return true;

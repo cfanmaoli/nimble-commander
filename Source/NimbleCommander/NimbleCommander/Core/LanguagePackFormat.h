@@ -147,6 +147,15 @@ inline PlaceholderList ParsePlaceholders(NSString *_string)
                 break;
         }
         if( kind.empty() ) {
+            // printf's "*" supplies the width or the precision from an extra argument. This
+            // validator doesn't model those argument positions yet, so refuse the string instead of
+            // treating the "*" as literal text - the latter let "%*d" pass as a plain percent and
+            // under-counted the arguments the format really consumes.
+            if( conversion == '*' ) {
+                result.has_unknown = true;
+                ++i;
+                continue;
+            }
             // A '%' followed by a character that can't start a conversion is a literal percent sign
             // in the original text ("Percentage (%)", "%? Enter the value of the parameter"): it
             // consumes no argument and doesn't invalidate the string. A conversion that printf does

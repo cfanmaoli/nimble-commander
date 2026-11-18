@@ -70,7 +70,7 @@ private:
                   unsigned _basepath_no,
                   const base::chained_strings::node *_prefix,
                   Source &_ctx);
-    bool BuildArchive();
+    bool BuildArchive(const std::string &_proposed_arcname);
     void ProcessItems();
     void ProcessItem(const base::chained_strings::node &_node, int _index);
     StepResult ProcessDirectoryItem(int _index, const std::string &_relative_path, const std::string &_full_path);
@@ -98,6 +98,9 @@ private:
 
     struct ::archive *m_Archive = nullptr;
     std::shared_ptr<VFSFile> m_TargetFile;
+    // True only after the target was created by this job with OF_NoExist - cleanup must never
+    // unlink a file that appeared under the chosen name from somewhere else.
+    bool m_TargetCreated = false;
     std::optional<Error> m_TargetFileLastError;
 
     std::unique_ptr<const Source> m_Source;

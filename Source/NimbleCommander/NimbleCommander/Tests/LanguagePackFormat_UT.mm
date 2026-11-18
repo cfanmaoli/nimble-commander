@@ -22,6 +22,10 @@ TEST_CASE("LanguagePack format validation preserves argument types")
         {.source = @"%hhd", .translation = @"%d", .compatible = false},
         {.source = @"%f", .translation = @"%Lf", .compatible = false},
         {.source = @"Temporary Panel (%@)", .translation = @"Temporary Panel (%n)", .compatible = false},
+        // Dynamic width/precision consume extra arguments; until the validator models them, a
+        // translation using "*" must not be accepted as if it were plain text.
+        {.source = @"Temporary Panel (%@)", .translation = @"%*d Temporary Panel (%@)", .compatible = false},
+        {.source = @"Temporary Panel (%@)", .translation = @"%.*f Temporary Panel (%@)", .compatible = false},
         {.source = @"Temporary Panel (%@)", .translation = @"Temporary Panel (%2$@)", .compatible = false},
         {.source = @"%@ %ld", .translation = @"%1$@ %d", .compatible = false},
         {.source = @"Progress 100%", .translation = @"%n", .compatible = false},

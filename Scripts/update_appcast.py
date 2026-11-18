@@ -21,6 +21,7 @@ lives in NimbleCommander-NonMAS-Info.plist as SUPublicEDKey.
 import argparse
 import base64
 import email.utils
+import hashlib
 import json
 import os
 import re
@@ -82,10 +83,16 @@ def pick_releases(releases, wanted_tag):
 
 
 def download(asset, cache):
-    target = cache / asset["name"]
+    # Key the cached file by the GitHub asset ID: the rolling nightly reuses one asset name, so a
+    # name-only cache could sign yesterday's DMG while linking today's. The digest (when the API
+    # provides one) is verified as well, so a replaced asset with the same size is not reused.
+    key = f"{asset.get('id', 'unknown')}-{asset['name']}"
+    target = cache / key
     cache.mkdir(parents=True, exist_ok=True)
     if target.exists() and target.stat().st_size == asset["size"]:
-        return target
+        digest = asset.get("digest")
+        if digest is None or digest == "sha256:" + hashlib.sha256(target.read_bytes()).hexdigest():
+            return target
     print(f"downloading {asset['name']}", file=sys.stderr)
     tmp = target.with_suffix(target.suffix + ".part")
     with urllib.request.urlopen(asset["browser_download_url"], timeout=600) as response, open(tmp, "wb") as out:
