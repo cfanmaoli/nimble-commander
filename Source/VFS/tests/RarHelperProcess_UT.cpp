@@ -177,6 +177,11 @@ TEST_CASE(PREFIX "only a helper that speaks the known protocol is used")
     const auto cleanup = at_scope_end([&] {
         std::error_code ec;
         std::filesystem::remove_all(home_helper.parent_path().parent_path().parent_path(), ec);
+        // FindHelper() caches its answer; without this reset the cache would keep pointing at the
+        // fake and every helper test that runs later in this process would try to spawn a missing
+        // file. (An environment without a real helper is the normal CI case, so this matters.)
+        nc::vfs::rar::SetHelperEnabled(false);
+        nc::vfs::rar::SetHelperEnabled(true);
     });
 
     // A helper that reports a protocol this build doesn't know is treated as unusable.
