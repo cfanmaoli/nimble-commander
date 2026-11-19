@@ -1,5 +1,29 @@
 # What's New in Nimble Commander-Fork
 
+## Version 1.9.3b (19 Nov 2026)
+
+### Import settings from the original app
+- **Preferences -> General -> "Import Settings:" -> "Import..."** locates the original Nimble
+  Commander's data (both the normal Application Support directory and the App Store container),
+  validates it, backs up the current settings and imports preferences, saved tabs, network
+  connections, language packs and syntax highlighting. The app restarts and applies the staged
+  import before loading its configuration, so the saved tabs come back with that launch.
+
+### Fixes
+- Compression targets are created exclusively (OF_NoExist / O_EXCL): if the name chosen before the
+  source scan is taken by the time the archive is opened, the job picks the next free name instead
+  of overwriting the file that appeared there. Failure cleanup only unlinks files the job created.
+- Language packs: printf's dynamic width/precision ("%*d", "%.*f") is rejected instead of being
+  treated as literal percent signs, so it can no longer bypass argument validation.
+- update_appcast.py keys its download cache by the GitHub asset id and verifies the asset digest.
+- The fake-helper test no longer leaves the helper lookup cache pointing at a removed bundle - this
+  was what failed the nightly CI on machines without an installed helper.
+- The Unsigned build scheme now produces the same app and executable name as the release build, so
+  local, nightly and release builds share one Application Support directory.
+
+This build is signed with the maintainer's Apple Development identity (team 359W39ZS37), so
+Administrator Mode works; it is not notarised.
+
 ## Version 1.9.3a (17 Nov 2026)
 
 A follow-up to 1.9.3 with the fixes from the code audit - same features, fewer sharp edges.
