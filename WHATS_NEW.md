@@ -1,5 +1,25 @@
 # What's New in Nimble Commander-Fork
 
+## Version 1.9.3c (20 Nov 2026)
+
+### Language export fixed
+- Exporting the current language now produces complete files for the base language and for
+  imported language packs. Previously an English export left 1346 of 1488 translations empty and
+  wrote Interface Builder object identifiers instead of the English source for 934 entries, while
+  exporting an active pack silently exported the system language under the pack's code.
+- Format conversions are protected while translating and validated afterwards; the exported
+  \`baseLanguage\` is always \`en\` and a pack keeps its own display name.
+
+### Refreshed translations
+- The 92 packs in [nc-language](https://github.com/cfanmaoli/nc-language) were regenerated from the
+  1.9.3b English reference (1488 entries). Product names such as "Nimble Commander-Fork" are kept
+  verbatim, and plural/format entries are import-safe.
+- The Japanese and Russian packs were imported as a smoke test: 1419 / 1420 entries, no placeholder
+  mismatches.
+
+This build is signed with the maintainer's Apple Development identity (team 359W39ZS37), so
+Administrator Mode works; it is not notarised.
+
 ## Version 1.9.3b (19 Nov 2026)
 
 ### Import settings from the original app
