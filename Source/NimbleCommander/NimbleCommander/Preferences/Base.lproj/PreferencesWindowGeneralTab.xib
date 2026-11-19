@@ -74,7 +74,7 @@
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="160" id="upi-w1"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Original app settings:" id="upi-c1">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Import Settings:" id="upi-c1">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -82,7 +82,7 @@
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upi-btn">
                     <rect key="frame" x="321" y="31" width="144" height="32"/>
-                    <buttonCell key="cell" type="push" title="Import Settings…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="upi-c2">
+                    <buttonCell key="cell" type="push" title="Import…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="upi-c2">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

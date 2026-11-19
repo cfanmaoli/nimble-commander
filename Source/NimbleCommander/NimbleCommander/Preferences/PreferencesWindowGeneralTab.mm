@@ -27,13 +27,11 @@ using namespace std::literals;
 {
     [super loadView];
     self.ImportUpstreamLabel.stringValue =
-        NSLocalizedStringFromTable(@"Original app settings:",
+        NSLocalizedStringFromTable(@"Import Settings:",
                                    @"Preferences",
-                                   "Label for the button importing the settings of the original Nimble Commander app");
-    self.ImportUpstreamButton.title =
-        NSLocalizedStringFromTable(@"Import Settings…",
-                                   @"Preferences",
-                                   "Button title importing the settings of the original Nimble Commander app");
+                                   "Label for the row importing the settings of the original Nimble Commander app");
+    self.ImportUpstreamButton.title = NSLocalizedStringFromTable(
+        @"Import…", @"Preferences", "Button title importing the settings of the original Nimble Commander app");
     if( !nc::base::AmISandboxed() ) {
         self.FSAccessResetButton.enabled = false;
     }
