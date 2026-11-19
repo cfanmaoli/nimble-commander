@@ -1197,7 +1197,7 @@
 		CFA3B2A42DECB01F006001F9 /* PanelGalleryCollectionViewItemCarrier.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = PanelGalleryCollectionViewItemCarrier.mm; path = NimbleCommander/States/FilePanels/Gallery/PanelGalleryCollectionViewItemCarrier.mm; sourceTree = "<group>"; };
 		CFA3D7C519625F71006A30A1 /* GTMHotKeyTextField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GTMHotKeyTextField.h; path = ../../3rd_Party/GTMHotKeyTextField/GTMHotKeyTextField.h; sourceTree = SOURCE_ROOT; };
 		CFA3D7C619625F71006A30A1 /* GTMHotKeyTextField.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = GTMHotKeyTextField.mm; path = ../../3rd_Party/GTMHotKeyTextField/GTMHotKeyTextField.mm; sourceTree = SOURCE_ROOT; };
-		CFA53A6D1D433E2A00C562A7 /* NimbleCommander-Unsigned.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NimbleCommander-Unsigned.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFA53A6D1D433E2A00C562A7 /* Nimble Commander-Fork.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nimble Commander-Fork.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFA6C85A2015944D00CD7681 /* PanelControllerPersistency.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PanelControllerPersistency.h; path = NimbleCommander/States/FilePanels/PanelControllerPersistency.h; sourceTree = SOURCE_ROOT; };
 		CFA6C85B2015944D00CD7681 /* PanelControllerPersistency.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PanelControllerPersistency.mm; path = NimbleCommander/States/FilePanels/PanelControllerPersistency.mm; sourceTree = SOURCE_ROOT; };
 		CFA7DFF61EB6FD82001FE66C /* OpenNetworkConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenNetworkConnection.h; path = NimbleCommander/States/FilePanels/Actions/OpenNetworkConnection.h; sourceTree = SOURCE_ROOT; };
@@ -2141,7 +2141,7 @@
 			children = (
 				CFC5121116C4BD3D00D247EE /* Nimble Commander-Fork.app */,
 				CF6D997D196675290077B146 /* Nimble Commander-Fork.app */,
-				CFA53A6D1D433E2A00C562A7 /* NimbleCommander-Unsigned.app */,
+				CFA53A6D1D433E2A00C562A7 /* Nimble Commander-Fork.app */,
 				CF5DE07E2583E73300604DEE /* libNimbleCommanderCommon.a */,
 				CF5DE0B2258414CA00604DEE /* NimbleCommanderUT */,
 			);
@@ -2444,7 +2444,7 @@
 			);
 			name = "NimbleCommander-Unsigned";
 			productName = Directories;
-			productReference = CFA53A6D1D433E2A00C562A7 /* NimbleCommander-Unsigned.app */;
+			productReference = CFA53A6D1D433E2A00C562A7 /* Nimble Commander-Fork.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CFC5121016C4BD3D00D247EE /* NimbleCommander-NonMAS */ = {
@@ -3834,7 +3834,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Nimble Commander-Fork";
 			};
 			name = Debug;
 		};
@@ -3849,7 +3849,7 @@
 				);
 				INFOPLIST_FILE = "NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = info.filesmanager.Files;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Nimble Commander-Fork";
 			};
 			name = Release;
 		};

@@ -324,7 +324,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CFA539591D433E2A00C562A7"
-               BuildableName = "NimbleCommander-Unsigned.app"
+               BuildableName = "Nimble Commander-Fork.app"
                BlueprintName = "NimbleCommander-Unsigned"
                ReferencedContainer = "container:NimbleCommander.xcodeproj">
             </BuildableReference>

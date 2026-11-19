@@ -11,4 +11,4 @@ APP_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= 
 APP_PATH=$APP_DIR/$APP_NAME
 
 $XC build
-open -a $APP_PATH
+open -a "$APP_PATH"
