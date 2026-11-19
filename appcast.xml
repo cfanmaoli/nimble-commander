@@ -7,16 +7,16 @@
       the GitHub releases of the fork; the nightly pre-release is kept in its own channel.</description>
     <language>en</language>
     <item>
-      <title>Nimble Commander-Fork 1.9.3b</title>
-      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3b</link>
-      <pubDate>Thu, 19 Nov 2026 13:40:01 +0000</pubDate>
-      <sparkle:version>4539</sparkle:version>
-      <sparkle:shortVersionString>1.9.3b</sparkle:shortVersionString>
+      <title>Nimble Commander-Fork 1.9.3c</title>
+      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3c</link>
+      <pubDate>Thu, 19 Nov 2026 16:49:17 +0000</pubDate>
+      <sparkle:version>4543</sparkle:version>
+      <sparkle:shortVersionString>1.9.3c</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3b</sparkle:releaseNotesLink>
-      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3b/nimble-commander-fork-1.9.3b.dmg"
-                 sparkle:edSignature="ZpiimRSIRFOx1tuyQFMy4b2eSYnJyf2gPcouHSJrgyViTmENhv2OSg9asd3WBxSBSoBzd/gDDdOvKJM1M6VeAQ=="
-                 length="11633049"
+      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3c</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3c/nimble-commander-fork-1.9.3c.dmg"
+                 sparkle:edSignature="/iQ8m1DrtMZJEQ0ZBw1s+NuMwVsgsnn6pMhJZ9TH3WaCQpZ/YG0oZf9vN+SfuR+kefBmfOVZ81YAFmMn18C1DQ=="
+                 length="11634484"
                  type="application/octet-stream" />
     </item>
     <item>
