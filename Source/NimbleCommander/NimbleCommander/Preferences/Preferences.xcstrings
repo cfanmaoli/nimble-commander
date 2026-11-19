@@ -2237,6 +2237,40 @@
           }
         }
       }
+    },
+    "Original app settings:" : {
+      "comment" : "Label for the button importing the settings of the original Nimble Commander app",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Original app settings:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原版应用设置："
+          }
+        }
+      }
+    },
+    "Import Settings…" : {
+      "comment" : "Button title importing the settings of the original Nimble Commander app",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Settings…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入设置"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

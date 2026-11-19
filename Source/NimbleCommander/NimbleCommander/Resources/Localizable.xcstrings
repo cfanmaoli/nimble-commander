@@ -2777,6 +2777,108 @@
           }
         }
       }
+    },
+    "Couldn't import the settings" : {
+      "comment" : "Alert title when importing settings from the original Nimble Commander app failed",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't import the settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法导入设置"
+          }
+        }
+      }
+    },
+    "Import settings from Nimble Commander?" : {
+      "comment" : "Question offering to import the settings of the original Nimble Commander app",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import settings from Nimble Commander?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要从 Nimble Commander 导入设置吗？"
+          }
+        }
+      }
+    },
+    "Settings were found at:\n%@\n\nImporting replaces the current preferences and saved tabs; they are backed up first. Nimble Commander-Fork then restarts." : {
+      "comment" : "Settings import explanation, %@ is the source path",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings were found at:\n%@\n\nImporting replaces the current preferences and saved tabs; they are backed up first. Nimble Commander-Fork then restarts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在以下位置找到了设置：\n%@\n\n导入会替换当前的偏好设置和已保存的标签页；导入前会先备份。随后 Nimble Commander-Fork 会重启。"
+          }
+        }
+      }
+    },
+    "Import and Restart" : {
+      "comment" : "Button that imports the settings of the original Nimble Commander app and restarts",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import and Restart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入并重启"
+          }
+        }
+      }
+    },
+    "No Nimble Commander settings found" : {
+      "comment" : "Alert title when the original app's settings cannot be located",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Nimble Commander settings found"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到 Nimble Commander 的设置"
+          }
+        }
+      }
+    },
+    "Nimble Commander-Fork looked for the settings of the original Nimble Commander app but didn't find any." : {
+      "comment" : "Alert text when the original app's settings cannot be located",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nimble Commander-Fork looked for the settings of the original Nimble Commander app but didn't find any."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimble Commander-Fork 查找了原版 Nimble Commander 应用的设置，但没有找到。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

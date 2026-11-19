@@ -30,8 +30,10 @@ using namespace std::literals;
         NSLocalizedStringFromTable(@"Original app settings:",
                                    @"Preferences",
                                    "Label for the button importing the settings of the original Nimble Commander app");
-    self.ImportUpstreamButton.title = NSLocalizedStringFromTable(
-        @"Import…", @"Preferences", "Button title importing the settings of the original Nimble Commander app");
+    self.ImportUpstreamButton.title =
+        NSLocalizedStringFromTable(@"Import Settings…",
+                                   @"Preferences",
+                                   "Button title importing the settings of the original Nimble Commander app");
     if( !nc::base::AmISandboxed() ) {
         self.FSAccessResetButton.enabled = false;
     }
