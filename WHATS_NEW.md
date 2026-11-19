@@ -8,7 +8,7 @@
   wrote Interface Builder object identifiers instead of the English source for 934 entries, while
   exporting an active pack silently exported the system language under the pack's code.
 - Format conversions are protected while translating and validated afterwards; the exported
-  \`baseLanguage\` is always \`en\` and a pack keeps its own display name.
+  `baseLanguage` is always `en` and a pack keeps its own display name.
 
 ### Refreshed translations
 - The 92 packs in [nc-language](https://github.com/cfanmaoli/nc-language) were regenerated from the
