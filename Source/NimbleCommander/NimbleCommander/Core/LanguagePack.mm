@@ -211,7 +211,11 @@ NSDictionary<NSString *, NSDictionary *> *ManifestIndex()
 NSMutableDictionary *
 MakeEntry(NSString *_bundle, NSString *_table, NSString *_key, NSString *_translation, NSDictionary *_manifest_entry)
 {
+    // ManifestIndex() stores the English original under "en", while the raw manifest uses
+    // "source". Accept both so a caller that passes either form keeps the original text.
     NSString *source = [_manifest_entry[@"en"] isKindOfClass:NSString.class] ? _manifest_entry[@"en"] : nil;
+    if( source.length == 0 && [_manifest_entry[@"source"] isKindOfClass:NSString.class] )
+        source = _manifest_entry[@"source"];
     if( source.length == 0 )
         source = LooksLikeObjectIdentifier(_key) ? @"" : _key;
     NSMutableDictionary *const entry = [NSMutableDictionary dictionary];
@@ -604,39 +608,100 @@ bool RemovePack(const std::string &_identifier, std::string &_error)
     return true;
 }
 
+static NSString *LprojPathForLanguage(NSBundle *_bundle, const std::string &_language)
+{
+    NSString *const code = [NSString stringWithUTF8String:_language.c_str()];
+    NSString *const lproj =
+        [_bundle.resourcePath stringByAppendingPathComponent:[code stringByAppendingPathExtension:@"lproj"]];
+    return [[NSFileManager defaultManager] fileExistsAtPath:lproj] ? lproj : nil;
+}
+
+static NSDictionary<NSString *, NSString *> *LoadPackTranslations(const std::string &_identifier, std::string &_error)
+{
+    NSData *const data = [NSData dataWithContentsOfFile:FromPath(PackFileFor(_identifier))];
+    if( data.length == 0 ) {
+        _error = "unable to read the active language pack";
+        return nil;
+    }
+    const id root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+    if( ![root isKindOfClass:NSDictionary.class] ) {
+        _error = "the active language pack is not a JSON object";
+        return nil;
+    }
+    NSArray *const entries = static_cast<NSDictionary *>(root)[@"entries"];
+    if( ![entries isKindOfClass:NSArray.class] ) {
+        _error = "the active language pack has no entries";
+        return nil;
+    }
+    NSMutableDictionary<NSString *, NSString *> *const result =
+        [NSMutableDictionary dictionaryWithCapacity:entries.count];
+    for( NSDictionary *entry in entries ) {
+        if( ![entry isKindOfClass:NSDictionary.class] )
+            continue;
+        NSString *const bundle = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+        NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
+        NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
+        if( key.length == 0 || [table isEqualToString:kInfoPlistTable] )
+            continue;
+        result[EntryKey(bundle, table, key)] =
+            [entry[@"translation"] isKindOfClass:NSString.class] ? entry[@"translation"] : @"";
+    }
+    return [result copy];
+}
+
 bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error)
 {
     @autoreleasepool {
+        _error.clear();
+        const std::string current_language = CurrentLanguage();
+        const std::string pack_identifier = ActivePackIdentifier();
+        const bool is_pack = !pack_identifier.empty();
+        const bool is_base_language = current_language == "en";
+
+        NSDictionary<NSString *, NSString *> *pack_translations = nil;
+        if( is_pack ) {
+            pack_translations = LoadPackTranslations(pack_identifier, _error);
+            if( pack_translations == nil )
+                return false;
+        }
+
         NSDictionary<NSString *, NSDictionary *> *const manifest = ManifestIndex();
         NSMutableArray *const entries = [NSMutableArray array];
         NSMutableSet<NSString *> *const seen = [NSMutableSet set];
 
-        for( NSBundle *bundle in RelevantBundles() ) {
-            NSString *const bundle_key = BundleKeyForBundle(bundle);
-            NSString *const lproj = CurrentLprojPath(bundle);
-            if( lproj == nil )
-                continue;
-            NSArray<NSString *> *const files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj
-                                                                                                    error:nil]
-                sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
-            for( NSString *file in files ) {
-                if( ![file.pathExtension isEqualToString:@"strings"] )
+        // A language pack has no .lproj of its own - its strings live in the pack file. Reading the
+        // bundle instead would silently export the system language under the pack's language code.
+        if( !is_pack ) {
+            for( NSBundle *bundle in RelevantBundles() ) {
+                NSString *const bundle_key = BundleKeyForBundle(bundle);
+                // Look only at the requested language: CurrentLprojPath() falls back to the
+                // bundle's preferred localization, which would mix the system language into an
+                // English or partially translated export.
+                NSString *const lproj = LprojPathForLanguage(bundle, current_language);
+                if( lproj == nil )
                     continue;
-                NSString *const table = file.stringByDeletingPathExtension;
-                if( [table isEqualToString:kInfoPlistTable] )
-                    continue; // the OS reads these on its own, we can't override them anyway
-                NSDictionary *const strings =
-                    [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
-                if( ![strings isKindOfClass:NSDictionary.class] )
-                    continue;
-                for( NSString *key in
-                     [strings.allKeys sortedArrayUsingSelector:@selector(localizedStandardCompare:)] ) {
-                    NSString *const value = strings[key];
-                    if( ![value isKindOfClass:NSString.class] )
+                NSArray<NSString *> *const files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:lproj
+                                                                                                        error:nil]
+                    sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
+                for( NSString *file in files ) {
+                    if( ![file.pathExtension isEqualToString:@"strings"] )
                         continue;
-                    [entries
-                        addObject:MakeEntry(bundle_key, table, key, value, manifest[EntryKey(bundle_key, table, key)])];
-                    [seen addObject:EntryKey(bundle_key, table, key)];
+                    NSString *const table = file.stringByDeletingPathExtension;
+                    if( [table isEqualToString:kInfoPlistTable] )
+                        continue; // the OS reads these on its own, we can't override them anyway
+                    NSDictionary *const strings =
+                        [NSDictionary dictionaryWithContentsOfFile:[lproj stringByAppendingPathComponent:file]];
+                    if( ![strings isKindOfClass:NSDictionary.class] )
+                        continue;
+                    for( NSString *key in
+                         [strings.allKeys sortedArrayUsingSelector:@selector(localizedStandardCompare:)] ) {
+                        NSString *const value = strings[key];
+                        if( ![value isKindOfClass:NSString.class] )
+                            continue;
+                        NSString *const combined = EntryKey(bundle_key, table, key);
+                        [entries addObject:MakeEntry(bundle_key, table, key, value, manifest[combined])];
+                        [seen addObject:combined];
+                    }
                 }
             }
         }
@@ -656,10 +721,20 @@ bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::strin
                 if( [seen containsObject:combined] )
                     continue;
                 [seen addObject:combined];
-                [entries addObject:MakeEntry(bundle_key, table, key, @"", entry)];
+                NSString *const translation = is_pack ? pack_translations[combined] ?: @"" : @"";
+                [entries addObject:MakeEntry(bundle_key, table, key, translation, manifest[combined])];
             }
 
-        const std::string current_language = CurrentLanguage();
+        // The English .lproj files are incomplete because Xcode only emits the localizations that
+        // have explicit translations; for the source language every missing value is its source.
+        if( is_base_language && !is_pack ) {
+            for( NSMutableDictionary *entry in entries ) {
+                NSString *const translation = entry[@"translation"];
+                if( translation.length == 0 )
+                    entry[@"translation"] = entry[@"source"] ?: @"";
+            }
+        }
+
         NSString *const language = [NSString stringWithUTF8String:current_language.c_str()];
         NSMutableDictionary *const root = [NSMutableDictionary dictionary];
         root[@"format"] = kPackFormat;
@@ -667,9 +742,15 @@ bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::strin
         root[@"application"] =
             (g_main_bundle ?: NSBundle.mainBundle).infoDictionary[@"CFBundleShortVersionString"] ?: @"";
         root[@"exportedAt"] = ISODateString();
-        root[@"baseLanguage"] = language;
+        root[@"baseLanguage"] = @"en";
         root[@"language"] = language;
-        root[@"languageName"] = [NSString stringWithUTF8String:DisplayNameForLanguage(current_language).c_str()];
+        if( is_pack ) {
+            NSString *const pack_name = [NSString stringWithUTF8String:ActivePackDisplayName().c_str()];
+            root[@"languageName"] = pack_name.length ? pack_name : language;
+        }
+        else {
+            root[@"languageName"] = [NSString stringWithUTF8String:DisplayNameForLanguage(current_language).c_str()];
+        }
         root[@"entryCount"] = @(entries.count);
         root[@"notes"] = @"Translate the 'translation' fields (or leave them empty to fall back to the "
                           "original string), set 'language' to your language code, then import this file "
