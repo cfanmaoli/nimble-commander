@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CFA110000000000000000001 /* UpstreamSettingsImport.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA110000000000000000004 /* UpstreamSettingsImport.mm */; };
+		CFA110000000000000000002 /* UpstreamSettingsImport_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFA110000000000000000005 /* UpstreamSettingsImport_UT.mm */; };
 		C0DE20261117000100000001 /* LanguagePackFormat_UT.mm in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20261117000100000002 /* LanguagePackFormat_UT.mm */; };
 		A1B2C3D40000000000000051 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
 		A1B2C3D40000000000000052 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
@@ -880,6 +882,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CFA110000000000000000003 /* UpstreamSettingsImport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpstreamSettingsImport.h; path = NimbleCommander/Core/UpstreamSettingsImport.h; sourceTree = SOURCE_ROOT; };
+		CFA110000000000000000004 /* UpstreamSettingsImport.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = UpstreamSettingsImport.mm; path = NimbleCommander/Core/UpstreamSettingsImport.mm; sourceTree = SOURCE_ROOT; };
+		CFA110000000000000000005 /* UpstreamSettingsImport_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = UpstreamSettingsImport_UT.mm; path = NimbleCommander/Tests/UpstreamSettingsImport_UT.mm; sourceTree = SOURCE_ROOT; };
 		C0DE20261117000100000003 /* LanguagePackFormat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LanguagePackFormat.h; path = NimbleCommander/Core/LanguagePackFormat.h; sourceTree = SOURCE_ROOT; };
 		C0DE20261117000100000002 /* LanguagePackFormat_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LanguagePackFormat_UT.mm; path = NimbleCommander/Tests/LanguagePackFormat_UT.mm; sourceTree = SOURCE_ROOT; };
 		A1B2C3D40000000000000001 /* LanguagePack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LanguagePack.h; path = NimbleCommander/Core/LanguagePack.h; sourceTree = SOURCE_ROOT; };
@@ -1772,6 +1777,7 @@
 				C0DE20261117000100000002 /* LanguagePackFormat_UT.mm */,
 				AB12CD34EF5600000000002C /* ParallelContentSearch_UT.mm */,
 				CFD2D26028A03DC0003C18F9 /* ThemesManager_UT.mm */,
+				CFA110000000000000000005 /* UpstreamSettingsImport_UT.mm */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -2050,6 +2056,8 @@
 			children = (
 				A1B2C3D40000000000000001 /* LanguagePack.h */,
 				A1B2C3D40000000000000002 /* LanguagePack.mm */,
+				CFA110000000000000000003 /* UpstreamSettingsImport.h */,
+				CFA110000000000000000004 /* UpstreamSettingsImport.mm */,
 				C0DE20261117000100000003 /* LanguagePackFormat.h */,
 				CF46C23420317FD700A91E2F /* ServicesHandler.h */,
 				CF46C23520317FD700A91E2F /* ServicesHandler.mm */,
@@ -3278,6 +3286,7 @@
 				CF0A482E2BDDA0C200833160 /* ChangeAttributes.mm in Sources */,
 				CF0A48492BDDA29000833160 /* Select.mm in Sources */,
 				CF0A48532BDDA2BE00833160 /* ToggleLayout.mm in Sources */,
+				CFA110000000000000000001 /* UpstreamSettingsImport.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3299,6 +3308,7 @@
 				CFD2D27B28A03DC5003C18F9 /* ThemesManager_UT.mm in Sources */,
 				CF764D432587837200D7ED17 /* PanelBriefViewDynamicWidthLayoutEngine_UT.mm in Sources */,
 				CF764CE72587661300D7ED17 /* DragSender_UT.mm in Sources */,
+				CFA110000000000000000002 /* UpstreamSettingsImport_UT.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

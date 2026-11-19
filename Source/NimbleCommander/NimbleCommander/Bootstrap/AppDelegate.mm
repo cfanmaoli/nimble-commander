@@ -49,6 +49,7 @@
 #include <NimbleCommander/Core/ServicesHandler.h>
 #include <NimbleCommander/Core/ConfigBackedNetworkConnectionsManager.h>
 #include <NimbleCommander/Core/ConnectionsMenuDelegate.h>
+#include <NimbleCommander/Core/UpstreamSettingsImport.h>
 #include <NimbleCommander/Core/Theming/SystemThemeDetector.h>
 #include <NimbleCommander/Core/Theming/ThemesManager.h>
 #include <NimbleCommander/Core/Theming/Theme.h>
@@ -250,6 +251,11 @@ static NCAppDelegate *g_Me = nil;
         m_NativeHost = std::make_shared<nc::vfs::NativeHost>(*m_NativeFSManager, *m_FSEventsFileUpdate);
         CheckDefaultsReset();
         m_SupportDirectory = nc::AppDelegate::SupportDirectory();
+        // A settings import is staged by the previous run; it has to land on disk before the config
+        // objects read their files, which happens in setupConfigs below.
+        std::string upstream_import_error;
+        if( !nc::upstream::ApplyPendingImport(m_SupportDirectory, upstream_import_error) )
+            std::cerr << "Failed to apply the staged upstream settings import: " << upstream_import_error << '\n';
         [self setupConfigs];
         nc::vfs::rar::SetHelperEnabled(GlobalConfig().GetBool(g_ConfigCompressionRarSupport));
         m_SystemThemeDetector = std::make_unique<nc::SystemThemeDetector>();
@@ -415,6 +421,20 @@ static NCAppDelegate *g_Me = nil;
         PFMoveToApplicationsFolderIfNecessary();
     }
 
+    {
+        NSMenuItem *const import_item = [[NSMenuItem alloc] init];
+        import_item.title = NSLocalizedString(@"Import Settings from Nimble Commander…",
+                                              "Menu item title for importing the settings of the original "
+                                              "Nimble Commander app");
+        import_item.target = self;
+        import_item.action = @selector(onMainMenuImportUpstreamSettings:);
+        NSMenu *const application_menu = [NSApp.mainMenu itemAtIndex:0].submenu;
+        const NSInteger insert_index = nc::base::AmISandboxed() ? 1 : 2;
+        if( application_menu != nil && insert_index <= application_menu.numberOfItems )
+            [application_menu insertItem:import_item atIndex:insert_index];
+    }
+    nc::upstream::OfferImportOnFirstLaunch(self.supportDirectory);
+
     m_ConfigWiring = std::make_unique<ConfigWiring>(GlobalConfig(), m_PoolEnqueueFilter);
     m_ConfigWiring->Wire();
 
@@ -498,6 +518,11 @@ static NCAppDelegate *g_Me = nil;
     if( [identifier isEqualToString:NCMainWindow.defaultIdentifier] )
         window = [g_Me allocateMainWindowRestoredBySystem].window;
     completionHandler(window, nil);
+}
+
+- (IBAction)onMainMenuImportUpstreamSettings:(id) [[maybe_unused]] _sender
+{
+    nc::upstream::PromptToImport(self.supportDirectory);
 }
 
 - (IBAction)onMainMenuNewWindow:(id) [[maybe_unused]] _sender
