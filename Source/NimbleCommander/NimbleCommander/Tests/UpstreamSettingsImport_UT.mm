@@ -102,20 +102,3 @@ TEST_CASE("Upstream import rejects malformed settings files")
     CHECK_FALSE(error.empty());
     CHECK_FALSE(nc::upstream::HasPendingImport(fork));
 }
-
-TEST_CASE("Upstream import is only offered on a fresh install")
-{
-    TempTestDir temp;
-    const fs::path home = temp.directory / "home";
-    const fs::path fork = temp.directory / "fork";
-    const fs::path original = OriginalSupportDirectory(home);
-    WriteFile(original / "Config/Config.json", "{}");
-
-    CHECK(nc::upstream::ShouldOfferImportIn(home, fork));
-    WriteFile(fork / "Config/Config.json", "{}");
-    CHECK_FALSE(nc::upstream::ShouldOfferImportIn(home, fork));
-
-    const fs::path other_fork = temp.directory / "fork2";
-    nc::upstream::MarkImportOffered(other_fork);
-    CHECK_FALSE(nc::upstream::ShouldOfferImportIn(home, other_fork));
-}

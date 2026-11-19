@@ -1,6 +1,7 @@
 // Copyright (C) 2013-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "PreferencesWindowGeneralTab.h"
 #include "../Core/SandboxManager.h"
+#include "../Core/UpstreamSettingsImport.h"
 #include "../Bootstrap/AppDelegate.h"
 #include <Base/dispatch_cpp.h>
 #include <Base/debug.h>
@@ -11,16 +12,26 @@ using namespace std::literals;
 
 @property(nonatomic) IBOutlet NSButton *FSAccessResetButton;
 @property(nonatomic) IBOutlet NSTextField *FSAccessLabel;
+@property(nonatomic) IBOutlet NSButton *ImportUpstreamButton;
+@property(nonatomic) IBOutlet NSTextField *ImportUpstreamLabel;
 
 @end
 
 @implementation PreferencesWindowGeneralTab
 @synthesize FSAccessResetButton;
 @synthesize FSAccessLabel;
+@synthesize ImportUpstreamButton;
+@synthesize ImportUpstreamLabel;
 
 - (void)loadView
 {
     [super loadView];
+    self.ImportUpstreamLabel.stringValue =
+        NSLocalizedStringFromTable(@"Original app settings:",
+                                   @"Preferences",
+                                   "Label for the button importing the settings of the original Nimble Commander app");
+    self.ImportUpstreamButton.title = NSLocalizedStringFromTable(
+        @"Import…", @"Preferences", "Button title importing the settings of the original Nimble Commander app");
     if( !nc::base::AmISandboxed() ) {
         self.FSAccessResetButton.enabled = false;
     }
@@ -45,6 +56,11 @@ using namespace std::literals;
 - (IBAction)ResetToDefaults:(id) [[maybe_unused]] _sender
 {
     [NCAppDelegate.me askToResetDefaults];
+}
+
+- (IBAction)ImportUpstreamSettings:(id) [[maybe_unused]] _sender
+{
+    nc::upstream::PromptToImport(NCAppDelegate.me.supportDirectory);
 }
 
 - (IBAction)OnFSAccessReset:(id) [[maybe_unused]] _sender

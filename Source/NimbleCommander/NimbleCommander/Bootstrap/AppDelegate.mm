@@ -421,20 +421,6 @@ static NCAppDelegate *g_Me = nil;
         PFMoveToApplicationsFolderIfNecessary();
     }
 
-    {
-        NSMenuItem *const import_item = [[NSMenuItem alloc] init];
-        import_item.title = NSLocalizedString(@"Import Settings from Nimble Commander…",
-                                              "Menu item title for importing the settings of the original "
-                                              "Nimble Commander app");
-        import_item.target = self;
-        import_item.action = @selector(onMainMenuImportUpstreamSettings:);
-        NSMenu *const application_menu = [NSApp.mainMenu itemAtIndex:0].submenu;
-        const NSInteger insert_index = nc::base::AmISandboxed() ? 1 : 2;
-        if( application_menu != nil && insert_index <= application_menu.numberOfItems )
-            [application_menu insertItem:import_item atIndex:insert_index];
-    }
-    nc::upstream::OfferImportOnFirstLaunch(self.supportDirectory);
-
     m_ConfigWiring = std::make_unique<ConfigWiring>(GlobalConfig(), m_PoolEnqueueFilter);
     m_ConfigWiring->Wire();
 
@@ -518,11 +504,6 @@ static NCAppDelegate *g_Me = nil;
     if( [identifier isEqualToString:NCMainWindow.defaultIdentifier] )
         window = [g_Me allocateMainWindowRestoredBySystem].window;
     completionHandler(window, nil);
-}
-
-- (IBAction)onMainMenuImportUpstreamSettings:(id) [[maybe_unused]] _sender
-{
-    nc::upstream::PromptToImport(self.supportDirectory);
 }
 
 - (IBAction)onMainMenuNewWindow:(id) [[maybe_unused]] _sender

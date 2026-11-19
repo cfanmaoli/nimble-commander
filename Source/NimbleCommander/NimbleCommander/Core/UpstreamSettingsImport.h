@@ -30,15 +30,8 @@ bool StagePendingImport(const ImportPlan &_plan, const std::filesystem::path &_f
 // Applies a staged import. Must be called before the Config/State objects are created.
 bool ApplyPendingImport(const std::filesystem::path &_fork_support_dir, std::string &_error);
 
-bool ShouldOfferImport(const std::filesystem::path &_fork_support_dir);
-bool ShouldOfferImportIn(const std::filesystem::path &_home, const std::filesystem::path &_fork_support_dir);
-// Records that the first-launch question was answered, so it is not asked again; the menu item
-// stays available for a later import.
-void MarkImportOffered(const std::filesystem::path &_fork_support_dir);
-
-// AppKit entry points. The first one shows the question only on a fresh install; the second one is
-// the menu action and always asks before touching anything.
-void OfferImportOnFirstLaunch(const std::filesystem::path &_fork_support_dir);
+// Shows a confirmation alert for the discovered settings and, when accepted, stages them and
+// relaunches the app. Used by Preferences -> General.
 void PromptToImport(const std::filesystem::path &_fork_support_dir);
 
 } // namespace nc::upstream

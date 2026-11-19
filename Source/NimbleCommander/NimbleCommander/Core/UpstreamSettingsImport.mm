@@ -19,7 +19,6 @@ using namespace std::string_literals;
 namespace fs = std::filesystem;
 
 constexpr auto kPendingDirectoryName = ".pending-upstream-import";
-constexpr auto kOfferedMarkerName = ".upstream-import-offered";
 constexpr auto kOriginalSupportDirectoryName = "Nimble Commander";
 constexpr auto kMASContainerSuffix = "Library/Containers/info.filesmanager.Files/Data/Library/Application Support";
 constexpr std::uintmax_t kMaxJSONFileSize = 64ull * 1024 * 1024;
@@ -299,66 +298,6 @@ bool ApplyPendingImport(const fs::path &_fork_support_directory, std::string &_e
     return true;
 }
 
-bool ShouldOfferImportIn(const fs::path &_home, const fs::path &_fork_support_directory)
-{
-    std::error_code ec;
-    if( fs::exists(_fork_support_directory / kOfferedMarkerName, ec) )
-        return false;
-    if( fs::exists(_fork_support_directory / "Config/Config.json", ec) ||
-        fs::exists(_fork_support_directory / "State/State.json", ec) )
-        return false;
-    return DiscoverIn(_home, _fork_support_directory).has_value();
-}
-
-bool ShouldOfferImport(const fs::path &_fork_support_directory)
-{
-    NSString *const home = NSHomeDirectory();
-    if( home == nil )
-        return false;
-    return ShouldOfferImportIn(fs::path(home.fileSystemRepresentation), _fork_support_directory);
-}
-
-void MarkImportOffered(const fs::path &_fork_support_directory)
-{
-    std::error_code ec;
-    fs::create_directories(_fork_support_directory, ec);
-    std::ofstream marker(_fork_support_directory / kOfferedMarkerName, std::ios::app);
-}
-
-void OfferImportOnFirstLaunch(const fs::path &_fork_support_directory)
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-      if( !ShouldOfferImport(_fork_support_directory) )
-          return;
-      const std::optional<ImportPlan> plan = Discover(_fork_support_directory);
-      if( !plan ) {
-          MarkImportOffered(_fork_support_directory);
-          return;
-      }
-
-      NSAlert *const alert = [[NSAlert alloc] init];
-      alert.messageText = NSLocalizedString(
-          @"Import settings from Nimble Commander?",
-          "First-launch question offering to import the settings of the original Nimble Commander app");
-      alert.informativeText = [NSString
-          stringWithFormat:NSLocalizedString(@"Settings from the original Nimble Commander app were found at:\n"
-                                             @"%@\n\n"
-                                             @"Import preferences, saved tabs and network connections? Nimble "
-                                             @"Commander-Fork backs up its current settings first and then restarts.",
-                                             "First-launch import explanation, %@ is the source path"),
-                           FromPath(plan->source_root)];
-      [alert
-          addButtonWithTitle:NSLocalizedString(
-                                 @"Import and Restart",
-                                 "Button that imports the settings of the original Nimble Commander app and restarts")];
-      [alert addButtonWithTitle:NSLocalizedString(@"Not Now", "Button that postpones the settings import")];
-      const NSModalResponse response = [alert runModal];
-      MarkImportOffered(_fork_support_directory);
-      if( response == NSAlertFirstButtonReturn )
-          ScheduleRelaunch(*plan, _fork_support_directory);
-    });
-}
-
 void PromptToImport(const fs::path &_fork_support_directory)
 {
     const std::optional<ImportPlan> plan = Discover(_fork_support_directory);
@@ -384,7 +323,7 @@ void PromptToImport(const fs::path &_fork_support_directory)
                                            @"%@\n\n"
                                            @"Importing replaces the current preferences and saved tabs; they are "
                                            @"backed up first. Nimble Commander-Fork then restarts.",
-                                           "Menu import explanation, %@ is the source path"),
+                                           "Settings import explanation, %@ is the source path"),
                          FromPath(plan->source_root)];
     [alert
         addButtonWithTitle:NSLocalizedString(

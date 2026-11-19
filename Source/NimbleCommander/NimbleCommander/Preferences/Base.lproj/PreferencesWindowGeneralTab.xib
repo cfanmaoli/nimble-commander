@@ -10,6 +10,8 @@
             <connections>
                 <outlet property="FSAccessLabel" destination="mE6-dr-OKl" id="bOi-pr-rtr"/>
                 <outlet property="FSAccessResetButton" destination="8tk-ZS-HXz" id="vPs-ST-nCy"/>
+                <outlet property="ImportUpstreamButton" destination="upi-btn" id="upi-o2"/>
+                <outlet property="ImportUpstreamLabel" destination="upi-lbl" id="upi-o1"/>
                 <outlet property="view" destination="1" id="2"/>
             </connections>
         </customObject>
@@ -67,6 +69,30 @@
                         <action selector="OnFSAccessReset:" target="-2" id="qcr-xq-bMK"/>
                     </connections>
                 </button>
+                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upi-lbl">
+                    <rect key="frame" x="18" y="41" width="304" height="16"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="160" id="upi-w1"/>
+                    </constraints>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Original app settings:" id="upi-c1">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upi-btn">
+                    <rect key="frame" x="321" y="31" width="144" height="32"/>
+                    <buttonCell key="cell" type="push" title="Import…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="upi-c2">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="130" id="upi-w2"/>
+                    </constraints>
+                    <connections>
+                        <action selector="ImportUpstreamSettings:" target="-2" id="upi-a1"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="30" secondAttribute="trailing" constant="20" symbolic="YES" id="7El-SZ-fOn"/>
@@ -81,6 +107,12 @@
                 <constraint firstItem="30" firstAttribute="top" secondItem="1" secondAttribute="top" constant="20" symbolic="YES" id="sCH-9h-gF7"/>
                 <constraint firstItem="30" firstAttribute="leading" secondItem="55" secondAttribute="trailing" constant="8" symbolic="YES" id="tQd-hJ-HV9"/>
                 <constraint firstItem="30" firstAttribute="baseline" secondItem="55" secondAttribute="baseline" id="wgf-ND-KF3"/>
+                <constraint firstItem="upi-lbl" firstAttribute="leading" secondItem="1" secondAttribute="leading" constant="20" symbolic="YES" id="upi-k1"/>
+                <constraint firstItem="upi-lbl" firstAttribute="top" secondItem="mE6-dr-OKl" secondAttribute="bottom" constant="10" id="upi-k2"/>
+                <constraint firstItem="upi-btn" firstAttribute="leading" secondItem="upi-lbl" secondAttribute="trailing" constant="8" symbolic="YES" id="upi-k3"/>
+                <constraint firstItem="upi-btn" firstAttribute="baseline" secondItem="upi-lbl" secondAttribute="baseline" id="upi-k4"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="upi-btn" secondAttribute="trailing" constant="20" symbolic="YES" id="upi-k5"/>
+                <constraint firstItem="upi-btn" firstAttribute="leading" secondItem="30" secondAttribute="leading" id="upi-k6"/>
             </constraints>
             <point key="canvasLocation" x="79" y="118"/>
         </customView>
