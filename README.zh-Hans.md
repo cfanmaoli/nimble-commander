@@ -52,8 +52,9 @@ Nimble Commander 是一款面向 macOS 的免费双栏文件管理器，主打�
 
 ## 海量目录下的性能
 
-本分支还包含一组针对几十万条目目录的优化（以 100 万条目的目录为基准）。测量方法与推理见
-[Docs/Performance.md](Docs/Performance.md)，简表如下：
+本分支还包含一组针对几十万条目目录的优化（以 100 万条目的目录为基准）。工程推理见
+[Docs/Performance.md](Docs/Performance.md)，当前测量见
+[Scripts/perf/README.md](Scripts/perf/README.md)，简表如下：
 
 | | 之前 | 现在 |
 |---|---|---|

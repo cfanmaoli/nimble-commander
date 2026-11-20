@@ -52,8 +52,9 @@ The project website, with downloads and release notes, is
 ## Performance with huge directories
 
 The fork also carries a set of changes aimed at directories with hundreds of thousands of entries
-(a million-entry directory is the benchmark). See [Docs/Performance.md](Docs/Performance.md) for the
-measurements and the reasoning; the short version:
+(a million-entry directory is the benchmark). [Docs/Performance.md](Docs/Performance.md) has the
+engineering reasoning; [Scripts/perf/README.md](Scripts/perf/README.md) has the current
+measurements. The short version:
 
 | | before | now |
 |---|---|---|

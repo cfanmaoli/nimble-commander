@@ -1,7 +1,8 @@
 # Performance benchmarks
 
-These scripts reproduce the numbers in [Docs/Performance.md](../../Docs/Performance.md). They need a
-built-and-installed app (`Scripts/build_unsigned.sh`) and a big test directory.
+These scripts reproduce the numbers below; [Docs/Performance.md](../../Docs/Performance.md) has the
+engineering reasoning behind them. They need a built-and-installed app
+(`Scripts/build_unsigned.sh`) and a big test directory.
 
 ## Preparing a test directory
 
