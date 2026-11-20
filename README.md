@@ -57,10 +57,16 @@ measurements and the reasoning; the short version:
 
 | | before | now |
 |---|---|---|
-| first paint of a 1M-entry directory | ~2.2 s | **~34 ms** (a preview listing goes on screen while the rest is read) |
-| a single change in a 1M-entry directory | 2.4 s (a full reload with the default view options) | **~40 ms** (path-level FSEvents + an incremental listing patch) |
-| reading the directory itself | ~5.7 s of CPU | ~2.35 s, of which 2.17 s is the kernel enumeration |
-| resident memory, 1M entries | ~650 MB | ~283 MB |
+| first paint of a 1M-entry directory | ~2.2 s | **~0.4 s** (4,096 rows on screen; the rest streams in) |
+| a single change in a 1M-entry directory | 2.4 s (a full reload with the default view options) | **~135 ms** (path-level FSEvents + an incremental listing patch) |
+| opening a 1M-entry directory completely | ~5.7 s of CPU | **~3.5 s wall**, of which 2.67 s is the kernel enumeration |
+| physical footprint, 1M entries | ~650 MB | **~620 MB** (the listing itself is ~81 MB) |
+
+These numbers were re-measured on 1.9.3c with an Apple M5 Ultra, 96 GB, macOS 27.2.1, a 1M-file
+directory on an external APFS volume and a warm file cache. A 200k-file directory whose files all
+carry an extended attribute opens in ~2.1 s instead of ~0.85 s, because Finder-tag loading has to
+open every such file; [Scripts/perf/README.md](Scripts/perf/README.md) has the details and the
+other test datasets.
 
 The flat view and the find-files dialog have their own fast paths (a column-oriented tree scan and
 parallel filename/content searches); they are described, with measurements, in

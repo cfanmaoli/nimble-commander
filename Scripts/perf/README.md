@@ -29,6 +29,7 @@ NC_PERF_LOG=1 "/Applications/Nimble Commander-Fork.app/Contents/MacOS/Nimble Com
 | `[perf] prepare n=... total=...ms` | the model preparation, done on a background queue |
 | `[perf] ui n=... total=...ms` | the main-thread part of putting the data on screen |
 | `[perf] incr ... patch=...ms` / `[perf] incr.ui ... total=...ms` | the response to a directory change (an incremental listing patch) |
+| `[perf] stream n=... chunk=...` | one streamed chunk of a large listing; `n` reaches the entry count when the directory is complete |
 | `[perf] build ... mem=...MB` | the deterministic size of the listing's own storage |
 
 ## Measuring
@@ -50,12 +51,16 @@ Two more caveats, both learned the hard way:
 - `open -a <app> <directory>` while the app is being killed leaves a queued open event that fires on
   the next launch; the scripts wait a couple of seconds after `pkill` to avoid it.
 
-## The lazy modes
+## Finder tags and extended attributes
 
-`filePanel.general.lazyDates` and `filePanel.general.lazySizes` in
-`~/Library/Application Support/Nimble Commander-Fork/Config/Config.json` make the enumeration skip
-the timestamp and size columns and fetch them for the rows the panel actually shows. They are off by
-default; with both on, a million-entry directory costs ~55MB in the listing instead of ~81MB.
+The listing reads Finder tags only for entries whose `getattrlistbulk` result does not carry
+`EF_NO_XATTRS`. A file with any extended attribute therefore costs an `openat` +
+`flistxattr` + `close`; files without xattrs are skipped cheaply.
+
+This matters on directories where every file has an xattr: `x200k` below takes ~2.1 s instead of
+~0.85 s for an equivalent directory without xattrs. Disabling Finder tags
+(`filePanel.FinderTags.enable = false`) removes the pass and brings the same directory down to
+~0.68 s. The tag scan runs on the background enumerators, so the first rows still appear quickly.
 
 ## The flat view and the find-files engines
 
@@ -93,7 +98,22 @@ cc -O2 -o /tmp/nc_enum_baseline Scripts/perf/enum_baseline.c
 /tmp/nc_enum_baseline /tmp/ncbench/m1 nameonly
 ```
 
-On this machine (1M-entry directory, APFS on NVMe): `readdir` ~0.6s, `getattrlistbulk` with the full
-attribute set ~2.6s, and the app's own `[perf] fetch` for the same directory lands at ~2.2-2.8s -
-i.e. the VFS layer adds nothing measurable to a single-directory listing.
+Measured on an Apple M5 Ultra (96 GB, macOS 27.2.1), external APFS volume, warm cache, app 1.9.3c,
+default settings. "First rows" is the first `[perf] incr.ui`/`[perf] ui` for the opened directory;
+"complete" is the last `[perf] stream` line reaching the entry count. Footprints are from
+`vmmap` before/after.
+
+| dataset | entries | `readdir` | `getattrlistbulk` full | first rows | complete | footprint |
+|---|---|---|---|---|---|---|
+| `m1` (1M files) | 1,000,003 | 0.63 s | 2.67 s | 0.38-0.40 s | **3.49 s** | 616-622 MB |
+| `p200k` (200k files) | 200,001 | 0.05 s | 0.39 s | 0.37-0.39 s | **0.85 s** | 206-210 MB |
+| `x200k` (200k files, each with xattr) | 200,001 | 0.05 s | 0.19 s | 0.39-0.42 s | **2.09 s** | 224-244 MB |
+| `d200k` (200k empty dirs) | 200,001 | 0.10 s | 0.44 s | 0.55-0.56 s | **1.04 s** | 213-219 MB |
+
+The `x200k` gap is the Finder-tag pass described above: the kernel enumeration is actually faster
+than for `p200k`, but every file has a `user.ncbench` xattr, so the app opens and inspects it.
+
+`open_benchmark.sh` still reports the baseline/loaded physical footprint; for very large streaming
+listings its `tail` may not include the final `stream` line - look for the line whose `n` equals
+the entry count when parsing the log by hand.
 
