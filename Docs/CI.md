@@ -13,14 +13,19 @@ shared macOS runner pool and starves the queue.
 |---|---|
 | `pull_request` | gate only: Debug tests with clang-format and clang-tidy, no packaging |
 | `push` to `main` | nothing - run the gate manually (see below) |
-| `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG - **skipped when `main` has not moved since the last successful nightly** |
+| `schedule` (nightly) | all four test configurations (the Debug one also runs clang-format and clang-tidy), integration tests, DMG - **skipped when `main` has not moved since the last successful nightly, or when only documentation (`.md` files / `appcast.xml`) changed** |
 | `workflow_dispatch` | Debug tests with clang-format and clang-tidy, DMG; tick `full` to get the nightly set |
 
 The `preflight` job runs first on `ubuntu-latest` (a few seconds, no macOS runner). For a scheduled
 run it looks up the most recent **successful scheduled** run and compares its `head_sha` with the
-current `github.sha`: if they are the same, the macOS jobs are skipped and the run ends after the
-preflight. A manual dispatch always proceeds - it is a deliberate action. A nightly that failed or
-was cancelled is not counted as "last successful", so a broken night is retried on the next day.
+current `github.sha`. If they are the same, the macOS jobs are skipped and the run ends after the
+preflight. If they differ, it also asks the compare API for the changed files: when every changed
+path is a `.md` file or `appcast.xml` (renames from or to a non-documentation path count as
+code), the run is skipped as well. A diverged history (force push or rebase), a comparison error, an
+empty file list or the 300-file cap of the compare API all fall back to running the full build, so a
+real change is never skipped silently. A manual dispatch always proceeds - it is a deliberate action. A nightly that
+failed or was cancelled is not counted as "last successful", so a broken night is retried on the
+next day.
 
 Trigger a run from the Actions tab (*Build and Test* → *Run workflow*) or with
 `gh workflow run build.yml --ref main -f full=true`.

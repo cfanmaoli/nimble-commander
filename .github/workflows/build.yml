@@ -40,13 +40,15 @@ jobs:
   preflight:
     # A scheduled run that would build the very same commit as the last successful nightly has
     # nothing to add - skip the whole thing instead of burning an hour of the shared macOS runner
-    # pool. Manual dispatches always run: they are deliberate.
+    # pool. A run whose only changes since that nightly are documentation (Markdown or the
+    # appcast.xml update feed) is skipped as well: there is nothing to compile or test. Manual
+    # dispatches always run: they are deliberate.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       proceed: ${{ steps.check.outputs.proceed }}
     steps:
-    - name: Skip when nothing was pushed since the last successful nightly
+    - name: Skip when nothing or only documentation changed since the last successful nightly
       id: check
       uses: actions/github-script@v7
       with:
@@ -72,13 +74,55 @@ jobs:
           }
           core.info(`Previous successful nightly: ${previous.head_sha} (${previous.created_at})`);
           core.info(`Current head:                   ${context.sha}`);
-          const same = previous.head_sha === context.sha;
-          if (same) {
+          if (previous.head_sha === context.sha) {
             core.info('Nothing was pushed since the last successful nightly - skipping.');
-          } else {
-            core.info('The head has changed since the last successful nightly - running.');
+            core.setOutput('proceed', 'false');
+            return;
           }
-          core.setOutput('proceed', same ? 'false' : 'true');
+
+          // The head moved. It still may have moved only through documentation commits (Markdown
+          // or the appcast update feed) - there is nothing to compile, so compare the two trees
+          // instead of running the whole matrix.
+          let comparison;
+          try {
+            comparison = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: previous.head_sha,
+              head: context.sha,
+              per_page: 100,
+            });
+          } catch (error) {
+            core.info('Could not compare the nightly head with the current head: ' + error.message + ' - running.');
+            core.setOutput('proceed', 'true');
+            return;
+          }
+          const data = comparison.data;
+          const files = Array.isArray(data.files) ? data.files : [];
+          core.info('Changes since that nightly: status=' + data.status + ', commits=' + (data.total_commits ?? '?') + ', files=' + files.length);
+
+          // A diverged history (force push, rebase) or a truncated file list cannot be classified
+          // safely - build rather than skipping a real change.
+          if (data.status !== 'ahead' || files.length === 0 || files.length >= 300) {
+            core.info('The comparison is not a complete, straightforward set of changes - running.');
+            core.setOutput('proceed', 'true');
+            return;
+          }
+
+          const is_documentation = name => typeof name === 'string' &&
+              (name.toLowerCase().endsWith('.md') || name.toLowerCase() === 'appcast.xml');
+          const docs_only = files.every(file => {
+            if (!is_documentation(file.filename)) return false;
+            // A rename from a non-documentation path (or to one) is a code change in disguise.
+            if (file.previous_filename !== undefined && !is_documentation(file.previous_filename)) return false;
+            return true;
+          });
+          if (docs_only) {
+            core.info('Only documentation (Markdown/appcast.xml) changed since the last successful nightly - skipping.');
+          } else {
+            core.info('Non-documentation files changed since the last successful nightly - running.');
+          }
+          core.setOutput('proceed', docs_only ? 'false' : 'true');
 
   unit-tests:
     # Manual dispatch: Debug only. Nightly / full dispatch: every configuration.
