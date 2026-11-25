@@ -161,6 +161,14 @@ using namespace nc::panel;
     delete_item.alternate = !trash_item.hidden;
     delete_item.keyEquivalent = @"";
     delete_item.keyEquivalentModifierMask = trash_item.hidden ? 0 : NSEventModifierFlagOption;
+
+    // The Option-key alternate bypasses the Trash; highlight that destructive action in red.
+    const auto delete_title = [[NSMutableAttributedString alloc] initWithString:delete_item.title];
+    [delete_title addAttribute:NSForegroundColorAttributeName
+                         value:NSColor.systemRedColor
+                         range:NSMakeRange(0, delete_title.length)];
+    delete_item.attributedTitle = delete_title;
+
     [self addItem:delete_item];
 
     [self addItem:NSMenuItem.separatorItem];
