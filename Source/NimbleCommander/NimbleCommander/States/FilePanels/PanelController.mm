@@ -444,6 +444,10 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_DirectorySizeCountingQ;
     nc::base::SerialQueue m_DirectoryLoadingQ;
     nc::base::SerialQueue m_DirectoryReLoadingQ;
+
+    // A navigation requested while another one is still streaming. The current load is stopped
+    // and this request is started as soon as the loading queue becomes dry.
+    std::shared_ptr<DirectoryChangeRequest> m_PendingDirectoryChangeRequest;
     bool m_FlatTruncationReported;
     NCPanelQuickSearch *m_QuickSearch;
 
@@ -533,7 +537,11 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
 
         __weak PanelController *weakself = self;
         auto on_change = [=] {
-            dispatch_to_main_queue([=] { [static_cast<PanelController *>(weakself) updateSpinningIndicator]; });
+            dispatch_to_main_queue([=] {
+                PanelController *const panel = static_cast<PanelController *>(weakself);
+                [panel startPendingDirectoryLoadIfPossible];
+                [panel updateSpinningIndicator];
+            });
         };
         m_DirectorySizeCountingQ.SetOnChange(on_change);
         m_DirectoryReLoadingQ.SetOnChange(on_change);
@@ -1170,9 +1178,24 @@ namespace {
     // will stop at its next checkpoint, but the chunks it has already posted must not land on top
     // of whatever gets installed instead.
     m_StreamingLoadId.fetch_add(1);
+    if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+        m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+    }
+    m_PendingDirectoryChangeRequest.reset();
     m_DirectorySizeCountingQ.Stop();
     m_DirectoryLoadingQ.Stop();
     m_DirectoryReLoadingQ.Stop();
+}
+
+- (void)startPendingDirectoryLoadIfPossible
+{
+    dispatch_assert_main_queue();
+    if( !m_PendingDirectoryChangeRequest || !m_DirectoryLoadingQ.Empty() )
+        return;
+
+    std::shared_ptr<DirectoryChangeRequest> request = std::move(m_PendingDirectoryChangeRequest);
+    m_PendingDirectoryChangeRequest.reset();
+    [self GoToDirWithContext:request];
 }
 
 - (void)updateSpinningIndicator
@@ -1679,9 +1702,23 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         return result;
     }
     else {
-        if( !m_DirectoryLoadingQ.Empty() )
+        if( !m_DirectoryLoadingQ.Empty() ) {
+            // Do not ignore navigation while a huge directory is streaming in. Cancel the current
+            // fetch and remember only the newest request; startPendingDirectoryLoadIfPossible will
+            // run it when the serial queue becomes dry.
+            m_StreamingLoadId.fetch_add(1);
+            if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+                m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+            }
+            m_PendingDirectoryChangeRequest = std::move(_request);
+            m_DirectoryLoadingQ.Stop();
             return {};
+        }
 
+        if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+            m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+        }
+        m_PendingDirectoryChangeRequest.reset();
         const VFSListingPtr previous_listing = m_Data.ListingPtr();
         m_DirectoryLoadingQ.Run([=] {
             [self doGoToDirWithContext:_request
