@@ -44,7 +44,7 @@ void ReleasePromiseOperation(const std::shared_ptr<nc::ops::Operation> &_operati
 {
     PromiseOperationRegistry &registry = PromiseOperations();
     const std::lock_guard lock(registry.mutex);
-    const auto it = std::find(registry.operations.begin(), registry.operations.end(), _operation);
+    const auto it = std::ranges::find(registry.operations, _operation);
     if( it != registry.operations.end() )
         registry.operations.erase(it);
 }

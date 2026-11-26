@@ -149,9 +149,8 @@ void IconBuilderImpl::BuildRealIconAsync(const VFSListingItem &_item,
         return;
     }
 
-    const VFSListingItem item = _item;
     m_VFSThumbnailsCache->ProduceThumbnailAsync(
-        path, *item.Host(), _icon_px_size, [item, _callback, _cancel_checker](NSImage *thumbnail) {
+        path, *_item.Host(), _icon_px_size, [item = _item, _callback, _cancel_checker](NSImage *thumbnail) {
             if( _cancel_checker && _cancel_checker() ) {
                 _callback({});
                 return;

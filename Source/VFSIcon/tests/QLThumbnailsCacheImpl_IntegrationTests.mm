@@ -115,7 +115,7 @@ TEST_CASE("QLThumbnailsCacheImpl doesn't crash under a concurrent load")
             const auto path = g_Paths[index];
             cache.ThumbnailIfHas(path, px_size);
             dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-            __block NSImage *image = nil;
+            NSImage *image = nil;
             cache.ProduceThumbnailAsync(path, px_size, std::nullopt, [&](NSImage *result) {
                 image = result;
                 dispatch_semaphore_signal(semaphore);
