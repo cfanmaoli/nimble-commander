@@ -47,6 +47,7 @@
 #include <NimbleCommander/Core/SandboxManager.h>
 #include <NimbleCommander/Core/Dock.h>
 #include <NimbleCommander/Core/ServicesHandler.h>
+#include <NimbleCommander/Core/LanguagePack.h>
 #include <NimbleCommander/Core/ConfigBackedNetworkConnectionsManager.h>
 #include <NimbleCommander/Core/ConnectionsMenuDelegate.h>
 #include <NimbleCommander/Core/UpstreamSettingsImport.h>
@@ -256,6 +257,8 @@ static NCAppDelegate *g_Me = nil;
         std::string upstream_import_error;
         if( !nc::upstream::ApplyPendingImport(m_SupportDirectory, upstream_import_error) )
             std::cerr << "Failed to apply the staged upstream settings import: " << upstream_import_error << '\n';
+        else
+            nc::lang::ReloadActiveLanguagePack();
         [self setupConfigs];
         nc::vfs::rar::SetHelperEnabled(GlobalConfig().GetBool(g_ConfigCompressionRarSupport));
         m_SystemThemeDetector = std::make_unique<nc::SystemThemeDetector>();

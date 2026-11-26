@@ -59,7 +59,7 @@ void DragSender::Start(NSView *_from_view, NSEvent *_via_event, int _dragged_pan
     position.x -= 16;
     position.y -= 16;
 
-    const auto dragging_source = [[FilesDraggingSource alloc] initWithSourceController:m_Panel nativeHost:m_NativeHost];
+    const auto dragging_source = [[FilesDraggingSource alloc] initWithSourceController:m_Panel];
     const auto drag_items = [[NSMutableArray alloc] initWithCapacity:vfs_items.size()];
     for( const auto &item : vfs_items ) {
         // Keep the item for the in-app drag source and for the drag image, but expose an

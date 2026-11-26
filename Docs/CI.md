@@ -126,7 +126,6 @@ tagged release is the regular update, the rolling `nightly` pre-release is publi
 signed with the EdDSA key whose public half is `SUPublicEDKey` in the plist - the private key
 lives outside the repository (see [Release.md](Release.md), step 9).
 
-The build number is the number of commits: `build_unsigned.sh` stamps the packaged application
-with `git rev-list --count HEAD` (which is why the job checks out with `fetch-depth: 0`), and the
-local `sign-install-fork.sh` does the same. That keeps the build numbers monotonic, so Sparkle
-compares them meaningfully against the appcast items.
+The CI build number is the number of commits: `build_unsigned.sh` stamps the packaged application
+with `git rev-list --count HEAD` (which is why the job checks out with `fetch-depth: 0`). That keeps
+the CI build numbers monotonic, so Sparkle compares them meaningfully against the appcast items.

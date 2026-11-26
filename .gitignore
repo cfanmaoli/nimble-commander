@@ -221,3 +221,9 @@ xcuserdata/
 #
 compile_commands.json
 Scripts/*.tmp/
+
+#
+# Python bytecode
+#
+__pycache__/
+*.py[cod]

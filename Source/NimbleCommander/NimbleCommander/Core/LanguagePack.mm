@@ -38,6 +38,7 @@ NSString *const kSeparator = @"\x1f";
 // lookups from any thread are safe.
 NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *> *g_overlay = nil;
 NSArray<NSDictionary *> *g_manifest_entries = nil;
+NSDictionary<NSString *, NSDictionary *> *g_manifest_index = nil;
 NSBundle *g_main_bundle = nil;
 std::size_t g_active_entries = 0;
 [[clang::no_destroy]] std::string g_active_language;
@@ -183,29 +184,29 @@ NSArray<NSDictionary *> *ManifestEntries()
 
 NSDictionary<NSString *, NSDictionary *> *ManifestIndex()
 {
-    static NSDictionary<NSString *, NSDictionary *> *const index = []() -> NSDictionary<NSString *, NSDictionary *> * {
-        NSArray<NSDictionary *> *const entries = ManifestEntries();
-        if( entries == nil )
-            return nil;
-        NSMutableDictionary *result = [NSMutableDictionary dictionaryWithCapacity:entries.count];
-        for( NSDictionary *entry in entries ) {
-            if( ![entry isKindOfClass:NSDictionary.class] )
-                continue;
-            NSString *const bundle = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
-            NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
-            NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
-            if( key.length == 0 )
-                continue;
-            NSMutableDictionary *value = [NSMutableDictionary dictionary];
-            if( [entry[@"source"] isKindOfClass:NSString.class] )
-                value[@"en"] = entry[@"source"];
-            if( [entry[@"comment"] isKindOfClass:NSString.class] )
-                value[@"comment"] = entry[@"comment"];
-            result[EntryKey(bundle, table, key)] = value;
-        }
-        return [result copy];
-    }();
-    return index;
+    if( g_manifest_index )
+        return g_manifest_index;
+    NSArray<NSDictionary *> *const entries = ManifestEntries();
+    if( entries == nil )
+        return nil;
+    NSMutableDictionary *result = [NSMutableDictionary dictionaryWithCapacity:entries.count];
+    for( NSDictionary *entry in entries ) {
+        if( ![entry isKindOfClass:NSDictionary.class] )
+            continue;
+        NSString *const bundle = [entry[@"bundle"] isKindOfClass:NSString.class] ? entry[@"bundle"] : @"";
+        NSString *const table = [entry[@"table"] isKindOfClass:NSString.class] ? entry[@"table"] : kDefaultTable;
+        NSString *const key = [entry[@"key"] isKindOfClass:NSString.class] ? entry[@"key"] : @"";
+        if( key.length == 0 )
+            continue;
+        NSMutableDictionary *value = [NSMutableDictionary dictionary];
+        if( [entry[@"source"] isKindOfClass:NSString.class] )
+            value[@"en"] = entry[@"source"];
+        if( [entry[@"comment"] isKindOfClass:NSString.class] )
+            value[@"comment"] = entry[@"comment"];
+        result[EntryKey(bundle, table, key)] = value;
+    }
+    g_manifest_index = [result copy];
+    return g_manifest_index;
 }
 
 NSMutableDictionary *
@@ -649,7 +650,7 @@ static NSDictionary<NSString *, NSString *> *LoadPackTranslations(const std::str
     return [result copy];
 }
 
-bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error)
+bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error, std::size_t *_entry_count)
 {
     @autoreleasepool {
         _error.clear();
@@ -735,6 +736,11 @@ bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::strin
             }
         }
 
+        if( entries.count == 0 ) {
+            _error = "there are no entries to export";
+            return false;
+        }
+
         NSString *const language = [NSString stringWithUTF8String:current_language.c_str()];
         NSMutableDictionary *const root = [NSMutableDictionary dictionary];
         root[@"format"] = kPackFormat;
@@ -773,6 +779,8 @@ bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::strin
             _error = ErrorText(write_error, "unable to write the file");
             return false;
         }
+        if( _entry_count )
+            *_entry_count = entries.count;
         return true;
     }
 }
@@ -972,6 +980,20 @@ void RelaunchApplication()
             return;
         }
         [NSApp terminate:nil];
+    }
+}
+
+void ReloadActiveLanguagePack()
+{
+    @autoreleasepool {
+        g_overlay = nil;
+        g_manifest_entries = nil;
+        g_manifest_index = nil;
+        g_active_entries = 0;
+        g_active_translated = std::numeric_limits<std::size_t>::max();
+        g_active_language.clear();
+        g_active_display_name.clear();
+        LoadActiveOverlay();
     }
 }
 

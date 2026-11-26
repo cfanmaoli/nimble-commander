@@ -378,7 +378,8 @@ struct Entry {
         return;
 
     std::string error;
-    if( nc::lang::ExportCurrentLanguage(panel.URL.fileSystemRepresentation, error) ) {
+    std::size_t exported_entries = 0;
+    if( nc::lang::ExportCurrentLanguage(panel.URL.fileSystemRepresentation, error, &exported_entries) ) {
         NSAlert *const alert = [[NSAlert alloc] init];
         alert.messageText =
             NSLocalizedStringFromTable(@"Export Complete", @"Preferences", "Language preferences tab export result");
@@ -386,7 +387,7 @@ struct Entry {
             [NSString stringWithFormat:NSLocalizedStringFromTable(@"Exported %@ entries to:\n%@",
                                                                   @"Preferences",
                                                                   "Language preferences tab export result"),
-                                       @(nc::lang::CurrentLanguageEntryCount()),
+                                       @(exported_entries),
                                        panel.URL.path];
         [alert addButtonWithTitle:NSLocalizedStringFromTable(@"OK", @"Preferences", "Language preferences tab button")];
         [alert runModal];

@@ -35,8 +35,8 @@ Distribution is a separate decision, driven by environment variables:
   identity first and point `NC_EXPORT_OPTIONS` at a `developer-id` export plist.
 - `NC_EXPORT_OPTIONS` - your own export options plist.
 
-CI does not sign anything: it builds unsigned DMGs, and the release attaches `UNSIGNED-BUILD.txt`
-explaining that Administrator Mode and the privileged helper need a signed build.
+CI does not sign anything: it builds unsigned DMGs, and the release notes explain that
+Administrator Mode and the privileged helper need a signed build.
 
 ## Step 6: Write "What's New"
 Update 'WHATS_NEW.md' with the list of changes since the last release.
@@ -66,14 +66,30 @@ download came from, so it should only be removed after the published SHA256 has 
 not claim that a Developer ID certificate is required for Administrator Mode - a team-signed Apple
 Development certificate satisfies the same requirement.
 
-## Step 7: Make the build
+## Step 7: Create the release tag and make the build
+
 Pushes to `main` don't start CI; pull requests run the gate (Debug tests with clang-format and
 clang-tidy) and stop there. Run the gate by hand when a commit is worth checking: `gh workflow run
-build.yml --ref main`. The unsigned DMG is produced by the nightly run or by a manual dispatch of
-`Build and Test` (`nimble-commander-fork-unsigned` artifact); tick `full` for the complete matrix,
-the full clang-tidy and the integration tests. A versioned release is packaged locally with
-`Scripts/build_release.sh` from the tagged commit - it stays unsigned unless `NC_CODESIGN_IDENTITY`
-and `NC_NOTARY_PROFILE` are provided (see step 5).
+build.yml --ref main`. Tick `full` for the complete matrix, the full clang-tidy and the integration
+tests.
+
+Create the version tag **before** building, on the exact commit that was tested, and check it out:
+
+```sh
+git tag -a vX.Y.Z -m "Nimble Commander-Fork vX.Y.Z"
+git checkout vX.Y.Z
+```
+
+The working tree must be clean. Then package the release locally:
+
+```sh
+Scripts/build_release.sh
+```
+
+The script refuses a dirty or untagged HEAD, asserts that the app's
+`CFBundleShortVersionString` matches the tag, and verifies the exported app's code signature and
+team ID. It stays unsigned unless `NC_CODESIGN_IDENTITY` and `NC_NOTARY_PROFILE` are provided (see
+step 5). Override the expected team with `NC_EXPECTED_TEAM_ID` if you deliberately use another one.
 
 ## Step 8: Create a GitHub Release (only if binaries are to be published)
 
@@ -86,8 +102,7 @@ clean variant is built locally by whoever needs it - see the README.
 
 For a versioned release:
 - Releases -> Draft a new release
-- Create new tag: `vX.Y.Z` (the new version)
-- Target: `main`
+- Select the existing tag `vX.Y.Z` created in step 7 (do not create the tag after building)
 - Add the changelog and attach the DMG built by `Scripts/build_release.sh` in step 7. If it was
   built unsigned, write the same notice the nightly carries: the app is unsigned and not notarised,
   Administrator Mode and its privileged helper need a signed build.
@@ -101,9 +116,8 @@ to users who opt into that channel).
 
 The release DMGs are signed with an EdDSA key; the public half is checked into the plist as
 `SUPublicEDKey`, the private half is kept outside the repository in `~/.sparkle-fork/ed25519.key`
-(mode 600) and must never be committed. Both the local `sign-install-fork.sh` and the CI
-`build_unsigned.sh` stamp `CFBundleVersion` with the number of commits, so build numbers only
-ever grow and Sparkle can tell which release is newer.
+(mode 600) and must never be committed. The CI `build_unsigned.sh` stamps `CFBundleVersion` with
+the number of commits, so build numbers only ever grow and Sparkle can tell which release is newer.
 
 After publishing a release (and after the nightly is refreshed), regenerate the feed and commit it:
 

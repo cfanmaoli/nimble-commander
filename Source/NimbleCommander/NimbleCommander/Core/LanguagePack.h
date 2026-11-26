@@ -73,8 +73,10 @@ std::string DisplayNameForLanguage(const std::string &_language_code);
 std::vector<std::string> BuiltInLanguages();
 
 /** Writes every localizable string of the current UI language into a JSON pack, ready to
- *  be translated. */
-bool ExportCurrentLanguage(const std::filesystem::path &_destination, std::string &_error);
+ *  be translated. On success, _entry_count receives the actual number of exported entries. */
+bool ExportCurrentLanguage(const std::filesystem::path &_destination,
+                           std::string &_error,
+                           std::size_t *_entry_count = nullptr);
 
 /** Validates and installs a JSON pack, and makes it the active one. */
 bool ImportPack(const std::filesystem::path &_source, ImportStats &_stats, std::string &_error);
@@ -84,5 +86,8 @@ void RelaunchApplication();
 
 /** Installs the NSBundle lookup override - called automatically from +load. */
 void InstallLocalizationOverride();
+
+/** Re-reads the active language pack and manifest after settings were applied at startup. */
+void ReloadActiveLanguagePack();
 
 } // namespace nc::lang

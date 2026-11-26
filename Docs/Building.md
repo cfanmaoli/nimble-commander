@@ -62,8 +62,8 @@ Two things to keep in mind while developing:
 
 * The helper lives outside the application bundle, so it is **not** replaced when the application is
   rebuilt and reinstalled - it is updated only when Admin Mode is enabled again.
-  `Scripts/sign-install-fork.sh` prints a note when the bundled and the installed helpers differ; a
-  fresh Admin Mode toggle (with an administrator password) updates it.
+  Reinstalling the app does not update the installed helper; a fresh Admin Mode toggle (with an
+  administrator password) updates it.
 * `SMJobBless()` replaces an installed helper only when its `CFBundleVersion`
   (`Source/RoutedIO/source/PrivilegedIOHelper-Info.plist`) is greater - bump it whenever the helper's
   code changes.

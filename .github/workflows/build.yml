@@ -183,8 +183,8 @@ jobs:
 
   integration-tests:
     # The docker/colima setup is the most fragile part of the pipeline, so it only runs nightly or
-    # on an explicit full dispatch.
-    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+    # when a manual dispatch asks for the full matrix or intends to publish the nightly.
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.full || inputs.publish_nightly)) }}
     needs: unit-tests
     runs-on: macos-26
     timeout-minutes: 60
@@ -226,8 +226,8 @@ jobs:
   publish-nightly:
     # Turns the unsigned DMG of a scheduled run into the rolling 'nightly' pre-release. The tag
     # and the release are recreated every night, so the download links stay stable while the
-    # assets always point at the last built commit.
-    needs: [preflight, build-unsigned]
+    # assets always point at the last built commit. Integration tests are a release gate.
+    needs: [preflight, build-unsigned, integration-tests]
     if: |
       needs.preflight.outputs.proceed == 'true' &&
       (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_nightly))
@@ -264,7 +264,8 @@ jobs:
 
         notes=$(mktemp)
         {
-          echo "Nightly build of `$REF_NAME` at commit [`$SHA`](https://github.com/$GITHUB_REPOSITORY/commit/$SHA) ($(date -u +%Y-%m-%d))."
+          printf 'Nightly build of %s at commit [%s](https://github.com/%s/commit/%s) (%s).\n' \
+            "$REF_NAME" "$SHA" "$GITHUB_REPOSITORY" "$SHA" "$(date -u +%Y-%m-%d)"
           echo
           echo '**This build is unsigned and not notarised.** On the first launch allow it in'
           echo 'System Settings -> Privacy & Security ("Open Anyway"), or remove the quarantine'

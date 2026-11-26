@@ -192,7 +192,6 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
     VFSHostPtr m_CommonHost;
     bool m_AreAllHostsWriteable;
     bool m_AreAllHostsNative;
-    VFSHostPtr m_NativeVFS;
 }
 
 @synthesize areAllHostsWriteable = m_AreAllHostsWriteable;
@@ -215,14 +214,12 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
 }
 
 - (FilesDraggingSource *)initWithSourceController:(PanelController *)_controller
-                                       nativeHost:(nc::vfs::NativeHost &)_native_vfs
 {
     self = [super init];
     if( self ) {
         m_SourceController = _controller;
         m_AreAllHostsWriteable = false;
         m_AreAllHostsNative = false;
-        m_NativeVFS = _native_vfs.SharedPtr();
     }
     return self;
 }
@@ -286,21 +283,6 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
     if( urls.count )
         [_sender writeObjects:urls];
 }
-
-// g_PasteboardFileURLUTI - public.file-url
-// "public.file-url"
-//- (void)provideFilenamesURLsPasteboard:(NSPasteboard *)sender item:(PanelDraggingItem *)item
-//{
-//    if( !m_FilenameURLsPasteboard )
-//        return;
-//
-//    m_FilenamesPasteboard = false;
-//
-//    if( item.item.Host()->IsNativeFS() ) {
-//        NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8StdString:item.item.Path()]];
-//        [url writeToPasteboard:sender];
-//    }
-//}
 
 - (void)draggingSession:(NSDraggingSession *) [[maybe_unused]] session
            endedAtPoint:(NSPoint) [[maybe_unused]] screenPoint

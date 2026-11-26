@@ -32,8 +32,7 @@
 @property(nonatomic, readonly) const VFSHostPtr &commonHost;
 @property(nonatomic, readonly) const std::vector<PanelDraggingItem *> &items;
 
-- (FilesDraggingSource *)initWithSourceController:(PanelController *)_controller
-                                       nativeHost:(nc::vfs::NativeHost &)_native_vfs;
+- (FilesDraggingSource *)initWithSourceController:(PanelController *)_controller;
 - (void)writeURLsPBoard:(NSPasteboard *)_sender;
 - (void)addItem:(PanelDraggingItem *)_item;
 

@@ -35,9 +35,22 @@ NOTARY_PROFILE="${NC_NOTARY_PROFILE:-}"
 # The default export options reference a provisioning profile by name - point NC_EXPORT_OPTIONS at
 # your own file when signing with a different one.
 EXPORT_OPTIONS="${NC_EXPORT_OPTIONS:-${SCRIPTS_DIR}/export_options.plist}"
+EXPECTED_TEAM="${NC_EXPECTED_TEAM_ID:-359W39ZS37}"
 BUILD_DIR="${SCRIPTS_DIR}/build_release.tmp"
 ARCHIVE_PATH="${BUILD_DIR}/NC_NonMAS.xcarchive"
 BUILT_PATH="${BUILD_DIR}/built"
+# A release must be built from a clean, tagged commit: otherwise the DMG and the tag may point at
+# different trees.
+RELEASE_TAG=$(git -C "${ROOT_DIR}" describe --tags --exact-match HEAD 2>/dev/null || true)
+if [ -z "${RELEASE_TAG}" ]; then
+    echo 'HEAD is not tagged. Create and check out the release tag before building.' >&2
+    exit 1
+fi
+if [ -n "$(git -C "${ROOT_DIR}" status --porcelain --untracked-files=no)" ]; then
+    echo 'The working tree has tracked modifications. Commit or stash them before building.' >&2
+    exit 1
+fi
+
 mkdir -p "${BUILD_DIR}"
 mkdir -p "${ARCHIVE_PATH}"
 
@@ -66,6 +79,21 @@ APP_NAME=$($XC -showBuildSettings | grep " FULL_PRODUCT_NAME =" | sed -e 's/.*= 
 APP_PATH="${BUILT_PATH}/${APP_NAME}"
 VERSION=$( $PBUDDY -c "Print CFBundleShortVersionString" "${APP_PATH}/Contents/Info.plist" )
 BUILD=$( $PBUDDY -c "Print CFBundleVersion" "${APP_PATH}/Contents/Info.plist" )
+TAG_VERSION="${RELEASE_TAG#v}"
+if [ "${VERSION}" != "${TAG_VERSION}" ]; then
+    echo "The app version (${VERSION}) does not match the release tag (${RELEASE_TAG})." >&2
+    exit 1
+fi
+
+# The archived app must be signed by the expected team; an export that silently falls back to an
+# unsigned app must not be published.
+codesign --verify --deep --strict "${APP_PATH}"
+ACTUAL_TEAM=$(codesign -dv --verbose=4 "${APP_PATH}" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1 || true)
+if [ "${ACTUAL_TEAM}" != "${EXPECTED_TEAM}" ]; then
+    echo "Unexpected signing team: '${ACTUAL_TEAM}' (expected '${EXPECTED_TEAM}')." >&2
+    exit 1
+fi
+
 DMG_NAME="nimble-commander-fork-${VERSION}(${BUILD}).dmg"
 
 # Wrap the built application into a .dmg disk image

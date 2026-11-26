@@ -102,7 +102,7 @@ else
     echo 'NC_NOTARY_PROFILE is not set - the DMG was not notarised.'
 fi
 if [ -z "${CODESIGN_IDENTITY}" ]; then
-    echo 'NC_CODESIGN_IDENTITY is not set - the application inside the DMG is not signed.'
+    echo 'NC_CODESIGN_IDENTITY is not set - the DMG itself is not signed.'
 fi
 
 # Done!
