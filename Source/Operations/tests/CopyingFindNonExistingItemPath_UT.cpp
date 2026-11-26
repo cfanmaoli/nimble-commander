@@ -14,7 +14,7 @@ TEST_CASE(PREFIX "checksum expectation accepts a SHA-256 digest")
 {
     const std::vector<uint8_t> digest(32, 0xAB);
     const nc::ops::copying::ChecksumExpectation expectation(0, "/tmp/destination", digest);
-    CHECK(expectation.digest == digest);
+    CHECK(expectation.digest_size == digest.size());
     CHECK(expectation == digest);
 
     const std::vector<uint8_t> md5(16, 0xCD);
