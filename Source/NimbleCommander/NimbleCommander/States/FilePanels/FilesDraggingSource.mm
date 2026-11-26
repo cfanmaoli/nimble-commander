@@ -21,6 +21,14 @@ static const auto g_PasteboardFileURLPromiseUTI = static_cast<NSString *>(kPaste
 static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileURL);
 #pragma clang diagnostic pop
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+static const auto g_PasteboardFilenamesUTI = static_cast<NSString *>(
+    CFBridgingRelease(UTTypeCreatePreferredIdentifierForTag(kUTTagClassNSPboardType,
+                                                            (__bridge CFStringRef)NSFilenamesPboardType,
+                                                            kUTTypeData)));
+#pragma clang diagnostic pop
+
 @implementation PanelDraggingItem {
     VFSListingItem m_Item;
 }
@@ -32,6 +40,13 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
     self = [super init];
     if( self ) {
         m_Item = _item;
+
+        // for File URL Promise. need to check if this is necessary
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        [self setString:static_cast<NSString *>(kUTTypeData)
+                forType:static_cast<NSString *>(kPasteboardTypeFilePromiseContent)];
+#pragma clang diagnostic pop
     }
     return self;
 }
@@ -156,6 +171,10 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
 {
     return g_PasteboardFileURLUTI;
 }
++ (NSString *)filenamesPBoardDragUTI
+{
+    return g_PasteboardFilenamesUTI;
+}
 
 - (FilesDraggingSource *)initWithSourceController:(PanelController *)_controller
                                        nativeHost:(nc::vfs::NativeHost &)_native_vfs
@@ -211,6 +230,81 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
     }
 }
 
+// g_PasteboardFilenamesUTI - NSFilenamesPboardType as UTI
+//- (void)provideFilenamesPasteboard:(NSPasteboard *)sender item:(PanelDraggingItem *)item
+//{
+//    if( !m_FilenamesPasteboard )
+//        return;
+//
+//    m_FilenameURLsPasteboard = false;
+//    m_FilenamesPasteboard = false;
+//    m_URLsPromisePasteboard = false;
+//
+//    cout << "provideFilenamesPasteboard" << endl;
+//
+//    NSMutableArray *ar = [NSMutableArray new];
+//    for( auto &i: m_Items )
+//        if( i.item.Host()->IsNativeFS() ) {
+//            auto url = [NSURL fileURLWithPath:[NSString stringWithUTF8StdString:i.item.Path()]];
+//            [ar addObject:url];
+//        }
+//    [sender writeObjects:ar];
+// }
+
+static NSURL *ExtractPromiseDropLocation(NSPasteboard *_pasteboard)
+{
+    NSURL *result = nil;
+    PasteboardRef pboardRef = nullptr;
+    PasteboardCreate((__bridge CFStringRef)_pasteboard.name, &pboardRef);
+    if( pboardRef ) {
+        PasteboardSynchronize(pboardRef);
+        CFURLRef urlRef = nullptr;
+        PasteboardCopyPasteLocation(pboardRef, &urlRef);
+        if( urlRef )
+            result = static_cast<NSURL *>(CFBridgingRelease(urlRef));
+        CFRelease(pboardRef);
+    }
+    return result;
+}
+
+// g_PasteboardFileURLPromiseUTI - kPasteboardTypeFileURLPromise
+// "com.apple.pasteboard.promised-file-url"
+- (void)provideURLPromisePasteboard:(NSPasteboard *)sender item:(PanelDraggingItem *)item
+{
+    auto drop_url = ExtractPromiseDropLocation(sender);
+    if( drop_url == nil )
+        return;
+
+    nc::ops::CopyingOptions opts;
+    opts.docopy = true;
+    opts.copy_file_times = true;
+    opts.copy_unix_flags = true;
+    opts.copy_unix_owners = true;
+    opts.preserve_symlinks = true;
+    opts.exist_behavior = nc::ops::CopyingOptions::ExistBehavior::Stop;
+
+    const auto dest = std::filesystem::path(drop_url.path.fileSystemRepresentation) / item.item.Filename();
+
+    auto operation =
+        std::make_shared<nc::ops::Copying>(std::vector<VFSListingItem>{item.item}, dest, m_NativeVFS, opts);
+
+    operation->Start();
+    operation->Wait();
+    const bool success = operation->State() == nc::ops::OperationState::Completed;
+
+    if( success ) {
+        // write result url into pasteboard
+        const auto url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:dest.c_str()]
+                                    isDirectory:item.item.IsDir()
+                                  relativeToURL:nil];
+        if( url ) {
+            // NB! keep this in dumb form!
+            // [url writeToPasteboard:sender] doesn't work.
+            [sender writeObjects:@[url]];
+        }
+    }
+}
+
 // From Apple's doc:
 //    The recommended approach for writing URLs to the pasteboard is as follows:
 //    NSArray *arrayOfURLs; // assume this exists
@@ -226,8 +320,10 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
             [urls addObject:url];
         }
 
-    if( urls.count )
-        [_sender writeObjects:urls];
+    if( urls.count ) {
+        [_sender clearContents];     // clear pasteboard to take ownership
+        [_sender writeObjects:urls]; // clear pasteboard to take ownership
+    }
 }
 
 // g_PasteboardFileURLUTI - kUTTypeFileURL
@@ -244,6 +340,20 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
 //        [url writeToPasteboard:sender];
 //    }
 //}
+
+// dispatch incoming data request
+- (void)pasteboard:(NSPasteboard *)sender item:(PanelDraggingItem *)item provideDataForType:(NSString *)type
+{
+    if( !item.item )
+        return;
+
+    //    else if( [type isEqualToString:g_PasteboardFilenamesUTI] )
+    //        [self provideFilenamesPasteboard:sender item:item];
+    if( [type isEqualToString:g_PasteboardFileURLPromiseUTI] )
+        [self provideURLPromisePasteboard:sender item:item];
+    //    else if( [type isEqualToString:g_PasteboardFileURLUTI] )
+    //        [self provideFilenamesURLsPasteboard:sender item:item];
+}
 
 - (void)draggingSession:(NSDraggingSession *) [[maybe_unused]] session
            endedAtPoint:(NSPoint) [[maybe_unused]] screenPoint
