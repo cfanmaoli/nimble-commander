@@ -25,14 +25,10 @@
 
 using namespace nc::panel;
 
-@interface NCPanelContextMenuSharingDelegate : NSObject <NSSharingServiceDelegate>
-@property(nonatomic, weak) NSWindow *sourceWindow;
-@end
-
 @implementation NCPanelContextMenu {
     std::vector<VFSListingItem> m_Items;
     PanelController *m_Panel;
-    NSMutableArray *m_ShareItemsURLs;
+    NSSharingServicePicker *m_SharePicker;
     NCPanelOpenWithMenuDelegate *m_OpenWithDelegate;
     std::unique_ptr<actions::PanelAction> m_CopyAction;
     std::unique_ptr<actions::PanelAction> m_CopyPathnameAction;
@@ -204,38 +200,25 @@ using namespace nc::panel;
     //////////////////////////////////////////////////////////////////////
     // Share stuff
     {
-        const auto share_submenu = [NSMenu new];
-        const auto eligible = std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); });
+        const bool eligible = std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); });
+        NSMenuItem *share_item = nil;
         if( eligible ) {
-            m_ShareItemsURLs = [NSMutableArray new];
-            for( auto &i : m_Items )
-                if( NSString *s = [NSString stringWithUTF8StdString:i.Path()] )
-                    if( NSURL *url = [[NSURL alloc] initFileURLWithPath:s] )
-                        [m_ShareItemsURLs addObject:url];
-
-            // The menu is built manually so that each service appears directly in the Share
-            // submenu; NSSharingServicePicker.standardShareMenuItem is a different UI. Keep the
-            // per-service API until the menu is redesigned.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-            auto services = [NSSharingService sharingServicesForItems:m_ShareItemsURLs];
-#pragma clang diagnostic pop
-            for( NSSharingService *service in services ) {
-                NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:service.title
-                                                              action:@selector(OnShareWithService:)
-                                                       keyEquivalent:@""];
-                item.image = service.image;
-                item.representedObject = service;
-                item.target = self;
-                [share_submenu addItem:item];
+            NSMutableArray<NSURL *> *const urls = [NSMutableArray arrayWithCapacity:m_Items.size()];
+            for( const auto &item : m_Items )
+                if( NSString *const path = [NSString stringWithUTF8StdString:item.Path()] )
+                    if( NSURL *const url = [NSURL fileURLWithPath:path] )
+                        [urls addObject:url];
+            if( urls.count != 0 ) {
+                m_SharePicker = [[NSSharingServicePicker alloc] initWithItems:urls];
+                share_item = m_SharePicker.standardShareMenuItem;
             }
         }
-
-        const auto share_menuitem = [NSMenuItem new];
-        share_menuitem.title = NSLocalizedStringFromTable(@"Share", @"FilePanelsContextMenu", "Share submenu title");
-        share_menuitem.submenu = share_submenu;
-        share_menuitem.enabled = share_submenu.numberOfItems > 0;
-        [self addItem:share_menuitem];
+        if( share_item == nil ) {
+            share_item = [NSMenuItem new];
+            share_item.enabled = false;
+        }
+        share_item.title = NSLocalizedStringFromTable(@"Share", @"FilePanelsContextMenu", "Share submenu title");
+        [self addItem:share_item];
     }
 
     [self addItem:NSMenuItem.separatorItem];
@@ -362,16 +345,6 @@ using namespace nc::panel;
     m_CompressHereAction->Perform(m_Panel, sender);
 }
 
-- (void)OnShareWithService:(id)sender
-{
-    auto delegate = [[NCPanelContextMenuSharingDelegate alloc] init];
-    delegate.sourceWindow = m_Panel.window;
-
-    NSSharingService *service = static_cast<NSMenuItem *>(sender).representedObject;
-    service.delegate = delegate;
-    [service performWithItems:m_ShareItemsURLs];
-}
-
 - (void)OnDuplicateItem:(id)sender
 {
     m_DuplicateAction->Perform(m_Panel, sender);
@@ -398,42 +371,6 @@ using namespace nc::panel;
 - (std::span<VFSListingItem>)items
 {
     return m_Items;
-}
-
-@end
-
-@implementation NCPanelContextMenuSharingDelegate {
-    NCPanelContextMenuSharingDelegate *m_Self;
-}
-@synthesize sourceWindow;
-
-- (instancetype)init
-{
-    self = [super init];
-    if( self ) {
-        m_Self = self;
-    }
-    return self;
-}
-
-- (void)sharingService:(NSSharingService *) [[maybe_unused]] sharingService
-    didFailToShareItems:(NSArray *) [[maybe_unused]] items
-                  error:(NSError *) [[maybe_unused]] error
-{
-    m_Self = nil;
-}
-
-- (void)sharingService:(NSSharingService *) [[maybe_unused]] sharingService
-         didShareItems:(NSArray *) [[maybe_unused]] items
-{
-    m_Self = nil;
-}
-
-- (nullable NSWindow *)sharingService:(NSSharingService *) [[maybe_unused]] sharingService
-            sourceWindowForShareItems:(NSArray *) [[maybe_unused]] items
-                  sharingContentScope:(NSSharingContentScope *) [[maybe_unused]] sharingContentScope
-{
-    return self.sourceWindow;
 }
 
 @end

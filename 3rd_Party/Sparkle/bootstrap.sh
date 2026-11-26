@@ -29,4 +29,13 @@ rm -rf ./Sparkle.framework
 
 cp -R ${BINARY_PATH} .
 
+# The app is arm64-only; drop the unused x86_64 slices after extracting the release.
+find Sparkle.framework -type f -perm -111 | while read binary; do
+    if lipo -info "$binary" 2>/dev/null | grep -q x86_64; then
+        lipo -thin arm64 -output "$binary.arm64" "$binary"
+        mv "$binary.arm64" "$binary"
+        chmod +x "$binary"
+    fi
+done
+
 rm -rf ${TMP_DIR}
