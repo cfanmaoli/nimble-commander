@@ -38,7 +38,7 @@ private:
     };
 
     using WatchesT = ankerl::unordered_dense::
-        map<std::string, std::unique_ptr<WatchData>, UnorderedStringHashEqual, UnorderedStringHashEqual>;
+        map<std::string, std::shared_ptr<WatchData>, UnorderedStringHashEqual, UnorderedStringHashEqual>;
 
     void OnVolumeDidUnmount(const std::string &_on_path) override;
 
@@ -49,7 +49,7 @@ private:
                                           void *_paths,
                                           const FSEventStreamEventFlags _flags[],
                                           const FSEventStreamEventId _ids[]);
-    static FSEventStreamRef CreateEventStream(const std::string &path, void *context);
+    static FSEventStreamRef CreateEventStream(const std::string &path, std::shared_ptr<WatchData> watch);
 
     // Registers a handler for '_path', creating (or reusing) the underlying event stream.
     uint64_t AddWatchPathImpl(std::string_view _path, const std::function<void(WatchData &, uint64_t)> &_attach);

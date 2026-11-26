@@ -90,7 +90,8 @@ void FSEventsDirUpdateImpl::FSEventsDirUpdateCallback([[maybe_unused]] ConstFSEv
                _num,
                fmt::join(std::span<const char *>{reinterpret_cast<const char **>(_paths), _num}, ", "));
 
-    WatchData &watch = *static_cast<WatchData *>(_user_data);
+    const auto &watch_ptr = *static_cast<const std::shared_ptr<WatchData> *>(_user_data);
+    WatchData &watch = *watch_ptr;
     // The callback runs on the main run loop, while handlers can still be attached/removed from
     // other threads - copy the lists under their lock instead of walking them in place.
     std::vector<std::pair<uint64_t, std::function<void()>>> handlers;
@@ -140,7 +141,7 @@ void FSEventsDirUpdateImpl::FSEventsDirUpdateCallback([[maybe_unused]] ConstFSEv
         h.second(changed_names);
 }
 
-FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &path, void *context_ptr)
+FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &path, std::shared_ptr<WatchData> watch)
 {
     Log::Debug("CreateEventStream called for '{}'", path);
     auto cf_path = base::CFStringCreateWithUTF8StdString(path);
@@ -156,8 +157,13 @@ FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &pat
         // only reports directory-level events and every change would require a full reload.
         const auto flags =
             kFSEventStreamCreateFlagNoDefer | kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents;
+        auto *const watch_holder = new std::shared_ptr<WatchData>(std::move(watch));
         auto context = FSEventStreamContext{
-            .version = 0, .info = context_ptr, .retain = nullptr, .release = nullptr, .copyDescription = nullptr};
+            .version = 0,
+            .info = watch_holder,
+            .retain = nullptr,
+            .release = [](const void *info) { delete static_cast<const std::shared_ptr<WatchData> *>(info); },
+            .copyDescription = nullptr};
         stream = FSEventStreamCreate(nullptr,
                                      &FSEventsDirUpdateImpl::FSEventsDirUpdateCallback,
                                      &context,
@@ -245,16 +251,17 @@ uint64_t FSEventsDirUpdateImpl::AddWatchPathImpl(std::string_view _path,
 
     // create a new watch stream
     Log::Trace("Creating a new watcher for '{}'", _path);
-    const auto ep = m_Watches.emplace(dir_path, std::make_unique<WatchData>());
+    auto watch = std::make_shared<WatchData>();
+    watch->path = dir_path;
+    const auto ep = m_Watches.emplace(dir_path, watch);
     assert(ep.second == true);
     WatchData &w = *ep.first->second;
-    w.stream = CreateEventStream(dir_path, &w);
+    w.stream = CreateEventStream(dir_path, watch);
     if( w.stream == nullptr ) {
         // failed to creat the event stream, roll back the changes and return a failure indication
         m_Watches.erase(ep.first);
         return no_ticket;
     }
-    w.path = ep.first->first;
     {
         const std::lock_guard handlers_lock{w.handlers_mutex};
         _attach(w, ticket);

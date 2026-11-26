@@ -54,6 +54,25 @@ TEST_CASE(PREFIX "Verify that /Applications/ and temp dir are on the same fs")
             TestEnv().native_fs_man->VolumeFromPath(target_dir));
 }
 
+TEST_CASE(PREFIX "Verifies a copied file with SHA-256")
+{
+    const TempTestDir source_dir;
+    const TempTestDir destination_dir;
+    const std::string filename = "__nc_sha256_verification__";
+    REQUIRE(close(creat((source_dir.directory / filename).c_str(), 0600)) == 0);
+
+    CopyingOptions opts;
+    opts.docopy = true;
+    opts.verification = CopyingOptions::ChecksumVerification::Always;
+
+    const auto host = TestEnv().vfs_native;
+    Copying op(FetchItems(source_dir.directory, {filename}, *host), destination_dir.directory.native(), host, opts);
+    RunOperationAndCheckSuccess(op);
+
+    struct stat copied_stat;
+    REQUIRE(stat((destination_dir.directory / filename).c_str(), &copied_stat) == 0);
+}
+
 TEST_CASE(PREFIX "Can rename a regular file across firmlink injection points")
 {
     const std::string filename = "__nc_rename_test__";
