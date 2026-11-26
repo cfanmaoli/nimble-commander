@@ -48,7 +48,8 @@ public:
     static int ReadDirAttributesStat(const int _dir_fd,
                                      const char *_dir_path,
                                      const std::function<bool(size_t _fetched_now)> &_cb_fetch,
-                                     const Callback &_cb_param);
+                                     const Callback &_cb_param,
+                                     const std::function<bool()> &_cancelled = {});
 
     /**
      * the most performant way to fetch data

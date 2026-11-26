@@ -202,7 +202,8 @@ int Fetching::ReadSingleEntryAttributesByPath(nc::routedio::PosixIOInterface &_i
 int Fetching::ReadDirAttributesStat(const int _dir_fd,
                                     const char *_dir_path,
                                     const std::function<bool(size_t _fetched_now)> &_cb_fetch,
-                                    const Callback &_cb_param)
+                                    const Callback &_cb_param,
+                                    const std::function<bool()> &_cancelled)
 {
     // initial directory lookup
     std::vector<std::tuple<std::string, uint64_t, uint8_t>> dirents; // name, inode, entry_type
@@ -211,6 +212,8 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
         static const auto dirents_reserve_amount = 64;
         dirents.reserve(dirents_reserve_amount);
         while( auto entp = ::readdir(dirp) ) {
+            if( _cancelled && _cancelled() )
+                return 0;
             if( entp->d_ino == 0 ||                      // apple's documentation suggest to skip such files
                 entp->d_name == std::string_view{"."} || // do not process self entry
                 entp->d_name == std::string_view{".."} ) // do not process parent entry

@@ -343,9 +343,9 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     };
 
     // when Admin Mode is on - we use different fetch route
-    const int ret =
-        is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
-                     : Fetching::ReadDirAttributesStat(fd, listing_source.directories[0].c_str(), cb_fetch, cb_param);
+    const int ret = is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
+                                 : Fetching::ReadDirAttributesStat(
+                                       fd, listing_source.directories[0].c_str(), cb_fetch, cb_param, _cancel_checker);
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});
 
