@@ -1,6 +1,7 @@
 // Copyright (C) 2024-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "CommandPopover.h"
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include <vector>
 #include <ranges>
 #include <algorithm>

@@ -9,7 +9,8 @@
 #include <Utility/StringExtras.h>
 #include <Base/debug.h>
 #include <NimbleCommander/Core/Alert.h>
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 
 #include <algorithm>
 

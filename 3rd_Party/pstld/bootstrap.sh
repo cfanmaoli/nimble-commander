@@ -12,13 +12,14 @@ cd ${TMP_DIR}
 git clone https://github.com/mikekazakov/pstld
 
 cd pstld
+git checkout ed6d53586b27f28f07402227cc4fcf797d2fdfda
 
 mkdir build
 cd build
 
 cmake \
   -D CMAKE_OSX_ARCHITECTURES="arm64" \
-  -D CMAKE_OSX_DEPLOYMENT_TARGET="12.0" \
+  -D CMAKE_OSX_DEPLOYMENT_TARGET="13.0" \
   -D CMAKE_CXX_FLAGS="-fvisibility=hidden -flto -Os" \
   ..
 make -j

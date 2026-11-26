@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <sys/stat.h>
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include "FileAlreadyExistDialog.h"
 #include "../ModalDialogResponses.h"
 #include "../Internal.h"

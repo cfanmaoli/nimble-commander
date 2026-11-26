@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <optional>
 #include <ranges>
-#include <regex>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -26,12 +25,16 @@ static bool strincmp2(const char *s1, const char *s2, size_t _n)
 
 static std::string regex_escape(const std::string &string_to_escape)
 {
-    // TODO: migrate to RE2
-    // do not escape "?" and "*"
-    [[clang::no_destroy]] static const std::regex escape(R"([.^$|()\[\]{}+\\])");
-    [[clang::no_destroy]] static const std::string replace("\\\\&");
-    return std::regex_replace(
-        string_to_escape, escape, replace, std::regex_constants::match_default | std::regex_constants::format_sed);
+    // Do not escape "?" and "*": sub_masks() turns them into wildcard operators afterwards.
+    static constexpr std::string_view special = R"(.^$|()[]{}+\)";
+    std::string result;
+    result.reserve(string_to_escape.size() * 2);
+    for( const char c : string_to_escape ) {
+        if( special.contains(c) )
+            result += '\\';
+        result += c;
+    }
+    return result;
 }
 
 static std::vector<std::string> sub_masks(std::string_view _source)

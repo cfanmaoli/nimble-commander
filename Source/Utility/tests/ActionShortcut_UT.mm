@@ -1,7 +1,6 @@
 // Copyright (C) 2019-2022 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "ActionShortcut.h"
 #include "UnitTests_main.h"
-#include <Carbon/Carbon.h>
 #include <spdlog/fmt/fmt.h>
 
 using nc::utility::ActionShortcut;

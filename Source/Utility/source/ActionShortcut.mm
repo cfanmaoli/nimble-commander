@@ -7,7 +7,6 @@
 #include <unordered_map>
 #include <ankerl/unordered_dense.h>
 #include <Base/ToLower.h>
-#include <Carbon/Carbon.h>
 
 namespace nc::utility {
 
@@ -142,13 +141,13 @@ static NSString *StringForModifierFlags(uint64_t flags)
     unsigned int charCount = 0;
     // These are in the same order as the menu manager shows them
     if( flags & NSEventModifierFlagControl )
-        modChars[charCount++] = kControlUnicode;
+        modChars[charCount++] = static_cast<UniChar>(0x2303);
     if( flags & NSEventModifierFlagOption )
-        modChars[charCount++] = kOptionUnicode;
+        modChars[charCount++] = static_cast<UniChar>(0x2325);
     if( flags & NSEventModifierFlagShift )
-        modChars[charCount++] = kShiftUnicode;
+        modChars[charCount++] = static_cast<UniChar>(0x21E7);
     if( flags & NSEventModifierFlagCommand )
-        modChars[charCount++] = kCommandUnicode;
+        modChars[charCount++] = static_cast<UniChar>(0x2318);
     if( charCount == 0 )
         return @"";
 

@@ -2,7 +2,6 @@
 #include "ParserImpl.h"
 #include "TranslateMaps.h"
 #include <Base/CFPtr.h>
-#include <Carbon/Carbon.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <Utility/Encodings.h>
 #include <algorithm>

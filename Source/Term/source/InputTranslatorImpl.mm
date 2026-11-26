@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <optional>
+// Carbon remains necessary for TIS/UCKeyTranslate; it has no direct modern equivalent.
 #include <Carbon/Carbon.h>
 #include <algorithm>
 

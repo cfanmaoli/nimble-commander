@@ -9,8 +9,9 @@ TMP_DIR=${CUR_DIR}/rapidjson.tmp
 mkdir ${TMP_DIR}
 cd ${TMP_DIR} 
 
-git clone -b master --single-branch https://github.com/Tencent/rapidjson
-
+git clone https://github.com/Tencent/rapidjson
+cd rapidjson
+git checkout 297637bc0a0f00dc504dbc1a47ebdaa577f8ae19
 cd ..
 
 rm -rf ./include/

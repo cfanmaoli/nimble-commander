@@ -1,5 +1,6 @@
 // Copyright (C) 2015-2024 Michael Kazakov. Subject to GNU General Public License version 3.
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include <Utility/SheetWithHotkeys.h>
 
 @implementation NCSheetWithHotkeys {

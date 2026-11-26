@@ -1,6 +1,7 @@
 // Copyright (C) 2016-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <FunctionKeysPass.h>
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include <AppKit/AppKit.h>
 #include <IOKit/hidsystem/ev_keymap.h>
 #include <iostream>

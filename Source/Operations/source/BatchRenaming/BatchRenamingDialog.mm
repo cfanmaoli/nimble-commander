@@ -1,5 +1,6 @@
 // Copyright (C) 2015-2025 Michael Kazakov. Subject to GNU General Public License version 3.
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include <Utility/SheetWithHotkeys.h>
 #include "BatchRenamingDialog.h"
 #include "BatchRenamingRangeSelectionPopover.h"

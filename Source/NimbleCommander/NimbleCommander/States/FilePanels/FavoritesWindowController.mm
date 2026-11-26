@@ -5,7 +5,8 @@
 #include "FilesDraggingSource.h"
 #include <Base/algo.h>
 #include <Base/dispatch_cpp.h>
-#include <Carbon/Carbon.h>
+#include <Base/KeyCodes.h>
+using namespace nc::base::keycodes;
 #include <NimbleCommander/Core/Alert.h>
 #include <NimbleCommander/States/FilePanels/MainWindowFilePanelState.h>
 #include <NimbleCommander/States/MainWindowController.h>

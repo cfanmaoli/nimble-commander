@@ -7,6 +7,8 @@
 #include <sys/fcntl.h>
 #include <sys/dirent.h>
 #include <dirent.h>
+#include <array>
+#include <cstdlib>
 #include <exception>
 #include <ftw.h>
 
@@ -218,10 +220,13 @@ static bool CheckExistence(const std::string &_path)
 
 static std::string MakeRandomFilename()
 {
-    // TODO: write something more reasonable
+    std::array<unsigned char, 6> random_bytes{};
+    arc4random_buf(random_bytes.data(), random_bytes.size());
+
     std::string filename;
-    for( int i = 0; i < 6; ++i )
-        filename += 'A' + (rand() % ('Z' - 'A'));
+    filename.reserve(random_bytes.size());
+    for( const unsigned char byte : random_bytes )
+        filename += 'A' + (byte % ('Z' - 'A'));
     return filename;
 }
 
