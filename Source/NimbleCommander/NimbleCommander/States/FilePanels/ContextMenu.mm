@@ -1,5 +1,6 @@
 // Copyright (C) 2013-2024 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "ContextMenu.h"
+#include "PanelView.h"
 #include "Actions/Compress.h"
 #include "Actions/CopyFilePaths.h"
 #include "Actions/CopyToPasteboard.h"
@@ -25,10 +26,13 @@
 
 using namespace nc::panel;
 
+// The context menu can be released as soon as the selected action returns, while the sharing
+// picker may still be on screen. Keep the active picker alive until a later share request.
+static NSSharingServicePicker *g_ActiveSharePicker = nil;
+
 @implementation NCPanelContextMenu {
     std::vector<VFSListingItem> m_Items;
     PanelController *m_Panel;
-    NSSharingServicePicker *m_SharePicker;
     NCPanelOpenWithMenuDelegate *m_OpenWithDelegate;
     std::unique_ptr<actions::PanelAction> m_CopyAction;
     std::unique_ptr<actions::PanelAction> m_CopyPathnameAction;
@@ -201,23 +205,12 @@ using namespace nc::panel;
     // Share stuff
     {
         const bool eligible = std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); });
-        NSMenuItem *share_item = nil;
-        if( eligible ) {
-            NSMutableArray<NSURL *> *const urls = [NSMutableArray arrayWithCapacity:m_Items.size()];
-            for( const auto &item : m_Items )
-                if( NSString *const path = [NSString stringWithUTF8StdString:item.Path()] )
-                    if( NSURL *const url = [NSURL fileURLWithPath:path] )
-                        [urls addObject:url];
-            if( urls.count != 0 ) {
-                m_SharePicker = [[NSSharingServicePicker alloc] initWithItems:urls];
-                share_item = m_SharePicker.standardShareMenuItem;
-            }
-        }
-        if( share_item == nil ) {
-            share_item = [NSMenuItem new];
-            share_item.enabled = false;
-        }
-        share_item.title = NSLocalizedStringFromTable(@"Share", @"FilePanelsContextMenu", "Share submenu title");
+        NSMenuItem *const share_item = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedStringFromTable(@"Share", @"FilePanelsContextMenu", "Share submenu title")
+                   action:@selector(OnShare:)
+            keyEquivalent:@""];
+        share_item.target = self;
+        share_item.enabled = eligible;
         [self addItem:share_item];
     }
 
@@ -343,6 +336,28 @@ using namespace nc::panel;
 - (void)OnCompressToCurrentPanel:(id)sender
 {
     m_CompressHereAction->Perform(m_Panel, sender);
+}
+
+- (void)OnShare:(id) [[maybe_unused]] sender
+{
+    NSMutableArray<NSURL *> *const urls = [NSMutableArray arrayWithCapacity:m_Items.size()];
+    for( const auto &item : m_Items )
+        if( NSString *const path = [NSString stringWithUTF8StdString:item.Path()] )
+            if( NSURL *const url = [NSURL fileURLWithPath:path] )
+                [urls addObject:url];
+    if( urls.count == 0 )
+        return;
+
+    g_ActiveSharePicker = [[NSSharingServicePicker alloc] initWithItems:urls];
+
+    NSRect anchor = m_Panel.view.bounds;
+    anchor.origin.x = NSMidX(anchor);
+    anchor.origin.y = NSMidY(anchor);
+    anchor.size = NSMakeSize(1, 1);
+    if( const auto item_frame = [m_Panel.view frameOfItemAtSortPos:m_Panel.view.curpos] )
+        anchor = *item_frame;
+
+    [g_ActiveSharePicker showRelativeToRect:anchor ofView:m_Panel.view preferredEdge:NSMinYEdge];
 }
 
 - (void)OnDuplicateItem:(id)sender
