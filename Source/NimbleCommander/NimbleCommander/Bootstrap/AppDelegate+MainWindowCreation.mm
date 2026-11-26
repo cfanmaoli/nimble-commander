@@ -128,7 +128,7 @@ static std::vector<std::string> CommaSeparatedStrings(const nc::config::Config &
 
     [[clang::no_destroy]] static const auto icon_builder = std::make_shared<nc::vfsicon::IconBuilderImpl>(
         ql_cache, ws_cache, ext_cache, vfs_cache, vfs_bi_cache, extensions_whitelist);
-    const auto concurrency_per_repo = 4;
+    const auto concurrency_per_repo = 8;
     using Que = nc::vfsicon::detail::IconRepositoryImplBase::GCDLimitedConcurrentQueue;
 
     return std::make_unique<nc::vfsicon::IconRepositoryImpl>(icon_builder, std::make_unique<Que>(concurrency_per_repo));

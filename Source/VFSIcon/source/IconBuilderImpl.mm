@@ -1,9 +1,15 @@
 // Copyright (C) 2018-2022 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconBuilderImpl.h>
+#include <ImageIO/ImageIO.h>
+#include <cctype>
+#include <string_view>
 #include <VFSIcon/Log.h>
 #include <Utility/ObjCpp.h>
 
 namespace nc::vfsicon {
+
+static bool IsDirectImageExtension(std::string_view _extension);
+static NSImage *ProduceImageThumbnailDirectly(const std::string &_path, int _px_size);
 
 IconBuilderImpl::IconBuilderImpl(const std::shared_ptr<QLThumbnailsCache> &_ql_cache,
                                  const std::shared_ptr<WorkspaceIconsCache> &_workspace_icons_cache,
@@ -108,6 +114,15 @@ void IconBuilderImpl::BuildRealIconAsync(const VFSListingItem &_item,
         auto hint = QLThumbnailsCache::FileStateHint{};
         hint.size = _item.Size();
         hint.mtime = _item.MTime();
+        if( IsDirectImageExtension(_item.Extension()) ) {
+            if( NSImage *const image = ProduceImageThumbnailDirectly(path, _icon_px_size) ) {
+                BuildResult result;
+                result.thumbnail = image;
+                _callback(result);
+                return;
+            }
+        }
+
         m_QLThumbnailsCache->ProduceThumbnailAsync(
             path, _icon_px_size, hint, [this, path, _callback, _cancel_checker](NSImage *thumbnail) {
                 if( _cancel_checker && _cancel_checker() ) {
@@ -159,6 +174,51 @@ void IconBuilderImpl::BuildRealIconAsync(const VFSListingItem &_item,
             result.thumbnail = thumbnail;
             _callback(result);
         });
+}
+
+static bool IsDirectImageExtension(std::string_view _extension)
+{
+    static constexpr std::string_view extensions[] = {
+        "jpg", "jpeg", "png", "gif", "heic", "heif", "tif", "tiff", "bmp", "webp", "raw",
+        "cr2", "nef",  "dng", "arw", "orf",  "raf",  "rw2", "pef",  "srw", "ico",
+    };
+    if( _extension.size() > 5 )
+        return false;
+
+    char lower[6] = {};
+    for( size_t i = 0; i != _extension.size(); ++i )
+        lower[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(_extension[i])));
+
+    for( const auto extension : extensions )
+        if( std::string_view{lower, _extension.size()} == extension )
+            return true;
+    return false;
+}
+
+static NSImage *ProduceImageThumbnailDirectly(const std::string &_path, int _px_size)
+{
+    NSString *const path = [NSString stringWithUTF8String:_path.c_str()];
+    if( path == nil )
+        return nil;
+    NSURL *const url = [NSURL fileURLWithPath:path];
+    const CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, nullptr);
+    if( source == nullptr )
+        return nil;
+
+    NSDictionary *const options = @{
+        (__bridge NSString *)kCGImageSourceCreateThumbnailFromImageAlways: @YES,
+        (__bridge NSString *)kCGImageSourceCreateThumbnailWithTransform: @YES,
+        (__bridge NSString *)kCGImageSourceThumbnailMaxPixelSize: @(_px_size),
+        (__bridge NSString *)kCGImageSourceShouldCacheImmediately: @YES,
+    };
+    const CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)options);
+    CFRelease(source);
+    if( thumbnail == nullptr )
+        return nil;
+
+    NSImage *const image = [[NSImage alloc] initWithCGImage:thumbnail size:NSMakeSize(_px_size, _px_size)];
+    CGImageRelease(thumbnail);
+    return image;
 }
 
 NSImage *IconBuilderImpl::GetGenericIcon(const VFSListingItem &_item) const
