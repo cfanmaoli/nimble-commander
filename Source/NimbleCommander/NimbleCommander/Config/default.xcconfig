@@ -3,7 +3,7 @@ HEADER_SEARCH_PATHS = $(inherited) $(THRDPTY) $(LIBS)/Base/include $(LIBS)/Utili
 
 LD_RUNPATH_SEARCH_PATHS = /usr/lib/swift @executable_path/../Frameworks
 
-FRAMEWORK_SEARCH_PATHS = $(THRDPTY)/Sparkle $(THRDPTY)/LetsMove
+FRAMEWORK_SEARCH_PATHS = $(THRDPTY)/Sparkle
 
 WRAPPER_EXTENSION = app
 

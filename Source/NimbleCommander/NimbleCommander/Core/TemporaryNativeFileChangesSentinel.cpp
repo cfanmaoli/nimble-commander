@@ -25,7 +25,7 @@ static std::optional<std::vector<uint8_t>> CalculateFileHash(const std::string &
         return std::nullopt;
 
     const auto buf = std::make_unique<uint8_t[]>(chunk_sz);
-    nc::base::Hash h(nc::base::Hash::MD5);
+    nc::base::Hash h(nc::base::Hash::SHA2_256);
 
     std::expected<size_t, Error> rn;
     while( (rn = file.Read(buf.get(), chunk_sz)).value_or(0) > 0 )
@@ -48,7 +48,7 @@ bool TemporaryNativeFileChangesSentinel::WatchFile(const std::string &_path,
                                                    std::chrono::milliseconds _check_delay,
                                                    std::chrono::milliseconds _drop_delay)
 {
-    // 1st - read current file and it's MD5 hash
+    // 1st - read current file and its SHA-256 hash
     auto file_hash = CalculateFileHash(_path);
     if( !file_hash )
         return false;
@@ -64,7 +64,7 @@ bool TemporaryNativeFileChangesSentinel::WatchFile(const std::string &_path,
     current->fswatch_ticket = watch_ticket;
     current->path = _path;
     current->callback = to_shared_ptr(std::move(_on_file_changed));
-    current->last_md5_hash = std::move(*file_hash);
+    current->last_hash = std::move(*file_hash);
     current->drop_delay = _drop_delay;
     current->check_delay = _check_delay;
 
@@ -121,8 +121,8 @@ void TemporaryNativeFileChangesSentinel::BackgroundItemCheck(std::shared_ptr<Met
     if( !current_hash )
         return; // this file is not ok - just abort
 
-    if( *current_hash != _meta->last_md5_hash ) {
-        _meta->last_md5_hash = std::move(*current_hash);
+    if( *current_hash != _meta->last_hash ) {
+        _meta->last_hash = std::move(*current_hash);
         ScheduleItemDrop(_meta);
 
         const auto client_callback = _meta->callback;

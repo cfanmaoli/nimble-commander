@@ -209,7 +209,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         std::optional<base::Hash> hash; // this optional will be filled with the first call of hash_feedback
         const auto hash_feedback = [&](const void *_data, unsigned _sz) {
             if( !hash )
-                hash.emplace(base::Hash::MD5);
+                hash.emplace(base::Hash::SHA2_256);
             hash->Feed(_data, _sz);
         };
 
@@ -2633,7 +2633,7 @@ CopyingJob::StepResult CopyingJob::VerifyCopiedFile(const copying::ChecksumExpec
                 return StepResult::Stop;
         }
 
-    base::Hash hash(base::Hash::MD5);
+    base::Hash hash(base::Hash::SHA2_256);
 
     const std::expected<uint64_t, Error> sz = file->Size();
     uint64_t szleft = sz.value_or(0);

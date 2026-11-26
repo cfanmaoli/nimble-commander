@@ -19,7 +19,6 @@ set -e
 ./spdlog/bootstrap.sh
 ./googletest/bootstrap.sh
 ./Sparkle/bootstrap.sh
-./LetsMove/bootstrap.sh
 ./frozen/bootstrap.sh
 ./pstld/bootstrap.sh
 ./abseil/bootstrap.sh

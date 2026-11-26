@@ -6,9 +6,6 @@
 
 namespace nc::base {
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 Hash::Hash(Mode _mode) : m_Mode(_mode)
 {
     switch( m_Mode ) {
@@ -26,15 +23,6 @@ Hash::Hash(Mode _mode) : m_Mode(_mode)
             break;
         case SHA2_512:
             CC_SHA512_Init(reinterpret_cast<CC_SHA512_CTX *>(m_Stuff));
-            break;
-        case MD2:
-            CC_MD2_Init(reinterpret_cast<CC_MD2_CTX *>(m_Stuff));
-            break;
-        case MD4:
-            CC_MD4_Init(reinterpret_cast<CC_MD4_CTX *>(m_Stuff));
-            break;
-        case MD5:
-            CC_MD5_Init(reinterpret_cast<CC_MD5_CTX *>(m_Stuff));
             break;
         case Adler32:
             *reinterpret_cast<uint32_t *>(m_Stuff) = static_cast<uint32_t>(adler32(0, nullptr, 0));
@@ -65,15 +53,6 @@ Hash &Hash::Feed(const void *_data, size_t _size)
             break;
         case SHA2_512:
             CC_SHA512_Update(reinterpret_cast<CC_SHA512_CTX *>(m_Stuff), _data, usize);
-            break;
-        case MD2:
-            CC_MD2_Update(reinterpret_cast<CC_MD2_CTX *>(m_Stuff), _data, usize);
-            break;
-        case MD4:
-            CC_MD4_Update(reinterpret_cast<CC_MD4_CTX *>(m_Stuff), _data, usize);
-            break;
-        case MD5:
-            CC_MD5_Update(reinterpret_cast<CC_MD5_CTX *>(m_Stuff), _data, usize);
             break;
         case Adler32:
             *reinterpret_cast<uint32_t *>(m_Stuff) = static_cast<uint32_t>(
@@ -117,21 +96,6 @@ std::vector<uint8_t> Hash::Final()
             CC_SHA512_Final(r.data(), reinterpret_cast<CC_SHA512_CTX *>(m_Stuff));
             return r;
         }
-        case MD2: {
-            std::vector<uint8_t> r(CC_MD2_DIGEST_LENGTH);
-            CC_MD2_Final(r.data(), reinterpret_cast<CC_MD2_CTX *>(m_Stuff));
-            return r;
-        }
-        case MD4: {
-            std::vector<uint8_t> r(CC_MD4_DIGEST_LENGTH);
-            CC_MD4_Final(r.data(), reinterpret_cast<CC_MD4_CTX *>(m_Stuff));
-            return r;
-        }
-        case MD5: {
-            std::vector<uint8_t> r(CC_MD5_DIGEST_LENGTH);
-            CC_MD5_Final(r.data(), reinterpret_cast<CC_MD5_CTX *>(m_Stuff));
-            return r;
-        }
         case Adler32:
         case CRC32:
             return std::vector<uint8_t>{m_Stuff[3], m_Stuff[2], m_Stuff[1], m_Stuff[0]};
@@ -152,7 +116,5 @@ std::string Hash::Hex(const std::vector<uint8_t> &_d)
     }
     return r;
 }
-
-#pragma clang diagnostic pop
 
 } // namespace nc::base

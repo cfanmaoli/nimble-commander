@@ -15,9 +15,6 @@
 		A1B2C3D40000000000000053 /* UtilityResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000050 /* UtilityResources.bundle */; };
 		A1B2C3D40000000000000005 /* LanguagePack.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* LanguagePack.mm */; };
 		A1B2C3D40000000000000006 /* PreferencesWindowLanguageTab.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* PreferencesWindowLanguageTab.mm */; };
-		CF0A46FA2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
-		CF0A46FB2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
-		CF0A46FC2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A47012BDD863700833160 /* Alert.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF2740831E57F5DD000D4365 /* Alert.mm */; };
 		CF0A47022BDD864300833160 /* AnyHolder.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0139BA1E9B1B8E00E44F2D /* AnyHolder.mm */; };
 		CF0A47032BDD864D00833160 /* Dock.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFFA942D1F3DBF790035E606 /* Dock.mm */; };
@@ -195,7 +192,6 @@
 		CF0A488D2BDDA5A400833160 /* SettingsAdaptor.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF41351F1F890709007429B6 /* SettingsAdaptor.mm */; };
 		CF0A488E2BDDA5A900833160 /* ExternalEditorState.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2781DFBF9260039A104 /* ExternalEditorState.mm */; };
 		CF0A488F2BDDA5AD00833160 /* ShellState.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC27A1DFBF9260039A104 /* ShellState.mm */; };
-		CF0A48902BDDA64700833160 /* PFMoveToApplicationsShim.mm in Sources */ = {isa = PBXBuildFile; fileRef = CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */; };
 		CF0A48912BDDA64A00833160 /* SparkleShim.m in Sources */ = {isa = PBXBuildFile; fileRef = CF0B78D925739F61003061D0 /* SparkleShim.m */; };
 		CF0B78F225739F61003061D0 /* SparkleShim.m in Sources */ = {isa = PBXBuildFile; fileRef = CF0B78D925739F61003061D0 /* SparkleShim.m */; };
 		CF0B78F325739F61003061D0 /* SparkleShim.m in Sources */ = {isa = PBXBuildFile; fileRef = CF0B78D925739F61003061D0 /* SparkleShim.m */; };
@@ -333,7 +329,6 @@
 		CFC5122516C4BD3D00D247EE /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = CFC5122316C4BD3D00D247EE /* Credits.rtf */; };
 		CFC5122B16C4BD3D00D247EE /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CFC5122916C4BD3D00D247EE /* MainMenu.xib */; };
 		CFC706472B497F5C0045D2C9 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; };
-		CFC706492B497F6A0045D2C9 /* LetsMove.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706482B497F6A0045D2C9 /* LetsMove.framework */; };
 		CFC7064A2B497F770045D2C9 /* CUIResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC705BF2B497D010045D2C9 /* CUIResources.bundle */; };
 		CFC7064B2B497F7B0045D2C9 /* OperationsResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC705C92B497D090045D2C9 /* OperationsResources.bundle */; };
 		CFC7064C2B497F7F0045D2C9 /* PanelResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC705D82B497D110045D2C9 /* PanelResources.bundle */; };
@@ -348,13 +343,10 @@
 		CFC706552B497FB00045D2C9 /* OperationsResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC705C92B497D090045D2C9 /* OperationsResources.bundle */; };
 		CFC706562B497FB20045D2C9 /* PanelResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC705D82B497D110045D2C9 /* PanelResources.bundle */; };
 		CFC706582B497FB90045D2C9 /* ViewerResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC706102B497D680045D2C9 /* ViewerResources.bundle */; };
-		CFC7065F2B4982FF0045D2C9 /* LetsMove.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC706482B497F6A0045D2C9 /* LetsMove.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CFC706602B4983020045D2C9 /* Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		CFC706612B4983190045D2C9 /* LetsMove.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = CFC706482B497F6A0045D2C9 /* LetsMove.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CFC706622B49831B0045D2C9 /* Sparkle.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		CFC7066D2B49AF480045D2C9 /* LetsMove.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706482B497F6A0045D2C9 /* LetsMove.framework */; };
 		CFC7066E2B49AF6D0045D2C9 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; };
 		CFC762782D3C53B6000498AA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CFC762772D3C53B6000498AA /* Localizable.xcstrings */; };
 		CFC762792D3C53B6000498AA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CFC762772D3C53B6000498AA /* Localizable.xcstrings */; };
@@ -833,7 +825,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				CFC7065F2B4982FF0045D2C9 /* LetsMove.framework in CopyFiles */,
 				CFC706602B4983020045D2C9 /* Sparkle.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -863,7 +854,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				CFC706612B4983190045D2C9 /* LetsMove.framework in Copy Files */,
 				CFC706622B49831B0045D2C9 /* Sparkle.framework in Copy Files */,
 			);
 			name = "Copy Files";
@@ -920,8 +910,6 @@
 		CF04DE051E3086E90047B1F9 /* ThemePersistence.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ThemePersistence.mm; path = NimbleCommander/Core/Theming/ThemePersistence.mm; sourceTree = SOURCE_ROOT; };
 		CF09394B1D196FB500D67AC6 /* ExternalToolParameterValueSheetController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ExternalToolParameterValueSheetController.h; path = NimbleCommander/States/FilePanels/ExternalToolParameterValueSheetController.h; sourceTree = SOURCE_ROOT; };
 		CF0939541D1BC4DF00D67AC6 /* ExternalToolParameterValueSheetController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ExternalToolParameterValueSheetController.mm; path = NimbleCommander/States/FilePanels/ExternalToolParameterValueSheetController.mm; sourceTree = SOURCE_ROOT; };
-		CF0A46EA2BDD830D00833160 /* PFMoveToApplicationsShim.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PFMoveToApplicationsShim.h; path = NimbleCommander/Bootstrap/PFMoveToApplicationsShim.h; sourceTree = "<group>"; };
-		CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PFMoveToApplicationsShim.mm; path = NimbleCommander/Bootstrap/PFMoveToApplicationsShim.mm; sourceTree = "<group>"; };
 		CF0B78D925739F61003061D0 /* SparkleShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SparkleShim.m; path = NimbleCommander/Bootstrap/SparkleShim.m; sourceTree = "<group>"; };
 		CF0B78F825739F79003061D0 /* SparkleShim.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SparkleShim.h; path = NimbleCommander/Bootstrap/SparkleShim.h; sourceTree = "<group>"; };
 		CF1257542CA96CAD003906C6 /* PanelListViewTableHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PanelListViewTableHeaderCell.swift; path = NimbleCommander/States/FilePanels/List/PanelListViewTableHeaderCell.swift; sourceTree = "<group>"; };
@@ -1243,7 +1231,6 @@
 		CFC5121116C4BD3D00D247EE /* Nimble Commander-Fork.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nimble Commander-Fork.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC705FA2B497D600045D2C9 /* VFSIcon.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VFSIcon.xcodeproj; path = ../VFSIcon/VFSIcon.xcodeproj; sourceTree = "<group>"; };
 		CFC706462B497F5C0045D2C9 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = ../../../3rd_Party/Sparkle/Sparkle.framework; sourceTree = "<group>"; };
-		CFC706482B497F6A0045D2C9 /* LetsMove.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LetsMove.framework; path = ../../../3rd_Party/LetsMove/LetsMove.framework; sourceTree = "<group>"; };
 		CFC762772D3C53B6000498AA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = NimbleCommander/Resources/Localizable.xcstrings; sourceTree = "<group>"; };
 		CFC7627C2D3C54B8000498AA /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/PreferencesWindowGeneralTab.xcstrings; sourceTree = "<group>"; };
 		CFC7627D2D3C59BC000498AA /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/PreferencesWindowViewerTab.xcstrings; sourceTree = "<group>"; };
@@ -1453,7 +1440,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				CF5DE09925840D3E00604DEE /* libNimbleCommanderCommon.a in Frameworks */,
-				CFC7066D2B49AF480045D2C9 /* LetsMove.framework in Frameworks */,
 				CFC7066E2B49AF6D0045D2C9 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1462,7 +1448,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CFC706492B497F6A0045D2C9 /* LetsMove.framework in Frameworks */,
 				CFC706472B497F5C0045D2C9 /* Sparkle.framework in Frameworks */,
 				CF5DE0A325840E9200604DEE /* libNimbleCommanderCommon.a in Frameworks */,
 			);
@@ -1964,8 +1949,6 @@
 				CFE08B0C23D4BE3D007E99B8 /* NativeVFSHostInstance.h */,
 				CF2F10B02567DF2500622405 /* NCHelpMenuDelegate.h */,
 				CF2F10972567DF2500622405 /* NCHelpMenuDelegate.mm */,
-				CF0A46EA2BDD830D00833160 /* PFMoveToApplicationsShim.h */,
-				CF0A46F92BDD830D00833160 /* PFMoveToApplicationsShim.mm */,
 				CF0B78F825739F79003061D0 /* SparkleShim.h */,
 				CF0B78D925739F61003061D0 /* SparkleShim.m */,
 				CF3E2F641F5FA7C8001BFFCE /* VFSInit.h */,
@@ -2159,7 +2142,6 @@
 		CFC5121316C4BD3D00D247EE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				CFC706482B497F6A0045D2C9 /* LetsMove.framework */,
 				CFC706462B497F5C0045D2C9 /* Sparkle.framework */,
 				CFC5121616C4BD3D00D247EE /* System Frameworks */,
 			);
@@ -3302,7 +3284,6 @@
 				CF764D572587875E00D7ED17 /* PanelBriefViewFixedWidthLayoutEngine_UT.mm in Sources */,
 				CF371DAA2D18472E0034EB3F /* ActionsShortcutsManager_UT.cpp in Sources */,
 				CF764D4F258785CC00D7ED17 /* PanelBriefViewFixedNumberLayoutEngine_UT.mm in Sources */,
-				CF0A48902BDDA64700833160 /* PFMoveToApplicationsShim.mm in Sources */,
 				CF0A48912BDDA64A00833160 /* SparkleShim.m in Sources */,
 				CF5DE0C22584157B00604DEE /* Tests.cpp in Sources */,
 				CFD2D27B28A03DC5003C18F9 /* ThemesManager_UT.mm in Sources */,
@@ -3316,7 +3297,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF0A46FC2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */,
 				CFD7260E1E42E07900603077 /* main.cpp in Sources */,
 				CF0B78F425739F61003061D0 /* SparkleShim.m in Sources */,
 			);
@@ -3326,7 +3306,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF0A46FA2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */,
 				CFD7260F1E42E07A00603077 /* main.cpp in Sources */,
 				CF0B78F225739F61003061D0 /* SparkleShim.m in Sources */,
 			);
@@ -3336,7 +3315,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF0A46FB2BDD830D00833160 /* PFMoveToApplicationsShim.mm in Sources */,
 				CF0B78F325739F61003061D0 /* SparkleShim.m in Sources */,
 				CFDAC2331DFBDE2B0039A104 /* main.cpp in Sources */,
 			);

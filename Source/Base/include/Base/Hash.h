@@ -13,9 +13,6 @@ public:
     enum Mode : uint8_t {
         Adler32,
         CRC32,
-        MD2,
-        MD4,
-        MD5,
         SHA1_160,
         SHA2_224,
         SHA2_256,

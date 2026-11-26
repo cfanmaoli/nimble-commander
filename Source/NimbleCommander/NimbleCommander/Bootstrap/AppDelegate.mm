@@ -10,7 +10,6 @@
 #include "Interactions.h"
 #include "NCHelpMenuDelegate.h"
 #include "SparkleShim.h"
-#include "PFMoveToApplicationsShim.h"
 #include "NativeVFSHostInstance.h"
 #include "Actions.h"
 
@@ -417,8 +416,6 @@ static NCAppDelegate *g_Me = nil;
 
         if( GlobalConfig().GetBool(g_ConfigForceFn) )
             nc::utility::FunctionalKeysPass::Instance().Enable(); // accessibility - remapping functional keys FnXX
-
-        PFMoveToApplicationsFolderIfNecessary();
     }
 
     m_ConfigWiring = std::make_unique<ConfigWiring>(GlobalConfig(), m_PoolEnqueueFilter);

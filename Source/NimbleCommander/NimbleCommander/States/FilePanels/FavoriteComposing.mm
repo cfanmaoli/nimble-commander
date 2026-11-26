@@ -8,7 +8,6 @@
 
 namespace nc::panel {
 
-static std::vector<std::pair<std::string, std::string>> GetFindersFavorites();
 static std::vector<std::pair<std::string, std::string>> GetDefaultFavorites();
 
 FavoriteComposing::FavoriteComposing(const FavoriteLocationsStorage &_storage) : m_Storage(_storage)
@@ -68,21 +67,6 @@ std::optional<FavoriteLocationsStorage::Favorite> FavoriteComposing::FromListing
     return f;
 }
 
-std::vector<FavoriteLocationsStorage::Favorite> FavoriteComposing::FinderFavorites()
-{
-    const auto ff = GetFindersFavorites();
-
-    std::vector<FavoriteLocationsStorage::Favorite> favorites;
-    auto &host = nc::bootstrap::NativeVFSHostInstance();
-    for( const auto &f : ff ) {
-        auto fl = m_Storage.ComposeFavoriteLocation(host, f.second, f.first);
-
-        if( fl )
-            favorites.emplace_back(std::move(*fl));
-    }
-    return favorites;
-}
-
 std::vector<FavoriteLocationsStorage::Favorite> FavoriteComposing::DefaultFavorites()
 {
     const auto df = GetDefaultFavorites();
@@ -96,31 +80,6 @@ std::vector<FavoriteLocationsStorage::Favorite> FavoriteComposing::DefaultFavori
             favorites.emplace_back(std::move(*fl));
     }
     return favorites;
-}
-
-static std::string StringFromURL(CFURLRef _url)
-{
-    char path_buf[MAXPATHLEN];
-    if( CFURLGetFileSystemRepresentation(_url, true, reinterpret_cast<UInt8 *>(path_buf), MAXPATHLEN) )
-        return path_buf;
-    return {};
-}
-
-static std::string TitleForURL(CFURLRef _url)
-{
-    if( const auto url = (__bridge NSURL *)_url ) {
-        NSString *title;
-        [url getResourceValue:&title forKey:NSURLLocalizedNameKey error:nil];
-        if( title ) {
-            return title.UTF8String;
-        }
-        else {
-            [url getResourceValue:&title forKey:NSURLNameKey error:nil];
-            if( title )
-                return title.UTF8String;
-        }
-    }
-    return {};
 }
 
 static std::string TitleForPath(const std::string &_path)
@@ -141,57 +100,6 @@ static std::string TitleForPath(const std::string &_path)
         }
     }
     return {};
-}
-
-static std::string ensure_tr_slash(std::string _str)
-{
-    if( _str.empty() || _str.back() != '/' )
-        _str += '/';
-    return _str;
-}
-
-static std::vector<std::pair<std::string, std::string>> GetFindersFavorites() // title, path
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    const auto flags = kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes;
-    std::vector<std::pair<std::string, std::string>> paths;
-
-    UInt32 seed;
-    LSSharedFileListRef list = LSSharedFileListCreate(nullptr, kLSSharedFileListFavoriteItems, nullptr);
-    CFArrayRef snapshot = LSSharedFileListCopySnapshot(list, &seed);
-    if( snapshot ) {
-        for( int i = 0, e = static_cast<int>(CFArrayGetCount(snapshot)); i != e; ++i ) {
-            if( auto item = reinterpret_cast<LSSharedFileListItemRef>(
-                    const_cast<void *>(CFArrayGetValueAtIndex(snapshot, i))) ) {
-                CFErrorRef err = nullptr;
-                auto url = LSSharedFileListItemCopyResolvedURL(item, flags, &err);
-                if( url ) {
-                    auto path = StringFromURL(url);
-                    if( !path.empty() && !path.ends_with(".cannedSearch") && !path.ends_with(".cannedSearch/") &&
-                        !path.ends_with(".savedSearch") && nc::bootstrap::NativeVFSHostInstance().IsDirectory(path, 0) )
-                        paths.emplace_back(TitleForURL(url), ensure_tr_slash(std::move(path)));
-                    CFRelease(url);
-                }
-                if( err ) {
-                    if( auto description = CFErrorCopyDescription(err) ) {
-                        CFShow(description);
-                        CFRelease(description);
-                    }
-                    if( auto reason = CFErrorCopyFailureReason(err) ) {
-                        CFShow(reason);
-                        CFRelease(reason);
-                    }
-                    CFRelease(err);
-                }
-            }
-        }
-        CFRelease(snapshot);
-    }
-    CFRelease(list);
-
-    return paths;
-#pragma clang diagnostic pop
 }
 
 static std::vector<std::pair<std::string, std::string>> GetDefaultFavorites()

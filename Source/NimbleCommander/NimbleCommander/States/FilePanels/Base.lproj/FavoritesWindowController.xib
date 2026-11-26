@@ -159,12 +159,6 @@
         </window>
         <menu id="y1d-OU-iOz">
             <items>
-                <menuItem title="Reset to Finder's Favorites" id="trX-D7-5NF">
-                    <modifierMask key="keyEquivalentModifierMask"/>
-                    <connections>
-                        <action selector="onResetToFinderFavorites:" target="-2" id="vJX-Wz-Tey"/>
-                    </connections>
-                </menuItem>
                 <menuItem title="Reset to Default Favorites" id="iKG-r8-pYH">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>

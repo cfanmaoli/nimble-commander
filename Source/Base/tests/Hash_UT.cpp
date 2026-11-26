@@ -24,9 +24,6 @@ TEST_CASE(PREFIX "check the hash results")
           "5e648bcc3fc9ebd87128a9272167af99a12df927d2dbc1547674827a7a91ccafe61a4d"
           "fa92e209b41b98dbe2bd204f049bd3730496b4"
           "680aaf6d362a73f9c677");
-    CHECK(Hash::Hex(Hash(Hash::MD2).Feed(d.c_str(), d.size()).Final()) == "754b67a193402945bc87a641cecddef6");
-    CHECK(Hash::Hex(Hash(Hash::MD4).Feed(d.c_str(), d.size()).Final()) == "99fa84d915d2917a174c26fed2843441");
-    CHECK(Hash::Hex(Hash(Hash::MD5).Feed(d.c_str(), d.size()).Final()) == "189b20088062f608cc1c9ce6002e10e0");
     CHECK(Hash::Hex(Hash(Hash::Adler32).Feed(d.c_str(), d.size()).Final()) == "e3d9270a");
     CHECK(Hash::Hex(Hash(Hash::CRC32).Feed(d.c_str(), d.size()).Final()) == "d3ec3da8");
 }

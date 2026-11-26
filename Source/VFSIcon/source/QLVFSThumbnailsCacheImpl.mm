@@ -1,9 +1,40 @@
 // Copyright (C) 2018-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/QLVFSThumbnailsCacheImpl.h>
-#include <Quartz/Quartz.h>
+#include <QuickLookThumbnailing/QuickLookThumbnailing.h>
+#include <VFSIcon/Log.h>
 #include <filesystem>
 
 namespace nc::vfsicon {
+
+static NSImage *GenerateVFSQuickLookThumbnail(NSURL *_url, CGSize _size)
+{
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    __block NSImage *image = nil;
+    QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
+          initWithFileAtURL:_url
+                       size:_size
+                      scale:1.0
+        representationTypes:QLThumbnailGenerationRequestRepresentationTypeThumbnail];
+    request.iconMode = YES;
+    [[QLThumbnailGenerator sharedGenerator]
+        generateBestRepresentationForRequest:request
+                           completionHandler:^(QLThumbnailRepresentation *_Nullable representation,
+                                               NSError *_Nullable error) {
+                             if( representation != nil )
+                                 image = [[NSImage alloc] initWithCGImage:representation.CGImage size:_size];
+                             if( error != nil )
+                                 Log::Warn("QuickLook thumbnail generation failed: {}",
+                                           error.localizedDescription.UTF8String);
+                             dispatch_semaphore_signal(semaphore);
+                           }];
+    const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
+    if( wait_result != 0 ) {
+        [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
+        Log::Warn("QuickLook thumbnail generation timed out");
+        return nil;
+    }
+    return image;
+}
 
 QLVFSThumbnailsCacheImpl::QLVFSThumbnailsCacheImpl(const std::shared_ptr<utility::BriefOnDiskStorage> &_temp_storage)
     : m_TempStorage(_temp_storage)
@@ -74,21 +105,11 @@ std::string QLVFSThumbnailsCacheImpl::MakeKey(const std::string &_file_path, VFS
 
 NSImage *QLVFSThumbnailsCacheImpl::ProduceThumbnailForTempFile(const std::string &_path, CGSize _px_size)
 {
-
-    CFURLRef url = CFURLCreateFromFileSystemRepresentation(
-        nullptr, reinterpret_cast<const UInt8 *>(_path.c_str()), _path.length(), false);
-    const void *keys[] = {static_cast<const void *>(kQLThumbnailOptionIconModeKey)};
-    const void *values[] = {static_cast<const void *>(kCFBooleanTrue)};
-    static CFDictionaryRef dict = CFDictionaryCreate(nullptr, keys, values, 1, nullptr, nullptr);
-    NSImage *result = nullptr;
-    if( CGImageRef thumbnail = QLThumbnailImageCreate(nullptr, url, _px_size, dict) ) {
-        result = [[NSImage alloc] initWithCGImage:thumbnail size:_px_size];
-        CGImageRelease(thumbnail);
-    }
-    CFRelease(url);
-    return result;
+    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_path.c_str()]];
+    if( url == nil )
+        return nil;
+    return GenerateVFSQuickLookThumbnail(url, _px_size);
 }
-
 std::expected<std::vector<uint8_t>, Error> QLVFSThumbnailsCacheImpl::ReadEntireFile(const std::string &_path,
                                                                                     VFSHost &_host)
 {

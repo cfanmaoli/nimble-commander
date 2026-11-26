@@ -1,6 +1,5 @@
 // Copyright (C) 2017-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "FavoritesImpl.h"
-#include <CoreServices/CoreServices.h>
 #include <VFS/VFS.h>
 #include <VFS/Native.h>
 #include <Base/CommonPaths.h>
@@ -24,13 +23,8 @@ FavoriteLocationsStorageImpl::FavoriteLocationsStorageImpl(config::Config &_conf
 {
     LoadData(_config, _path);
 
-    if( m_Favorites.empty() ) {
-        auto ff = FavoriteComposing{*this}.FinderFavorites();
-        if( !ff.empty() )
-            m_Favorites = std::move(ff);
-        else
-            m_Favorites = FavoriteComposing{*this}.DefaultFavorites();
-    }
+    if( m_Favorites.empty() )
+        m_Favorites = FavoriteComposing{*this}.DefaultFavorites();
 }
 
 std::shared_ptr<const FavoriteLocationsStorage::Location>

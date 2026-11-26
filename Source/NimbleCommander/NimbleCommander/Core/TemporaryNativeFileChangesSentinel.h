@@ -39,7 +39,7 @@ private:
         std::string path;
         std::shared_ptr<std::function<void()>> callback;
         uint64_t fswatch_ticket = 0;
-        std::vector<uint8_t> last_md5_hash;
+        std::vector<uint8_t> last_hash;
         std::chrono::milliseconds drop_time;
         std::chrono::milliseconds check_delay;
         std::chrono::milliseconds drop_delay;

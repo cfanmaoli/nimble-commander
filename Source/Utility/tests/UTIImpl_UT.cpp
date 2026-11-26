@@ -43,7 +43,7 @@ TEST_CASE(PREFIX "UTI for non-existing extensions is dynamic")
 {
     const UTIDBImpl db;
     CHECK(db.IsDynamicUTI(db.UTIForExtension("iasgduygdiuwbuiwebvciuewtvciue")) == true);
-    CHECK(db.IsDynamicUTI(db.UTIForExtension("")) == true);
+    CHECK(db.UTIForExtension("") == "");
 }
 
 TEST_CASE(PREFIX "ConformsTo works")

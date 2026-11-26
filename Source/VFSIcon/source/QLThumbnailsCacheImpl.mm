@@ -1,7 +1,7 @@
 // Copyright (C) 2014-2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/QLThumbnailsCacheImpl.h>
 #include <VFSIcon/Log.h>
-#include <Quartz/Quartz.h>
+#include <QuickLookThumbnailing/QuickLookThumbnailing.h>
 #include <sys/stat.h>
 #include <Base/algo.h>
 
@@ -100,32 +100,48 @@ bool QLThumbnailsCacheImpl::Key::operator!=(const Key &_rhs) const noexcept
     return !(*this == _rhs);
 }
 
-static const auto g_QLOptions = [] {
-    const void *keys[] = {static_cast<const void *>(kQLThumbnailOptionIconModeKey)};
-    const void *values[] = {static_cast<const void *>(kCFBooleanTrue)};
-    return CFDictionaryCreate(nullptr, keys, values, 1, nullptr, nullptr);
-}();
+static NSImage *GenerateQuickLookThumbnail(NSURL *_url, CGSize _size)
+{
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    __block NSImage *image = nil;
+    QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
+          initWithFileAtURL:_url
+                       size:_size
+                      scale:1.0
+        representationTypes:QLThumbnailGenerationRequestRepresentationTypeThumbnail];
+    request.iconMode = YES;
+    [[QLThumbnailGenerator sharedGenerator]
+        generateBestRepresentationForRequest:request
+                           completionHandler:^(QLThumbnailRepresentation *_Nullable representation,
+                                               NSError *_Nullable error) {
+                             if( representation != nil )
+                                 image = [[NSImage alloc] initWithCGImage:representation.CGImage size:_size];
+                             if( error != nil )
+                                 Log::Warn("QuickLook thumbnail generation failed: {}",
+                                           error.localizedDescription.UTF8String);
+                             dispatch_semaphore_signal(semaphore);
+                           }];
+    const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
+    if( wait_result != 0 ) {
+        [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
+        Log::Warn("QuickLook thumbnail generation timed out");
+        return nil;
+    }
+    return image;
+}
 
 static NSImage *BuildRep(const std::string &_filename, int _px_size)
 {
-    Log::Info("BuildRep(): building QL tumbnail for '{}' ({}px)", _filename, _px_size);
-    CFURLRef url = CFURLCreateFromFileSystemRepresentation(
-        nullptr, reinterpret_cast<const UInt8 *>(_filename.c_str()), _filename.length(), false);
-    if( !url ) {
+    Log::Info("BuildRep(): building QL thumbnail for '{}' ({}px)", _filename, _px_size);
+    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_filename.c_str()]];
+    if( url == nil ) {
         Log::Warn("BuildRep(): failed to create NSURL for '{}'", _filename);
         return nil;
     }
-
-    NSImage *result = nil;
-    const auto sz = NSMakeSize(_px_size, _px_size);
-    if( auto thumbnail = QLThumbnailImageCreate(nullptr, url, sz, g_QLOptions) ) {
-        result = [[NSImage alloc] initWithCGImage:thumbnail size:sz];
-        CGImageRelease(thumbnail);
-    }
-    else {
+    const CGSize size = NSMakeSize(_px_size, _px_size);
+    NSImage *const result = GenerateQuickLookThumbnail(url, size);
+    if( result == nil )
         Log::Warn("BuildRep(): failed to build a thumbnail image for '{}'", _filename);
-    }
-    CFRelease(url);
     return result;
 }
 

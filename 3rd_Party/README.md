@@ -15,7 +15,7 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | Flag                       | Comments
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
-| -arch arm64                | Build for Apple Silicon (the only architecture the app uses; Sparkle and LetsMove are still built as universal binaries)
+| -arch arm64                | Build for Apple Silicon (the only architecture the app uses; Sparkle is still built as a universal binary)
 | -mmacosx-version-min=12.0  | Minimum supported target version of macOS is 12.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden
@@ -45,7 +45,6 @@ already built `.a` files.
 | fmt             | 12.2.1     | 2026.11.07 | https://github.com/fmtlib/fmt.git
 | frozen          | 1.2.0      | 2024.06.02 | https://github.com/serge-sans-paille/frozen
 | gtest           | 1.18.0     | 2026.10.18 | https://github.com/google/googletest.git
-| letsmove        | 1.25       | 2020.07.09 | https://github.com/potionfactory/LetsMove.git
 | lexilla         | 5.5.0      | 2026.06.01 | https://github.com/ScintillaOrg/lexilla.git
 | libarchive      | 3.8.11     | 2026.10.30 | https://github.com/libarchive/libarchive.git
 | libcxx          | 21.x       | 2024.03.05 | https://github.com/llvm/llvm-project.git

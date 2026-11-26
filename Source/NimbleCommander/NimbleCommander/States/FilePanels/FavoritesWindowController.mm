@@ -344,25 +344,6 @@ static const auto g_FavoritesWindowControllerDragDataType = @"com.magnumbytes.nc
     }
 }
 
-- (IBAction)onResetToFinderFavorites:(id) [[maybe_unused]] sender
-{
-    auto ff = FavoriteComposing{m_Storage()}.FinderFavorites();
-    if( ff.empty() ) {
-        Alert *alert = [[Alert alloc] init];
-        alert.messageText = NSLocalizedString(@"Failed to retreive Finder's Favorites",
-                                              "Showing an error when NC isn't able to get Finder Favorites");
-        [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
-        [alert beginSheetModalForWindow:self.window
-                      completionHandler:^([[maybe_unused]] NSModalResponse rc){
-                      }];
-        return;
-    }
-
-    m_Favorites = std::move(ff);
-    [self loadData];
-    [self commit];
-}
-
 - (IBAction)onResetToDefaultFavorites:(id) [[maybe_unused]] sender
 {
     m_Favorites = FavoriteComposing{m_Storage()}.DefaultFavorites();
