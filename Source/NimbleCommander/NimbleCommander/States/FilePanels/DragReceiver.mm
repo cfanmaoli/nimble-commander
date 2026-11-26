@@ -32,10 +32,8 @@ static bool DraggingIntoFoldersAllowed() noexcept;
 static void PrintDragOperations(NSDragOperation _op);
 static std::vector<VFSListingItem> ExtractListingItems(FilesDraggingSource *_source);
 static NSArray<NSURL *> *ExtractURLs(NSPasteboard *_source);
-static bool DraggingHasFilenames(id<NSDraggingInfo> _dragging);
-static bool DraggingHasPromiseType(id<NSDraggingInfo> _dragging);
-static NSArray<NSURL *> *ExtractFilenamesFromDragging(id<NSDraggingInfo> _dragging);
 static int CountItemsWithPromiseTypes(id<NSDraggingInfo> _sender);
+static NSString *URLs_Promise_UTI();
 static NSString *URLs_UTI();
 static std::expected<std::vector<VFSListingItem>, Error> FetchListingItems(NSArray<NSURL *> *_input, VFSHost &_host);
 
@@ -85,9 +83,7 @@ NSDragOperation DragReceiver::Validate()
             std::tie(operation, valid_items) = ScanLocalSource(source, destination);
         else if( [m_Dragging.draggingPasteboard.types containsObject:URLs_UTI()] )
             std::tie(operation, valid_items) = ScanURLsSource(ExtractURLs(m_Dragging.draggingPasteboard), destination);
-        else if( DraggingHasFilenames(m_Dragging) )
-            std::tie(operation, valid_items) = ScanURLsSource(ExtractFilenamesFromDragging(m_Dragging), destination);
-        else if( DraggingHasPromiseType(m_Dragging) )
+        else if( [m_Dragging.draggingPasteboard.types containsObject:URLs_Promise_UTI()] )
             std::tie(operation, valid_items) = ScanURLsPromiseSource(destination);
     }
 
@@ -116,9 +112,7 @@ bool DragReceiver::Receive()
         return PerformWithLocalSource(source, destination);
     else if( [m_Dragging.draggingPasteboard.types containsObject:URLs_UTI()] )
         return PerformWithURLsSource(ExtractURLs(m_Dragging.draggingPasteboard), destination);
-    else if( DraggingHasFilenames(m_Dragging) )
-        return PerformWithURLsSource(ExtractFilenamesFromDragging(m_Dragging), destination);
-    else if( DraggingHasPromiseType(m_Dragging) )
+    else if( [m_Dragging.draggingPasteboard.types containsObject:URLs_Promise_UTI()] )
         return PerformWithURLsPromiseSource(destination);
 
     return false;
@@ -394,7 +388,10 @@ bool DragReceiver::PerformWithURLsPromiseSource(const vfs::VFSPath &_dest)
 
     NSArray<NSFilePromiseReceiver *> *const receivers =
         [m_Dragging.draggingPasteboard readObjectsForClasses:@[NSFilePromiseReceiver.class] options:@{}];
-    if( receivers.count != 0 ) {
+    if( receivers.count == 0 )
+        return false;
+
+    {
         static NSOperationQueue *const receive_queue = [] {
             NSOperationQueue *const queue = [NSOperationQueue new];
             queue.maxConcurrentOperationCount = 2;
@@ -419,13 +416,6 @@ bool DragReceiver::PerformWithURLsPromiseSource(const vfs::VFSPath &_dest)
         }
         return true;
     }
-
-    // Compatibility fallback for very old promisers which don't expose NSFilePromiseReceiver.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    [m_Dragging namesOfPromisedFilesDroppedAtDestination:drop_url];
-#pragma clang diagnostic pop
-    return true;
 }
 
 NSArray<NSString *> *DragReceiver::AcceptedUTIs()
@@ -440,12 +430,6 @@ NSArray<NSString *> *DragReceiver::AcceptedUTIs()
         for( NSString *const type in NSFilePromiseReceiver.readableDraggedTypes )
             if( ![types containsObject:type] )
                 [types addObject:type];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        // Parallels Desktop exposes guest files through legacy filename/promise types.
-        [types addObject:NSFilenamesPboardType];
-        [types addObject:NSFilesPromisePboardType];
-#pragma clang diagnostic pop
         return types;
     }();
     return utis;
@@ -516,55 +500,17 @@ static std::vector<VFSListingItem> ExtractListingItems(FilesDraggingSource *_sou
     return files;
 }
 
-static bool DraggingHasFilenames(id<NSDraggingInfo> _dragging)
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    return [_dragging.draggingPasteboard.types containsObject:NSFilenamesPboardType];
-#pragma clang diagnostic pop
-}
-
-static bool DraggingHasPromiseType(id<NSDraggingInfo> _dragging)
-{
-    NSArray<NSString *> *const types = _dragging.draggingPasteboard.types;
-    for( NSString *const type in NSFilePromiseReceiver.readableDraggedTypes )
-        if( [types containsObject:type] )
-            return true;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    return [types containsObject:NSFilesPromisePboardType];
-#pragma clang diagnostic pop
-}
-
-static NSArray<NSURL *> *ExtractFilenamesFromDragging(id<NSDraggingInfo> _dragging)
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    const id plist = [_dragging.draggingPasteboard propertyListForType:NSFilenamesPboardType];
-#pragma clang diagnostic pop
-
-    if( ![plist isKindOfClass:NSArray.class] )
-        return nil;
-
-    NSMutableArray<NSURL *> *urls = [NSMutableArray array];
-    for( const id path in static_cast<NSArray *>(plist) ) {
-        if( [path isKindOfClass:NSURL.class] ) {
-            if( NSURL *const url = static_cast<NSURL *>(path); url.isFileURL )
-                [urls addObject:url];
-        }
-        else if( [path isKindOfClass:NSString.class] ) {
-            if( NSURL *const url = [NSURL fileURLWithPath:static_cast<NSString *>(path)] )
-                [urls addObject:url];
-        }
-    }
-    return urls.count != 0 ? urls : nil;
-}
-
 static NSArray<NSURL *> *ExtractURLs(NSPasteboard *_source)
 {
     static const auto read_opts = @{NSPasteboardURLReadingFileURLsOnlyKey: @YES};
     static const auto classes = @[NSURL.class];
     return [_source readObjectsForClasses:classes options:read_opts];
+}
+
+static NSString *URLs_Promise_UTI()
+{
+    static const auto uti = FilesDraggingSource.fileURLsPromiseDragUTI;
+    return uti;
 }
 
 static NSString *URLs_UTI()
@@ -619,15 +565,7 @@ static void AddPanelRefreshIfNecessary(PanelController *_target, PanelController
 
 static int CountItemsWithPromiseTypes(id<NSDraggingInfo> _sender)
 {
-    static NSArray<NSString *> *const promise_types = [] {
-        NSMutableArray<NSString *> *types = [NSFilePromiseReceiver.readableDraggedTypes mutableCopy];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        if( ![types containsObject:NSFilesPromisePboardType] )
-            [types addObject:NSFilesPromisePboardType];
-#pragma clang diagnostic pop
-        return types;
-    }();
+    static NSArray<NSString *> *const promise_types = NSFilePromiseReceiver.readableDraggedTypes;
     static const auto classes = @[NSPasteboardItem.class];
     static const auto options = @{};
     __block int amount = 0;

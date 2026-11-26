@@ -20,12 +20,11 @@
 - (instancetype)initWithItem:(const VFSListingItem &)_item nativeHost:(const VFSHostPtr &)_native_host;
 @end
 
-@interface FilesDraggingSource : NSObject <NSDraggingSource, NSPasteboardItemDataProvider>
+@interface FilesDraggingSource : NSObject <NSDraggingSource>
 
 + (NSString *)privateDragUTI;
 + (NSString *)fileURLsPromiseDragUTI;
 + (NSString *)fileURLsDragUTI;
-+ (NSString *)filenamesPBoardDragUTI;
 
 @property(nonatomic, readonly, weak) PanelController *sourceController;
 @property(nonatomic, readonly) bool areAllHostsWriteable;

@@ -184,12 +184,9 @@ static void Perform(SEL _sel, const PanelActionsMap &_map, PanelController *_tar
         NSBeep();
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 - (id)validRequestorForSendType:(NSString *)sendType returnType:(NSString *)returnType
 {
-    if( ([sendType isEqualToString:NSFilenamesPboardType] ||
-         [sendType isEqualToString:(__bridge NSString *)kUTTypeFileURL]) )
+    if( [sendType isEqualToString:NSPasteboardTypeFileURL] )
         return self;
 
     return [super validRequestorForSendType:sendType returnType:returnType];
@@ -197,13 +194,10 @@ static void Perform(SEL _sel, const PanelActionsMap &_map, PanelController *_tar
 
 - (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pboard types:(NSArray *)types
 {
-    if( [types containsObject:(__bridge NSString *)kUTTypeFileURL] )
+    if( [types containsObject:NSPasteboardTypeFileURL] )
         return PasteboardSupport::WriteURLSPBoard(m_PC.selectedEntriesOrFocusedEntry, pboard);
-    if( [types containsObject:NSFilenamesPboardType] )
-        return PasteboardSupport::WriteFilesnamesPBoard(m_PC.selectedEntriesOrFocusedEntry, pboard);
     return false;
 }
-#pragma clang diagnostic pop
 
 #define PERFORM Perform(_cmd, *m_AM, m_PC, sender)
 
