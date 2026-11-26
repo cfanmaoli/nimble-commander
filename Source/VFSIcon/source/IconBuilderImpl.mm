@@ -154,6 +154,88 @@ IconBuilderImpl::BuildRealIcon(const VFSListingItem &_item, int _icon_px_size, c
     }
 }
 
+void IconBuilderImpl::BuildRealIconAsync(const VFSListingItem &_item,
+                                         int _icon_px_size,
+                                         BuildCallback _callback,
+                                         const CancelChecker &_cancel_checker)
+{
+    if( !_callback )
+        return;
+    if( !_item || _icon_px_size <= 0 ) {
+        _callback({});
+        return;
+    }
+    if( _cancel_checker && _cancel_checker() ) {
+        _callback({});
+        return;
+    }
+
+    const auto path = _item.Path();
+    if( _item.Host()->IsNativeFS() ) {
+        if( !ShouldTryProducingQLThumbnailOnNativeFS(_item) ) {
+            BuildResult result;
+            result.filetype = m_WorkspaceIconsCache->ProduceIcon(path);
+            _callback(result);
+            return;
+        }
+
+        auto hint = QLThumbnailsCache::FileStateHint{};
+        hint.size = _item.Size();
+        hint.mtime = _item.MTime();
+        m_QLThumbnailsCache->ProduceThumbnailAsync(
+            path, _icon_px_size, hint, [this, path, _callback, _cancel_checker](NSImage *thumbnail) {
+                if( _cancel_checker && _cancel_checker() ) {
+                    _callback({});
+                    return;
+                }
+                if( thumbnail != nil ) {
+                    BuildResult result;
+                    result.thumbnail = thumbnail;
+                    _callback(result);
+                    return;
+                }
+                BuildResult result;
+                result.filetype = m_WorkspaceIconsCache->ProduceIcon(path);
+                _callback(result);
+            });
+        return;
+    }
+
+    if( !_item.Host()->ShouldProduceThumbnails() ) {
+        _callback({});
+        return;
+    }
+
+    BuildResult result;
+    if( ShouldTryProducingBundleIconOnVFS(_item) )
+        result.thumbnail = m_VFSBundleIconsCache->ProduceIcon(path, *_item.Host());
+    if( result.thumbnail != nil ) {
+        _callback(result);
+        return;
+    }
+    if( _cancel_checker && _cancel_checker() ) {
+        _callback({});
+        return;
+    }
+
+    if( !ShouldTryProducingQLThumbnailOnVFS(_item) ) {
+        _callback({});
+        return;
+    }
+
+    const VFSListingItem item = _item;
+    m_VFSThumbnailsCache->ProduceThumbnailAsync(
+        path, *item.Host(), _icon_px_size, [item, _callback, _cancel_checker](NSImage *thumbnail) {
+            if( _cancel_checker && _cancel_checker() ) {
+                _callback({});
+                return;
+            }
+            BuildResult result;
+            result.thumbnail = thumbnail;
+            _callback(result);
+        });
+}
+
 NSImage *IconBuilderImpl::GetGenericIcon(const VFSListingItem &_item) const
 {
     return _item.IsDir() ? m_ExtensionIconsCache->GenericFolderIcon() : m_ExtensionIconsCache->GenericFileIcon();

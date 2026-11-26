@@ -123,22 +123,29 @@ void IconRepositoryImpl::ScheduleIconProduction(SlotKey _key, const VFSListingIt
         if( context->must_stop )
             return;
 
-        ProduceRealIcon(*context);
-
-        if( context->must_stop )
-            return;
-
-        auto commit_block = [this, slot_index, context] { CommitProductionResult(slot_index, *context); };
-        m_ClientExecutor->Execute(std::move(commit_block));
+        StartRealIconProduction(slot_index, context);
     };
     m_ProductionQueue->Execute(std::move(work_block));
 }
 
-void IconRepositoryImpl::ProduceRealIcon(WorkerContext &_ctx)
+void IconRepositoryImpl::StartRealIconProduction(int _slot_index, const base::intrusive_ptr<WorkerContext> &_context)
 {
-    const auto build_result = m_IconBuilder->BuildRealIcon(_ctx.item, m_IconPxSize);
-    _ctx.result_filetype = build_result.filetype;
-    _ctx.result_thumbnail = build_result.thumbnail;
+    m_IconBuilder->BuildRealIconAsync(
+        _context->item,
+        m_IconPxSize,
+        [this, _slot_index, _context](IconBuilder::BuildResult result) {
+            if( _context->must_stop )
+                return;
+            _context->result_filetype = result.filetype;
+            _context->result_thumbnail = result.thumbnail;
+            m_ClientExecutor->Execute([this, _slot_index, _context] {
+                if( _context->must_stop )
+                    return;
+                if( IsValidSlot(FromIndex(_slot_index)) )
+                    CommitProductionResult(_slot_index, *_context);
+            });
+        },
+        [_context] { return _context->must_stop.load(); });
 }
 
 void IconRepositoryImpl::CommitProductionResult(int _slot_index, WorkerContext &_ctx)

@@ -24,6 +24,11 @@ public:
 
     NSImage *ProduceThumbnail(const std::string &_filename, int _px_size, const FileStateHint &_hint) override;
 
+    void ProduceThumbnailAsync(const std::string &_filename,
+                               int _px_size,
+                               const std::optional<FileStateHint> &_hint,
+                               ThumbnailCallback _callback) override;
+
 private:
     static constexpr size_t m_CacheSize = 4096;
 
@@ -56,7 +61,8 @@ private:
         NSImage *image = nil; // may be nil - it means that QL can't produce thumbnail for this file
         uint64_t file_size = 0;
         uint64_t mtime = 0;
-        std::atomic_flag is_in_work = {false}; // item is currenly updating its image
+        std::atomic_flag is_in_work = {false}; // item is currently updating its image
+        std::vector<ThumbnailCallback> waiters;
     };
 
     using Container = base::LRUCache<Key, base::intrusive_ptr<Info>, m_CacheSize, KeyHash>;

@@ -31,6 +31,11 @@ public:
     BuildResult
     BuildRealIcon(const VFSListingItem &_item, int _icon_px_size, const CancelChecker &_cancel_checker) override;
 
+    void BuildRealIconAsync(const VFSListingItem &_item,
+                            int _icon_px_size,
+                            BuildCallback _callback,
+                            const CancelChecker &_cancel_checker) override;
+
 private:
     [[nodiscard]] NSImage *GetGenericIcon(const VFSListingItem &_item) const;
     [[nodiscard]] bool ShouldTryProducingQLThumbnailOnNativeFS(const VFSListingItem &_item) const;

@@ -100,10 +100,8 @@ bool QLThumbnailsCacheImpl::Key::operator!=(const Key &_rhs) const noexcept
     return !(*this == _rhs);
 }
 
-static NSImage *GenerateQuickLookThumbnail(NSURL *_url, CGSize _size)
+static void GenerateQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_callback)(NSImage *))
 {
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-    __block NSImage *image = nil;
     QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
           initWithFileAtURL:_url
                        size:_size
@@ -114,16 +112,26 @@ static NSImage *GenerateQuickLookThumbnail(NSURL *_url, CGSize _size)
         generateBestRepresentationForRequest:request
                            completionHandler:^(QLThumbnailRepresentation *_Nullable representation,
                                                NSError *_Nullable error) {
+                             NSImage *image = nil;
                              if( representation != nil )
                                  image = [[NSImage alloc] initWithCGImage:representation.CGImage size:_size];
                              if( error != nil )
                                  Log::Warn("QuickLook thumbnail generation failed: {}",
                                            error.localizedDescription.UTF8String);
-                             dispatch_semaphore_signal(semaphore);
+                             _callback(image);
                            }];
+}
+
+static NSImage *GenerateQuickLookThumbnail(NSURL *_url, CGSize _size)
+{
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    __block NSImage *image = nil;
+    GenerateQuickLookThumbnailAsync(_url, _size, ^(NSImage *result) {
+      image = result;
+      dispatch_semaphore_signal(semaphore);
+    });
     const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
     if( wait_result != 0 ) {
-        [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
         Log::Warn("QuickLook thumbnail generation timed out");
         return nil;
     }
@@ -278,6 +286,78 @@ NSImage *QLThumbnailsCacheImpl::ThumbnailIfHas(const std::string &_filename, int
         Log::Trace("ThumbnailIfHas(): doesn't have a cached entry for '{}' ({}px)", _filename, _px_size);
         return nil;
     }
+}
+
+void QLThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_filename,
+                                                  int _px_size,
+                                                  const std::optional<FileStateHint> &_hint,
+                                                  ThumbnailCallback _callback)
+{
+    if( !_callback )
+        return;
+
+    const auto file_state = _hint ? _hint : ReadFileState(_filename);
+    if( !file_state.has_value() ) {
+        _callback(nil);
+        return;
+    }
+
+    const auto temp_key = Key{std::string_view{_filename}, _px_size, Key::no_ownership};
+    std::unique_lock lock{m_ItemsLock};
+    base::intrusive_ptr<Info> info;
+    if( m_Items.count(temp_key) ) {
+        info = m_Items[temp_key];
+    }
+    else {
+        auto key = Key{_filename, _px_size};
+        info = base::intrusive_ptr{new Info};
+        m_Items.insert(std::move(key), info);
+    }
+    assert(info != nullptr);
+
+    if( info->file_size == file_state->size && info->mtime == file_state->mtime ) {
+        NSImage *const image = info->image;
+        lock.unlock();
+        _callback(image);
+        return;
+    }
+
+    if( info->is_in_work.test_and_set() ) {
+        info->waiters.emplace_back(std::move(_callback));
+        return;
+    }
+
+    info->file_size = file_state->size;
+    info->mtime = file_state->mtime;
+    info->waiters.emplace_back(std::move(_callback));
+    lock.unlock();
+
+    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_filename.c_str()]];
+    if( url == nil ) {
+        std::vector<ThumbnailCallback> waiters;
+        {
+            const std::lock_guard guard{m_ItemsLock};
+            waiters = std::move(info->waiters);
+            info->is_in_work.clear();
+        }
+        for( auto &waiter : waiters )
+            waiter(nil);
+        return;
+    }
+
+    const CGSize size = NSMakeSize(_px_size, _px_size);
+    GenerateQuickLookThumbnailAsync(url, size, ^(NSImage *image) {
+      std::vector<ThumbnailCallback> waiters;
+      {
+          const std::lock_guard guard{m_ItemsLock};
+          if( image != nil )
+              info->image = image;
+          waiters = std::move(info->waiters);
+          info->is_in_work.clear();
+      }
+      for( auto &waiter : waiters )
+          waiter(image);
+    });
 }
 
 } // namespace nc::vfsicon

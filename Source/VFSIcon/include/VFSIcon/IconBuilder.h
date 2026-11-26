@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Cocoa/Cocoa.h>
+#include <functional>
 #include <VFS/VFS.h>
 
 namespace nc::vfsicon {
@@ -34,6 +35,7 @@ public:
         NSImage *filetype = nil;  // icon generated from file type or taken from a bundle
     };
     using CancelChecker = std::function<bool()>;
+    using BuildCallback = std::function<void(BuildResult)>;
     /**
      * Thumbnail has priority over filetype.
      * If a thumbnail is not nil, filetype lookup might be skipped during.
@@ -47,6 +49,16 @@ public:
     virtual BuildResult BuildRealIcon(const VFSListingItem &_item,
                                       int _icon_px_size,
                                       const CancelChecker &_cancel_checker = CancelChecker{}) = 0;
+
+    /**
+     * Asynchronous variant of BuildRealIcon(). The callback may be invoked on any queue and
+     * exactly once. The default implementation preserves the old blocking behavior for callers
+     * that only implement BuildRealIcon().
+     */
+    virtual void BuildRealIconAsync(const VFSListingItem &_item,
+                                    int _icon_px_size,
+                                    BuildCallback _callback,
+                                    const CancelChecker &_cancel_checker = CancelChecker{});
 };
 
 } // namespace nc::vfsicon

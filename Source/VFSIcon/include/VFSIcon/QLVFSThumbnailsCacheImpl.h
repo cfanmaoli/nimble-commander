@@ -18,6 +18,11 @@ public:
 
     NSImage *ProduceThumbnail(const std::string &_file_path, VFSHost &_host, int _px_size) override;
 
+    void ProduceThumbnailAsync(const std::string &_file_path,
+                               VFSHost &_host,
+                               int _px_size,
+                               ThumbnailCallback _callback) override;
+
 private:
     // this is a lazy and far from ideal implementation
     // it cheats in several ways:

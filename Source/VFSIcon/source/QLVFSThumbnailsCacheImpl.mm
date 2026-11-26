@@ -6,10 +6,8 @@
 
 namespace nc::vfsicon {
 
-static NSImage *GenerateVFSQuickLookThumbnail(NSURL *_url, CGSize _size)
+static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_callback)(NSImage *))
 {
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-    __block NSImage *image = nil;
     QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
           initWithFileAtURL:_url
                        size:_size
@@ -20,16 +18,26 @@ static NSImage *GenerateVFSQuickLookThumbnail(NSURL *_url, CGSize _size)
         generateBestRepresentationForRequest:request
                            completionHandler:^(QLThumbnailRepresentation *_Nullable representation,
                                                NSError *_Nullable error) {
+                             NSImage *image = nil;
                              if( representation != nil )
                                  image = [[NSImage alloc] initWithCGImage:representation.CGImage size:_size];
                              if( error != nil )
                                  Log::Warn("QuickLook thumbnail generation failed: {}",
                                            error.localizedDescription.UTF8String);
-                             dispatch_semaphore_signal(semaphore);
+                             _callback(image);
                            }];
+}
+
+static NSImage *GenerateVFSQuickLookThumbnail(NSURL *_url, CGSize _size)
+{
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    __block NSImage *image = nil;
+    GenerateVFSQuickLookThumbnailAsync(_url, _size, ^(NSImage *result) {
+      image = result;
+      dispatch_semaphore_signal(semaphore);
+    });
     const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
     if( wait_result != 0 ) {
-        [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
         Log::Warn("QuickLook thumbnail generation timed out");
         return nil;
     }
@@ -123,6 +131,54 @@ std::expected<std::vector<uint8_t>, Error> QLVFSThumbnailsCacheImpl::ReadEntireF
     else {
         return std::unexpected(rc.error());
     }
+}
+
+void QLVFSThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_file_path,
+                                                     VFSHost &_host,
+                                                     int _px_size,
+                                                     ThumbnailCallback _callback)
+{
+    if( !_callback )
+        return;
+
+    const std::string key = MakeKey(_file_path, _host, _px_size);
+    NSImage *cached = nil;
+    {
+        const auto lock = std::lock_guard{m_Lock};
+        if( m_Thumbnails.count(key) )
+            cached = m_Thumbnails.at(key);
+    }
+    if( cached != nil ) {
+        _callback(cached);
+        return;
+    }
+
+    const std::string extension = std::filesystem::path(_file_path).extension();
+    auto data = ReadEntireFile(_file_path, _host);
+    if( !data.has_value() ) {
+        _callback(nil);
+        return;
+    }
+
+    auto placement_result = m_TempStorage->PlaceWithExtension(data->data(), data->size(), extension);
+    if( !placement_result.has_value() ) {
+        _callback(nil);
+        return;
+    }
+
+    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:placement_result->Path().c_str()]];
+    if( url == nil ) {
+        _callback(nil);
+        return;
+    }
+
+    GenerateVFSQuickLookThumbnailAsync(url, CGSizeMake(double(_px_size), double(_px_size)), ^(NSImage *image) {
+      if( image != nil ) {
+          const auto lock = std::lock_guard{m_Lock};
+          m_Thumbnails.insert(key, image);
+      }
+      _callback(image);
+    });
 }
 
 } // namespace nc::vfsicon

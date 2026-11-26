@@ -99,7 +99,7 @@ private:
 
     [[nodiscard]] int NumberOfUsedSlots() const;
     int AllocateSlot();
-    void ProduceRealIcon(WorkerContext &_ctx);
+    void StartRealIconProduction(int _slot_index, const base::intrusive_ptr<WorkerContext> &_context);
     void CommitProductionResult(int _slot_index, WorkerContext &_ctx);
     static bool RefreshImages(Slot &_slot, const WorkerContext &_ctx);
     static bool HasFileChanged(const Slot &_slot, const VFSListingItem &_item);

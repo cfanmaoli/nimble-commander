@@ -1,6 +1,8 @@
 // Copyright (C) 2018 Michael Kazakov. Subject to GNU General Public License version 3.
 #pragma once
 
+#include <functional>
+#include <optional>
 #include <string>
 
 @class NSImage;
@@ -36,6 +38,13 @@ public:
         uint64_t size = 0;
         uint64_t mtime = 0;
     };
+
+    using ThumbnailCallback = std::function<void(NSImage *)>;
+    /** Starts an asynchronous thumbnail request; the callback is invoked on a background queue. */
+    virtual void ProduceThumbnailAsync(const std::string &_file_path,
+                                       int _px_size,
+                                       const std::optional<FileStateHint> &_hint,
+                                       ThumbnailCallback _callback) = 0;
     /**
      * Same as ProduceThumbnail(filename, px_size), but can use additional information available
      * for caller. It may decreate redundant I/O operations when checking for current file state.
