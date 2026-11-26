@@ -221,6 +221,7 @@ xcuserdata/
 #
 compile_commands.json
 Scripts/*.tmp/
+Scripts/run-clang-tidy.log
 
 #
 # Python bytecode
