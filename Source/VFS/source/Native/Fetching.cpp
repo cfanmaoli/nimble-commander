@@ -201,7 +201,7 @@ int Fetching::ReadSingleEntryAttributesByPath(nc::routedio::PosixIOInterface &_i
 // assuming this will be called when Admin Mode is on
 int Fetching::ReadDirAttributesStat(const int _dir_fd,
                                     const char *_dir_path,
-                                    const std::function<void(size_t _fetched_now)> &_cb_fetch,
+                                    const std::function<bool(size_t _fetched_now)> &_cb_fetch,
                                     const Callback &_cb_param)
 {
     // initial directory lookup
@@ -249,7 +249,8 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
             if( !S_ISDIR(stat_buffer.st_mode) )
                 params.size = stat_buffer.st_size;
 
-            _cb_fetch(1);
+            if( !_cb_fetch(1) )
+                return 0;
             _cb_param(params);
         }
     }

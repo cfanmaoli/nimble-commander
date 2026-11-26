@@ -445,9 +445,11 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     nc::base::SerialQueue m_DirectoryLoadingQ;
     nc::base::SerialQueue m_DirectoryReLoadingQ;
 
-    // A navigation requested while another one is still streaming. The current load is stopped
-    // and this request is started as soon as the loading queue becomes dry.
+    // Navigation or a listing-restore task requested while another one is still streaming. The
+    // current load is stopped and only the newest pending operation is started once the loading
+    // queue becomes dry.
     std::shared_ptr<DirectoryChangeRequest> m_PendingDirectoryChangeRequest;
+    std::function<void(const std::function<bool()> &)> m_PendingLoadingTask;
     bool m_FlatTruncationReported;
     NCPanelQuickSearch *m_QuickSearch;
 
@@ -1182,6 +1184,7 @@ namespace {
         m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
     }
     m_PendingDirectoryChangeRequest.reset();
+    m_PendingLoadingTask = nullptr;
     m_DirectorySizeCountingQ.Stop();
     m_DirectoryLoadingQ.Stop();
     m_DirectoryReLoadingQ.Stop();
@@ -1190,12 +1193,21 @@ namespace {
 - (void)startPendingDirectoryLoadIfPossible
 {
     dispatch_assert_main_queue();
-    if( !m_PendingDirectoryChangeRequest || !m_DirectoryLoadingQ.Empty() )
+    if( !m_DirectoryLoadingQ.Empty() )
         return;
+    if( m_PendingDirectoryChangeRequest ) {
+        std::shared_ptr<DirectoryChangeRequest> request = std::move(m_PendingDirectoryChangeRequest);
+        m_PendingDirectoryChangeRequest.reset();
+        [self GoToDirWithContext:request];
+        return;
+    }
 
-    std::shared_ptr<DirectoryChangeRequest> request = std::move(m_PendingDirectoryChangeRequest);
-    m_PendingDirectoryChangeRequest.reset();
-    [self GoToDirWithContext:request];
+    if( m_PendingLoadingTask ) {
+        std::function<void(const std::function<bool()> &)> task = std::move(m_PendingLoadingTask);
+        m_PendingLoadingTask = nullptr;
+        m_DirectoryLoadingQ.Run(
+            [task = std::move(task), sq = &m_DirectoryLoadingQ] { task([sq] { return sq->IsStopped(); }); });
+    }
 }
 
 - (void)updateSpinningIndicator
@@ -1497,6 +1509,31 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
 - (void)commitCancelableLoadingTask:(std::function<void(const std::function<bool()> &_is_cancelled)>)_task
 {
+    if( !dispatch_is_main_queue() ) {
+        dispatch_to_main_queue(
+            [self, task = std::move(_task)]() mutable { [self commitCancelableLoadingTask:std::move(task)]; });
+        return;
+    }
+
+    if( !m_DirectoryLoadingQ.Empty() ) {
+        // A back/forward navigation restores a listing through this path instead of
+        // GoToDirWithContext. Treat it like a newer navigation: stop the current stream and run
+        // only this task once the queue is dry.
+        m_StreamingLoadId.fetch_add(1);
+        if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+            m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+        }
+        m_PendingDirectoryChangeRequest.reset();
+        m_PendingLoadingTask = std::move(_task);
+        m_DirectoryLoadingQ.Stop();
+        return;
+    }
+
+    if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+        m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+    }
+    m_PendingDirectoryChangeRequest.reset();
+    m_PendingLoadingTask = nullptr;
     m_DirectoryLoadingQ.Run(
         [task = std::move(_task), sq = &m_DirectoryLoadingQ] { task([sq] { return sq->IsStopped(); }); });
 }
@@ -1711,6 +1748,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
             }
             m_PendingDirectoryChangeRequest = std::move(_request);
+            m_PendingLoadingTask = nullptr;
             m_DirectoryLoadingQ.Stop();
             return {};
         }
@@ -1719,6 +1757,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
         }
         m_PendingDirectoryChangeRequest.reset();
+        m_PendingLoadingTask = nullptr;
         const VFSListingPtr previous_listing = m_Data.ListingPtr();
         m_DirectoryLoadingQ.Run([=] {
             [self doGoToDirWithContext:_request

@@ -331,6 +331,11 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     }
 
     const auto cb_fetch = [&](size_t _fetched_now) {
+        // Stop as soon as the navigation is superseded. Cancellation is checked between
+        // getattrlistbulk batches (and between stat() calls in Admin Mode), so a million-entry
+        // directory stops within one batch instead of enumerating to the end.
+        if( _cancel_checker && _cancel_checker() )
+            return false;
         // check if final entries count is more than previous approximate
         if( next_entry_index + _fetched_now > allocated_size )
             resize_dense(next_entry_index + _fetched_now);
