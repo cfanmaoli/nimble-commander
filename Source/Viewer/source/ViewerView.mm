@@ -558,7 +558,6 @@ static const auto g_ConfigEnableSyntaxHighlighting = "viewer.enableHighlighting"
                                                       length:m_SelectionInWindowUnichars.length];
         NSPasteboard *pasteBoard = NSPasteboard.generalPasteboard;
         [pasteBoard clearContents];
-        [pasteBoard declareTypes:@[NSPasteboardTypeString] owner:nil];
         [pasteBoard setString:str forType:NSPasteboardTypeString];
     }
 }

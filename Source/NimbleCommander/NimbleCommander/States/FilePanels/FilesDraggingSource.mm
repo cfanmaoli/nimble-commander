@@ -6,6 +6,7 @@
 #include <Operations/Copying.h>
 #include <Operations/Operation.h>
 #include <Base/dispatch_cpp.h>
+#include <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #include "PanelController.h"
 #include "MainWindowFilePanelState.h"
 #include "../MainWindowController.h"
@@ -16,10 +17,7 @@ static const auto g_PrivateDragUTI = @"com.magnumbytes.nimblecommander.filespane
 static const auto g_PasteboardFileURLPromiseUTI = static_cast<NSString *>(kPasteboardTypeFileURLPromise);
 
 // "public.file-url"
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileURL);
-#pragma clang diagnostic pop
+static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
 
 @implementation PanelDraggingItem {
     VFSListingItem m_Item;
@@ -50,10 +48,7 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
 
 - (instancetype)initWithItem:(const VFSListingItem &)_item nativeHost:(const VFSHostPtr &)_native_host
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    const auto type = _item.IsDir() ? static_cast<NSString *>(kUTTypeFolder) : static_cast<NSString *>(kUTTypeData);
-#pragma clang diagnostic pop
+    const auto type = _item.IsDir() ? UTTypeFolder.identifier : UTTypeData.identifier;
     self = [super initWithFileType:type delegate:self];
     if( self ) {
         m_Item = _item;
@@ -230,7 +225,7 @@ static const auto g_PasteboardFileURLUTI = static_cast<NSString *>(kUTTypeFileUR
         [_sender writeObjects:urls];
 }
 
-// g_PasteboardFileURLUTI - kUTTypeFileURL
+// g_PasteboardFileURLUTI - public.file-url
 // "public.file-url"
 //- (void)provideFilenamesURLsPasteboard:(NSPasteboard *)sender item:(PanelDraggingItem *)item
 //{

@@ -17,7 +17,7 @@ ServicesHandler::ServicesHandler(std::function<NCMainWindowController *()> _wind
 static NSURL *ExtractFirstURL(NSPasteboard *_pboard)
 {
     for( NSPasteboardItem *item in _pboard.pasteboardItems )
-        if( const auto url_string = [item stringForType:@"public.file-url"] )
+        if( const auto url_string = [item stringForType:NSPasteboardTypeFileURL] )
             if( const auto url = [NSURL URLWithString:url_string] )
                 return url;
     return nil;
@@ -82,7 +82,7 @@ void ServicesHandler::RevealItem(NSPasteboard *_pboard,
 {
     std::vector<std::string> paths;
     for( NSPasteboardItem *item in _pboard.pasteboardItems ) {
-        if( const auto url_string = [item stringForType:@"public.file-url"] ) {
+        if( const auto url_string = [item stringForType:NSPasteboardTypeFileURL] ) {
             if( const auto url = [NSURL URLWithString:url_string] )
                 if( auto path = url.fileSystemRepresentation )
                     paths.emplace_back(path);

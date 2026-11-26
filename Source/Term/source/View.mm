@@ -763,7 +763,6 @@ static const auto g_ClearCGColor = NSColor.clearColor.CGColor;
     NSString *result = [[NSString alloc] initWithCharacters:unichars.data() length:unichars.size()];
     NSPasteboard *pasteBoard = NSPasteboard.generalPasteboard;
     [pasteBoard clearContents];
-    [pasteBoard declareTypes:@[NSPasteboardTypeString] owner:nil];
     [pasteBoard setString:result forType:NSPasteboardTypeString];
 }
 

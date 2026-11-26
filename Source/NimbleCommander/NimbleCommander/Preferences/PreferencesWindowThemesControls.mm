@@ -622,10 +622,11 @@ static const auto g_PreferencesWindowThemesTabColoringRulesControlDataType =
     writeRowsWithIndexes:(NSIndexSet *)rowIndexes
             toPasteboard:(NSPasteboard *)pboard
 {
-    [pboard declareTypes:@[g_PreferencesWindowThemesTabColoringRulesControlDataType] owner:self];
-    [pboard setData:[NSKeyedArchiver archivedDataWithRootObject:rowIndexes requiringSecureCoding:false error:nil]
-            forType:g_PreferencesWindowThemesTabColoringRulesControlDataType];
-    return true;
+    NSPasteboardItem *const item = [NSPasteboardItem new];
+    [item setData:[NSKeyedArchiver archivedDataWithRootObject:rowIndexes requiringSecureCoding:false error:nil]
+          forType:g_PreferencesWindowThemesTabColoringRulesControlDataType];
+    [pboard clearContents];
+    return [pboard writeObjects:@[item]];
 }
 
 - (BOOL)tableView:(NSTableView *) [[maybe_unused]] aTableView
