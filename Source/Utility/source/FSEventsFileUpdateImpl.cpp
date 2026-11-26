@@ -156,13 +156,11 @@ void FSEventsFileUpdateImpl::DeleteEventStream(FSEventStreamRef _stream)
     assert(_stream != nullptr);
     dispatch_assert_main_queue();
     FSEventStreamStop(_stream);
-    // FSEventStreamInvalidate() also removes the stream from its dispatch queue.
-
-    // FSEventStreamInvalidate can be blocking, so let's do that in a background thread
-    dispatch_to_background([_stream] {
-        FSEventStreamInvalidate(_stream);
-        FSEventStreamRelease(_stream);
-    });
+    // The file watcher's callback uses |this| as its user data, so the stream must be fully
+    // invalidated before the owning object or its watch entry can be destroyed. Invalidate on the
+    // main queue here: a background invalidate left a window for a queued callback to outlive it.
+    FSEventStreamInvalidate(_stream);
+    FSEventStreamRelease(_stream);
 }
 
 void FSEventsFileUpdateImpl::Callback([[maybe_unused]] ConstFSEventStreamRef _stream_ref,
