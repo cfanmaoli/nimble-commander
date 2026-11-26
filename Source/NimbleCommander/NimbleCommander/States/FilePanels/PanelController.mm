@@ -437,6 +437,9 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
     // Identifies the incremental directory load whose chunks are being installed; bumped by every
     // navigation so that the stale chunks of a superseded load are ignored.
     std::atomic<unsigned long> m_StreamingLoadId;
+
+    // Invalidates a listing restore that finishes after the user has already navigated elsewhere.
+    std::atomic<uint64_t> m_NavigationEpoch;
     std::string m_FlatViewRoot;
     VFSHostPtr m_FlatViewHost;
 
@@ -531,6 +534,8 @@ VFSListingPtr ProducePatchedListingGeneric(const VFSListing &_base,
         m_VFSFetchingFlags = 0;
         m_NextActivityTicket = 1;
         m_DataGeneration = 0;
+        m_StreamingLoadId = 0;
+        m_NavigationEpoch = 0;
         m_IsAnythingWorksInBackground = false;
         m_PendingRefreshScheduled = false;
         m_FlatTruncationReported = false;
@@ -1515,6 +1520,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         return;
     }
 
+    m_NavigationEpoch.fetch_add(1);
     if( !m_DirectoryLoadingQ.Empty() ) {
         // A back/forward navigation restores a listing through this path instead of
         // GoToDirWithContext. Treat it like a newer navigation: stop the current stream and run
@@ -1717,6 +1723,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         return {};
     }
 
+    m_NavigationEpoch.fetch_add(1);
     if( _request->RequestedDirectory.empty() || _request->RequestedDirectory.front() != '/' ||
         _request->VFS == nullptr )
         return std::unexpected(Error{Error::POSIX, EINVAL});
@@ -1779,6 +1786,11 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         });
         return {};
     }
+}
+
+- (uint64_t)navigationEpoch
+{
+    return m_NavigationEpoch.load();
 }
 
 - (void)loadListing:(const VFSListingPtr &)_listing

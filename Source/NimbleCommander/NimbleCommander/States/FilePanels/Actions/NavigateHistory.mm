@@ -46,6 +46,7 @@ namespace nc::panel {
 void ListingPromiseLoader::Load(const ListingPromise &_promise, PanelController *_panel)
 {
     auto task = [=](const std::function<bool()> &_cancelled) {
+        const uint64_t epoch = _panel.navigationEpoch;
         const auto vfs_adapter = [&](const core::VFSInstancePromise &_promise) {
             return _panel.vfsInstanceManager.RetrieveVFS(_promise, _cancelled);
         };
@@ -53,7 +54,12 @@ void ListingPromiseLoader::Load(const ListingPromise &_promise, PanelController 
         try {
             const auto listing = _promise.Restore(_panel.vfsFetchingFlags, vfs_adapter, _cancelled);
             if( listing )
-                dispatch_to_main_queue([=] { [_panel loadListing:listing]; });
+                dispatch_to_main_queue([=] {
+                    // A newer Back/Forward or GoTo may have completed while this restore was
+                    // running; never install an older listing over the newer view.
+                    if( _panel.navigationEpoch == epoch )
+                        [_panel loadListing:listing];
+                });
         } catch( ... ) {
             //...
         }

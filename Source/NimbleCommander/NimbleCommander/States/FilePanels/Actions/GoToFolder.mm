@@ -35,7 +35,8 @@ void GoToFolder::Perform(PanelController *_target, id /*_sender*/) const
                                  c->PerformAsynchronous = true;
                                  c->InitiatedByUser = true;
                                  c->LoadingResultCallback = [=](const std::expected<void, Error> &_result) {
-                                     dispatch_to_main_queue([=] { [sheet tellLoadingResult:_result]; });
+                                     if( _result || !nc::IsCancellation(_result.error()) )
+                                         dispatch_to_main_queue([=] { [sheet tellLoadingResult:_result]; });
                                  };
                                  [_target GoToDirWithContext:c];
                              }];

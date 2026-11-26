@@ -1,6 +1,7 @@
 // Copyright (C) 2025-2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #pragma once
 
+#include <cerrno>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -132,6 +133,13 @@ private:
     int64_t m_Code = -1;
     nc::base::intrusive_ptr<ExternalPayload> m_External;
 };
+
+// Returns true when the error represents a deliberately cancelled operation rather than a
+// failure. Callers that recover from load errors should generally ignore these.
+inline bool IsCancellation(const Error &_error) noexcept
+{
+    return _error.Domain() == Error::POSIX && _error.Code() == ECANCELED;
+}
 
 // This class wraps Error as a throwable exception.
 class ErrorException : public std::exception

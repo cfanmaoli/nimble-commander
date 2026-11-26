@@ -197,6 +197,10 @@ using ContextMenuProvider =
  */
 - (void)loadListing:(const VFSListingPtr &)_listing;
 
+// Monotonic navigation generation, safe to read from background threads. A listing restore must
+// compare it before installing its result on the main queue.
+- (uint64_t)navigationEpoch;
+
 /**
  * Flat view lists every file and directory underneath the current directory, recursively, in a
  * single listing. It is only available on top of a regular directory listing; leaving it reloads

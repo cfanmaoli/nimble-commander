@@ -95,7 +95,7 @@ static void RecoverSavedPathAtVFSAsync(const VFSHostPtr &_host, const std::strin
     ctx.PerformAsynchronous = true;
     ctx.RequestedDirectory = _path;
     ctx.LoadingResultCallback = [=](const std::expected<void, Error> &_result) {
-        if( !_result && !_panel.data.IsLoaded() ) {
+        if( !_result && !nc::IsCancellation(_result.error()) && !_panel.data.IsLoaded() ) {
             // failed to load a listing on this VFS on specified path
             // will try upper directories on this VFS up to the root,
             // in case if everyone fails we will fallback to Home Directory on native
@@ -150,7 +150,7 @@ void ControllerStateJSONDecoder::RecoverSavedContentSync(const PersistentLocatio
     request->PerformAsynchronous = false;
     request->RequestedDirectory = _location.path;
     request->LoadingResultCallback = [host, path, _panel](const std::expected<void, Error> &_result) {
-        if( !_result && !_panel.data.IsLoaded() ) {
+        if( !_result && !nc::IsCancellation(_result.error()) && !_panel.data.IsLoaded() ) {
             // failed to load a listing on this VFS on specified path
             // will try upper directories on this VFS up to the root,
             // in case if everyone fails we will fallback to Home Directory on native VFS.
