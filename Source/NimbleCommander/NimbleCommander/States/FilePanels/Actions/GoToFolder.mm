@@ -253,8 +253,10 @@ void GoIntoFolder::Perform(PanelController *_target, id /*_sender*/) const
         return;
 
     if( item.IsDir() ) {
-        if( item.IsDotDot() )
+        if( item.IsDotDot() ) {
             actions::GoToEnclosingFolder{}.Perform(_target, _target);
+            return;
+        }
 
         const auto request = std::make_shared<DirectoryChangeRequest>();
         request->RequestedDirectory = item.Path();
