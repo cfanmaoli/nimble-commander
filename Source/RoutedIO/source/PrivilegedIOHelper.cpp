@@ -675,14 +675,13 @@ static void XPC_Connection_Handler(xpc_connection_t _connection)
         return;
     }
 
-    if( __builtin_available(macOS 12.0, *) ) {
-        // On MacOS12+ we also ask the OS itself to enforce the code signing requirement per connection
-        const int rc = xpc_connection_set_peer_code_signing_requirement(_connection, g_SignatureRequirement);
-        if( rc != 0 ) {
-            syslog_warning("xpc_connection_set_peer_code_signing_requirement() failed, dropping connection.");
-            xpc_connection_cancel(_connection);
-            return;
-        }
+    // The minimum supported macOS is 13, so the per-connection code-signing requirement is
+    // always available.
+    const int rc = xpc_connection_set_peer_code_signing_requirement(_connection, g_SignatureRequirement);
+    if( rc != 0 ) {
+        syslog_warning("xpc_connection_set_peer_code_signing_requirement() failed, dropping connection.");
+        xpc_connection_cancel(_connection);
+        return;
     }
 
     ConnectionContext *cc = new ConnectionContext;

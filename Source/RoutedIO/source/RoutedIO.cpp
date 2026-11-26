@@ -258,7 +258,12 @@ bool RoutedIO::AskToInstallHelper()
     m_AuthenticatedAsAdmin = true;
     CFErrorRef error;
 
+    // SMJobBless is deprecated in macOS 13 in favour of SMAppService, but the helper registration
+    // and on-disk layout still use SMJobBless; keep it until that migration is done.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     const bool result = SMJobBless(kSMDomainSystemLaunchd, g_HelperLabelCF, auth_ref, &error);
+#pragma clang diagnostic pop
     if( result ) {
         Log::Info("Successfully installed a privileged helper");
     }
@@ -442,7 +447,10 @@ void RoutedIO::InstallViaRootCLI()
     }
 
     CFErrorRef error = nullptr;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     const bool result = SMJobBless(kSMDomainSystemLaunchd, g_HelperLabelCF, auth_ref, &error);
+#pragma clang diagnostic pop
     if( !result && error != nullptr ) {
         if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyDescription(error)) )
             std::cerr << base::CFStringGetUTF8StdString(desc.get()) << '\n';

@@ -282,7 +282,7 @@ jobs:
           echo '359W39ZS37 - an Apple Development or a Developer ID certificate. A signed build (such'
           echo 'as the stable releases) can use it.'
           echo
-          echo 'Requires macOS 12 Monterey or newer, Apple Silicon only.'
+          echo 'Requires macOS 13 Ventura or newer, Apple Silicon only.'
           echo
           echo '```'
           cat "$asset.sha256"

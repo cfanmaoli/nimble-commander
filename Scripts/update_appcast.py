@@ -115,7 +115,7 @@ def read_bundle_versions(dmg):
                 return {
                     "version": str(info["CFBundleVersion"]),
                     "short_version": str(info.get("CFBundleShortVersionString", "")),
-                    "minimum_system": str(info.get("LSMinimumSystemVersion", "12.0")),
+                    "minimum_system": str(info.get("LSMinimumSystemVersion", "13.0")),
                 }
         sys.exit(f"no application bundle inside {dmg}")
     finally:

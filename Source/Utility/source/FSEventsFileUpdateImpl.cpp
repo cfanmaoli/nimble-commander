@@ -137,7 +137,7 @@ FSEventStreamRef FSEventsFileUpdateImpl::CreateEventStream(const std::filesystem
             Log::Warn("Failed to create a stream for {}", _path);
             return;
         }
-        FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+        FSEventStreamSetDispatchQueue(stream, dispatch_get_main_queue());
         FSEventStreamStart(stream);
 
         Log::Debug("Started a stream for {}", _path);
@@ -156,7 +156,7 @@ void FSEventsFileUpdateImpl::DeleteEventStream(FSEventStreamRef _stream)
     assert(_stream != nullptr);
     dispatch_assert_main_queue();
     FSEventStreamStop(_stream);
-    FSEventStreamUnscheduleFromRunLoop(_stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    // FSEventStreamInvalidate() also removes the stream from its dispatch queue.
 
     // FSEventStreamInvalidate can be blocking, so let's do that in a background thread
     dispatch_to_background([_stream] {

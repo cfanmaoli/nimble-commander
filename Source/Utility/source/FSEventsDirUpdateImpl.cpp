@@ -187,7 +187,7 @@ static void StartStream(FSEventStreamRef _stream)
     assert(_stream != nullptr);
 
     const auto schedule_and_run = [=] {
-        FSEventStreamScheduleWithRunLoop(_stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+        FSEventStreamSetDispatchQueue(_stream, dispatch_get_main_queue());
         const bool started = FSEventStreamStart(_stream);
         if( !started ) {
             Log::Error("FSEventStreamStart failed to start");
@@ -206,7 +206,7 @@ static void StopStream(FSEventStreamRef _stream)
     assert(_stream != nullptr);
     dispatch_assert_main_queue();
     FSEventStreamStop(_stream);
-    FSEventStreamUnscheduleFromRunLoop(_stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    // FSEventStreamInvalidate() also removes the stream from its dispatch queue.
 
     // FSEventStreamInvalidate can be blocking, so let's do that in a background thread
     dispatch_to_background([_stream] {

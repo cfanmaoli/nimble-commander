@@ -213,7 +213,13 @@ using namespace nc::panel;
                     if( NSURL *url = [[NSURL alloc] initFileURLWithPath:s] )
                         [m_ShareItemsURLs addObject:url];
 
+            // The menu is built manually so that each service appears directly in the Share
+            // submenu; NSSharingServicePicker.standardShareMenuItem is a different UI. Keep the
+            // per-service API until the menu is redesigned.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
             auto services = [NSSharingService sharingServicesForItems:m_ShareItemsURLs];
+#pragma clang diagnostic pop
             for( NSSharingService *service in services ) {
                 NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:service.title
                                                               action:@selector(OnShareWithService:)

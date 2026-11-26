@@ -12,7 +12,7 @@
       <pubDate>Thu, 19 Nov 2026 16:49:17 +0000</pubDate>
       <sparkle:version>4543</sparkle:version>
       <sparkle:shortVersionString>1.9.3c</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3c</sparkle:releaseNotesLink>
       <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3c/nimble-commander-fork-1.9.3c.dmg"
                  sparkle:edSignature="/iQ8m1DrtMZJEQ0ZBw1s+NuMwVsgsnn6pMhJZ9TH3WaCQpZ/YG0oZf9vN+SfuR+kefBmfOVZ81YAFmMn18C1DQ=="
@@ -25,7 +25,7 @@
       <pubDate>Thu, 19 Nov 2026 00:47:57 +0000</pubDate>
       <sparkle:version>4532</sparkle:version>
       <sparkle:shortVersionString>1.9.3a</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/nightly</sparkle:releaseNotesLink>
       <sparkle:channel>nightly</sparkle:channel>
       <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/nightly/nimble-commander-fork-nightly.dmg"
