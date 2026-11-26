@@ -59,7 +59,11 @@ TEST_CASE(PREFIX "Verifies a copied file with SHA-256")
     const TempTestDir source_dir;
     const TempTestDir destination_dir;
     const std::string filename = "__nc_sha256_verification__";
-    REQUIRE(close(creat((source_dir.directory / filename).c_str(), 0600)) == 0);
+    const std::string payload = "non-empty SHA-256 verification payload";
+    const int source_fd = open((source_dir.directory / filename).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    REQUIRE(source_fd >= 0);
+    REQUIRE(write(source_fd, payload.data(), payload.size()) == static_cast<ssize_t>(payload.size()));
+    REQUIRE(close(source_fd) == 0);
 
     CopyingOptions opts;
     opts.docopy = true;

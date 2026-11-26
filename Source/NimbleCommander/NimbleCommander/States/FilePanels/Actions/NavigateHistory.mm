@@ -45,8 +45,8 @@ namespace nc::panel {
 
 void ListingPromiseLoader::Load(const ListingPromise &_promise, PanelController *_panel)
 {
+    const uint64_t epoch = [_panel beginNavigationEpoch];
     auto task = [=](const std::function<bool()> &_cancelled) {
-        const uint64_t epoch = _panel.navigationEpoch;
         const auto vfs_adapter = [&](const core::VFSInstancePromise &_promise) {
             return _panel.vfsInstanceManager.RetrieveVFS(_promise, _cancelled);
         };

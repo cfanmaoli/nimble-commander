@@ -238,8 +238,8 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
             params.filename = std::get<0>(e).c_str();
             params.crt_time = stat_buffer.st_birthtimespec.tv_sec;
             params.mod_time = stat_buffer.st_mtimespec.tv_sec;
-            params.chg_time = stat_buffer.st_mtimespec.tv_sec;
-            params.acc_time = stat_buffer.st_ctimespec.tv_sec;
+            params.chg_time = stat_buffer.st_ctimespec.tv_sec;
+            params.acc_time = stat_buffer.st_atimespec.tv_sec;
             params.add_time = -1;
             params.uid = stat_buffer.st_uid;
             params.gid = stat_buffer.st_gid;

@@ -338,8 +338,10 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
     }
 
     if( IsStopped() ) {
-        if( m_TargetCreated )
+        if( m_TargetCreated ) {
             std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+            m_TargetCreated = false;
+        }
     }
     else {
         m_TargetCommitted = true;

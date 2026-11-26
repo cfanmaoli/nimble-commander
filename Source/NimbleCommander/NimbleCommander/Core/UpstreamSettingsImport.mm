@@ -495,8 +495,9 @@ bool ApplyPendingImport(const fs::path &_fork_support_directory, std::string &_e
     // Move any leftover staging aside so discovery cannot pick it up.
     fs::remove_all(pending, ec);
     if( ec ) {
+        const fs::path discarded = pending.string() + ".applied-" + stamp;
         std::error_code rename_ec;
-        fs::rename(pending, pending.string() + ".applied", rename_ec);
+        fs::rename(pending, discarded, rename_ec);
         if( rename_ec )
             _error = "unable to clean up the staged settings";
     }

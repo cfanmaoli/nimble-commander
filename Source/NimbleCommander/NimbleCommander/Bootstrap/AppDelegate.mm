@@ -256,8 +256,11 @@ static NCAppDelegate *g_Me = nil;
         std::string upstream_import_error;
         if( !nc::upstream::ApplyPendingImport(m_SupportDirectory, upstream_import_error) )
             std::cerr << "Failed to apply the staged upstream settings import: " << upstream_import_error << '\n';
-        else
+        else {
+            if( !upstream_import_error.empty() )
+                std::cerr << "Upstream settings import warning: " << upstream_import_error << '\n';
             nc::lang::ReloadActiveLanguagePack();
+        }
         [self setupConfigs];
         nc::vfs::rar::SetHelperEnabled(GlobalConfig().GetBool(g_ConfigCompressionRarSupport));
         m_SystemThemeDetector = std::make_unique<nc::SystemThemeDetector>();

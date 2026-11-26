@@ -204,6 +204,10 @@ using ContextMenuProvider =
 // compare it before installing its result on the main queue.
 - (uint64_t)navigationEpoch;
 
+// Starts a new navigation epoch and returns it. Call before scheduling a listing restore so the
+// token is fixed at submission time, not when the queued task happens to run.
+- (uint64_t)beginNavigationEpoch;
+
 /**
  * Flat view lists every file and directory underneath the current directory, recursively, in a
  * single listing. It is only available on top of a regular directory listing; leaving it reloads

@@ -705,6 +705,7 @@ namespace {
     const auto pers = CursorBackup{m_View.curpos, m_Data};
 
     m_Data.ReLoad(_ptr);
+    [self setListingIncomplete:false];
     [m_View dataUpdated];
     [m_QuickSearch dataUpdated];
 
@@ -954,12 +955,19 @@ namespace {
     }
 }
 
+- (void)setListingIncomplete:(bool)_incomplete
+{
+    m_Data.SetIncomplete(_incomplete);
+    [m_View.headerView setIncomplete:_incomplete];
+}
+
 - (void)installPreparedReload:(data::Model::PreparedLoad &&)_prepared
 {
     assert(dispatch_is_main_queue());
     [self CancelBackgroundOperations];
     const auto pers = CursorBackup{m_View.curpos, m_Data};
     m_Data.InstallLoad(std::move(_prepared));
+    [self setListingIncomplete:false];
     m_DataGeneration++;
     [m_View dataUpdated];
     [m_QuickSearch dataUpdated];
@@ -1523,7 +1531,6 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         return;
     }
 
-    m_NavigationEpoch.fetch_add(1);
     if( !m_DirectoryLoadingQ.Empty() ) {
         // A back/forward navigation restores a listing through this path instead of
         // GoToDirWithContext. Treat it like a newer navigation: stop the current stream and run
@@ -1653,8 +1660,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                     if( m_StreamingLoadId.load() != stream_id )
                         return;
                     const auto perf_begin = std::chrono::steady_clock::now();
-                    m_Data.SetIncomplete(false);
-                    [m_View.headerView setIncomplete:false];
+                    [self setListingIncomplete:false];
                     [m_View savePathState];
                     m_FlatView = false;
                     m_FlatViewHost.reset();
@@ -1713,10 +1719,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             // The first screenful is already visible, so do not throw it away on a late error;
             // mark the header instead and let the user retry/refresh.
             dispatch_to_main_queue([self, stream_id] {
-                if( m_StreamingLoadId.load() == stream_id ) {
-                    m_Data.SetIncomplete(true);
-                    [m_View.headerView setIncomplete:true];
-                }
+                if( m_StreamingLoadId.load() == stream_id )
+                    [self setListingIncomplete:true];
             });
         }
         if( _request->LoadingResultCallback )
@@ -1811,6 +1815,11 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     return m_NavigationEpoch.load();
 }
 
+- (uint64_t)beginNavigationEpoch
+{
+    return m_NavigationEpoch.fetch_add(1) + 1;
+}
+
 - (bool)listingIncomplete
 {
     return m_Data.IsIncomplete();
@@ -1821,8 +1830,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     [self CancelBackgroundOperations]; // clean running operations if any
     dispatch_or_run_in_main_queue([=] {
         const auto perf_begin = std::chrono::steady_clock::now();
-        m_Data.SetIncomplete(false);
-        [m_View.headerView setIncomplete:false];
+        [self setListingIncomplete:false];
         [m_View savePathState];
         if( _listing->IsUniform() )
             m_Data.Load(_listing, data::Model::PanelType::Directory);
