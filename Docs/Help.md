@@ -26,8 +26,8 @@ Below is the compatibility table for the older releases:
 
 | Versions      | Architecture  | Minimum macOS Version
 | ------------- | ------------- | -----------------
-| 1.9.3c+       | x64 & ARM64   | macOS 13
-| 1.9.0 - 1.9.3b | x64 & ARM64  | macOS 12
+| 2.0+          | x64 & ARM64   | macOS 13
+| 1.9.0 - 1.9.3c | x64 & ARM64  | macOS 12
 | 1.8.0 - 1.8.0 | x64 & ARM64   | macOS 11
 | 1.2.9 - 1.7.0 | x64 & ARM64   | macOS 10.15
 | 1.2.0 - 1.2.7 | x64           | OS X 10.11 El Capitan

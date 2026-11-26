@@ -1,5 +1,29 @@
 # What's New in Nimble Commander-Fork
 
+## Version 2.0 (unreleased)
+
+### Platform and architecture
+- The minimum supported macOS is now 13 Ventura.
+- The unused x86_64 slice was removed from the bundled Sparkle framework.
+
+### Modern APIs and cleanup
+- Removed LetsMove and the deprecated AuthorizationExecuteWithPrivileges path used when the app
+  was launched outside /Applications.
+- Removed MD2/MD4/MD5; copy verification and temporary-file change detection use SHA-256.
+- Migrated the LaunchServices UTType C API to UniformTypeIdentifiers.
+- Replaced QLThumbnailImageCreate with QuickLookThumbnailing and made thumbnail production fully
+  asynchronous.
+- Removed the unsupported Finder-favorites importer based on LSSharedFileListFavoriteItems.
+- Removed Carbon keycode dependencies except for the isolated TIS/UCKeyTranslate translator.
+- Pinned pstld and rapidjson and replaced std::regex/rand() in small utility paths.
+- Replaced deprecated per-service sharing enumeration with the system sharing picker.
+
+### Reliability
+- Promise writes now complete exactly once and no longer leak their operation.
+- Security-scoped drag-in URLs remain valid for the whole copy.
+- Settings import applies atomically after revalidation.
+- Nightly publishing is gated by integration tests; release builds require a clean tagged tree.
+
 ## Version 1.9.3c (20 Nov 2026)
 
 ### Language export fixed
