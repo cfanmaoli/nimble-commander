@@ -6,12 +6,57 @@
 #include <Operations/Copying.h>
 #include <Operations/Operation.h>
 #include <Base/dispatch_cpp.h>
+#include <algorithm>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <vector>
 #include <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #include "PanelController.h"
 #include "MainWindowFilePanelState.h"
 #include "../MainWindowController.h"
 
 static const auto g_PrivateDragUTI = @"com.magnumbytes.nimblecommander.filespanelsdraganddrop";
+
+namespace {
+
+struct PromiseOperationRegistry {
+    std::mutex mutex;
+    std::vector<std::shared_ptr<nc::ops::Operation>> operations;
+};
+
+PromiseOperationRegistry &PromiseOperations()
+{
+    // Intentionally leaked: file promises can outlive the app's normal teardown, and this avoids
+    // an exit-time destructor for a global container.
+    static auto *const registry = new PromiseOperationRegistry;
+    return *registry;
+}
+
+void RetainPromiseOperation(const std::shared_ptr<nc::ops::Operation> &_operation)
+{
+    PromiseOperationRegistry &registry = PromiseOperations();
+    const std::lock_guard lock(registry.mutex);
+    registry.operations.emplace_back(_operation);
+}
+
+void ReleasePromiseOperation(const std::shared_ptr<nc::ops::Operation> &_operation)
+{
+    PromiseOperationRegistry &registry = PromiseOperations();
+    const std::lock_guard lock(registry.mutex);
+    const auto it = std::find(registry.operations.begin(), registry.operations.end(), _operation);
+    if( it != registry.operations.end() )
+        registry.operations.erase(it);
+}
+
+NSError *PromiseCopyError()
+{
+    return [NSError errorWithDomain:@"info.filesmanager.Files.promise"
+                               code:1
+                           userInfo:@{NSLocalizedDescriptionKey: @"Copy failed"}];
+}
+
+} // namespace
 
 // "com.apple.pasteboard.promised-file-url"
 static const auto g_PasteboardFileURLPromiseUTI = static_cast<NSString *>(kPasteboardTypeFileURLPromise);
@@ -111,15 +156,32 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
 
     const auto operation =
         std::make_shared<nc::ops::Copying>(std::vector<VFSListingItem>{m_Item}, destination, m_NativeHost, options);
-    operation->ObserveUnticketed(nc::ops::Operation::NotifyAboutCompletion, [operation, _completion_handler] {
-        if( operation->State() == nc::ops::OperationState::Completed )
-            _completion_handler(nil);
-        else
-            _completion_handler([NSError errorWithDomain:@"info.filesmanager.Files.promise"
-                                                    code:1
-                                                userInfo:@{NSLocalizedDescriptionKey: @"Copy failed"}]);
-    });
-    operation->Start();
+    const auto completion_called = std::make_shared<std::atomic_bool>(false);
+    const std::weak_ptr<nc::ops::Operation> weak_operation = operation;
+    const auto finish = [weak_operation, completion_called, _completion_handler](NSError *_Nullable _error) {
+        if( completion_called->exchange(true) )
+            return;
+        _completion_handler(_error);
+        if( const auto op = weak_operation.lock() )
+            ReleasePromiseOperation(op);
+    };
+
+    try {
+        RetainPromiseOperation(operation);
+        operation->ObserveUnticketed(nc::ops::Operation::NotifyAboutFinish, [weak_operation, finish] {
+            if( const auto op = weak_operation.lock() ) {
+                finish(op->State() == nc::ops::OperationState::Completed ? nil : PromiseCopyError());
+            }
+            else {
+                // The retained table should make this unreachable, but never leave the receiver
+                // waiting if it happens.
+                finish(PromiseCopyError());
+            }
+        });
+        operation->Start();
+    } catch( ... ) {
+        finish(PromiseCopyError());
+    }
 }
 
 @end

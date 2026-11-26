@@ -12,10 +12,10 @@ namespace nc::panel::actions {
 
 bool CopyToPasteboard::Predicate(PanelController *_target) const
 {
-    const auto &stats = _target.data.Stats();
-    if( stats.selected_entries_amount > 0 )
-        return true;
-    return _target.view.item;
+    for( const auto &item : _target.selectedEntriesOrFocusedEntryWithDotDot )
+        if( item.Host()->IsNativeFS() )
+            return true;
+    return false;
 }
 
 bool CopyToPasteboard::ValidateMenuItem(PanelController *_target, NSMenuItem *_item) const
@@ -58,10 +58,10 @@ context::CopyToPasteboard::CopyToPasteboard(const std::vector<VFSListingItem> &_
 
 bool context::CopyToPasteboard::Predicate([[maybe_unused]] PanelController *_target) const
 {
-    // currently there's a difference with previous predicate form context menu:
-    //        if( m_CommonHost && m_CommonHost->IsNativeFS() ) {
-    // such thing works only on native file systems
-    return !m_Items.empty();
+    for( const auto &item : m_Items )
+        if( item.Host()->IsNativeFS() )
+            return true;
+    return false;
 }
 
 bool context::CopyToPasteboard::ValidateMenuItem(PanelController *_target, NSMenuItem *_item) const

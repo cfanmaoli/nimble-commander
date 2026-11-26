@@ -6,12 +6,19 @@
 #import <Foundation/Foundation.h>
 
 #include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <fcntl.h>
 #include <array>
 #include <cstdint>
 #include <ctime>
 #include <fstream>
 #include <string_view>
+#include <string>
 #include <system_error>
+#include <unistd.h>
+#include <utility>
+#include <vector>
 
 namespace {
 
@@ -138,6 +145,74 @@ void ScheduleRelaunch(const nc::upstream::ImportPlan &_plan, const fs::path &_fo
     nc::lang::RelaunchApplication();
 }
 
+struct ImportFile {
+    fs::path relative;
+    fs::path destination;
+    fs::path temporary;
+    fs::path backup;
+    bool had_destination = false;
+    bool committed = false;
+};
+
+bool IsImportableRelativePath(const fs::path &_relative)
+{
+    if( _relative.empty() || _relative.is_absolute() )
+        return false;
+    for( const auto &part : _relative )
+        if( part == ".." || part == "." )
+            return false;
+
+    const std::string relative = _relative.generic_string();
+    for( const std::string_view root : kImportableRelativePaths ) {
+        if( relative == root )
+            return true;
+        if( relative.size() > root.size() && relative.starts_with(root) && relative[root.size()] == '/' )
+            return true;
+    }
+    return false;
+}
+
+fs::path MakeSiblingPath(const fs::path &_path, std::string_view _tag)
+{
+    for( int attempt = 0;; ++attempt ) {
+        fs::path candidate = _path;
+        candidate += "."s;
+        candidate += std::string(_tag);
+        if( attempt != 0 )
+            candidate += "." + std::to_string(attempt);
+
+        std::error_code ec;
+        if( !fs::exists(candidate, ec) )
+            return candidate;
+    }
+}
+
+bool SyncFile(const fs::path &_path, std::string &_error)
+{
+    const int fd = ::open(_path.c_str(), O_RDONLY);
+    if( fd < 0 ) {
+        _error = "unable to open "s + _path.string() + " for syncing";
+        return false;
+    }
+    const int sync_rc = ::fsync(fd);
+    const int saved_errno = errno;
+    ::close(fd);
+    if( sync_rc != 0 ) {
+        _error = "unable to flush "s + _path.string() + ": " + std::strerror(saved_errno);
+        return false;
+    }
+    return true;
+}
+
+void SyncDirectory(const fs::path &_directory)
+{
+    const int fd = ::open(_directory.c_str(), O_RDONLY);
+    if( fd < 0 )
+        return;
+    std::ignore = ::fsync(fd);
+    ::close(fd);
+}
+
 bool HasCoreSettings(const fs::path &_root)
 {
     std::error_code ec;
@@ -258,43 +333,168 @@ bool ApplyPendingImport(const fs::path &_fork_support_directory, std::string &_e
     if( !fs::is_directory(pending, ec) )
         return true;
 
-    std::vector<fs::path> files;
+    std::vector<fs::path> relatives;
     for( fs::recursive_directory_iterator it(pending, fs::directory_options::skip_permission_denied, ec), end;
          !ec && it != end;
          it.increment(ec) ) {
-        if( it->is_regular_file(ec) && !it->is_symlink(ec) )
-            files.push_back(fs::relative(it->path(), pending, ec));
+        if( !it->is_regular_file(ec) || it->is_symlink(ec) )
+            continue;
+        const fs::path relative = fs::relative(it->path(), pending, ec);
+        if( ec ) {
+            _error = "unable to inspect the staged settings";
+            return false;
+        }
+        if( !IsImportableRelativePath(relative) ) {
+            _error = "unexpected file "s + relative.generic_string();
+            return false;
+        }
+        relatives.push_back(relative);
     }
     if( ec ) {
         _error = "unable to read the staged settings";
         return false;
     }
+    if( relatives.empty() )
+        return true;
 
     const std::string stamp = std::to_string(std::time(nullptr));
-    for( const fs::path &relative : files ) {
-        const fs::path source = pending / relative;
-        const fs::path destination = _fork_support_directory / relative;
-        if( fs::exists(destination, ec) ) {
-            if( fs::is_directory(destination, ec) ) {
-                _error = "unable to replace the directory "s + destination.string();
-                return false;
-            }
-            const fs::path backup = destination.string() + ".pre-upstream-import-" + stamp;
-            fs::copy_file(destination, backup, fs::copy_options::overwrite_existing, ec);
-            if( ec ) {
-                _error = "unable to back up "s + destination.string();
-                return false;
-            }
+    std::uintmax_t total_size = 0;
+    std::vector<ImportFile> files;
+    files.reserve(relatives.size());
+
+    const auto cleanup_temporary_files = [&files] {
+        for( const ImportFile &file : files ) {
+            std::error_code ignored;
+            if( !file.temporary.empty() )
+                fs::remove(file.temporary, ignored);
         }
-        fs::create_directories(destination.parent_path(), ec);
-        fs::copy_file(source, destination, fs::copy_options::overwrite_existing, ec);
+    };
+    const auto cleanup_backups = [&files] {
+        for( const ImportFile &file : files ) {
+            std::error_code ignored;
+            if( !file.backup.empty() )
+                fs::remove(file.backup, ignored);
+        }
+    };
+
+    for( size_t index = 0; index != relatives.size(); ++index ) {
+        const fs::path &relative = relatives[index];
+        const fs::path source = pending / relative;
+        if( IsJSONConfig(relative.generic_string()) && !ValidateJSONFile(source, _error) ) {
+            cleanup_temporary_files();
+            return false;
+        }
+
+        const auto size = fs::file_size(source, ec);
         if( ec ) {
-            _error = "unable to write "s + destination.string();
+            _error = "unable to read "s + source.string();
+            cleanup_temporary_files();
+            return false;
+        }
+        total_size += size;
+        if( total_size > kMaxImportSize ) {
+            _error = "the settings are too large to import";
+            cleanup_temporary_files();
+            return false;
+        }
+
+        const fs::path destination = _fork_support_directory / relative;
+        if( fs::is_directory(destination, ec) ) {
+            _error = "unable to replace the directory "s + destination.string();
+            cleanup_temporary_files();
+            return false;
+        }
+        ec.clear();
+        fs::create_directories(destination.parent_path(), ec);
+        if( ec ) {
+            _error = "unable to create "s + destination.parent_path().string();
+            cleanup_temporary_files();
+            return false;
+        }
+
+        ImportFile file;
+        file.relative = relative;
+        file.destination = destination;
+        file.temporary = MakeSiblingPath(destination, "upstream-import-" + stamp + "-" + std::to_string(index));
+        files.push_back(file);
+
+        fs::copy_file(source, file.temporary, fs::copy_options::overwrite_existing, ec);
+        if( ec ) {
+            _error = "unable to stage "s + destination.string();
+            cleanup_temporary_files();
+            return false;
+        }
+        if( !SyncFile(file.temporary, _error) ) {
+            cleanup_temporary_files();
             return false;
         }
     }
 
+    // Back up all original files before touching any destination.
+    for( size_t index = 0; index != files.size(); ++index ) {
+        ImportFile &file = files[index];
+        if( !fs::exists(file.destination, ec) ) {
+            ec.clear();
+            continue;
+        }
+        if( fs::is_directory(file.destination, ec) ) {
+            _error = "unable to replace the directory "s + file.destination.string();
+            cleanup_temporary_files();
+            cleanup_backups();
+            return false;
+        }
+        file.had_destination = true;
+        file.backup = MakeSiblingPath(file.destination, "pre-upstream-import-" + stamp + "-" + std::to_string(index));
+        fs::copy_file(file.destination, file.backup, fs::copy_options::overwrite_existing, ec);
+        if( ec ) {
+            _error = "unable to back up "s + file.destination.string();
+            cleanup_temporary_files();
+            cleanup_backups();
+            return false;
+        }
+    }
+
+    // Commit with rename; if any rename fails, restore every already-replaced destination.
+    for( ImportFile &file : files ) {
+        std::error_code rename_ec;
+        fs::rename(file.temporary, file.destination, rename_ec);
+        if( rename_ec ) {
+            _error = "unable to write "s + file.destination.string();
+            for( auto it = files.rbegin(); it != files.rend(); ++it ) {
+                ImportFile &rollback = *it;
+                if( rollback.committed ) {
+                    std::error_code restore_ec;
+                    if( rollback.had_destination ) {
+                        fs::rename(rollback.backup, rollback.destination, restore_ec);
+                        if( restore_ec ) {
+                            restore_ec.clear();
+                            std::error_code copy_ec;
+                            fs::copy_file(
+                                rollback.backup, rollback.destination, fs::copy_options::overwrite_existing, copy_ec);
+                        }
+                    }
+                    else {
+                        std::error_code remove_ec;
+                        fs::remove(rollback.destination, remove_ec);
+                    }
+                }
+                else {
+                    std::error_code remove_ec;
+                    fs::remove(rollback.temporary, remove_ec);
+                }
+            }
+            cleanup_backups();
+            return false;
+        }
+        file.committed = true;
+        SyncDirectory(file.destination.parent_path());
+    }
+
     fs::remove_all(pending, ec);
+    if( ec ) {
+        _error = "unable to remove the staged settings";
+        return false;
+    }
     return true;
 }
 

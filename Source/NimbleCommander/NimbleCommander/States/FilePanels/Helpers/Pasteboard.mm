@@ -17,6 +17,9 @@ bool PasteboardSupport::WriteURLSPBoard(const std::vector<VFSListingItem> &_item
                 if( const auto url = [NSURL fileURLWithPath:path] )
                     [urls addObject:url];
 
+    if( urls.count == 0 )
+        return false;
+
     [_pasteboard clearContents];
     return [_pasteboard writeObjects:urls];
 }

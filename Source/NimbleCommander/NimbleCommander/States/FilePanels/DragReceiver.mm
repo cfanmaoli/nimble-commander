@@ -256,14 +256,9 @@ NSDragOperation DragReceiver::BuildOperationForURLs(NSArray<NSURL *> *_source, c
         return NSDragOperationNone;
 
     // Do not compare the mask for exact equality: external drag sources (notably Parallels
-    // Desktop) commonly advertise several operations at once, such as Copy|Link. Prefer the
-    // least destructive operation the source allows instead of rejecting the whole drag.
-    if( m_DraggingOperationsMask & NSDragOperationCopy )
-        return NSDragOperationCopy;
-
-    if( _destination.Host()->IsNativeFS() && (m_DraggingOperationsMask & NSDragOperationLink) )
-        return NSDragOperationLink;
-
+    // Desktop) commonly advertise several operations at once, such as Copy|Link. Generic means
+    // that the source allows the destination to decide, so keep the same-volume move behaviour
+    // for such sources; Copy-only or Copy|Link sources still get a copy.
     if( m_DraggingOperationsMask & NSDragOperationGeneric ) {
         if( _destination.Host()->IsNativeFS() ) {
             const auto v1 = m_NativeFSManager.VolumeFromPath(_destination.Path());
@@ -273,6 +268,12 @@ NSDragOperation DragReceiver::BuildOperationForURLs(NSArray<NSURL *> *_source, c
         }
         return NSDragOperationCopy;
     }
+
+    if( m_DraggingOperationsMask & NSDragOperationCopy )
+        return NSDragOperationCopy;
+
+    if( _destination.Host()->IsNativeFS() && (m_DraggingOperationsMask & NSDragOperationLink) )
+        return NSDragOperationLink;
 
     if( m_DraggingOperationsMask & NSDragOperationMove )
         return NSDragOperationMove;
@@ -348,7 +349,7 @@ bool DragReceiver::PerformWithURLsSource(NSArray<NSURL *> *_source, const vfs::V
         const auto opts = MakeDefaultFileCopyOptions();
         const auto op = std::make_shared<nc::ops::Copying>(
             std::move(*source_items), _destination.Path(), _destination.Host(), opts);
-        op->Observe(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
+        op->ObserveUnticketed(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
         AddPanelRefreshIfNecessary(m_Target, *op);
         [m_Target.mainWindowController enqueueOperation:op];
         return true;
@@ -357,7 +358,7 @@ bool DragReceiver::PerformWithURLsSource(NSArray<NSURL *> *_source, const vfs::V
         const auto opts = MakeDefaultFileMoveOptions();
         const auto op = std::make_shared<nc::ops::Copying>(
             std::move(*source_items), _destination.Path(), _destination.Host(), opts);
-        op->Observe(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
+        op->ObserveUnticketed(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
         AddPanelRefreshIfNecessary(m_Target, *op);
         [m_Target.mainWindowController enqueueOperation:op];
         return true;
@@ -368,7 +369,7 @@ bool DragReceiver::PerformWithURLsSource(NSArray<NSURL *> *_source, const vfs::V
             const auto dest_path = std::filesystem::path(_destination.Path()) / file.Filename();
             const auto op = std::make_shared<nc::ops::Linkage>(
                 dest_path.native(), source_path, _destination.Host(), nc::ops::LinkageType::CreateSymlink);
-            op->Observe(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
+            op->ObserveUnticketed(ops::Operation::NotifyAboutFinish, [urls_access_guard] {});
             AddPanelRefreshIfNecessary(m_Target, *op);
             [m_Target.mainWindowController enqueueOperation:op];
         }

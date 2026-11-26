@@ -200,8 +200,15 @@ jobs:
         brew install qemu
         brew install docker
         brew install colima
-        LIMACTL_PATH=$(brew --prefix)/bin/limactl
-        sudo curl -L -o $LIMACTL_PATH https://github.com/mikekazakov/qemu-test/raw/main/limactl && sudo chmod +x $LIMACTL_PATH
+        # Pin the custom limactl build instead of executing whatever the upstream main branch serves.
+        LIMACTL_COMMIT=365c00375b3c30faf9faecb083c33c90c9b8e1f3
+        LIMACTL_SHA256=1fee7ded3b96d610ad116e3c5f3a1d6ffea2956ae6df07e5ec1515e944116a4d
+        LIMACTL_DIR="$RUNNER_TEMP/limactl-bin"
+        mkdir -p "$LIMACTL_DIR"
+        curl --fail --location --retry 3 --output "$LIMACTL_DIR/limactl"           "https://raw.githubusercontent.com/mikekazakov/qemu-test/$LIMACTL_COMMIT/limactl"
+        echo "$LIMACTL_SHA256  $LIMACTL_DIR/limactl" | shasum -a 256 -c -
+        chmod +x "$LIMACTL_DIR/limactl"
+        export PATH="$LIMACTL_DIR:$PATH"
         colima start --network-address --arch arm64 --vm-type=qemu
     - uses: actions/checkout@v5
     - name: Work around GHA issue 7522

@@ -102,3 +102,48 @@ TEST_CASE("Upstream import rejects malformed settings files")
     CHECK_FALSE(error.empty());
     CHECK_FALSE(nc::upstream::HasPendingImport(fork));
 }
+
+TEST_CASE("Upstream import revalidates staged JSON before applying")
+{
+    TempTestDir temp;
+    const fs::path home = temp.directory / "home";
+    const fs::path fork = temp.directory / "fork";
+    const fs::path original = OriginalSupportDirectory(home);
+    WriteFile(original / "Config/Config.json", R"({"general":{"theme":"old"}})");
+    WriteFile(fork / "Config/Config.json", R"({"general":{"theme":"current"}})");
+
+    const auto plan = nc::upstream::DiscoverIn(home, fork);
+    REQUIRE(plan.has_value());
+    std::string error;
+    REQUIRE(nc::upstream::StagePendingImport(*plan, fork, error));
+
+    const fs::path pending = fork / ".pending-upstream-import";
+    WriteFile(pending / "Config/Config.json", "{not json");
+
+    CHECK_FALSE(nc::upstream::ApplyPendingImport(fork, error));
+    CHECK_FALSE(error.empty());
+    CHECK(nc::upstream::HasPendingImport(fork));
+    CHECK(ReadFile(fork / "Config/Config.json") == R"({"general":{"theme":"current"}})");
+}
+
+TEST_CASE("Upstream import rejects files outside the whitelist")
+{
+    TempTestDir temp;
+    const fs::path home = temp.directory / "home";
+    const fs::path fork = temp.directory / "fork";
+    const fs::path original = OriginalSupportDirectory(home);
+    WriteFile(original / "Config/Config.json", R"({"general":{"theme":"old"}})");
+    WriteFile(fork / "Config/Config.json", R"({"general":{"theme":"current"}})");
+
+    const auto plan = nc::upstream::DiscoverIn(home, fork);
+    REQUIRE(plan.has_value());
+    std::string error;
+    REQUIRE(nc::upstream::StagePendingImport(*plan, fork, error));
+
+    WriteFile(fork / ".pending-upstream-import/Config/Unexpected.json", "{}");
+
+    CHECK_FALSE(nc::upstream::ApplyPendingImport(fork, error));
+    CHECK_FALSE(error.empty());
+    CHECK(nc::upstream::HasPendingImport(fork));
+    CHECK(ReadFile(fork / "Config/Config.json") == R"({"general":{"theme":"current"}})");
+}
