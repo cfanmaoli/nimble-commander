@@ -1,5 +1,6 @@
 // Copyright (C) 2025 Michael Kazakov. Subject to GNU General Public License version 3.
 #include "PanelGalleryCollectionViewItemCarrier.h"
+#include <algorithm>
 #include "PanelGalleryCollectionViewItem.h"
 #include "PanelGalleryView.h"
 #include "../PanelViewPresentationSettings.h"
@@ -54,6 +55,17 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
         default:
             return nil;
     }
+}
+
+static NSRect AspectFitRect(NSImage *image, NSRect bounds)
+{
+    const NSSize size = image.size;
+    if( size.width <= 0 || size.height <= 0 )
+        return bounds;
+    const CGFloat scale = std::min(bounds.size.width / size.width, bounds.size.height / size.height);
+    const NSSize fitted = NSMakeSize(size.width * scale, size.height * scale);
+    return NSMakeRect(
+        NSMidX(bounds) - fitted.width / 2, NSMidY(bounds) - fitted.height / 2, fitted.width, fitted.height);
 }
 
 @implementation NCPanelGalleryCollectionViewItemCarrier {
@@ -117,7 +129,8 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
     if( m_ItemLayout.icon_size > 0 ) {
         const NSRect icon_rect = [self calculateIconSegmentFromBounds:bounds];
 
-        [m_Icon drawInRect:icon_rect
+        const NSRect icon_draw_rect = AspectFitRect(m_Icon, icon_rect);
+        [m_Icon drawInRect:icon_draw_rect
                   fromRect:NSZeroRect
                  operation:NSCompositingOperationSourceOver
                   fraction:1.0

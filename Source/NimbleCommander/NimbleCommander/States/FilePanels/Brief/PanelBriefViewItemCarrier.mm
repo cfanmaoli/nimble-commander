@@ -1,5 +1,6 @@
 // Copyright (C) 2016-2024 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <Utility/FontExtras.h>
+#include <algorithm>
 #include <NimbleCommander/Core/Theming/Theme.h>
 #include "../PanelView.h"
 #include "../PanelViewPresentationSettings.h"
@@ -49,6 +50,17 @@ static NSParagraphStyle *ParagraphStyle(PanelViewFilenameTrimming _mode)
         default:
             return nil;
     }
+}
+
+static NSRect AspectFitRect(NSImage *image, NSRect bounds)
+{
+    const NSSize size = image.size;
+    if( size.width <= 0 || size.height <= 0 )
+        return bounds;
+    const CGFloat scale = std::min(bounds.size.width / size.width, bounds.size.height / size.height);
+    const NSSize fitted = NSMakeSize(size.width * scale, size.height * scale);
+    return NSMakeRect(
+        NSMidX(bounds) - fitted.width / 2, NSMidY(bounds) - fitted.height / 2, fitted.width, fitted.height);
 }
 
 @implementation PanelBriefViewItemCarrier {
@@ -199,7 +211,8 @@ static NSColor *Blend(NSColor *_front, NSColor *_back)
                                       ((bounds.size.height - m_LayoutConstants.icon_size) / 2.) + 0.5,
                                       m_LayoutConstants.icon_size,
                                       m_LayoutConstants.icon_size);
-    [m_Icon drawInRect:icon_rect
+    const NSRect icon_draw_rect = AspectFitRect(m_Icon, icon_rect);
+    [m_Icon drawInRect:icon_draw_rect
               fromRect:NSZeroRect
              operation:NSCompositingOperationSourceOver
               fraction:1.0

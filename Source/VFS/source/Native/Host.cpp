@@ -279,7 +279,10 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     size_t chunk_size = streaming_first_chunk;
     bool stream_cancelled = false;
     const auto flush_chunk = [&](const size_t _end) {
-        if( !streaming || _end == chunk_begin )
+        // An empty directory has no entries to trigger a regular chunk. Deliver an explicit empty
+        // listing so the panel can leave the previous directory; for non-empty directories the
+        // final empty tail is still skipped.
+        if( !streaming || (_end == chunk_begin && _end != 0) )
             return;
         apply_display_names(chunk_begin, _end);
         run_epilogue(chunk_begin, _end);

@@ -1,5 +1,6 @@
 // Copyright (C) 2018-2022 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconBuilderImpl.h>
+#include <algorithm>
 #include <ImageIO/ImageIO.h>
 #include <cctype>
 #include <string_view>
@@ -216,7 +217,11 @@ static NSImage *ProduceImageThumbnailDirectly(const std::string &_path, int _px_
     if( thumbnail == nullptr )
         return nil;
 
-    NSImage *const image = [[NSImage alloc] initWithCGImage:thumbnail size:NSMakeSize(_px_size, _px_size)];
+    const CGFloat source_width = static_cast<CGFloat>(CGImageGetWidth(thumbnail));
+    const CGFloat source_height = static_cast<CGFloat>(CGImageGetHeight(thumbnail));
+    const CGFloat scale = _px_size / std::max(source_width, source_height);
+    NSImage *const image = [[NSImage alloc] initWithCGImage:thumbnail
+                                                       size:NSMakeSize(source_width * scale, source_height * scale)];
     CGImageRelease(thumbnail);
     return image;
 }

@@ -64,11 +64,11 @@ def fetch_releases():
 
 def version_tuple(tag):
     """Sortable version key; a trailing letter makes a follow-up release newer (1.9.3a > 1.9.3)."""
-    match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)([A-Za-z]*)", tag)
+    match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.(\d+))?([A-Za-z]*)", tag)
     if not match:
         return (0, 0, 0, 0, "")
     major, minor, patch, suffix = match.groups()
-    return (int(major), int(minor), int(patch), 0 if not suffix else 1, suffix.lower())
+    return (int(major), int(minor), int(patch or 0), 0 if not suffix else 1, suffix.lower())
 
 
 def pick_releases(releases, wanted_tag):
