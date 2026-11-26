@@ -15,6 +15,14 @@ namespace {
 struct IconBuilderMock : IconBuilder {
     MOCK_METHOD2(LookupExistingIcon, LookupResult(const VFSListingItem &, int));
     MOCK_METHOD3(BuildRealIcon, BuildResult(const VFSListingItem &, int, const CancelChecker &));
+
+    void BuildRealIconAsync(const VFSListingItem &_item,
+                            int _icon_px_size,
+                            BuildCallback _callback,
+                            const CancelChecker &_cancel_checker) override
+    {
+        _callback(BuildRealIcon(_item, _icon_px_size, _cancel_checker));
+    }
 };
 
 struct ExecutorMock : base::Executor {

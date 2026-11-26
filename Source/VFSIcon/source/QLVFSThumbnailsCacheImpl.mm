@@ -28,22 +28,6 @@ static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (
                            }];
 }
 
-static NSImage *GenerateVFSQuickLookThumbnail(NSURL *_url, CGSize _size)
-{
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-    __block NSImage *image = nil;
-    GenerateVFSQuickLookThumbnailAsync(_url, _size, ^(NSImage *result) {
-      image = result;
-      dispatch_semaphore_signal(semaphore);
-    });
-    const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
-    if( wait_result != 0 ) {
-        Log::Warn("QuickLook thumbnail generation timed out");
-        return nil;
-    }
-    return image;
-}
-
 QLVFSThumbnailsCacheImpl::QLVFSThumbnailsCacheImpl(const std::shared_ptr<utility::BriefOnDiskStorage> &_temp_storage)
     : m_TempStorage(_temp_storage)
 {
@@ -64,45 +48,6 @@ NSImage *QLVFSThumbnailsCacheImpl::ThumbnailIfHas(const std::string &_file_path,
     return nil;
 }
 
-NSImage *QLVFSThumbnailsCacheImpl::ProduceThumbnail(const std::string &_file_path, VFSHost &_host, int _px_size)
-{
-    auto key = MakeKey(_file_path, _host, _px_size);
-
-    {
-        const auto lock = std::lock_guard{m_Lock};
-        if( m_Thumbnails.count(key) )
-            return m_Thumbnails.at(key);
-    }
-
-    const auto image = ProduceThumbnail(_file_path,
-                                        std::filesystem::path(_file_path).extension(),
-                                        _host,
-                                        CGSizeMake(double(_px_size), double(_px_size)));
-
-    {
-        const auto lock = std::lock_guard{m_Lock};
-        m_Thumbnails.insert(std::move(key), image);
-    }
-
-    return image;
-}
-
-NSImage *QLVFSThumbnailsCacheImpl::ProduceThumbnail(const std::string &_path,
-                                                    const std::string &_ext,
-                                                    VFSHost &_host,
-                                                    CGSize _sz)
-{
-    auto data = ReadEntireFile(_path, _host);
-    if( !data.has_value() )
-        return nil;
-
-    auto placement_result = m_TempStorage->PlaceWithExtension(data->data(), data->size(), _ext);
-    if( !placement_result.has_value() )
-        return nil;
-
-    return ProduceThumbnailForTempFile(placement_result->Path(), _sz);
-}
-
 std::string QLVFSThumbnailsCacheImpl::MakeKey(const std::string &_file_path, VFSHost &_host, int _px_size)
 {
     auto key = _host.MakePathVerbose(_file_path);
@@ -111,13 +56,6 @@ std::string QLVFSThumbnailsCacheImpl::MakeKey(const std::string &_file_path, VFS
     return key;
 }
 
-NSImage *QLVFSThumbnailsCacheImpl::ProduceThumbnailForTempFile(const std::string &_path, CGSize _px_size)
-{
-    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_path.c_str()]];
-    if( url == nil )
-        return nil;
-    return GenerateVFSQuickLookThumbnail(url, _px_size);
-}
 std::expected<std::vector<uint8_t>, Error> QLVFSThumbnailsCacheImpl::ReadEntireFile(const std::string &_path,
                                                                                     VFSHost &_host)
 {

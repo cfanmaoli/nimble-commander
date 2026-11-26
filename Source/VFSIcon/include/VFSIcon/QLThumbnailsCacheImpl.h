@@ -20,10 +20,6 @@ public:
 
     NSImage *ThumbnailIfHas(const std::string &_filename, int _px_size) override;
 
-    NSImage *ProduceThumbnail(const std::string &_filename, int _px_size) override;
-
-    NSImage *ProduceThumbnail(const std::string &_filename, int _px_size, const FileStateHint &_hint) override;
-
     void ProduceThumbnailAsync(const std::string &_filename,
                                int _px_size,
                                const std::optional<FileStateHint> &_hint,
@@ -66,13 +62,6 @@ private:
     };
 
     using Container = base::LRUCache<Key, base::intrusive_ptr<Info>, m_CacheSize, KeyHash>;
-
-    NSImage *Produce(const std::string &_filename, int _px_size, const std::optional<FileStateHint> &_hint);
-    static void CheckCacheAndUpdateIfNeeded(const std::string &_filename,
-                                            int _px_size,
-                                            Info &_info,
-                                            const std::optional<FileStateHint> &_hint);
-    static void ProduceNew(const std::string &_filename, int _px_size, Info &_info);
 
     Container m_Items;
     spinlock m_ItemsLock;

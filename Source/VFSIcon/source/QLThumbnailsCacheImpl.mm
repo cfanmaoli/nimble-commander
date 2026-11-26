@@ -122,82 +122,6 @@ static void GenerateQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_c
                            }];
 }
 
-static NSImage *GenerateQuickLookThumbnail(NSURL *_url, CGSize _size)
-{
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-    __block NSImage *image = nil;
-    GenerateQuickLookThumbnailAsync(_url, _size, ^(NSImage *result) {
-      image = result;
-      dispatch_semaphore_signal(semaphore);
-    });
-    const long wait_result = dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
-    if( wait_result != 0 ) {
-        Log::Warn("QuickLook thumbnail generation timed out");
-        return nil;
-    }
-    return image;
-}
-
-static NSImage *BuildRep(const std::string &_filename, int _px_size)
-{
-    Log::Info("BuildRep(): building QL thumbnail for '{}' ({}px)", _filename, _px_size);
-    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_filename.c_str()]];
-    if( url == nil ) {
-        Log::Warn("BuildRep(): failed to create NSURL for '{}'", _filename);
-        return nil;
-    }
-    const CGSize size = NSMakeSize(_px_size, _px_size);
-    NSImage *const result = GenerateQuickLookThumbnail(url, size);
-    if( result == nil )
-        Log::Warn("BuildRep(): failed to build a thumbnail image for '{}'", _filename);
-    return result;
-}
-
-QLThumbnailsCacheImpl::QLThumbnailsCacheImpl() = default;
-
-QLThumbnailsCacheImpl::~QLThumbnailsCacheImpl() = default;
-
-NSImage *QLThumbnailsCacheImpl::ProduceThumbnail(const std::string &_filename, int _px_size)
-{
-    return Produce(_filename, _px_size, std::nullopt);
-}
-
-NSImage *QLThumbnailsCacheImpl::ProduceThumbnail(const std::string &_filename, int _px_size, const FileStateHint &_hint)
-{
-    return Produce(_filename, _px_size, _hint);
-}
-
-NSImage *
-QLThumbnailsCacheImpl::Produce(const std::string &_filename, int _px_size, const std::optional<FileStateHint> &_hint)
-{
-    Log::Info("Produce(): request for '{}' ({}px)", _filename, _px_size);
-    const auto temp_key = Key{std::string_view{_filename}, _px_size, Key::no_ownership};
-    auto lock = std::unique_lock{m_ItemsLock};
-    if( m_Items.count(temp_key) ) { // O(1)
-        Log::Debug("found a cached item for '{}' ({}px)", _filename, _px_size);
-        const auto info = m_Items[temp_key]; // acquiring a copy of intrusive_ptr **by*value**! O(1)
-        lock.unlock();
-        assert(info != nullptr);
-        CheckCacheAndUpdateIfNeeded(_filename, _px_size, *info, _hint);
-        return info->image;
-    }
-    else {
-        Log::Debug("didn't find a cached item for '{}' ({}px). Adding new item, current cache size = {}",
-                   _filename,
-                   _px_size,
-                   m_Items.size());
-        // insert dummy info into the structure, so no one else can try producing it
-        // concurrently - prohibit wasting of resources
-        auto key = Key{_filename, _px_size};
-        const auto info = base::intrusive_ptr{new Info};
-        info->is_in_work.test_and_set();
-        m_Items.insert(std::move(key), info); // O(1)
-        lock.unlock();
-        ProduceNew(_filename, _px_size, *info);
-        return info->image;
-    }
-}
-
 static std::optional<QLThumbnailsCache::FileStateHint> ReadFileState(const std::string &_file_path)
 {
     Log::Trace("ReadFileState(): requested a state for '{}'", _file_path);
@@ -210,65 +134,6 @@ static std::optional<QLThumbnailsCache::FileStateHint> ReadFileState(const std::
     hint.size = static_cast<uint64_t>(st.st_size);
     hint.mtime = static_cast<uint64_t>(st.st_mtime);
     return hint;
-}
-
-void QLThumbnailsCacheImpl::CheckCacheAndUpdateIfNeeded(const std::string &_filename,
-                                                        int _px_size,
-                                                        Info &_info,
-                                                        const std::optional<FileStateHint> &_hint)
-{
-    Log::Trace("CheckCacheAndUpdateIfNeeded(): called for '{}' ({}px)", _filename, _px_size);
-    if( !_info.is_in_work.test_and_set() ) {
-        const auto clear_lock = at_scope_end([&] { _info.is_in_work.clear(); });
-        // we're first to take control of this item
-
-        const auto file_state_hint = _hint ? _hint : ReadFileState(_filename);
-        if( !file_state_hint.has_value() ) {
-            Log::Warn("CheckCacheAndUpdateIfNeeded(): can't get a file state hint for '{}'", _filename);
-            return; // can't proceed without information about the file.
-        }
-
-        // check if cache is up-to-date
-        if( _info.file_size == file_state_hint->size && _info.mtime == file_state_hint->mtime ) {
-            Log::Trace("CheckCacheAndUpdateIfNeeded(): up-to-date for '{}'", _filename);
-            return; // is up-to-date => nothing to do
-        }
-
-        _info.file_size = file_state_hint->size;
-        _info.mtime = file_state_hint->mtime;
-
-        // we prefer to keep the previous version of a thumbnail in case if QL can't produce a new
-        // version for the changed file.
-        if( const auto new_image = BuildRep(_filename, _px_size) ) {
-            Log::Info("CheckCacheAndUpdateIfNeeded(): update the image for '{}'", _filename);
-            _info.image = new_image;
-        }
-        else {
-            Log::Warn("CheckCacheAndUpdateIfNeeded(): failed to update the image for '{}'", _filename);
-        }
-    }
-    else {
-        // the item is currently in updating state, let's use the current image
-        Log::Trace("CheckCacheAndUpdateIfNeeded(): already updating now");
-    }
-}
-
-void QLThumbnailsCacheImpl::ProduceNew(const std::string &_filename, int _px_size, Info &_info)
-{
-    Log::Trace("ProduceNew(): called for '{}' ({}px)", _filename, _px_size);
-    assert(_info.is_in_work.test_and_set() == true); // _info should be locked initially
-    const auto clear_lock = at_scope_end([&] { _info.is_in_work.clear(); });
-
-    // file must exist and be accessible
-    struct stat st;
-    if( stat(_filename.c_str(), &st) != 0 ) {
-        Log::Warn("ProduceNew(): failed to stat() at '{}", _filename);
-        return;
-    }
-
-    _info.file_size = st.st_size;
-    _info.mtime = st.st_mtime;
-    _info.image = BuildRep(_filename, _px_size); // img may be nil - it's ok
 }
 
 NSImage *QLThumbnailsCacheImpl::ThumbnailIfHas(const std::string &_filename, int _px_size)
@@ -287,6 +152,10 @@ NSImage *QLThumbnailsCacheImpl::ThumbnailIfHas(const std::string &_filename, int
         return nil;
     }
 }
+
+QLThumbnailsCacheImpl::QLThumbnailsCacheImpl() = default;
+
+QLThumbnailsCacheImpl::~QLThumbnailsCacheImpl() = default;
 
 void QLThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_filename,
                                                   int _px_size,

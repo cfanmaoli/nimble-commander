@@ -13,8 +13,6 @@ public:
 
     virtual NSImage *ThumbnailIfHas(const std::string &_file_path, VFSHost &_host, int _px_size) = 0;
 
-    virtual NSImage *ProduceThumbnail(const std::string &_file_path, VFSHost &_host, int _px_size) = 0;
-
     using ThumbnailCallback = std::function<void(NSImage *)>;
     /** Starts an asynchronous thumbnail request; the callback is invoked on a background queue. */
     virtual void

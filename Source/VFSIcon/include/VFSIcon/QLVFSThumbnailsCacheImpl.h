@@ -16,8 +16,6 @@ public:
 
     NSImage *ThumbnailIfHas(const std::string &_file_path, VFSHost &_host, int _px_size) override;
 
-    NSImage *ProduceThumbnail(const std::string &_file_path, VFSHost &_host, int _px_size) override;
-
     void ProduceThumbnailAsync(const std::string &_file_path,
                                VFSHost &_host,
                                int _px_size,
@@ -33,9 +31,7 @@ private:
     static constexpr size_t m_CacheSize = 1024;
     using Container = base::LRUCache<std::string, NSImage *, m_CacheSize>;
 
-    NSImage *ProduceThumbnail(const std::string &_path, const std::string &_ext, VFSHost &_host, CGSize _sz);
     static std::string MakeKey(const std::string &_file_path, VFSHost &_host, int _px_size);
-    static NSImage *ProduceThumbnailForTempFile(const std::string &_path, CGSize _px_size);
     static std::expected<std::vector<uint8_t>, Error> ReadEntireFile(const std::string &_path, VFSHost &_host);
 
     Container m_Thumbnails;

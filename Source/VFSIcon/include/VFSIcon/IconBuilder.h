@@ -37,28 +37,13 @@ public:
     using CancelChecker = std::function<bool()>;
     using BuildCallback = std::function<void(BuildResult)>;
     /**
-     * Thumbnail has priority over filetype.
-     * If a thumbnail is not nil, filetype lookup might be skipped during.
-     * Building an icon can be a timely operation, thus it's assumed to be called from background
-     * threads.
-     * If _cancel_checker is provided it can be executed during the build process. If it returns
-     * 'true' the process will be stopped and function will return a default value.
-     * The calling code should not rely on .size attribute of produced images. To adjust it, make
-     * a copy and change its size.
-     */
-    virtual BuildResult BuildRealIcon(const VFSListingItem &_item,
-                                      int _icon_px_size,
-                                      const CancelChecker &_cancel_checker = CancelChecker{}) = 0;
-
-    /**
-     * Asynchronous variant of BuildRealIcon(). The callback may be invoked on any queue and
-     * exactly once. The default implementation preserves the old blocking behavior for callers
-     * that only implement BuildRealIcon().
+     * Builds an icon without blocking the caller. The callback may be invoked on any queue and
+     * exactly once. If _cancel_checker returns true the callback may receive an empty result.
      */
     virtual void BuildRealIconAsync(const VFSListingItem &_item,
                                     int _icon_px_size,
                                     BuildCallback _callback,
-                                    const CancelChecker &_cancel_checker = CancelChecker{});
+                                    const CancelChecker &_cancel_checker = CancelChecker{}) = 0;
 };
 
 } // namespace nc::vfsicon

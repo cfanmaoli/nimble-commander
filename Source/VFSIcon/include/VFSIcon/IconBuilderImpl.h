@@ -28,9 +28,6 @@ public:
 
     LookupResult LookupExistingIcon(const VFSListingItem &_item, int _icon_px_size) override;
 
-    BuildResult
-    BuildRealIcon(const VFSListingItem &_item, int _icon_px_size, const CancelChecker &_cancel_checker) override;
-
     void BuildRealIconAsync(const VFSListingItem &_item,
                             int _icon_px_size,
                             BuildCallback _callback,
