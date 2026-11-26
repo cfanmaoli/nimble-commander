@@ -276,6 +276,8 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
+    if( item.action == @selector(OnShare:) )
+        return std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); });
     if( item.action == @selector(OnCopyPaths:) )
         return m_CopyAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnCopyPathname:) )
@@ -340,6 +342,9 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
 
 - (void)OnShare:(id) [[maybe_unused]] sender
 {
+    if( !std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); }) )
+        return;
+
     NSMutableArray<NSURL *> *const urls = [NSMutableArray arrayWithCapacity:m_Items.size()];
     for( const auto &item : m_Items )
         if( NSString *const path = [NSString stringWithUTF8StdString:item.Path()] )

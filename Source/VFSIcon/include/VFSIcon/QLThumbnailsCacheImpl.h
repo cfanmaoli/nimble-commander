@@ -57,6 +57,7 @@ private:
         NSImage *image = nil; // may be nil - it means that QL can't produce thumbnail for this file
         uint64_t file_size = 0;
         uint64_t mtime = 0;
+        uint64_t generation = 0;               // invalidates late/duplicate QL completions
         std::atomic_flag is_in_work = {false}; // item is currently updating its image
         std::vector<ThumbnailCallback> waiters;
     };

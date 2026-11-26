@@ -1,5 +1,6 @@
 // Copyright (C) 2018-2021 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconRepositoryImpl.h>
+#include <Base/dispatch_cpp.h>
 
 namespace nc::vfsicon {
 
@@ -130,22 +131,28 @@ void IconRepositoryImpl::ScheduleIconProduction(SlotKey _key, const VFSListingIt
 
 void IconRepositoryImpl::StartRealIconProduction(int _slot_index, const base::intrusive_ptr<WorkerContext> &_context)
 {
+    // Keep the production queue's concurrency slot occupied until the async builder completes.
+    // Previously the queue block returned immediately after starting QuickLook, so the 4-way
+    // concurrency limit no longer bounded the number of in-flight QL requests.
+    const dispatch_semaphore_t completion = dispatch_semaphore_create(0);
     m_IconBuilder->BuildRealIconAsync(
         _context->item,
         m_IconPxSize,
-        [this, _slot_index, _context](IconBuilder::BuildResult result) {
-            if( _context->must_stop )
-                return;
-            _context->result_filetype = result.filetype;
-            _context->result_thumbnail = result.thumbnail;
-            m_ClientExecutor->Execute([this, _slot_index, _context] {
-                if( _context->must_stop )
-                    return;
-                if( IsValidSlot(FromIndex(_slot_index)) )
-                    CommitProductionResult(_slot_index, *_context);
-            });
+        [this, _slot_index, _context, completion](IconBuilder::BuildResult result) {
+            if( !_context->must_stop ) {
+                _context->result_filetype = result.filetype;
+                _context->result_thumbnail = result.thumbnail;
+                m_ClientExecutor->Execute([this, _slot_index, _context] {
+                    if( _context->must_stop )
+                        return;
+                    if( IsValidSlot(FromIndex(_slot_index)) )
+                        CommitProductionResult(_slot_index, *_context);
+                });
+            }
+            dispatch_semaphore_signal(completion);
         },
         [_context] { return _context->must_stop.load(); });
+    dispatch_semaphore_wait(completion, DISPATCH_TIME_FOREVER);
 }
 
 void IconRepositoryImpl::CommitProductionResult(int _slot_index, WorkerContext &_ctx)

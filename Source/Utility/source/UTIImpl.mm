@@ -28,7 +28,12 @@ std::string UTIDBImpl::UTIForExtension(std::string_view _extension) const
 
     @autoreleasepool {
         NSString *const extension = StringFromView(_extension);
-        UTType *const type = extension.length != 0 ? [UTType typeWithFilenameExtension:extension] : nil;
+        // typeWithFilenameExtension: is constrained to public.data descendants; the old
+        // LaunchServices query also recognized package types such as .app, .rtfd and .framework.
+        UTType *const type = extension.length != 0 ? [UTType typeWithTag:extension
+                                                                 tagClass:UTTagClassFilenameExtension
+                                                         conformingToType:nil]
+                                                   : nil;
         if( type != nil ) {
             const std::string uti = StringFromNSString(type.identifier);
             m_ExtensionToUTI.emplace(std::string(_extension), uti);

@@ -97,6 +97,12 @@ def download(asset, cache):
     tmp = target.with_suffix(target.suffix + ".part")
     with urllib.request.urlopen(asset["browser_download_url"], timeout=600) as response, open(tmp, "wb") as out:
         shutil.copyfileobj(response, out)
+    expected_digest = asset.get("digest")
+    if expected_digest is not None:
+        actual_digest = "sha256:" + hashlib.sha256(tmp.read_bytes()).hexdigest()
+        if actual_digest != expected_digest:
+            tmp.unlink(missing_ok=True)
+            sys.exit(f"digest mismatch for {asset['name']}")
     tmp.rename(target)
     return target
 
@@ -108,15 +114,16 @@ def read_bundle_versions(dmg):
     try:
         run(["hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", mount, str(dmg)])
         attached = True
-        for path in Path(mount).rglob("Contents/Info.plist"):
+        for path in Path(mount).glob("*.app/Contents/Info.plist"):
             with open(path, "rb") as file:
                 info = plistlib.load(file)
-            if "CFBundleVersion" in info:
-                return {
-                    "version": str(info["CFBundleVersion"]),
-                    "short_version": str(info.get("CFBundleShortVersionString", "")),
-                    "minimum_system": str(info.get("LSMinimumSystemVersion", "13.0")),
-                }
+            if info.get("CFBundleIdentifier") != "info.filesmanager.Files":
+                continue
+            return {
+                "version": str(info["CFBundleVersion"]),
+                "short_version": str(info.get("CFBundleShortVersionString", "")),
+                "minimum_system": str(info.get("LSMinimumSystemVersion", "13.0")),
+            }
         sys.exit(f"no application bundle inside {dmg}")
     finally:
         if attached:

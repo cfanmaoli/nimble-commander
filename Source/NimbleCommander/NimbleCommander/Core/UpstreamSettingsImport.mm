@@ -490,10 +490,15 @@ bool ApplyPendingImport(const fs::path &_fork_support_directory, std::string &_e
         SyncDirectory(file.destination.parent_path());
     }
 
+    // The import itself is committed at this point. A cleanup failure must not turn it into a
+    // failed import and leave the old staging directory to be applied again on the next launch.
+    // Move any leftover staging aside so discovery cannot pick it up.
     fs::remove_all(pending, ec);
     if( ec ) {
-        _error = "unable to remove the staged settings";
-        return false;
+        std::error_code rename_ec;
+        fs::rename(pending, pending.string() + ".applied", rename_ec);
+        if( rename_ec )
+            _error = "unable to clean up the staged settings";
     }
     return true;
 }

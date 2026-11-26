@@ -5,17 +5,16 @@
 
 namespace nc::ops::copying {
 
-ChecksumExpectation::ChecksumExpectation(int _source_ind, std::string _destination, const std::vector<uint8_t> &_md5)
-    : destination_path(std::move(_destination)), original_item(_source_ind)
+ChecksumExpectation::ChecksumExpectation(int _source_ind, std::string _destination, std::vector<uint8_t> _digest)
+    : destination_path(std::move(_destination)), original_item(_source_ind), digest(std::move(_digest))
 {
-    if( _md5.size() != 16 )
-        throw std::invalid_argument("ChecksumExpectation: _md5 should be 16 bytes long!");
-    std::ranges::copy(_md5, std::begin(md5.buf));
+    if( digest.empty() )
+        throw std::invalid_argument("ChecksumExpectation: digest must not be empty");
 }
 
 bool operator==(const ChecksumExpectation &_lhs, const std::vector<uint8_t> &_rhs) noexcept
 {
-    return _rhs.size() == 16 && std::equal(std::begin(_rhs), std::end(_rhs), std::begin(_lhs.md5.buf));
+    return _lhs.digest == _rhs;
 }
 
 bool operator==(const std::vector<uint8_t> &_rhs, const ChecksumExpectation &_lhs) noexcept

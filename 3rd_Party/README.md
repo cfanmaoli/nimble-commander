@@ -16,7 +16,7 @@ The following flags or their equivalents (e.g., when the 3rd-party library uses 
 | -------------------------- | -------------------------------------------------------
 | -std=c++23                 | Enable C++23
 | -arch arm64                | Build for Apple Silicon (the only architecture the app uses; Sparkle is thinned to arm64)
-| -mmacosx-version-min=12.0  | Minimum supported target version of macOS is 12.0
+| -mmacosx-version-min=13.0  | Minimum supported target version of macOS is 13.0
 | -DNDEBUG                   | Disable debug assertions
 | -fvisibility=hidden        | Set symbol visibility to hidden
 | -flto                      | Enable link-time optimization

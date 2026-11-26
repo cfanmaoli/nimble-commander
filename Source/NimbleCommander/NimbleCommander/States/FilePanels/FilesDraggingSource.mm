@@ -162,8 +162,11 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
         if( completion_called->exchange(true) )
             return;
         _completion_handler(_error);
+        // Do not drop the registry's last reference from inside Operation::JobFinished's observer
+        // callback: the Operation/Job still owns the callback stack. Keep it alive until the main
+        // queue runs again.
         if( const auto op = weak_operation.lock() )
-            ReleasePromiseOperation(op);
+            dispatch_to_main_queue([op] { ReleasePromiseOperation(op); });
     };
 
     try {

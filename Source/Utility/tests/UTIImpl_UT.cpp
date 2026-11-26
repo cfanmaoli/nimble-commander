@@ -11,6 +11,9 @@ TEST_CASE(PREFIX "getting uti by extension works")
     CHECK(db.UTIForExtension("jpg") == "public.jpeg");
     CHECK(db.UTIForExtension("icns") == "com.apple.icns");
     CHECK(db.UTIForExtension("pdf") == "com.adobe.pdf");
+    CHECK(db.UTIForExtension("app") == "com.apple.application-bundle");
+    CHECK(db.UTIForExtension("rtfd") == "com.apple.rtfd");
+    CHECK(db.UTIForExtension("framework") == "com.apple.framework");
 }
 
 TEST_CASE(PREFIX "getting uti by extension is case insensitive")

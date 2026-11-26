@@ -2,7 +2,9 @@
 #include <VFSIcon/QLVFSThumbnailsCacheImpl.h>
 #include <QuickLookThumbnailing/QuickLookThumbnailing.h>
 #include <VFSIcon/Log.h>
+#include <atomic>
 #include <filesystem>
+#include <memory>
 
 namespace nc::vfsicon {
 
@@ -14,6 +16,7 @@ static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (
                       scale:1.0
         representationTypes:QLThumbnailGenerationRequestRepresentationTypeThumbnail];
     request.iconMode = YES;
+    const auto completed = std::make_shared<std::atomic_bool>(false);
     [[QLThumbnailGenerator sharedGenerator]
         generateBestRepresentationForRequest:request
                            completionHandler:^(QLThumbnailRepresentation *_Nullable representation,
@@ -24,8 +27,15 @@ static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (
                              if( error != nil )
                                  Log::Warn("QuickLook thumbnail generation failed: {}",
                                            error.localizedDescription.UTF8String);
-                             _callback(image);
+                             if( !completed->exchange(true) )
+                                 _callback(image);
                            }];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+      if( !completed->exchange(true) ) {
+          [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
+          _callback(nil);
+      }
+    });
 }
 
 QLVFSThumbnailsCacheImpl::QLVFSThumbnailsCacheImpl(const std::shared_ptr<utility::BriefOnDiskStorage> &_temp_storage)
@@ -98,11 +108,15 @@ void QLVFSThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_file_pa
         return;
     }
 
-    auto placement_result = m_TempStorage->PlaceWithExtension(data->data(), data->size(), extension);
-    if( !placement_result.has_value() ) {
+    auto placement = m_TempStorage->PlaceWithExtension(data->data(), data->size(), extension);
+    if( !placement.has_value() ) {
         _callback(nil);
         return;
     }
+
+    // QLThumbnailGenerator reads the URL asynchronously. PlacementResult deletes the temporary
+    // file in its destructor, so the completion block must keep it alive until QL is done.
+    auto placement_result = std::make_shared<nc::utility::BriefOnDiskStorage::PlacementResult>(std::move(*placement));
 
     NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:placement_result->Path().c_str()]];
     if( url == nil ) {
@@ -111,6 +125,8 @@ void QLVFSThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_file_pa
     }
 
     GenerateVFSQuickLookThumbnailAsync(url, CGSizeMake(double(_px_size), double(_px_size)), ^(NSImage *image) {
+      // Keep the temporary file alive until QL has finished reading it.
+      (void)placement_result;
       if( image != nil ) {
           const auto lock = std::lock_guard{m_Lock};
           m_Thumbnails.insert(key, image);

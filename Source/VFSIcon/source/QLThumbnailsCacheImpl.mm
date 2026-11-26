@@ -100,7 +100,8 @@ bool QLThumbnailsCacheImpl::Key::operator!=(const Key &_rhs) const noexcept
     return !(*this == _rhs);
 }
 
-static void GenerateQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_callback)(NSImage *))
+static QLThumbnailGenerationRequest *
+GenerateQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_callback)(NSImage *))
 {
     QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
           initWithFileAtURL:_url
@@ -120,6 +121,7 @@ static void GenerateQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_c
                                            error.localizedDescription.UTF8String);
                              _callback(image);
                            }];
+    return request;
 }
 
 static std::optional<QLThumbnailsCache::FileStateHint> ReadFileState(const std::string &_file_path)
@@ -196,36 +198,72 @@ void QLThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_filename,
         return;
     }
 
-    info->file_size = file_state->size;
-    info->mtime = file_state->mtime;
+    const uint64_t generation = ++info->generation;
+    const uint64_t requested_size = file_state->size;
+    const uint64_t requested_mtime = file_state->mtime;
     info->waiters.emplace_back(std::move(_callback));
     lock.unlock();
 
     NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:_filename.c_str()]];
     if( url == nil ) {
         std::vector<ThumbnailCallback> waiters;
+        NSImage *result_image = nil;
         {
             const std::lock_guard guard{m_ItemsLock};
+            if( info->generation != generation )
+                return;
+            info->generation++;
+            result_image = info->image;
             waiters = std::move(info->waiters);
             info->is_in_work.clear();
         }
         for( auto &waiter : waiters )
-            waiter(nil);
+            waiter(result_image);
         return;
     }
 
     const CGSize size = NSMakeSize(_px_size, _px_size);
-    GenerateQuickLookThumbnailAsync(url, size, ^(NSImage *image) {
+    QLThumbnailGenerationRequest *const request = GenerateQuickLookThumbnailAsync(url, size, ^(NSImage *image) {
       std::vector<ThumbnailCallback> waiters;
+      NSImage *result_image = nil;
       {
           const std::lock_guard guard{m_ItemsLock};
-          if( image != nil )
+          if( info->generation != generation )
+              return; // timed out or superseded by a newer request
+          if( image != nil ) {
               info->image = image;
+              info->file_size = requested_size;
+              info->mtime = requested_mtime;
+              result_image = image;
+          }
+          else {
+              // Do not mark a failed request as up-to-date; keep the previous state so that a
+              // later request retries. Waiters still get the old image instead of a blank icon.
+              result_image = info->image;
+          }
+          info->generation++;
           waiters = std::move(info->waiters);
           info->is_in_work.clear();
       }
       for( auto &waiter : waiters )
-          waiter(image);
+          waiter(result_image);
+    });
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+      std::vector<ThumbnailCallback> waiters;
+      NSImage *result_image = nil;
+      {
+          const std::lock_guard guard{m_ItemsLock};
+          if( info->generation != generation )
+              return;
+          info->generation++;
+          result_image = info->image;
+          waiters = std::move(info->waiters);
+          info->is_in_work.clear();
+      }
+      [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
+      for( auto &waiter : waiters )
+          waiter(result_image);
     });
 }
 

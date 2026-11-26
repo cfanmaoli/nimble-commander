@@ -8,12 +8,10 @@
 namespace nc::ops::copying {
 
 struct ChecksumExpectation {
-    ChecksumExpectation(int _source_ind, std::string _destination, const std::vector<uint8_t> &_md5);
+    ChecksumExpectation(int _source_ind, std::string _destination, std::vector<uint8_t> _digest);
     std::string destination_path;
     int original_item;
-    struct {
-        uint8_t buf[16];
-    } md5;
+    std::vector<uint8_t> digest;
 };
 
 bool operator==(const ChecksumExpectation &_lhs, const std::vector<uint8_t> &_rhs) noexcept;

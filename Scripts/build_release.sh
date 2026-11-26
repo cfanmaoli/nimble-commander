@@ -54,9 +54,8 @@ fi
 mkdir -p "${BUILD_DIR}"
 mkdir -p "${ARCHIVE_PATH}"
 
-# Build Help.pdf and copy it into the NC sources
-${SCRIPTS_DIR}/build_help.sh
-cp -f "${SCRIPTS_DIR}/build_help.tmp/Help.pdf" "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf"
+# Help.pdf is a tracked release artifact. Regenerating it here would dirty the tagged tree and
+# package a PDF that is absent from the tag; update it and commit it before creating the release tag.
 
 # Gather common flags in the XC variable
 XC="xcodebuild \

@@ -245,8 +245,10 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
             m_Archive = nullptr;
         }
         std::ignore = m_TargetFile->Close();
-        if( m_TargetCreated )
+        if( m_TargetCreated ) {
             std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+            m_TargetCreated = false; // the destructor must not unlink the path a second time
+        }
     };
     m_Archive = archive_write_new();
     if( m_Archive == nullptr ) {

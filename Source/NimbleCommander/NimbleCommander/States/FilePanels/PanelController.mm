@@ -1712,6 +1712,11 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     if( _request == nullptr )
         return std::unexpected(Error{Error::POSIX, EINVAL});
 
+    if( !dispatch_is_main_queue() ) {
+        dispatch_to_main_queue([self, _request] { [self GoToDirWithContext:_request]; });
+        return {};
+    }
+
     if( _request->RequestedDirectory.empty() || _request->RequestedDirectory.front() != '/' ||
         _request->VFS == nullptr )
         return std::unexpected(Error{Error::POSIX, EINVAL});
@@ -1728,8 +1733,14 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     if( !_request->PerformAsynchronous ) {
         assert(dispatch_is_main_queue());
+        m_StreamingLoadId.fetch_add(1);
         m_DirectoryLoadingQ.Stop();
         m_DirectoryLoadingQ.Wait();
+        if( m_PendingDirectoryChangeRequest && m_PendingDirectoryChangeRequest->LoadingResultCallback ) {
+            m_PendingDirectoryChangeRequest->LoadingResultCallback(std::unexpected(Error{Error::POSIX, ECANCELED}));
+        }
+        m_PendingDirectoryChangeRequest.reset();
+        m_PendingLoadingTask = nullptr;
 
         const std::expected<void, Error> result = [self doGoToDirWithContext:_request
                                                                     sortMode:sort_mode
@@ -1999,6 +2010,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 {
     std::filesystem::path initial_path = EnsureNoTrailingSlash(self.currentDirectoryPath);
     auto initial_vfs = self.vfs;
+    const auto native_host = m_NativeHost->SharedPtr();
     m_DirectoryLoadingQ.Run([=] {
         // 1st - try to locate a valid dir in current host
         std::filesystem::path path = initial_path;
@@ -2013,7 +2025,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                     request->PerformAsynchronous = true;
                     [self GoToDirWithContext:request];
                 });
-                break;
+                return;
             }
 
             if( path == "/" )
@@ -2025,9 +2037,9 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         // we can't work on this vfs. currently for simplicity - just go home
         const auto request = std::make_shared<DirectoryChangeRequest>();
         request->RequestedDirectory = nc::base::CommonPaths::Home();
-        request->VFS = m_NativeHost->SharedPtr();
+        request->VFS = native_host;
         request->PerformAsynchronous = true;
-        [self GoToDirWithContext:request];
+        dispatch_to_main_queue([self, request] { [self GoToDirWithContext:request]; });
     });
 }
 
