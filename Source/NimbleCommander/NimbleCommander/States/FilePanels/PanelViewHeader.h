@@ -12,6 +12,10 @@
 // Updates header title according to the new path. Should be called by controller when path is changed.
 - (void)setPath:(NSString *)_path;
 
+// Marks the displayed listing as incomplete (for example, when a streaming load failed after the
+// first screenful was installed).
+@property(nonatomic) bool incomplete;
+
 // Progress indicator located in the header. Shown only when displaying activity.
 @property(nonatomic, readonly) NSProgressIndicator *busyIndicator;
 

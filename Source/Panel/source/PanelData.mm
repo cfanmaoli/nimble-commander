@@ -177,6 +177,7 @@ Model::PreparedLoad Model::PrepareLoad(const VFSListingPtr &_listing,
 void Model::InstallLoad(PreparedLoad &&_prepared)
 {
     assert(dispatch_is_main_queue()); // STA api design
+    m_Incomplete = false;
     m_Listing = std::move(_prepared.listing);
     m_Type = _prepared.type;
     m_HardFiltering = std::move(_prepared.hard_filtering);
@@ -187,6 +188,16 @@ void Model::InstallLoad(PreparedLoad &&_prepared)
     m_ReverseToCustomSort = std::move(_prepared.reverse_to_custom_sort);
     m_EntriesBySoftFiltering = std::move(_prepared.entries_by_soft_filtering);
     m_Stats = _prepared.statistics;
+}
+
+bool Model::IsIncomplete() const noexcept
+{
+    return m_Incomplete;
+}
+
+void Model::SetIncomplete(bool _incomplete) noexcept
+{
+    m_Incomplete = _incomplete;
 }
 
 void Model::Load(const VFSListingPtr &_listing, PanelType _type)

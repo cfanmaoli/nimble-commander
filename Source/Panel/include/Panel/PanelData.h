@@ -157,6 +157,11 @@ public:
      */
     [[nodiscard]] PanelType Type() const noexcept;
 
+    // True when the installed listing is known to be only a partial view of the directory, for
+    // example when a streaming fetch failed after the first chunk was already shown.
+    [[nodiscard]] bool IsIncomplete() const noexcept;
+    void SetIncomplete(bool _incomplete) noexcept;
+
     /**
      * Returns the number of raw i.e. unfiltered entires in the listing.
      */
@@ -378,6 +383,7 @@ private:
     // while the following sort-indeces(except for m_EntriesByRawName) will be permanent with it's
     // content changing
     VFSListingPtr m_Listing;
+    bool m_Incomplete = false;
     std::vector<ItemVolatileData> m_VolatileData;
 
     // sorted with raw strcmp comparison

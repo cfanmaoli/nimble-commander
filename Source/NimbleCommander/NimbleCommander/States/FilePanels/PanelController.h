@@ -131,6 +131,9 @@ using ContextMenuProvider =
 // the existing listing.
 @property(nonatomic, readonly) unsigned long dataGeneration;
 
+// True when the current listing is known to be partial (e.g. a streamed load failed midway).
+@property(nonatomic, readonly) bool listingIncomplete;
+
 @property(nonatomic, readonly) nc::panel::History &history;
 @property(nonatomic, readonly) bool isActive;
 @property(nonatomic, readonly)

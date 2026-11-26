@@ -24,6 +24,9 @@ static bool IsDark(NSColor *_color);
 
     ColoredSeparatorLine *m_SeparatorLine;
     NSColor *m_Background;
+    NSColor *m_NormalPathTextColor;
+    NSString *m_Path;
+    bool m_Incomplete;
     NSString *m_SearchPrompt;
     NSButton *m_SortButton;
     NSProgressIndicator *m_BusyIndicator;
@@ -159,7 +162,8 @@ static bool IsDark(NSColor *_color);
     m_Background = active ? m_Theme->ActiveBackgroundColor() : m_Theme->InactiveBackgroundColor();
 
     NSColor *text_color = active ? m_Theme->ActiveTextColor() : m_Theme->TextColor();
-    m_PathTextField.textColor = text_color;
+    m_NormalPathTextColor = text_color;
+    [self updatePathDisplay];
     m_SearchTextField.textColor = text_color;
     m_SearchMatchesField.textColor = text_color;
 
@@ -246,7 +250,29 @@ static bool IsDark(NSColor *_color);
 
 - (void)setPath:(NSString *)_path
 {
-    m_PathTextField.stringValue = _path;
+    m_Path = _path;
+    [self updatePathDisplay];
+}
+
+- (BOOL)incomplete
+{
+    return m_Incomplete;
+}
+
+- (void)setIncomplete:(bool)_incomplete
+{
+    if( m_Incomplete == _incomplete )
+        return;
+    m_Incomplete = _incomplete;
+    [self updatePathDisplay];
+}
+
+- (void)updatePathDisplay
+{
+    NSString *const path = m_Path ?: @"";
+    m_PathTextField.stringValue = m_Incomplete ? [path stringByAppendingString:@"  ⚠"] : path;
+    m_PathTextField.textColor = m_Incomplete ? NSColor.systemOrangeColor : m_NormalPathTextColor;
+    m_PathTextField.toolTip = m_Incomplete ? NSLocalizedString(@"The directory listing is incomplete", "") : nil;
 }
 
 - (void)setupBindings

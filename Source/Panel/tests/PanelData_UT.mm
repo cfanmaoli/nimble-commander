@@ -13,6 +13,21 @@
 #define PREFIX "PanelData "
 
 namespace {
+VFSListingPtr ProduceDummyListing(const std::vector<std::string> &_filenames);
+}
+
+TEST_CASE(PREFIX "incomplete state is cleared by a new load")
+{
+    Model model;
+    CHECK_FALSE(model.IsIncomplete());
+    model.SetIncomplete(true);
+    CHECK(model.IsIncomplete());
+
+    model.Load(ProduceDummyListing({"a"}), Model::PanelType::Directory);
+    CHECK_FALSE(model.IsIncomplete());
+}
+
+namespace {
 
 using namespace nc;
 using namespace nc::base;

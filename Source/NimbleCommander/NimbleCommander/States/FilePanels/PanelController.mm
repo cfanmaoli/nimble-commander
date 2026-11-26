@@ -1589,6 +1589,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         // never sees a second, different listing.
         const unsigned long stream_id = m_StreamingLoadId.fetch_add(1) + 1;
         auto is_first_chunk = std::make_shared<bool>(true);
+        auto saw_first_chunk = std::make_shared<bool>(false);
         // The chunks are applied to the panel in batches: a patch costs a bulk copy of the whole
         // listing plus a linear pass over it, so applying one per 64 KiB chunk would keep the main
         // thread busy half of the time. Batching bounds that to a handful of short stalls.
@@ -1627,6 +1628,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         const auto on_chunk = [self,
                                stream_id,
                                is_first_chunk,
+                               saw_first_chunk,
                                pending_chunks,
                                pending_mutex,
                                pending_count,
@@ -1640,6 +1642,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 return false; // superseded by a newer navigation or cancelled outright
             if( *is_first_chunk ) {
                 *is_first_chunk = false;
+                *saw_first_chunk = true;
                 // the expensive part of the model setup happens here, on the fetching queue
                 auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
                     _chunk, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
@@ -1647,6 +1650,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                     if( m_StreamingLoadId.load() != stream_id )
                         return;
                     const auto perf_begin = std::chrono::steady_clock::now();
+                    m_Data.SetIncomplete(false);
+                    [m_View.headerView setIncomplete:false];
                     [m_View savePathState];
                     m_FlatView = false;
                     m_FlatViewHost.reset();
@@ -1701,6 +1706,16 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         const std::expected<void, Error> stream_result =
             vfs.FetchDirectoryListingIncremental(directory, fetch_flags, canceller, on_chunk);
         flush_pending();
+        if( !stream_result && !IsCancellation(stream_result.error()) && *saw_first_chunk ) {
+            // The first screenful is already visible, so do not throw it away on a late error;
+            // mark the header instead and let the user retry/refresh.
+            dispatch_to_main_queue([self, stream_id] {
+                if( m_StreamingLoadId.load() == stream_id ) {
+                    m_Data.SetIncomplete(true);
+                    [m_View.headerView setIncomplete:true];
+                }
+            });
+        }
         if( _request->LoadingResultCallback )
             _request->LoadingResultCallback(stream_result);
         if( !stream_result )
@@ -1793,11 +1808,18 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
     return m_NavigationEpoch.load();
 }
 
+- (bool)listingIncomplete
+{
+    return m_Data.IsIncomplete();
+}
+
 - (void)loadListing:(const VFSListingPtr &)_listing
 {
     [self CancelBackgroundOperations]; // clean running operations if any
     dispatch_or_run_in_main_queue([=] {
         const auto perf_begin = std::chrono::steady_clock::now();
+        m_Data.SetIncomplete(false);
+        [m_View.headerView setIncomplete:false];
         [m_View savePathState];
         if( _listing->IsUniform() )
             m_Data.Load(_listing, data::Model::PanelType::Directory);
