@@ -6,6 +6,8 @@
 #include <sys/xattr.h>
 #include <set>
 #include <fstream>
+#include <iterator>
+#include <string>
 
 #include "../source/Compression/Compression.h"
 #include "../source/Statistics.h"
@@ -436,6 +438,30 @@ FetchItems(const std::string &_directory_path, const std::vector<std::string> &_
 static bool touch(const std::filesystem::path &_path)
 {
     return close(open(_path.c_str(), O_CREAT | O_RDWR, S_IRWXU)) == 0;
+}
+
+TEST_CASE(PREFIX "Does not overwrite an existing archive target")
+{
+    const TempTestDir tmp_dir;
+    const auto native_host = TestEnv().vfs_native;
+    const auto existing = tmp_dir.directory / "Archive.zip";
+    {
+        std::ofstream out(existing, std::ios::binary);
+        out << "keep me";
+    }
+
+    Compression operation{std::vector<VFSListingItem>{}, tmp_dir.directory, native_host};
+    operation.Start();
+    operation.Wait();
+
+    REQUIRE(operation.State() == OperationState::Completed);
+    CHECK(operation.ArchivePath() != existing);
+    CHECK(native_host->Exists(operation.ArchivePath()));
+
+    std::ifstream in(existing, std::ios::binary);
+    std::string content;
+    content.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    CHECK(content == "keep me");
 }
 
 } // namespace CompressionTests

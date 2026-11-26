@@ -40,9 +40,14 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     if( _open_flags & VFSFlags::OF_Write ) {
         const std::expected<VFSStat, Error> st = m_Host.Stat(Path(), 0, _cancel_checker);
 
-        // Refuse if the file does exist and OF_NoExist was specified
-        if( (_open_flags & VFSFlags::OF_NoExist) && st ) {
-            return std::unexpected(Error{Error::POSIX, EEXIST});
+        // Refuse if the file does exist and OF_NoExist was specified. A failed Stat is not proof
+        // that the file is absent: network/server errors must not turn an exclusive create into
+        // an overwrite.
+        if( _open_flags & VFSFlags::OF_NoExist ) {
+            if( st )
+                return std::unexpected(Error{Error::POSIX, EEXIST});
+            if( st.error() != Error{Error::POSIX, ENOENT} )
+                return std::unexpected(st.error());
         }
 
         // Refuse if the file does not exist but OF_Create was not specified

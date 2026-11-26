@@ -91,6 +91,10 @@ std::expected<void, Error> File::Open(unsigned long _open_flags, const VFSCancel
     else if( (!(_open_flags & VFSFlags::OF_NoExist) || !stat) && //
              (_open_flags & VFSFlags::OF_Read) == 0 &&           //
              (_open_flags & VFSFlags::OF_Write) != 0 ) {
+        // OF_NoExist must not treat an unknown Stat failure as "file absent": that would allow
+        // overwriting an existing remote file after a transient network error.
+        if( !stat && (_open_flags & VFSFlags::OF_NoExist) && stat.error() != Error{Error::POSIX, ENOENT} )
+            return std::unexpected(stat.error());
         m_URLRequest = ftp_host->BuildFullURLString(Path());
         m_CURL = ftp_host->InstanceForIOAtDir(DirName().c_str());
 

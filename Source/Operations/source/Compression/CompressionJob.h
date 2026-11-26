@@ -101,6 +101,7 @@ private:
     // True only after the target was created by this job with OF_NoExist - cleanup must never
     // unlink a file that appeared under the chosen name from somewhere else.
     bool m_TargetCreated = false;
+    bool m_TargetCommitted = false;
     std::optional<Error> m_TargetFileLastError;
 
     std::unique_ptr<const Source> m_Source;

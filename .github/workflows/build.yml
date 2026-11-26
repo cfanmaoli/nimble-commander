@@ -110,7 +110,9 @@ jobs:
           }
 
           const is_documentation = name => typeof name === 'string' &&
-              (name.toLowerCase().endsWith('.md') || name.toLowerCase() === 'appcast.xml');
+              (name.toLowerCase().endsWith('.md') || name.toLowerCase() === 'appcast.xml') &&
+              // Help.md is rendered into Help.pdf and copied into the app by build_unsigned.sh.
+              name.toLowerCase() !== 'docs/help.md';
           const docs_only = files.every(file => {
             if (!is_documentation(file.filename)) return false;
             // A rename from a non-documentation path (or to one) is a code change in disguise.

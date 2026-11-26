@@ -137,7 +137,22 @@ CompressionJob::CompressionJob(std::vector<VFSListingItem> _src_files,
         m_DstRoot += '/';
 }
 
-CompressionJob::~CompressionJob() = default;
+CompressionJob::~CompressionJob()
+{
+    if( m_Archive != nullptr ) {
+        archive_write_free(m_Archive);
+        m_Archive = nullptr;
+    }
+    if( m_TargetFile ) {
+        try {
+            std::ignore = m_TargetFile->Close();
+        } catch( ... ) {
+        }
+        m_TargetFile.reset();
+    }
+    if( m_TargetCreated && !m_TargetCommitted && IsStopped() && m_DstVFS )
+        std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+}
 
 void CompressionJob::Perform()
 {
@@ -158,11 +173,17 @@ void CompressionJob::Perform()
     else
         return;
 
+    if( BlockIfPaused(); IsStopped() )
+        return;
+
     BuildArchive(proposed_arcname);
 }
 
 bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
 {
+    if( BlockIfPaused(); IsStopped() )
+        return false;
+
     // FindSuitableFilename() looked at the directory before the source scan, so the name it picked
     // can be taken by now. Claim it atomically (OF_NoExist is O_EXCL on the native host) and pick
     // another free name when that fails, instead of silently opening and overwriting whatever now
@@ -170,10 +191,28 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
     // open does not truncate and libarchive starts writing at offset zero.
     const auto flags = VFSFlags::OF_Write | VFSFlags::OF_Create | VFSFlags::OF_NoExist | VFSFlags::OF_IRUsr |
                        VFSFlags::OF_IWUsr | VFSFlags::OF_IRGrp;
+    const auto target_exists = [&] {
+        return static_cast<bool>(m_DstVFS->Stat(m_TargetArchivePath, VFSFlags::F_NoFollow));
+    };
+    const auto advance_target = [&]() -> bool {
+        m_TargetFile.reset();
+        const std::string next_path = FindSuitableFilename(_proposed_arcname);
+        if( next_path.empty() || next_path == m_TargetArchivePath )
+            return false;
+        m_TargetArchivePath = next_path;
+        m_TargetPathDefined();
+        return true;
+    };
+
     std::expected<void, Error> open_rc = std::unexpected(Error{Error::POSIX, EIO});
     for( int attempt = 0; attempt != 16; ++attempt ) {
         const std::expected<std::shared_ptr<VFSFile>, Error> exp_file = m_DstVFS->CreateFile(m_TargetArchivePath);
         if( !exp_file ) {
+            open_rc = std::unexpected(exp_file.error());
+            // FTP/SFTP/WebDAV can report "already exists" with a host-specific error instead of
+            // EEXIST. Ask the VFS whether the name is occupied before treating it as a hard error.
+            if( target_exists() && advance_target() )
+                continue;
             m_TargetWriteError(exp_file.error(), m_TargetArchivePath, *m_DstVFS);
             Stop();
             return false;
@@ -184,21 +223,13 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
             m_TargetCreated = true;
             break;
         }
-        if( open_rc.error() != Error{Error::POSIX, EEXIST} ) {
-            m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
-            Stop();
-            return false;
-        }
-        // The name is gone - try the next candidate the naming scheme offers.
-        m_TargetFile.reset();
-        const std::string next_path = FindSuitableFilename(_proposed_arcname);
-        if( next_path.empty() || next_path == m_TargetArchivePath ) {
-            m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
-            Stop();
-            return false;
-        }
-        m_TargetArchivePath = next_path;
-        m_TargetPathDefined();
+        // Do not rely on the exact EEXIST code: remote hosts use their own error domains and
+        // codes. A successful Stat after a failed exclusive open means the chosen name is busy.
+        if( target_exists() && advance_target() )
+            continue;
+        m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
+        Stop();
+        return false;
     }
     if( !open_rc ) {
         m_TargetWriteError(open_rc.error(), m_TargetArchivePath, *m_DstVFS);
@@ -218,6 +249,12 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
             std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
     };
     m_Archive = archive_write_new();
+    if( m_Archive == nullptr ) {
+        m_TargetWriteError(Error{Error::POSIX, ENOMEM}, m_TargetArchivePath, *m_DstVFS);
+        cleanup_failed_archive();
+        Stop();
+        return false;
+    }
     switch( m_Options.format ) {
         case CompressionFormat::zip:
             archive_write_set_format_zip(m_Archive);
@@ -298,8 +335,12 @@ bool CompressionJob::BuildArchive(const std::string &_proposed_arcname)
         Stop();
     }
 
-    if( IsStopped() && m_TargetCreated ) {
-        std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+    if( IsStopped() ) {
+        if( m_TargetCreated )
+            std::ignore = m_DstVFS->Unlink(m_TargetArchivePath);
+    }
+    else {
+        m_TargetCommitted = true;
     }
 
     return true;
@@ -575,6 +616,8 @@ std::optional<CompressionJob::Source> CompressionJob::ScanItems()
 
 bool CompressionJob::ScanItem(const VFSListingItem &_item, Source &_ctx)
 {
+    if( BlockIfPaused(); IsStopped() )
+        return false;
     Statistics().CommitEstimated(Statistics::SourceType::Items, 1);
     if( _item.IsSymlink() ) {
         // NB! The check for symlink must be before the regular/dir check, because they are not mutually exclusive.
@@ -605,10 +648,14 @@ bool CompressionJob::ScanItem(const VFSListingItem &_item, Source &_ctx)
         std::vector<std::string> directory_entries;
         while( true ) {
             const auto callback = [&](const VFSDirEnt &_dirent) {
+                if( BlockIfPaused(); IsStopped() )
+                    return false;
                 directory_entries.emplace_back(_dirent.name);
                 return true;
             };
             const std::expected<void, Error> rc = host.IterateDirectoryListing(_item.Path(), callback);
+            if( IsStopped() )
+                return false;
             if( rc )
                 break;
             switch( m_SourceScanError(rc.error(), _item.Path(), host) ) {
@@ -640,6 +687,9 @@ bool CompressionJob::ScanItem(const std::string &_full_path,
                               const base::chained_strings::node *_prefix,
                               Source &_ctx)
 {
+    if( BlockIfPaused(); IsStopped() )
+        return false;
+
     VFSStat stat_buffer;
     const auto &vfs = _ctx.base_hosts[_vfs_no];
 
@@ -689,10 +739,14 @@ bool CompressionJob::ScanItem(const std::string &_full_path,
         std::vector<std::string> directory_entries;
         while( true ) {
             const auto callback = [&](const VFSDirEnt &_dirent) {
+                if( BlockIfPaused(); IsStopped() )
+                    return false;
                 directory_entries.emplace_back(_dirent.name);
                 return true;
             };
             const std::expected<void, Error> rc = vfs->IterateDirectoryListing(_full_path, callback);
+            if( IsStopped() )
+                return false;
             if( rc )
                 break;
             switch( m_SourceScanError(rc.error(), _full_path, *vfs) ) {
