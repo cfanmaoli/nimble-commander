@@ -60,7 +60,7 @@ static NSRect AspectFitRect(NSImage *image, NSRect bounds)
     const CGFloat scale = std::min(bounds.size.width / size.width, bounds.size.height / size.height);
     const NSSize fitted = NSMakeSize(size.width * scale, size.height * scale);
     return NSMakeRect(
-        NSMidX(bounds) - fitted.width / 2, NSMidY(bounds) - fitted.height / 2, fitted.width, fitted.height);
+        NSMidX(bounds) - (fitted.width / 2), NSMidY(bounds) - (fitted.height / 2), fitted.width, fitted.height);
 }
 
 @implementation PanelBriefViewItemCarrier {

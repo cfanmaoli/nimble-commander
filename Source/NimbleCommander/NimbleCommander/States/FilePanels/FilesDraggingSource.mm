@@ -162,11 +162,14 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
         if( completion_called->exchange(true) )
             return;
         _completion_handler(_error);
-        // Do not drop the registry's last reference from inside Operation::JobFinished's observer
-        // callback: the Operation/Job still owns the callback stack. Keep it alive until the main
-        // queue runs again.
-        if( const auto op = weak_operation.lock() )
-            dispatch_to_main_queue([op] { ReleasePromiseOperation(op); });
+        // Release the registry only after the job thread has left Execute(). This must not be a
+        // timer race: JobFinished and Job::Execute tail still use the Operation/Job.
+        if( const auto op = weak_operation.lock() ) {
+            const bool deferred = op->SetAfterJobFinishedCallback(
+                [op] { dispatch_to_main_queue([op] { ReleasePromiseOperation(op); }); });
+            if( !deferred )
+                dispatch_to_main_queue([op] { ReleasePromiseOperation(op); });
+        }
     };
 
     try {

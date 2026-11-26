@@ -26,6 +26,10 @@ public:
     bool IsCompleted() const noexcept;
 
     void SetFinishCallback(std::function<void()> _callback);
+    // Invoked at the very end of the job thread, after Execute() has returned. Unlike the finish
+    // callback this is not part of the Operation/Job stack frame, so it is safe to release the last
+    // external reference from here.
+    void SetAfterExecuteCallback(std::function<void()> _callback);
     void SetPauseCallback(std::function<void()> _callback);
     void SetResumeCallback(std::function<void()> _callback);
     void SetItemStateReportCallback(ItemStateReportCallback _callback);
@@ -51,6 +55,7 @@ private:
     std::condition_variable m_PauseCV;
 
     std::function<void()> m_OnFinish;
+    std::function<void()> m_AfterExecute;
     std::function<void()> m_OnPause;
     std::function<void()> m_OnResume;
     ItemStateReportCallback m_OnItemStateReport;

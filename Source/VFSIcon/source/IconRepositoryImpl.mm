@@ -27,6 +27,7 @@ IconRepositoryImpl::IconRepositoryImpl(const std::shared_ptr<IconBuilder> &_icon
 
 IconRepositoryImpl::~IconRepositoryImpl()
 {
+    m_Alive->store(false);
     for( const auto &slot : m_Slots ) {
         if( slot.state == SlotState::Production ) {
             if( slot.production != nullptr )
@@ -152,7 +153,9 @@ void IconRepositoryImpl::StartRealIconProduction(int _slot_index, const base::in
             dispatch_semaphore_signal(completion);
         },
         [_context] { return _context->must_stop.load(); });
-    dispatch_semaphore_wait(completion, DISPATCH_TIME_FOREVER);
+    const auto wait_result = dispatch_semaphore_wait(completion, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_SEC));
+    if( wait_result != 0 )
+        Log::Error("Icon production timed out for '{}'", _context->item.Path());
 }
 
 void IconRepositoryImpl::CommitProductionResult(int _slot_index, WorkerContext &_ctx)
@@ -161,7 +164,9 @@ void IconRepositoryImpl::CommitProductionResult(int _slot_index, WorkerContext &
         return;
 
     auto &slot = m_Slots[_slot_index];
-    assert(slot.production.get() == &_ctx);
+    // A timed-out or superseded callback may arrive after a newer production has taken the slot.
+    if( slot.production.get() != &_ctx )
+        return;
 
     slot.production.reset();
     const bool updated = RefreshImages(slot, _ctx);

@@ -8,6 +8,12 @@
 
 namespace nc::vfsicon {
 
+static dispatch_queue_t QLVFSTimeoutQueue()
+{
+    static dispatch_queue_t queue = dispatch_queue_create("nc.vfsicon.ql-timeout", DISPATCH_QUEUE_SERIAL);
+    return queue;
+}
+
 static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (^_callback)(NSImage *))
 {
     QLThumbnailGenerationRequest *const request = [[QLThumbnailGenerationRequest alloc]
@@ -30,7 +36,7 @@ static void GenerateVFSQuickLookThumbnailAsync(NSURL *_url, CGSize _size, void (
                              if( !completed->exchange(true) )
                                  _callback(image);
                            }];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), QLVFSTimeoutQueue(), ^{
       if( !completed->exchange(true) ) {
           [[QLThumbnailGenerator sharedGenerator] cancelRequest:request];
           _callback(nil);

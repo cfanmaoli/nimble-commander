@@ -72,6 +72,14 @@ void Job::Execute()
     m_CallbackLock.unlock();
     if( callback )
         callback();
+
+    // Execute() is about to leave the job object's stack frame. The callback is expected to defer
+    // any destruction to another queue; it must not destroy the Job synchronously.
+    m_CallbackLock.lock();
+    const auto after_execute = m_AfterExecute;
+    m_CallbackLock.unlock();
+    if( after_execute )
+        after_execute();
 }
 
 bool Job::IsRunning() const noexcept
@@ -83,6 +91,12 @@ void Job::SetFinishCallback(std::function<void()> _callback)
 {
     const auto guard = std::lock_guard{m_CallbackLock};
     m_OnFinish = std::move(_callback);
+}
+
+void Job::SetAfterExecuteCallback(std::function<void()> _callback)
+{
+    const auto guard = std::lock_guard{m_CallbackLock};
+    m_AfterExecute = std::move(_callback);
 }
 
 bool Job::IsCompleted() const noexcept

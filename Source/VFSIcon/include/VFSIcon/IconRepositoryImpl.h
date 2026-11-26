@@ -109,6 +109,7 @@ private:
     static int ToIndex(SlotKey _key);
 
     std::vector<Slot> m_Slots;
+    std::shared_ptr<std::atomic_bool> m_Alive = std::make_shared<std::atomic_bool>(true);
     std::stack<int> m_FreeSlotsIndices;
     int m_IconPxSize = 32;
     const int m_Capacity;

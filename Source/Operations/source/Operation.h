@@ -77,6 +77,10 @@ public:
     // This callback will be fired from a background job thread.
     void SetItemStatusCallback(ItemStateReportCallback _callback);
 
+    // Invoked after the job thread has left Execute(); used to release external keepalive
+    // references without racing JobFinished.
+    bool SetAfterJobFinishedCallback(std::function<void()> _callback);
+
 protected:
     enum class GenericDialog : uint8_t {
         AbortRetry,

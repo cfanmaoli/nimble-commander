@@ -7,6 +7,12 @@
 
 namespace nc::vfsicon {
 
+static dispatch_queue_t QLNativeTimeoutQueue()
+{
+    static dispatch_queue_t queue = dispatch_queue_create("nc.vfsicon.ql-timeout", DISPATCH_QUEUE_SERIAL);
+    return queue;
+}
+
 static void hash_combine(size_t & /*unused*/)
 {
 }
@@ -249,7 +255,7 @@ void QLThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_filename,
           waiter(result_image);
     });
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC), QLNativeTimeoutQueue(), ^{
       std::vector<ThumbnailCallback> waiters;
       NSImage *result_image = nil;
       {

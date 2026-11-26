@@ -325,6 +325,15 @@ void Operation::SetTitle(std::string _title)
     FireObservers(NotifyAboutTitleChange);
 }
 
+bool Operation::SetAfterJobFinishedCallback(std::function<void()> _callback)
+{
+    if( auto job = GetJob() ) {
+        job->SetAfterExecuteCallback(std::move(_callback));
+        return true;
+    }
+    return false;
+}
+
 void Operation::SetItemStatusCallback(ItemStateReportCallback _callback)
 {
     if( auto job = GetJob() ) {
