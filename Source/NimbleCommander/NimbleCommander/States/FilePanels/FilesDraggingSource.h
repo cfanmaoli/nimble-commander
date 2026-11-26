@@ -16,6 +16,10 @@
 
 @end
 
+@interface PanelDraggingFilePromiseProvider : NSFilePromiseProvider <NSFilePromiseProviderDelegate>
+- (instancetype)initWithItem:(const VFSListingItem &)_item nativeHost:(const VFSHostPtr &)_native_host;
+@end
+
 @interface FilesDraggingSource : NSObject <NSDraggingSource, NSPasteboardItemDataProvider>
 
 + (NSString *)privateDragUTI;

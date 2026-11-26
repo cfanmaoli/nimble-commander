@@ -51,12 +51,12 @@ DragSender::~DragSender() = default;
 
 void DragSender::Start(NSView *_from_view, NSEvent *_via_event, int _dragged_panel_item_sorted_index)
 {
-    static const auto pasteboard_types =
-        @[FilesDraggingSource.fileURLsPromiseDragUTI, FilesDraggingSource.privateDragUTI];
-
     const auto vfs_items = Impl::ComposeItemsForDragging(_dragged_panel_item_sorted_index, m_Panel.data);
     if( vfs_items.empty() )
         return;
+
+    static const auto pasteboard_types =
+        @[FilesDraggingSource.fileURLsPromiseDragUTI, FilesDraggingSource.privateDragUTI];
 
     auto position = [_from_view convertPoint:_via_event.locationInWindow fromView:nil];
     position.x -= 16;
@@ -65,15 +65,28 @@ void DragSender::Start(NSView *_from_view, NSEvent *_via_event, int _dragged_pan
     const auto dragging_source = [[FilesDraggingSource alloc] initWithSourceController:m_Panel nativeHost:m_NativeHost];
     const auto drag_items = [[NSMutableArray alloc] initWithCapacity:vfs_items.size()];
     for( const auto &item : vfs_items ) {
-        // dragging item itself
+        // Keep the item for the in-app drag source and for the drag image, but expose an
+        // NSFilePromiseProvider on the pasteboard so external drops can copy asynchronously.
         const auto pasterboard_item = [[PanelDraggingItem alloc] initWithItem:item];
-        [pasterboard_item setDataProvider:dragging_source forTypes:pasteboard_types];
         pasterboard_item.icon = m_IconCallback(item);
-
         [dragging_source addItem:pasterboard_item];
 
+        id<NSPasteboardWriting> pasteboard_writer = nil;
+        if( item.Host()->IsNativeFS() ) {
+            // Native items keep the old promise path; writeURLsPBoard() exposes their URLs directly.
+            [pasterboard_item setDataProvider:dragging_source forTypes:pasteboard_types];
+            pasteboard_writer = pasterboard_item;
+        }
+        else {
+            // VFS items need to be materialized into a promised file. NSFilePromiseProvider writes
+            // them asynchronously on its own operation queue instead of blocking the pasteboard
+            // callback.
+            pasteboard_writer = [[PanelDraggingFilePromiseProvider alloc] initWithItem:item
+                                                                            nativeHost:m_NativeHost.SharedPtr()];
+        }
+
         // visual appearance of a dragging item
-        const auto drag_item = [[NSDraggingItem alloc] initWithPasteboardWriter:pasterboard_item];
+        const auto drag_item = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboard_writer];
         drag_item.draggingFrame = NSMakeRect(std::floor(position.x), std::floor(position.y), 32, 32);
 
         __weak PanelDraggingItem *weak_pb_item = pasterboard_item;

@@ -4,6 +4,7 @@
 #include <Utility/StringExtras.h>
 #include <Operations/Deletion.h>
 #include <Operations/Copying.h>
+#include <Operations/Operation.h>
 #include <Base/dispatch_cpp.h>
 #include "PanelController.h"
 #include "MainWindowFilePanelState.h"
@@ -53,6 +54,92 @@ static const auto g_PasteboardFilenamesUTI = static_cast<NSString *>(
 - (void)reset
 {
     m_Item = VFSListingItem();
+}
+
+@end
+
+@implementation PanelDraggingFilePromiseProvider {
+    VFSListingItem m_Item;
+    VFSHostPtr m_NativeHost;
+}
+
+- (instancetype)initWithItem:(const VFSListingItem &)_item nativeHost:(const VFSHostPtr &)_native_host
+{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    const auto type = _item.IsDir() ? static_cast<NSString *>(kUTTypeFolder) : static_cast<NSString *>(kUTTypeData);
+#pragma clang diagnostic pop
+    self = [super initWithFileType:type delegate:self];
+    if( self ) {
+        m_Item = _item;
+        m_NativeHost = _native_host;
+    }
+    return self;
+}
+
+- (NSArray<NSPasteboardType> *)writableTypesForPasteboard:(NSPasteboard *)pasteboard
+{
+    NSMutableArray<NSPasteboardType> *const types = [[super writableTypesForPasteboard:pasteboard] mutableCopy];
+    [types addObject:g_PrivateDragUTI];
+    return types;
+}
+
+- (id)pasteboardPropertyListForType:(NSPasteboardType)type
+{
+    if( [type isEqualToString:g_PrivateDragUTI] )
+        return [NSData data];
+    return [super pasteboardPropertyListForType:type];
+}
+
+- (NSString *)filePromiseProvider:(NSFilePromiseProvider *) [[maybe_unused]] _provider
+                  fileNameForType:(NSString *) [[maybe_unused]] _file_type
+{
+    return m_Item.FilenameNS();
+}
+
+- (NSOperationQueue *)operationQueueForFilePromiseProvider:(NSFilePromiseProvider *) [[maybe_unused]] _provider
+{
+    static NSOperationQueue *const queue = [] {
+        NSOperationQueue *const q = [NSOperationQueue new];
+        q.maxConcurrentOperationCount = 2;
+        q.name = @"com.magnumbytes.nimblecommander.file-promise-writer";
+        return q;
+    }();
+    return queue;
+}
+
+- (void)filePromiseProvider:(NSFilePromiseProvider *) [[maybe_unused]] _provider
+          writePromiseToURL:(NSURL *)_url
+          completionHandler:(void (^)(NSError *_Nullable))_completion_handler
+{
+    const char *const destination = _url.path.fileSystemRepresentation;
+    if( destination == nullptr || *destination == 0 ) {
+        _completion_handler([NSError errorWithDomain:@"info.filesmanager.Files.promise"
+                                                code:1
+                                            userInfo:@{NSLocalizedDescriptionKey: @"Invalid destination URL"}]);
+        return;
+    }
+
+    nc::ops::CopyingOptions options;
+    options.docopy = true;
+    options.preserve_symlinks = true;
+    options.copy_xattrs = true;
+    options.copy_file_times = true;
+    options.copy_unix_flags = true;
+    options.copy_unix_owners = true;
+    options.exist_behavior = nc::ops::CopyingOptions::ExistBehavior::Stop;
+
+    const auto operation =
+        std::make_shared<nc::ops::Copying>(std::vector<VFSListingItem>{m_Item}, destination, m_NativeHost, options);
+    operation->ObserveUnticketed(nc::ops::Operation::NotifyAboutCompletion, [operation, _completion_handler] {
+        if( operation->State() == nc::ops::OperationState::Completed )
+            _completion_handler(nil);
+        else
+            _completion_handler([NSError errorWithDomain:@"info.filesmanager.Files.promise"
+                                                    code:1
+                                                userInfo:@{NSLocalizedDescriptionKey: @"Copy failed"}]);
+    });
+    operation->Start();
 }
 
 @end

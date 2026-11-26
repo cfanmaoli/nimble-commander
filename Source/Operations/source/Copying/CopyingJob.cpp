@@ -19,6 +19,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/xattr.h>
+#include <sys/clonefile.h>
+#include <fcntl.h>
 
 namespace nc::ops {
 
@@ -608,10 +610,16 @@ std::tuple<CopyingJob::StepResult, copying::SourceItems> CopyingJob::ScanSourceI
                     std::vector<std::string> dir_ents;
                     while( true ) {
                         const auto callback = [&](auto &_) {
+                            // A single huge directory can take a long time to enumerate. Check for
+                            // pause/stop here as well, not only between directories.
+                            if( BlockIfPaused(); IsStopped() )
+                                return false;
                             dir_ents.emplace_back(_.name);
                             return true;
                         };
                         const std::expected<void, Error> rc = host.IterateDirectoryListing(path, callback);
+                        if( IsStopped() )
+                            return StepResult::Stop;
                         if( rc )
                             break;
                         switch( m_OnCantAccessSourceItem(rc.error(), path, host) ) {
@@ -741,12 +749,14 @@ CopyingJob::StepResult CopyingJob::CopyNativeFileToNativeFile(vfs::NativeHost &_
     int64_t total_dst_size = src_stat_buffer.st_size;
     uint64_t preallocate_delta = 0;
     int64_t initial_writing_offset = 0;
+    bool may_use_clone = false;
 
     const auto setup_new = [&] {
         dst_open_flags = O_WRONLY | O_CREAT | O_EXCL;
         do_unlink_on_stop = true;
         dst_size_on_stop = 0;
         preallocate_delta = src_stat_buffer.st_size;
+        may_use_clone = true;
     };
 
     // stat destination
@@ -798,6 +808,22 @@ CopyingJob::StepResult CopyingJob::CopyNativeFileToNativeFile(vfs::NativeHost &_
     else {
         // no dest file - just create it
         setup_new();
+    }
+
+    // On APFS a clone is both faster and more faithful than a byte-by-byte copy. It is only
+    // attempted for a brand-new destination; clonefile() requires that the target doesn't exist.
+    // A clone doesn't produce byte-level progress and doesn't run the usual checksum path, and it
+    // strips setuid/setgid bits, so keep the regular copier for those cases.
+    if( may_use_clone && m_Options.docopy && m_Options.verification == CopyingOptions::ChecksumVerification::Never &&
+        m_Options.copy_xattrs && m_Options.copy_file_times && m_Options.copy_unix_flags && m_Options.copy_unix_owners &&
+        !io.isrouted() && src_fs_info_holder == m_DestinationNativeFSInfo &&
+        (src_stat_buffer.st_mode & (S_ISUID | S_ISGID)) == 0 ) {
+        if( fclonefileat(source_fd, AT_FDCWD, _dst_path.c_str(), 0) == 0 ) {
+            Statistics().CommitProcessed(Statistics::SourceType::Bytes, static_cast<uint64_t>(src_stat_buffer.st_size));
+            return StepResult::Ok;
+        }
+        // Any failure (ENOTSUP, EXDEV, a race with another writer, ...) falls back to the regular
+        // read/write path below.
     }
 
     // open a file descriptor for the destination
