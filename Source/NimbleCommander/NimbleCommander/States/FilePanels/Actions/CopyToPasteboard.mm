@@ -41,7 +41,7 @@ bool CopyToPasteboard::ValidateMenuItem(PanelController *_target, NSMenuItem *_i
 
 void CopyToPasteboard::PerformWithItems(const std::vector<VFSListingItem> &_items)
 {
-    if( !PasteboardSupport::WriteFilesnamesPBoard(_items, NSPasteboard.generalPasteboard) )
+    if( !PasteboardSupport::WriteURLSPBoard(_items, NSPasteboard.generalPasteboard) )
         NSBeep();
 }
 

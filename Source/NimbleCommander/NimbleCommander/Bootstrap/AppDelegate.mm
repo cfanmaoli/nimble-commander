@@ -396,11 +396,8 @@ static NCAppDelegate *g_Me = nil;
                                                   // freshly new one
 
     NSApp.servicesProvider = self;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    [NSApp registerServicesMenuSendTypes:@[NSFilenamesPboardType, (__bridge NSString *)kUTTypeFileURL]
+    [NSApp registerServicesMenuSendTypes:@[NSPasteboardTypeFileURL]
                              returnTypes:@[]]; // pasteboard types provided by PanelController
-#pragma clang diagnostic pop
     NSUpdateDynamicServices();
 
     [self temporaryFileStorage]; // implicitly runs the background temp storage purging

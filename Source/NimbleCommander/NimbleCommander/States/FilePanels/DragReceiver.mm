@@ -389,7 +389,10 @@ bool DragReceiver::PerformWithURLsPromiseSource(const vfs::VFSPath &_dest)
 
     NSArray<NSFilePromiseReceiver *> *const receivers =
         [m_Dragging.draggingPasteboard readObjectsForClasses:@[NSFilePromiseReceiver.class] options:@{}];
-    if( receivers.count != 0 ) {
+    if( receivers.count == 0 )
+        return false;
+
+    {
         static NSOperationQueue *const receive_queue = [] {
             NSOperationQueue *const queue = [NSOperationQueue new];
             queue.maxConcurrentOperationCount = 2;
@@ -414,13 +417,6 @@ bool DragReceiver::PerformWithURLsPromiseSource(const vfs::VFSPath &_dest)
         }
         return true;
     }
-
-    // Compatibility fallback for very old promisers which don't expose NSFilePromiseReceiver.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    [m_Dragging namesOfPromisedFilesDroppedAtDestination:drop_url];
-#pragma clang diagnostic pop
-    return true;
 }
 
 NSArray<NSString *> *DragReceiver::AcceptedUTIs()
