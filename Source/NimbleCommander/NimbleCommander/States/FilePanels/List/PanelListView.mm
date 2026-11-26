@@ -727,6 +727,16 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     return m_Data->EntryAtSortPosition(static_cast<int>(row)).Filename();
 }
 
+- (NSPoint)viewportScrollPosition
+{
+    return m_ScrollView.contentView.bounds.origin;
+}
+
+- (void)restoreViewportScrollPosition:(NSPoint)_position
+{
+    [m_ScrollView.contentView setBoundsOrigin:_position];
+}
+
 - (void)scrollToTopItemNamed:(std::string_view)_filename
 {
     if( m_Data == nullptr )

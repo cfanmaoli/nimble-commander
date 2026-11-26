@@ -912,6 +912,7 @@ namespace {
     // The table reloads its rows wholesale when the count changes by more than a thousand - keep
     // the item the user is looking at in place instead of dropping the viewport to the top.
     const std::optional<std::string> top_item = [m_View topVisibleItemName];
+    const NSPoint viewport_position = [m_View viewportScrollPosition];
     if( std::getenv("NC_PERF_LOG") != nullptr )
         fmt::println(stderr, "[perf] anchor {}", top_item ? *top_item : std::string{"<none>"});
     const auto perf_begin = std::chrono::steady_clock::now();
@@ -931,7 +932,9 @@ namespace {
         m_View.curpos = pers.RestoredCursorPosition();
     }
     [self onCursorChanged];
-    if( top_item )
+    if( _removed.empty() && _appended != 0 && !std::isnan(viewport_position.x) && !std::isnan(viewport_position.y) )
+        [m_View restoreViewportScrollPosition:viewport_position];
+    else if( top_item )
         [m_View scrollToTopItemNamed:*top_item];
     [m_View setNeedsDisplay];
     if( std::getenv("NC_PERF_LOG") != nullptr ) {

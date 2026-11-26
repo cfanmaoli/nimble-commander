@@ -877,6 +877,19 @@ struct StateStorage {
         [m_ItemsView scrollToTopItemNamed:_filename];
 }
 
+- (NSPoint)viewportScrollPosition
+{
+    if( [m_ItemsView respondsToSelector:@selector(viewportScrollPosition)] )
+        return [m_ItemsView viewportScrollPosition];
+    return NSMakePoint(NAN, NAN);
+}
+
+- (void)restoreViewportScrollPosition:(NSPoint)_position
+{
+    if( [m_ItemsView respondsToSelector:@selector(restoreViewportScrollPosition:)] )
+        [m_ItemsView restoreViewportScrollPosition:_position];
+}
+
 - (void)savePathState
 {
     dispatch_assert_main_queue();

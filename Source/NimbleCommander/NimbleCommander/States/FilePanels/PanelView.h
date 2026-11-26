@@ -104,6 +104,10 @@ struct PresentationFactory {
 // Will return std::nullopt if the position is invalid.
 - (std::optional<NSRect>)frameOfItemAtSortPos:(int)_sorted_position;
 
+// Exact viewport offset for append-only streaming updates.
+- (NSPoint)viewportScrollPosition;
+- (void)restoreViewportScrollPosition:(NSPoint)_position;
+
 // The name of the item currently shown at the top of the viewport, if there is one. Views that
 // cannot answer return std::nullopt. Used to keep the scroll position stable when the listing
 // under the view is extended or replaced.

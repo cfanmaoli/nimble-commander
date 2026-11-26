@@ -55,6 +55,11 @@ class Model;
 // Scrolls the view so that the item with the given name sits at the top of the viewport.
 - (void)scrollToTopItemNamed:(std::string_view)_filename;
 
+// Optional: exact scroll offset of the presentation's viewport. Used for append-only streaming
+// patches, where preserving the pixel offset avoids visible row-by-row drift.
+- (NSPoint)viewportScrollPosition;
+- (void)restoreViewportScrollPosition:(NSPoint)_position;
+
 // Called by the owning PanelView when the existing Panel Data has its sorting mode changed.
 // This notification will not be set when the data is replaced entirely, the presentation implementation should
 // rely on "setData:" for that.
