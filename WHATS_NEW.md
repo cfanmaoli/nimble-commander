@@ -49,6 +49,9 @@
   the main thread; listing restores and panel loads are guarded by navigation epochs.
 - Fixed Admin Mode `stat` access/change timestamp mapping and duplicate unlink cleanup on stopped
   compression jobs.
+- Admin Mode now tries direct POSIX I/O first and escalates to the privileged helper only on
+  `EACCES`/`EPERM`, keeping files in TCC-protected folders and on removable volumes (including RAR
+  and other archives) accessible without requiring Full Disk Access.
 - Settings import applies atomically after revalidation and handles cleanup failures cleanly.
 - Nightly publishing is gated by integration tests; release builds require a clean tagged tree and
   verified team signing, and `update_appcast.py` supports two-component release tags (`v2.0`).
