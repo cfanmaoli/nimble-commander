@@ -120,11 +120,10 @@ The non-MAS build checks for updates through Sparkle, which reads `SUFeedURL` fr
 `NimbleCommander-NonMAS-Info.plist`. It points at `appcast.xml` in the root of the `main` branch
 of this repository, so the update check never reaches the upstream project.
 
-The appcast is generated from our GitHub releases by `Scripts/update_appcast.py`: the latest
-tagged release is the regular update, the rolling `nightly` pre-release is published in the
-`nightly` channel. The enclosures point at the DMG assets of those releases, and each archive is
-signed with the EdDSA key whose public half is `SUPublicEDKey` in the plist - the private key
-lives outside the repository (see [Release.md](Release.md), step 9).
+The appcast is generated from our GitHub releases by `Scripts/update_appcast.py` and lists the
+latest tagged stable release. The enclosure points at the DMG asset of that release, and the
+archive is signed with the EdDSA key whose public half is `SUPublicEDKey` in the plist - the
+private key lives outside the repository (see [Release.md](Release.md), step 9).
 
 The CI build number is the number of commits: `build_unsigned.sh` stamps the packaged application
 with `git rev-list --count HEAD` (which is why the job checks out with `fetch-depth: 0`). That keeps

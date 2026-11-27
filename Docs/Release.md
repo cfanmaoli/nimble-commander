@@ -110,16 +110,15 @@ For a versioned release:
 ## Step 9: Update the Sparkle feed
 The application reads its update feed from the root of the `main` branch - see `SUFeedURL` in
 `Source/NimbleCommander/NimbleCommander/Resources/NimbleCommander-NonMAS-Info.plist`. The feed is
-generated from the GitHub releases of the fork: the latest tagged release is served as the regular
-update, the rolling `nightly` pre-release lives in the `nightly` channel (Sparkle only offers it
-to users who opt into that channel).
+generated from the GitHub releases of the fork and serves the latest tagged stable release (nightly
+pre-releases remain available on GitHub Releases for manual download).
 
 The release DMGs are signed with an EdDSA key; the public half is checked into the plist as
 `SUPublicEDKey`, the private half is kept outside the repository in `~/.sparkle-fork/ed25519.key`
 (mode 600) and must never be committed. The CI `build_unsigned.sh` stamps `CFBundleVersion` with
 the number of commits, so build numbers only ever grow and Sparkle can tell which release is newer.
 
-After publishing a release (and after the nightly is refreshed), regenerate the feed and commit it:
+After publishing a release, regenerate the feed and commit it:
 
 ```sh
 Scripts/update_appcast.py --sign-update /path/to/Sparkle/bin/sign_update
@@ -127,11 +126,10 @@ git add appcast.xml && git commit -m "Update the Sparkle feed"
 git push
 ```
 
-The script downloads the DMG assets, reads their versions from the application bundles, signs each
-archive and writes `appcast.xml` with the enclosures pointing at the release assets on GitHub. Pass
-`--dry-run` to inspect the feed, `--tag vX.Y.Z` to pin a specific release and `--no-nightly` to
-leave the nightly out. The Sparkle tools ship in the official Sparkle release archive
-(`Sparkle-<version>.tar.xz`).
+The script downloads the DMG asset, reads its versions from the application bundle, signs the
+archive and writes `appcast.xml` with the enclosure pointing at the release asset on GitHub. Pass
+`--dry-run` to inspect the feed and `--tag vX.Y` to pin a specific release. The Sparkle tools ship
+in the official Sparkle release archive (`Sparkle-<version>.tar.xz`).
 
 ## Step 10: Mac App Store
 The fork doesn't ship the sandboxed MAS build.

@@ -3,15 +3,13 @@
 """Regenerate appcast.xml from the GitHub releases of the fork.
 
 The appcast is the Sparkle update feed served from the root of the 'main' branch. It lists the
-latest tagged release and the rolling 'nightly' pre-release, with the enclosures pointing at the
-DMG assets of those releases on GitHub. Every enclosure is signed with the Sparkle EdDSA key and
-the signature is embedded into the item.
+latest tagged stable release, with the enclosure pointing at its DMG asset on GitHub. Every
+enclosure is signed with the Sparkle EdDSA key and the signature is embedded into the item.
 
 Usage:
     Scripts/update_appcast.py                    # regenerate appcast.xml
     Scripts/update_appcast.py --dry-run          # print the feed to stdout only
-    Scripts/update_appcast.py --tag v1.9.2       # use another stable tag
-    Scripts/update_appcast.py --no-nightly       # skip the nightly pre-release
+    Scripts/update_appcast.py --tag v2.0         # use another stable tag
 
 The private key is read from ~/.sparkle-fork/ed25519.key by default (override with --key-file or
 the SPARKLE_ED_KEY_FILE environment variable). It must never be committed - the public counterpart
@@ -71,15 +69,14 @@ def version_tuple(tag):
     return (int(major), int(minor), int(patch or 0), 0 if not suffix else 1, suffix.lower())
 
 
-def pick_releases(releases, wanted_tag):
+def pick_release(releases, wanted_tag):
     stable = [r for r in releases if not r["draft"] and not r["prerelease"] and r["tag_name"].startswith("v")]
     if wanted_tag:
         stable = [r for r in stable if r["tag_name"] == wanted_tag]
     if not stable:
         sys.exit("no stable release found")
     stable.sort(key=lambda r: version_tuple(r["tag_name"]), reverse=True)
-    nightly = next((r for r in releases if not r["draft"] and r["prerelease"] and r["tag_name"] == "nightly"), None)
-    return stable[0], nightly
+    return stable[0]
 
 
 def download(asset, cache):
@@ -141,7 +138,7 @@ def sign(key_file, sign_update, archive):
     return out
 
 
-def make_item(release, cache, key_file, sign_update, channel=None):
+def make_item(release, cache, key_file, sign_update):
     assets = [a for a in release["assets"] if a["name"].endswith(".dmg")]
     if not assets:
         sys.exit(f"release {release['tag_name']} has no .dmg asset")
@@ -159,10 +156,6 @@ def make_item(release, cache, key_file, sign_update, channel=None):
         f"      <sparkle:shortVersionString>{escape(info['short_version'])}</sparkle:shortVersionString>",
         f"      <sparkle:minimumSystemVersion>{escape(info['minimum_system'])}</sparkle:minimumSystemVersion>",
         f"      <sparkle:releaseNotesLink>{escape(release['html_url'])}</sparkle:releaseNotesLink>",
-    ]
-    if channel:
-        lines.append(f"      <sparkle:channel>{channel}</sparkle:channel>")
-    lines += [
         f"      <enclosure url=\"{escape(asset['browser_download_url'])}\"",
         f"                 sparkle:edSignature=\"{signature}\"",
         f"                 length=\"{asset['size']}\"",
@@ -178,7 +171,6 @@ def main():
     parser.add_argument("--key-file", default=os.environ.get("SPARKLE_ED_KEY_FILE", str(DEFAULT_KEY_FILE)))
     parser.add_argument("--sign-update", default=os.environ.get("SPARKLE_SIGN_UPDATE", "sign_update"))
     parser.add_argument("--cache", default=str(DEFAULT_CACHE))
-    parser.add_argument("--no-nightly", action="store_true", help="do not include the nightly pre-release")
     parser.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "appcast.xml"))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -188,12 +180,10 @@ def main():
     if shutil.which(args.sign_update) is None:
         sys.exit(f"the Sparkle sign_update tool {args.sign_update!r} is not on PATH")
 
-    stable, nightly = pick_releases(fetch_releases(), args.tag)
+    stable = pick_release(fetch_releases(), args.tag)
     cache = Path(args.cache)
 
     items = [make_item(stable, cache, args.key_file, args.sign_update)]
-    if nightly and not args.no_nightly:
-        items.append(make_item(nightly, cache, args.key_file, args.sign_update, channel="nightly"))
 
     feed = [
         '<?xml version="1.0" encoding="utf-8"?>',
@@ -201,8 +191,8 @@ def main():
         "  <channel>",
         "    <title>Nimble Commander-Fork</title>",
         f"    <link>https://github.com/{REPO}</link>",
-        "    <description>Update feed for Nimble Commander-Fork. The items point at the DMG assets of",
-        "      the GitHub releases of the fork; the nightly pre-release is kept in its own channel.</description>",
+        "    <description>Update feed for Nimble Commander-Fork. The enclosures point at the DMG assets",
+        "      of the tagged GitHub releases of the fork.</description>",
         "    <language>en</language>",
     ]
     feed += items
