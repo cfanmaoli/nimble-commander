@@ -3,6 +3,8 @@
 #include "TestEnv.h"
 #include <NativeSpecialDirectories.h>
 #include <Base/algo.h>
+#include "../../RoutedIO/source/RoutedIOInterfaces.h"
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/xattr.h>
 #include <algorithm>
@@ -317,6 +319,111 @@ TEST_CASE(PREFIX "FetchDirectoryListingIncremental can be cancelled from the han
     CHECK(!result);
     CHECK(result.error().Code() == ECANCELED);
     CHECK(chunks_count == 1);
+}
+
+TEST_CASE(PREFIX "PosixIOInterfaceRouted tries direct IO first and escalates only on EACCES/EPERM")
+{
+    class SpyRoutedIO final : public nc::routedio::PosixIOInterfaceRouted
+    {
+    public:
+        SpyRoutedIO() : PosixIOInterfaceRouted(nc::routedio::RoutedIO::Instance()) {}
+        int connection_calls = 0;
+
+    protected:
+        xpc_connection_t Connection() override
+        {
+            ++connection_calls;
+            return nullptr;
+        }
+    };
+
+    const auto root = std::filesystem::temp_directory_path() / "nc_routed_io_escalation_test";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    const auto cleanup = at_scope_end([&] {
+        ::chmod((root / "locked_dir").c_str(), 0700);
+        ::chmod((root / "locked_file").c_str(), 0600);
+        std::filesystem::remove_all(root);
+    });
+
+    const auto file = root / "file.txt";
+    {
+        std::ofstream out(file);
+        out << "hello";
+    }
+
+    SpyRoutedIO io;
+
+    // Accessible operations must succeed directly without contacting the privileged helper.
+    const int fd = io.open(file.c_str(), O_RDONLY, 0);
+    REQUIRE(fd >= 0);
+    ::close(fd);
+    CHECK(io.connection_calls == 0);
+
+    struct stat st{};
+    CHECK(io.stat(file.c_str(), &st) == 0);
+    CHECK(io.lstat(file.c_str(), &st) == 0);
+    CHECK(io.chmod(file.c_str(), 0644) == 0);
+    CHECK(io.chmtime(file.c_str(), st.st_mtime) == 0);
+    CHECK(io.connection_calls == 0);
+
+    DIR *const dir = io.opendir(root.c_str());
+    REQUIRE(dir != nullptr);
+    ::closedir(dir);
+    CHECK(io.connection_calls == 0);
+
+    const auto subdir = root / "subdir";
+    CHECK(io.mkdir(subdir.c_str(), 0755) == 0);
+    CHECK(io.rmdir(subdir.c_str()) == 0);
+    const auto link_path = root / "sym";
+    CHECK(io.symlink(file.c_str(), link_path.c_str()) == 0);
+    char link_buf[PATH_MAX] = {};
+    CHECK(io.readlink(link_path.c_str(), link_buf, sizeof(link_buf)) > 0);
+    CHECK(io.unlink(link_path.c_str()) == 0);
+    CHECK(io.connection_calls == 0);
+
+    // Non-permission errors (ENOENT) must not escalate to the helper and must preserve errno.
+    const auto missing = root / "does_not_exist";
+    errno = 0;
+    CHECK(io.open(missing.c_str(), O_RDONLY, 0) == -1);
+    CHECK(errno == ENOENT);
+    errno = 0;
+    CHECK(io.stat(missing.c_str(), &st) == -1);
+    CHECK(errno == ENOENT);
+    errno = 0;
+    CHECK(io.opendir(missing.c_str()) == nullptr);
+    CHECK(errno == ENOENT);
+    CHECK(io.connection_calls == 0);
+
+    // Permission errors (EACCES) must escalate to the helper and preserve errno when unavailable.
+    if( ::geteuid() != 0 ) {
+        const auto locked_file = root / "locked_file";
+        {
+            std::ofstream out(locked_file);
+            out << "secret";
+        }
+        REQUIRE(::chmod(locked_file.c_str(), 0000) == 0);
+
+        errno = 0;
+        CHECK(io.open(locked_file.c_str(), O_RDONLY, 0) == -1);
+        CHECK(errno == EACCES);
+        CHECK(io.connection_calls == 1);
+
+        const auto locked_dir = root / "locked_dir";
+        std::filesystem::create_directories(locked_dir);
+        REQUIRE(::chmod(locked_dir.c_str(), 0000) == 0);
+
+        errno = 0;
+        CHECK(io.opendir(locked_dir.c_str()) == nullptr);
+        CHECK(errno == EACCES);
+        CHECK(io.connection_calls == 2);
+
+        const auto inside_locked = locked_dir / "nested";
+        errno = 0;
+        CHECK(io.stat(inside_locked.c_str(), &st) == -1);
+        CHECK(errno == EACCES);
+        CHECK(io.connection_calls == 3);
+    }
 }
 } // namespace VFSNativeTests
 

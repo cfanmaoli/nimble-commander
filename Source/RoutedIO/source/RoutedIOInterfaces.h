@@ -69,8 +69,11 @@ public:
     int killpg(int _pid, int _signal) noexcept override;
     int trash(const char *_path) noexcept override;
 
+protected:
+    virtual xpc_connection_t Connection();
+
 private:
-    xpc_connection_t Connection();
+    int OpenViaHelper(xpc_connection_t _conn, const char *_path, int _flags, int _mode, int _fallback_err) noexcept;
     using super = PosixIOInterfaceNative;
     RoutedIO &inst;
 };
