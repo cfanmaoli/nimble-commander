@@ -115,7 +115,7 @@ void IconBuilderImpl::BuildRealIconAsync(const VFSListingItem &_item,
         auto hint = QLThumbnailsCache::FileStateHint{};
         hint.size = _item.Size();
         hint.mtime = _item.MTime();
-        if( IsDirectImageExtension(_item.Extension()) ) {
+        if( _item.Size() <= 64ull * 1024 * 1024 && IsDirectImageExtension(_item.Extension()) ) {
             if( NSImage *const image = ProduceImageThumbnailDirectly(path, _icon_px_size) ) {
                 BuildResult result;
                 result.thumbnail = image;

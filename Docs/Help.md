@@ -26,7 +26,7 @@ Below is the compatibility table for the older releases:
 
 | Versions      | Architecture  | Minimum macOS Version
 | ------------- | ------------- | -----------------
-| 2.0+          | x64 & ARM64   | macOS 13
+| 2.0+          | ARM64         | macOS 13
 | 1.9.0 - 1.9.3c | x64 & ARM64  | macOS 12
 | 1.8.0 - 1.8.0 | x64 & ARM64   | macOS 11
 | 1.2.9 - 1.7.0 | x64 & ARM64   | macOS 10.15
@@ -41,7 +41,7 @@ Below is the compatibility table for the older releases:
 Nimble Commander-Fork is portable; it doesn't require the installation of additional components and can run from any folder.
 The fork ships the standalone build only (Apple Silicon, arm64); it can be copied into the
 `/Applications` folder by dragging the icon there.
-You can also run Nimble Commander-Fork directly from a `.dmg` disk image; in this case, Nimble Commander-Fork will offer to move itself to the `/Applications` folder.
+You can also run Nimble Commander-Fork directly from a `.dmg` disk image.
 
 ![Copying NC from a dmg](Help-install-dmg.png)
 
@@ -397,7 +397,7 @@ You can manage the list of favorite locations in the Favorites window, which can
 To add a directory to the list, use this window, click the `+` button, and select a path from the drop-down list.
 Alternatively, you can add a directory with the hotkey `Cmd + B` or the `File > Add to Favorites` menu item.
 Use the `-` button in the Favorites window to remove a location.
-The Favorites window also allows you to synchronize the list with Finder Favorites or reset it to the default set of location.
+The Favorites window also allows you to reset it to the default set of locations.
 A favorite location can represent any path available in the macOS filesystem or any virtual filesystem supported by Nimble Commander-Fork, such as network filesystems, archive contents, file extended attributes, or the process list.
 
 This screenshot shows the `Favorites` window:
