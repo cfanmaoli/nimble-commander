@@ -3,14 +3,20 @@
 #include <Security/Security.h>
 #include <cerrno>
 #include <cstdio>
+#include <fcntl.h>
 #include <frozen/string.h>
 #include <frozen/unordered_map.h>
 #include <libproc.h>
 #include <mach-o/dyld.h>
+#include <spawn.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <syslog.h>
+#include <unistd.h>
 #include <xpc/xpc.h>
 #include <Base/CFPtr.h>
+
+extern char **environ;
 
 // requires that the identifier is right and that the binary is signed by this development team.
 // NB: the certificate is identified by its Team ID (the OU field) rather than by its common
@@ -21,6 +27,9 @@ static const char *g_SignatureRequirement = "identifier info.filesmanager.Files 
                                             "certificate leaf[subject.OU] = \"359W39ZS37\"";
 
 static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV3";
+static constexpr int64_t g_HelperProtocolVersion = 3;
+static const char *g_LegacyPlistPath = "/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist";
+static const char *g_LegacyBinaryPath = "/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2";
 
 #define syslog_error(...) syslog(LOG_ERR, __VA_ARGS__)
 #define syslog_warning(...) syslog(LOG_WARNING, __VA_ARGS__)
@@ -64,6 +73,45 @@ static void send_reply_fd(xpc_object_t _from_event, int _fd)
 static bool HandleHeartbeat(xpc_object_t _event) noexcept
 {
     syslog_notice("processing heartbeat request");
+    char path[1024] = {0};
+    proc_pidpath(getpid(), path, sizeof(path));
+    xpc_connection_t remote = xpc_dictionary_get_remote_connection(_event);
+    xpc_object_t reply = xpc_dictionary_create_reply(_event);
+    xpc_dictionary_set_bool(reply, "ok", true);
+    xpc_dictionary_set_int64(reply, "protocol", g_HelperProtocolVersion);
+    xpc_dictionary_set_string(reply, "path", path);
+    xpc_connection_send_message(remote, reply);
+    xpc_release(reply);
+    return true;
+}
+
+static bool HandleCleanupLegacyV2(xpc_object_t _event) noexcept
+{
+    // Unload and stop any still-running legacy SMJobBless V2 daemon, and remove its leftover
+    // LaunchDaemon plist and binary from disk if present.
+    posix_spawn_file_actions_t actions;
+    if( posix_spawn_file_actions_init(&actions) == 0 ) {
+        posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
+        posix_spawn_file_actions_addopen(&actions, STDOUT_FILENO, "/dev/null", O_WRONLY, 0);
+        posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, "/dev/null", O_WRONLY, 0);
+
+        char launchctl_path[] = "/bin/launchctl";
+        char arg_bootout[] = "bootout";
+        char arg_target[] = "system/info.filesmanager.Files.PrivilegedIOHelperV2";
+        char *argv[] = {launchctl_path, arg_bootout, arg_target, nullptr};
+
+        pid_t pid = -1;
+        if( posix_spawn(&pid, launchctl_path, &actions, nullptr, argv, environ) == 0 ) {
+            int status = 0;
+            while( waitpid(pid, &status, 0) < 0 && errno == EINTR ) {
+            }
+        }
+        posix_spawn_file_actions_destroy(&actions);
+    }
+
+    unlink(g_LegacyPlistPath);
+    unlink(g_LegacyBinaryPath);
+
     send_reply_ok(_event);
     return true;
 }
@@ -493,30 +541,31 @@ static bool HandleTrash(xpc_object_t _event) noexcept
     return true;
 }
 
-static constexpr frozen::unordered_map<frozen::string, bool (*)(xpc_object_t), 23> g_Handlers{
-    {"heartbeat", HandleHeartbeat}, //
-    {"uninstall", HandleUninstall}, //
-    {"exit", HandleExit},           //
-    {"open", HandleOpen},           //
-    {"stat", HandleStat},           //
-    {"lstat", HandleLStat},         //
-    {"mkdir", HandleMkDir},         //
-    {"chown", HandleChOwn},         //
-    {"chflags", HandleChFlags},     //
-    {"lchflags", HandleLChFlags},   //
-    {"chmod", HandleChMod},         //
-    {"chmtime", HandleChTime},      //
-    {"chctime", HandleChTime},      //
-    {"chbtime", HandleChTime},      //
-    {"chatime", HandleChTime},      //
-    {"rmdir", HandleRmDir},         //
-    {"unlink", HandleUnlink},       //
-    {"rename", HandleRename},       //
-    {"readlink", HandleReadLink},   //
-    {"symlink", HandleSymlink},     //
-    {"link", HandleLink},           //
-    {"killpg", HandleKillPG},       //
-    {"trash", HandleTrash}          //
+static constexpr frozen::unordered_map<frozen::string, bool (*)(xpc_object_t), 24> g_Handlers{
+    {"heartbeat", HandleHeartbeat},               //
+    {"cleanup_legacy_v2", HandleCleanupLegacyV2}, //
+    {"uninstall", HandleUninstall},               //
+    {"exit", HandleExit},                         //
+    {"open", HandleOpen},                         //
+    {"stat", HandleStat},                         //
+    {"lstat", HandleLStat},                       //
+    {"mkdir", HandleMkDir},                       //
+    {"chown", HandleChOwn},                       //
+    {"chflags", HandleChFlags},                   //
+    {"lchflags", HandleLChFlags},                 //
+    {"chmod", HandleChMod},                       //
+    {"chmtime", HandleChTime},                    //
+    {"chctime", HandleChTime},                    //
+    {"chbtime", HandleChTime},                    //
+    {"chatime", HandleChTime},                    //
+    {"rmdir", HandleRmDir},                       //
+    {"unlink", HandleUnlink},                     //
+    {"rename", HandleRename},                     //
+    {"readlink", HandleReadLink},                 //
+    {"symlink", HandleSymlink},                   //
+    {"link", HandleLink},                         //
+    {"killpg", HandleKillPG},                     //
+    {"trash", HandleTrash}                        //
 };
 
 static bool ProcessOperation(const char *_operation, xpc_object_t _event)

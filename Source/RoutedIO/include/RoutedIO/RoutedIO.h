@@ -84,6 +84,7 @@ private:
     std::atomic_bool m_Enabled{false};
     std::atomic_bool m_RequiresApproval{false};
     std::atomic_bool m_AuthenticatedAsAdmin{false};
+    std::atomic_bool m_LegacyCleanupDone{false};
     xpc_connection_t m_Connection = nullptr;
     bool m_Sandboxed = false;
 };

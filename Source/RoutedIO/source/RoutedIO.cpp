@@ -19,6 +19,9 @@ PosixIOInterface &RoutedIO::Default = IOWrappedCreateProxy();
 
 static const char *g_HelperLabel = "info.filesmanager.Files.PrivilegedIOHelperV3";
 static const char *g_HelperPlistName = "info.filesmanager.Files.PrivilegedIOHelperV3.plist";
+static constexpr int64_t g_ExpectedHelperProtocolVersion = 3;
+static constexpr std::string_view g_ExpectedHelperPathSuffix =
+    "/Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV3";
 static const char *g_LegacyHelperLabel = "info.filesmanager.Files.PrivilegedIOHelperV2";
 static const char *g_LegacyPlistPath = "/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist";
 static const char *g_LegacyBinaryPath = "/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2";
@@ -119,24 +122,19 @@ bool RoutedIO::ReRegisterHelper()
 
 void RoutedIO::CleanupLegacyHelperIfPresent()
 {
-    if( !m_Connection )
+    if( !m_Connection || m_LegacyCleanupDone )
         return;
 
-    const auto unlink_via_helper = [this](const char *_path) {
-        if( access(_path, F_OK) != 0 )
-            return;
-        xpc_object_t message = xpc_dictionary_create(nullptr, nullptr, 0);
-        xpc_dictionary_set_string(message, "operation", "unlink");
-        xpc_dictionary_set_string(message, "path", _path);
-        xpc_object_t reply = xpc_connection_send_message_with_reply_sync(m_Connection, message);
-        xpc_release(message);
-        if( xpc_get_type(reply) != XPC_TYPE_ERROR && xpc_dictionary_get_bool(reply, "ok") )
-            Log::Info("Removed legacy SMJobBless helper artifact: {}", _path);
-        xpc_release(reply);
-    };
+    xpc_object_t message = xpc_dictionary_create(nullptr, nullptr, 0);
+    xpc_dictionary_set_string(message, "operation", "cleanup_legacy_v2");
+    xpc_object_t reply = xpc_connection_send_message_with_reply_sync(m_Connection, message);
+    xpc_release(message);
 
-    unlink_via_helper(g_LegacyPlistPath);
-    unlink_via_helper(g_LegacyBinaryPath);
+    if( xpc_get_type(reply) != XPC_TYPE_ERROR && xpc_dictionary_get_bool(reply, "ok") ) {
+        m_LegacyCleanupDone = true;
+        Log::Info("Completed legacy SMJobBless V2 helper cleanup check");
+    }
+    xpc_release(reply);
 }
 
 bool RoutedIO::TurnOn()
@@ -163,6 +161,14 @@ bool RoutedIO::TurnOn()
 
     if( !Connect() || !IsHelperAlive() ) {
         if( m_Connection ) {
+            // Ask a stale helper instance to exit cleanly before re-registering so launchd starts
+            // the current bundle's PrivilegedIOHelperV3 binary.
+            xpc_object_t exit_msg = xpc_dictionary_create(nullptr, nullptr, 0);
+            xpc_dictionary_set_string(exit_msg, "operation", "exit");
+            xpc_object_t exit_reply = xpc_connection_send_message_with_reply_sync(m_Connection, exit_msg);
+            xpc_release(exit_msg);
+            xpc_release(exit_reply);
+
             xpc_connection_cancel(m_Connection);
             xpc_release(m_Connection);
             m_Connection = nullptr;
@@ -332,9 +338,19 @@ bool RoutedIO::IsHelperAlive()
     xpc_release(message);
 
     bool result = false;
-    if( xpc_get_type(reply) != XPC_TYPE_ERROR )
-        if( xpc_dictionary_get_bool(reply, "ok") )
+    if( xpc_get_type(reply) != XPC_TYPE_ERROR && xpc_dictionary_get_bool(reply, "ok") ) {
+        const int64_t protocol = xpc_dictionary_get_int64(reply, "protocol");
+        const char *const path = xpc_dictionary_get_string(reply, "path");
+        const bool path_matches = path != nullptr && std::string_view{path}.ends_with(g_ExpectedHelperPathSuffix);
+        if( protocol >= g_ExpectedHelperProtocolVersion && path_matches ) {
             result = true;
+        }
+        else {
+            Log::Warn("Connected privileged helper is outdated (protocol={}, path='{}')",
+                      protocol,
+                      path != nullptr ? path : "");
+        }
+    }
 
     xpc_release(reply);
     return result;
@@ -391,9 +407,10 @@ void RoutedIO::UninstallViaRootCLI()
     if( !res.ok )
         std::cerr << "SMAppService unregister: " << res.error << '\n';
 
-    // Also remove any legacy SMJobBless V2 helper left behind by older releases when run as root.
-    if( geteuid() == 0 && (access(g_LegacyPlistPath, F_OK) == 0 || access(g_LegacyBinaryPath, F_OK) == 0) ) {
-        system(("launchctl bootout system/"s + g_LegacyHelperLabel).c_str());
+    // Also unload and remove any legacy SMJobBless V2 helper left behind by older releases when run
+    // as root, even if its plist and binary were already unlinked while the launchd job stayed loaded.
+    if( geteuid() == 0 ) {
+        system(("launchctl bootout system/"s + g_LegacyHelperLabel + " >/dev/null 2>&1").c_str());
         unlink(g_LegacyPlistPath);
         unlink(g_LegacyBinaryPath);
     }
