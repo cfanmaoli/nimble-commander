@@ -7,6 +7,9 @@
 #include "Actions/Delete.h"
 #include "Actions/Duplicate.h"
 #include "Actions/OpenFile.h"
+#include "MainWindowFilePanelState.h"
+#include "MainWindowFilePanelState+TabsSupport.h"
+#include "Views/FilePanelMainSplitView.h"
 #include "NCPanelOpenWithMenuDelegate.h"
 #include "PanelController.h"
 #include <Panel/TagsStorage.h>
@@ -94,6 +97,16 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
     open_item.target = self;
     open_item.action = @selector(OnRegularOpen:);
     [self addItem:open_item];
+
+    //////////////////////////////////////////////////////////////////////
+    // Open in New Tab — open a directory on the same side in a new tab,
+    // leaving the current tab's directory untouched.
+    const auto open_in_new_tab_item = [NSMenuItem new];
+    open_in_new_tab_item.title = NSLocalizedStringFromTable(
+        @"Open in New Tab", @"FilePanelsContextMenu", "Menu item: open a directory in a new tab on the same side");
+    open_in_new_tab_item.target = self;
+    open_in_new_tab_item.action = @selector(OnOpenInNewTab:);
+    [self addItem:open_in_new_tab_item];
 
     //////////////////////////////////////////////////////////////////////
     // Open With... stuff
@@ -294,6 +307,8 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
         return m_CompressToOppositeAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnRegularOpen:) )
         return m_OpenFileAction->ValidateMenuItem(m_Panel, item);
+    if( item.action == @selector(OnOpenInNewTab:) )
+        return m_Items.size() == 1 && m_Items.front().IsDir();
 
     return true;
 }
@@ -301,6 +316,41 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
 - (void)OnRegularOpen:(id)sender
 {
     m_OpenFileAction->Perform(m_Panel, sender);
+}
+
+- (void)OnOpenInNewTab:(id)sender
+{
+    if( m_Items.size() != 1 )
+        return;
+    const auto &item = m_Items.front();
+    if( !item.IsDir() )
+        return;
+
+    MainWindowFilePanelState *const state = m_Panel.state;
+    if( !state )
+        return;
+
+    NSTabView *tab_view = nil;
+    if( [state isLeftController:m_Panel] )
+        tab_view = state.splitView.leftTabbedHolder.tabView;
+    else if( [state isRightController:m_Panel] )
+        tab_view = state.splitView.rightTabbedHolder.tabView;
+    if( !tab_view )
+        return;
+
+    PanelController *const new_panel = [state spawnNewTabInTabView:tab_view
+                                            autoDirectoryLoading:false
+                                                activateNewPanel:false];
+    if( !new_panel )
+        return;
+
+    const auto request = std::make_shared<DirectoryChangeRequest>();
+    request->VFS = item.Host();
+    request->RequestedDirectory = item.Path();
+    request->PerformAsynchronous = true;
+    request->InitiatedByUser = true;
+    [new_panel GoToDirWithContext:request];
+    [state ActivatePanelByController:new_panel];
 }
 
 - (void)OnMoveToTrash:(id)sender

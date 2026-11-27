@@ -21,6 +21,27 @@ using nc::panel::ExternalTool;
 static auto g_ToolbarIdentifier = @"FilePanelsToolbar";
 static std::string_view g_ExternalToolsIdentifiersPrefix = "external_tool_";
 
+// TC-style always-visible action buttons placed in the real window
+// toolbar (the "title bar" strip). Each button sends its action through the
+// first-responder chain, so NC's panel dispatcher + user hotkeys apply.
+struct NCToolbarAction {
+    NSString *identifier;
+    NSString *label;
+    NSString *symbol;
+    NSString *selectorName;
+    const char *actionTag; // for the tooltip hotkey lookup
+};
+[[clang::no_destroy]] static const NCToolbarAction g_ToolbarActions[] = {
+    // tree toggle is the FIRST button (user preference).
+    // Keep identifier "nc_toggle_tree" so the explicit-target wiring below still
+    // matches; a toolbar migration key handles re-ordering of autosaved layouts.
+    {@"nc_toggle_tree",  @"Toggle Tree", @"sidebar.left", @"onToggleDirectoryTree:", ""},
+    {@"nc_go_back",  @"Back",   @"chevron.left",     @"OnGoBack:",            "menu.go.back"},
+    {@"nc_go_forward",   @"Forward",@"chevron.right",    @"OnGoForward:",         "menu.go.forward"},
+    {@"nc_go_up",    @"Up",     @"arrow.up",         @"OnGoToUpperDirectory:", "menu.go.enclosing_folder"},
+    {@"nc_new_folder",@"New Folder", @"folder.badge.plus", @"OnQuickNewFolder:", "menu.file.new_folder"},
+};
+
 @implementation MainWindowFilePanelsStateToolbarDelegate {
     NSToolbar *m_Toolbar;
     NSButton *m_LeftPanelGoToButton;
@@ -35,12 +56,14 @@ static std::string_view g_ExternalToolsIdentifiersPrefix = "external_tool_";
     const nc::utility::ActionsShortcutsManager *m_ActionsShortcutsManager;
 
     id m_RepresentedObject;
+    __weak id m_TreeToggleTarget; // v6
 }
 
 @synthesize toolbar = m_Toolbar;
 @synthesize leftPanelGoToButton = m_LeftPanelGoToButton;
 @synthesize rightPanelGoToButton = m_RightPanelGoToButton;
 @synthesize operationsPoolViewController = m_PoolViewController;
+@synthesize treeToggleTarget = m_TreeToggleTarget;
 
 - (instancetype)initWithToolsStorage:(nc::panel::ExternalToolsStorage &)_storage
              actionsShortcutsManager:(const nc::utility::ActionsShortcutsManager &)_actions_shortcuts_manager
@@ -170,6 +193,27 @@ static NSString *EncodeToolIdentifier(const ExternalTool &_et)
         itemForItemIdentifier:(NSString *)itemIdentifier
     willBeInsertedIntoToolbar:(BOOL) [[maybe_unused]] _flag
 {
+    // TC-style action buttons in the toolbar.
+    for( const auto &action : g_ToolbarActions ) {
+        if( [itemIdentifier isEqualToString:action.identifier] ) {
+            NSToolbarItem *item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
+            item.image = [NSImage imageWithSystemSymbolName:action.symbol accessibilityDescription:nil];
+            item.label = item.paletteLabel = action.label;
+            // tree toggle needs an explicit target — MainWindowFilePanelState
+            // is not reliably on the responder chain when the toolbar/command line
+            // owns first responder. All other actions keep first-responder routing.
+            if( [itemIdentifier isEqualToString:@"nc_toggle_tree"] ) {
+                item.target = m_TreeToggleTarget;
+            } else {
+                item.target = nil; // go through the first-responder chain
+            }
+            item.action = NSSelectorFromString(action.selectorName);
+            const auto shortcuts = m_ActionsShortcutsManager->ShortcutsFromAction(action.actionTag);
+            const auto hotkey = shortcuts && !shortcuts->empty() ? shortcuts->front().PrettyString() : @"";
+            item.toolTip = hotkey.length ? [NSString stringWithFormat:@"%@ (%@)", action.label, hotkey] : action.label;
+            return item;
+        }
+    }
     if( [itemIdentifier isEqualToString:@"filepanels_left_goto_button"] ) {
         NSToolbarItem *item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
         item.view = m_LeftPanelGoToButton;
@@ -220,13 +264,17 @@ static NSString *EncodeToolIdentifier(const ExternalTool &_et)
 
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *) [[maybe_unused]] _toolbar
 {
-    static NSArray *allowed_items = @[
-        @"filepanels_left_goto_button",
-        NSToolbarFlexibleSpaceItemIdentifier,
-        @"operations_pool",
-        NSToolbarFlexibleSpaceItemIdentifier,
-        @"filepanels_right_goto_button"
-    ];
+    // action buttons first (left), then the original GoTo buttons at
+    // the edges and the operations pool in the middle.
+    NSMutableArray *items = [NSMutableArray array];
+    for( const auto &action : g_ToolbarActions )
+        [items addObject:action.identifier];
+    [items addObject:NSToolbarFlexibleSpaceItemIdentifier];
+    [items addObject:@"operations_pool"];
+    [items addObject:NSToolbarFlexibleSpaceItemIdentifier];
+    [items addObject:@"filepanels_left_goto_button"];
+    [items addObject:@"filepanels_right_goto_button"];
+    static NSArray *allowed_items = items;
 
     return allowed_items;
 }
@@ -241,6 +289,8 @@ static NSString *EncodeToolIdentifier(const ExternalTool &_et)
     // this is a bit redundant, since we're building this list for _every_ window, and this list is
     // the same for them
     NSMutableArray *a = [[NSMutableArray alloc] init];
+    for( const auto &action : g_ToolbarActions )
+        [a addObject:action.identifier]; // v5
     [a addObject:@"filepanels_left_goto_button"];
     [a addObject:@"filepanels_right_goto_button"];
     [a addObject:@"operations_pool"];

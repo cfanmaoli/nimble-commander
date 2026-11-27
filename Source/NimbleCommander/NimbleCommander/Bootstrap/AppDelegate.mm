@@ -201,6 +201,8 @@ static NCAppDelegate *g_Me = nil;
 
 @property(nonatomic) IBOutlet NSMenu *recentlyClosedMenu;
 
+- (void)customizeToolbar:(id)sender;
+
 @end
 
 @interface NCViewerWindowDelegateBridge : NSObject <NCViewerWindowDelegate>
@@ -363,6 +365,26 @@ static NCAppDelegate *g_Me = nil;
     static const auto help_delegate = [[NCHelpMenuDelegate alloc] init];
     auto help_menu_item = [NSApp.mainMenu itemWithTagHierarchical:17'000].menu;
     help_menu_item.delegate = help_delegate;
+
+    // Discoverable entry point for rearranging the toolbar buttons. NSToolbar
+    // autosaves the dragged order, so the customization survives app updates.
+    static constexpr NSInteger customize_toolbar_tag = 19'999;
+    NSMenu *const view_menu = item_for_action("menu.view.toggle_layout_1").parentItem.menu;
+    if( view_menu != nil && [view_menu itemWithTag:customize_toolbar_tag] == nil ) {
+        [view_menu addItem:[NSMenuItem separatorItem]];
+        auto *const customize_item = [[NSMenuItem alloc]
+            initWithTitle:@"Customize Toolbar…"
+                   action:@selector(customizeToolbar:)
+            keyEquivalent:@""];
+        customize_item.tag = customize_toolbar_tag;
+        [view_menu addItem:customize_item];
+    }
+}
+
+- (void)customizeToolbar:(id)_sender
+{
+    if( auto window = nc::objc_cast<NSWindow>(NSApp.keyWindow) )
+        [window runToolbarCustomizationPalette:_sender];
 }
 
 - (void)updateMainMenuFeaturesByVersionAndState

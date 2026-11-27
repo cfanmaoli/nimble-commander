@@ -259,6 +259,24 @@
         }
       }
     },
+    "Open in New Tab" : {
+      "comment" : "Menu item: open a directory in a new tab on the same side",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in New Tab"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在新标签页中打开"
+          }
+        }
+      }
+    },
     "Open With" : {
       "comment" : "Submenu title to choose app to open with, for English is 'Open With'",
       "extractionState" : "manual",
