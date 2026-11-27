@@ -7,16 +7,16 @@
       of the tagged GitHub releases of the fork.</description>
     <language>en</language>
     <item>
-      <title>Nimble Commander-Fork 1.9.3c</title>
-      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3c</link>
-      <pubDate>Thu, 19 Nov 2026 16:49:17 +0000</pubDate>
-      <sparkle:version>4543</sparkle:version>
-      <sparkle:shortVersionString>1.9.3c</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v1.9.3c</sparkle:releaseNotesLink>
-      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v1.9.3c/nimble-commander-fork-1.9.3c.dmg"
-                 sparkle:edSignature="/iQ8m1DrtMZJEQ0ZBw1s+NuMwVsgsnn6pMhJZ9TH3WaCQpZ/YG0oZf9vN+SfuR+kefBmfOVZ81YAFmMn18C1DQ=="
-                 length="11634484"
+      <title>Nimble Commander-Fork 2.0</title>
+      <link>https://github.com/cfanmaoli/nimble-commander/releases/tag/v2.0</link>
+      <pubDate>Fri, 27 Nov 2026 04:59:55 +0000</pubDate>
+      <sparkle:version>4597</sparkle:version>
+      <sparkle:shortVersionString>2.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/cfanmaoli/nimble-commander/releases/tag/v2.0</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/cfanmaoli/nimble-commander/releases/download/v2.0/nimble-commander-fork-2.0.dmg"
+                 sparkle:edSignature="18bs0HR8tvU3S0p5F8OB43Mtymp4gpN4CpAmQrsVNhZh7ZtujU+XacHSF61ea/kiYk1RdBPyfAl5zGxK6FWCBg=="
+                 length="9001233"
                  type="application/octet-stream" />
     </item>
   </channel>
