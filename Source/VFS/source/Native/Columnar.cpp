@@ -62,7 +62,13 @@ void AppendDirectory(SharedState &_state,
         dir += '/';
 
     auto &io = routedio::RoutedIO::InterfaceForAccess(dir.c_str(), R_OK);
-    const int fd = io.open(dir.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+    int fd = routedio::RoutedIO::Direct.open(dir.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+    bool opened_via_helper = false;
+    if( fd < 0 && (errno == EACCES || errno == EPERM) && io.isrouted() ) {
+        fd = io.open(dir.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+        if( fd >= 0 )
+            opened_via_helper = true;
+    }
     if( fd < 0 )
         return;
 
@@ -138,14 +144,20 @@ void AppendDirectory(SharedState &_state,
     }
     size_t processed_entries = 0;
     const auto on_batch = [&](const size_t _fetched_now) {
-        if( _stop_requested() )
+        if( _stop_requested() || processed_entries >= remaining_items )
             return false;
         processed_entries += _fetched_now;
         return true;
     };
 
     const auto begin = std::chrono::steady_clock::now();
-    std::ignore = native::Fetching::ReadDirAttributesBulk(fd, on_batch, on_entry, remaining_items);
+    const bool use_bulk = !opened_via_helper && (!io.isrouted() || access(dir.c_str(), R_OK | X_OK) == 0);
+    int ret = use_bulk ? native::Fetching::ReadDirAttributesBulk(fd, on_batch, on_entry, remaining_items)
+                       : native::Fetching::ReadDirAttributesStat(fd, dir.c_str(), on_batch, on_entry, _stop_requested);
+    if( use_bulk && (ret == EACCES || ret == EPERM) && io.isrouted() && processed_entries == 0 ) {
+        lseek(fd, 0, SEEK_SET);
+        std::ignore = native::Fetching::ReadDirAttributesStat(fd, dir.c_str(), on_batch, on_entry, _stop_requested);
+    }
     ::close(fd);
     // The bulk call also stops when it runs into the entry cap - the listing is incomplete then,
     // whether or not the item counter happens to land exactly on the limit.

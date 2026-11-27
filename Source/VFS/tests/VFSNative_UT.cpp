@@ -3,6 +3,7 @@
 #include "TestEnv.h"
 #include <NativeSpecialDirectories.h>
 #include <Base/algo.h>
+#include "../source/Native/Fetching.h"
 #include "../../RoutedIO/source/RoutedIOInterfaces.h"
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -423,7 +424,82 @@ TEST_CASE(PREFIX "PosixIOInterfaceRouted tries direct IO first and escalates onl
         CHECK(io.stat(inside_locked.c_str(), &st) == -1);
         CHECK(errno == EACCES);
         CHECK(io.connection_calls == 3);
+
+        // Mode 0444 directory: access(dir, R_OK) succeeds, yet child stat() fails with EACCES
+        // because X_OK is missing; direct-first routed I/O must still escalate.
+        const auto no_exec_dir = root / "no_exec_dir";
+        std::filesystem::create_directories(no_exec_dir);
+        {
+            std::ofstream out(no_exec_dir / "child.txt");
+            out << "child";
+        }
+        const auto restore_no_exec = at_scope_end([&] { ::chmod(no_exec_dir.c_str(), 0700); });
+        REQUIRE(::chmod(no_exec_dir.c_str(), 0444) == 0);
+        REQUIRE(::access(no_exec_dir.c_str(), R_OK) == 0);
+
+        errno = 0;
+        CHECK(io.lstat((no_exec_dir / "child.txt").c_str(), &st) == -1);
+        CHECK(errno == EACCES);
+        CHECK(io.connection_calls == 4);
     }
+}
+
+TEST_CASE(PREFIX "ReadSingleEntryAttributesByPath reports accurate symlink timestamps and errno")
+{
+    const TestDir test_dir_holder;
+    const std::filesystem::path test_dir = test_dir_holder.directory;
+    const std::filesystem::path target = test_dir / "target.txt";
+    const std::filesystem::path link = test_dir / "link";
+    std::ofstream{target} << "data";
+    REQUIRE_NOTHROW(std::filesystem::create_symlink("target.txt", link));
+
+    // Give the symlink distinct atime and mtime so chg_time (ctime) and acc_time (atime) cannot
+    // be confused with each other or with mod_time (mtime).
+    const struct timespec times[2] = {
+        {.tv_sec = 1'600'000'000, .tv_nsec = 0}, // atime
+        {.tv_sec = 1'700'000'000, .tv_nsec = 0}, // mtime
+    };
+    REQUIRE(::utimensat(AT_FDCWD, link.c_str(), times, AT_SYMLINK_NOFOLLOW) == 0);
+
+    struct stat expected{};
+    REQUIRE(::lstat(link.c_str(), &expected) == 0);
+    REQUIRE(expected.st_atimespec.tv_sec == 1'600'000'000);
+    REQUIRE(expected.st_mtimespec.tv_sec == 1'700'000'000);
+    REQUIRE(expected.st_ctimespec.tv_sec != expected.st_mtimespec.tv_sec);
+    REQUIRE(expected.st_ctimespec.tv_sec != expected.st_atimespec.tv_sec);
+
+    Fetching::CallbackParams got{};
+    bool called = false;
+    const int rc = Fetching::ReadSingleEntryAttributesByPath(
+        routedio::RoutedIO::Direct, link.c_str(), [&](const Fetching::CallbackParams &_p) {
+            got = _p;
+            called = true;
+        });
+    REQUIRE(rc == 0);
+    REQUIRE(called);
+    CHECK(got.crt_time == expected.st_birthtimespec.tv_sec);
+    CHECK(got.mod_time == expected.st_mtimespec.tv_sec);
+    CHECK(got.chg_time == expected.st_ctimespec.tv_sec);
+    CHECK(got.acc_time == expected.st_atimespec.tv_sec);
+
+    // Verify LStatByPath returns a positive POSIX errno (not -1) when lstat fails.
+    class FailingLStatIO final : public nc::routedio::PosixIOInterfaceNative
+    {
+    public:
+        int open(const char *, int, int) noexcept override
+        {
+            errno = ELOOP;
+            return -1;
+        }
+        int lstat(const char *, struct ::stat *) noexcept override
+        {
+            errno = EACCES;
+            return -1;
+        }
+    };
+    FailingLStatIO failing_io;
+    CHECK(Fetching::ReadSingleEntryAttributesByPath(
+              failing_io, link.c_str(), [](const Fetching::CallbackParams &) {}) == EACCES);
 }
 } // namespace VFSNativeTests
 

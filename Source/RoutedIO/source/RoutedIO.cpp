@@ -390,16 +390,16 @@ bool RoutedIO::IsHelperAlive()
     return result;
 }
 
-PosixIOInterface &RoutedIO::InterfaceForAccess(const char *_path, int _mode) noexcept
+PosixIOInterface &RoutedIO::InterfaceForAccess([[maybe_unused]] const char *_path, [[maybe_unused]] int _mode) noexcept
 {
     const auto &instance = Instance();
-    if( instance.m_Sandboxed )
+    if( instance.m_Sandboxed || !instance.m_Enabled )
         return Direct;
 
-    if( !instance.m_Enabled )
-        return Direct;
-
-    return access(_path, _mode) == 0 ? RoutedIO::Direct : RoutedIO::Default;
+    // PosixIOInterfaceRouted tries direct I/O first and escalates to the privileged helper only on
+    // EACCES/EPERM, so always returning Default avoids bypassing the helper when access() disagrees
+    // with the actual syscall (e.g. directories without X_OK, symlinks, ACLs, TCC, or TOCTOU).
+    return Default;
 }
 
 bool RoutedIO::Enabled() const noexcept

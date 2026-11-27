@@ -105,8 +105,13 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
 
     const auto need_to_add_dot_dot = !(_flags & VFSFlags::F_NoDotDot) && _path != "/";
     auto &io = routedio::RoutedIO::InterfaceForAccess(path.c_str(), R_OK);
-    const bool is_native_io = !io.isrouted();
-    const int fd = io.open(path.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+    int fd = routedio::RoutedIO::Direct.open(path.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+    bool opened_via_helper = false;
+    if( fd < 0 && (errno == EACCES || errno == EPERM) && io.isrouted() ) {
+        fd = io.open(path.c_str(), O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_CLOEXEC);
+        if( fd >= 0 )
+            opened_via_helper = true;
+    }
     if( fd < 0 )
         return std::unexpected(Error{Error::POSIX, errno});
     const auto close_fd = at_scope_end([fd] { close(fd); });
@@ -191,7 +196,7 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
     std::mutex listing_source_symlinks_mut; // guard access to 'listing_source.symlinks'
     const auto epilogue_pass = [fd,
                                 tags_reading_enabled,
-                                is_native_io,
+                                opened_via_helper,
                                 &io,
                                 &listing_source,
                                 &listing_source_tags_mut,
@@ -204,11 +209,15 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         if( listing_source.unix_types[n] == DT_LNK ) {
             // read an actual link path
             char linkpath[MAXPATHLEN];
-            const ssize_t sz = is_native_io
-                                   ? readlinkat(fd, listing_source.filenames[n].c_str(), linkpath, MAXPATHLEN)
-                                   : io.readlink((listing_source.directories[0] + listing_source.filenames[n]).c_str(),
-                                                 linkpath,
-                                                 MAXPATHLEN);
+            ssize_t sz = opened_via_helper
+                             ? io.readlink((listing_source.directories[0] + listing_source.filenames[n]).c_str(),
+                                           linkpath,
+                                           MAXPATHLEN)
+                             : readlinkat(fd, listing_source.filenames[n].c_str(), linkpath, MAXPATHLEN);
+            if( !opened_via_helper && sz < 0 && (errno == EACCES || errno == EPERM) && io.isrouted() ) {
+                sz = io.readlink(
+                    (listing_source.directories[0] + listing_source.filenames[n]).c_str(), linkpath, MAXPATHLEN);
+            }
             if( sz >= 0 ) {
                 linkpath[sz] = 0;
                 {
@@ -218,10 +227,14 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
 
                 // stat the target file
                 struct ::stat stat_buffer;
-                const int stat_ret =
-                    is_native_io
-                        ? fstatat(fd, listing_source.filenames[n].c_str(), &stat_buffer, 0)
-                        : io.stat((listing_source.directories[0] + listing_source.filenames[n]).c_str(), &stat_buffer);
+                int stat_ret =
+                    opened_via_helper
+                        ? io.stat((listing_source.directories[0] + listing_source.filenames[n]).c_str(), &stat_buffer)
+                        : fstatat(fd, listing_source.filenames[n].c_str(), &stat_buffer, 0);
+                if( !opened_via_helper && stat_ret != 0 && (errno == EACCES || errno == EPERM) && io.isrouted() ) {
+                    stat_ret =
+                        io.stat((listing_source.directories[0] + listing_source.filenames[n]).c_str(), &stat_buffer);
+                }
                 if( stat_ret == 0 ) {
                     listing_source.unix_modes[n] = stat_buffer.st_mode;
                     listing_source.unix_flags[n] = MergeUnixFlags(listing_source.unix_flags[n], stat_buffer.st_flags);
@@ -345,10 +358,19 @@ std::expected<VFSListingPtr, Error> NativeHost::FetchDirectoryListingImpl(std::s
         return true;
     };
 
-    // when Admin Mode is on - we use different fetch route
-    const int ret = is_native_io ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
-                                 : Fetching::ReadDirAttributesStat(
-                                       fd, listing_source.directories[0].c_str(), cb_fetch, cb_param, _cancel_checker);
+    // Use fast getattrlistbulk() whenever the directory was opened directly and is searchable;
+    // fall back to per-entry routed lstat() when the directory was opened via the privileged helper
+    // or lacks direct search access (e.g. mode 0444 or ACL restrictions).
+    const size_t entries_before_enum = next_entry_index;
+    const bool use_bulk = !opened_via_helper && (!io.isrouted() || access(path.c_str(), R_OK | X_OK) == 0);
+    int ret = use_bulk ? Fetching::ReadDirAttributesBulk(fd, cb_fetch, cb_param)
+                       : Fetching::ReadDirAttributesStat(
+                             fd, listing_source.directories[0].c_str(), cb_fetch, cb_param, _cancel_checker);
+    if( use_bulk && (ret == EACCES || ret == EPERM) && io.isrouted() && next_entry_index == entries_before_enum ) {
+        lseek(fd, 0, SEEK_SET);
+        ret = Fetching::ReadDirAttributesStat(
+            fd, listing_source.directories[0].c_str(), cb_fetch, cb_param, _cancel_checker);
+    }
     if( ret != 0 )
         return std::unexpected(Error{Error::POSIX, ret});
 

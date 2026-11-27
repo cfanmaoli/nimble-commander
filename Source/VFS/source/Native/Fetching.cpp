@@ -39,14 +39,14 @@ static int LStatByPath(nc::routedio::PosixIOInterface &_io, const char *_path, c
     struct stat stat_buffer;
     const int ret = _io.lstat(_path, &stat_buffer);
     if( ret != 0 )
-        return ret;
+        return errno;
 
     Fetching::CallbackParams params;
     params.filename = "";
     params.crt_time = stat_buffer.st_birthtimespec.tv_sec;
     params.mod_time = stat_buffer.st_mtimespec.tv_sec;
-    params.chg_time = stat_buffer.st_mtimespec.tv_sec;
-    params.acc_time = stat_buffer.st_ctimespec.tv_sec;
+    params.chg_time = stat_buffer.st_ctimespec.tv_sec;
+    params.acc_time = stat_buffer.st_atimespec.tv_sec;
     params.add_time = -1;
     params.uid = stat_buffer.st_uid;
     params.gid = stat_buffer.st_gid;
