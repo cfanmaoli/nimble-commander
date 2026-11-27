@@ -114,6 +114,13 @@ private:
     const char *m_ConfigPath;
 };
 
+// persistent user preference for the default panel layout index.
+// Stored in NSUserDefaults under a single stable key so it survives app updates.
+// Returns the stored index, or 2 ("Full" / list view) when unset or invalid.
+// List view is the default because it has a real vertical scroller.
+int DefaultPanelLayout() noexcept;
+void SetDefaultPanelLayout(int _index) noexcept;
+
 } // namespace nc::panel
 
 @interface PanelViewLayoutsMenuDelegate : NSObject <NSMenuDelegate>

@@ -2,6 +2,7 @@
 #include <Base/CommonPaths.h>
 #include <Utility/PathManip.h>
 #include <Utility/NSView+Sugar.h>
+#include <Utility/NSMenu+Hierarchical.h>
 #include <Utility/ColoredSeparatorLine.h>
 #include <VFS/Native.h>
 #include <NimbleCommander/Bootstrap/AppDelegate.h>
@@ -10,6 +11,10 @@
 #include <Config/RapidJSON.h>
 #include <NimbleCommander/Core/Alert.h>
 #include <NimbleCommander/Core/ActionsShortcutsManager.h>
+#include <NimbleCommander/Bootstrap/Actions.h>
+#include <CUI/CommandPopover.h>
+#include <cstring>
+#include <cstdlib>
 #include <NimbleCommander/Core/SandboxManager.h>
 #include <NimbleCommander/Core/Theming/Theme.h>
 #include <NimbleCommander/Core/Theming/ThemesManager.h>
@@ -17,6 +22,7 @@
 #include "MainWindowFilePanelState.h"
 #include "PanelController.h"
 #include "PanelController+DataAccess.h"
+#include "PanelViewLayoutSupport.h" // DefaultPanelLayout()
 #include "MainWindowFilePanelsStateToolbarDelegate.h"
 #include "Favorites.h"
 #include "Views/QuickLookOverlay.h"
@@ -59,6 +65,11 @@ static const auto g_InitialStatePath = "filePanel.initialState";
 static const auto g_InitialStateLeftDefaults = "left";
 static const auto g_InitialStateRightDefaults = "right";
 
+// bottom bar now holds the command line only (v4 dropped the
+// F-key row - the tree + tabs are the real TC/DC workflow, not cosmetic keys).
+static constexpr double kFKeyBarTotalHeight = 30.0;
+static constexpr double kDirectoryTreeWidth = 230.0;
+
 static bool GoToForcesPanelActivation()
 {
     static const auto fetch = [] { return GlobalConfig().GetBool(g_ConfigGoToActivation); };
@@ -72,6 +83,231 @@ static bool GoToForcesPanelActivation()
 
 static NSString *TrimmedTitleForWindow(NSString *_title, NSWindow *_window);
 static NSString *TitleForData(const data::Model *_data);
+
+// MARK: - left-hand persistent directory tree
+//
+// Modelled on XYplorer / Directory Opus: a tree that is always visible on the
+// left, with the two (already tabbed) file panels to its right. Clicking a node
+// navigates the last-focused panel; Option-click navigates the opposite panel
+// without stealing focus; Shift+Option-click opens the path in a new tab there.
+
+@interface NCDirectoryTreeNode : NSObject
+@property(nonatomic, copy) NSString *path;
+@property(nonatomic, copy) NSString *name;
+@property(nonatomic, strong) NSImage *icon;
+@property(nonatomic, strong) NSMutableArray<NCDirectoryTreeNode *> *children;
+@property(nonatomic, assign) BOOL childrenLoaded;
+- (instancetype)initWithPath:(NSString *)path;
+@end
+
+@implementation NCDirectoryTreeNode
+@synthesize path = _path;
+@synthesize name = _name;
+@synthesize icon = _icon;
+@synthesize children = _children;
+@synthesize childrenLoaded = _childrenLoaded;
+
+- (instancetype)initWithPath:(NSString *)path_
+{
+    self = [super init];
+    if( self ) {
+        _path = [path_ copy];
+        NSString *display = [NSFileManager.defaultManager displayNameAtPath:path_];
+        _name = [display.length ? display : path_.lastPathComponent copy];
+        _children = [NSMutableArray array];
+        _childrenLoaded = NO;
+    }
+    return self;
+}
+@end
+
+@interface NCDirectoryTreeView : NSView <NSOutlineViewDataSource, NSOutlineViewDelegate>
+@property(nonatomic, weak) id<NCDirectoryTreeDelegate> treeDelegate;
+- (void)revealPath:(NSString *)path;
+@end
+
+@implementation NCDirectoryTreeView {
+    NSOutlineView *_outline;
+    NSScrollView *_scroll; // MUST wrap the outline, else its full row count becomes
+                           // the intrinsic height and blows up the whole split view (no scroll).
+    NCDirectoryTreeNode *_root;
+}
+@synthesize treeDelegate = _treeDelegate;
+
+- (instancetype)initWithFrame:(NSRect)frameRect
+{
+    self = [super initWithFrame:frameRect];
+    if( !self )
+        return nil;
+
+    _root = [[NCDirectoryTreeNode alloc] initWithPath:@"/"];
+
+    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"name"];
+    column.title = @"Folders";
+    column.minWidth = 120;
+
+    _outline = [[NSOutlineView alloc] initWithFrame:NSZeroRect];
+    _outline.translatesAutoresizingMaskIntoConstraints = NO;
+    [_outline addTableColumn:column];
+    _outline.outlineTableColumn = column;
+    _outline.dataSource = self;
+    _outline.delegate = self;
+    _outline.target = self;
+    _outline.action = @selector(onOutlineClicked:);
+    _outline.rowHeight = 22;
+    _outline.indentationPerLevel = 14;
+    _outline.autoresizesOutlineColumn = YES;
+    _outline.allowsMultipleSelection = NO;
+
+    // an NSOutlineView outside a scroll view reports its
+    // full content height as intrinsic size. That inflated m_SplitView to ~1200px
+    // inside a 750px window, so BOTH the tree and the right file panels scrolled
+    // off-screen with no visible scroller. Wrap it in a real NSScrollView whose
+    // clipsToBounds keeps the document height out of Auto Layout's fitting pass.
+    _scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+    _scroll.translatesAutoresizingMaskIntoConstraints = NO;
+    _scroll.hasVerticalScroller = YES;
+    _scroll.hasHorizontalScroller = NO;
+    _scroll.autohidesScrollers = YES;
+    _scroll.drawsBackground = NO;
+    _scroll.documentView = _outline;
+    [self addSubview:_scroll];
+    NSDictionary *views = NSDictionaryOfVariableBindings(_scroll);
+    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"|-(0)-[_scroll]-(0)-|"
+                                                                 options:0
+                                                                 metrics:nil
+                                                                   views:views]];
+    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(0)-[_scroll]-(0)-|"
+                                                                 options:0
+                                                                 metrics:nil
+                                                                   views:views]];
+
+    // Expand to the user's home directory on first layout so the tree is useful
+    // immediately instead of showing a single collapsed "/" row.
+    dispatch_async(dispatch_get_main_queue(), ^{ [self revealPath:NSHomeDirectory()]; });
+    return self;
+}
+
+- (void)loadChildrenForNode:(NCDirectoryTreeNode *)node
+{
+    if( node.childrenLoaded )
+        return;
+    node.childrenLoaded = YES;
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSArray<NSString *> *names = [fm contentsOfDirectoryAtPath:node.path error:nil];
+    if( !names )
+        return;
+    NSMutableArray<NCDirectoryTreeNode *> *kids = [NSMutableArray arrayWithCapacity:names.count];
+    for( NSString *name in names ) {
+        if( [name hasPrefix:@"."] )
+            continue;
+        NSString *full = [node.path stringByAppendingPathComponent:name];
+        BOOL is_dir = NO;
+        if( ![fm fileExistsAtPath:full isDirectory:&is_dir] || !is_dir )
+            continue;
+        [kids addObject:[[NCDirectoryTreeNode alloc] initWithPath:full]];
+    }
+    [kids sortUsingComparator:^NSComparisonResult(NCDirectoryTreeNode *lhs, NCDirectoryTreeNode *rhs) {
+        return [lhs.name localizedCompare:rhs.name];
+    }];
+    node.children = kids;
+}
+
+- (NSInteger)outlineView:(NSOutlineView *)outline_view numberOfChildrenOfItem:(id)item
+{
+    NCDirectoryTreeNode *node = item ?: _root;
+    [self loadChildrenForNode:node];
+    return node.children.count;
+}
+
+- (id)outlineView:(NSOutlineView *)outline_view child:(NSInteger)index ofItem:(id)item
+{
+    NCDirectoryTreeNode *node = item ?: _root;
+    [self loadChildrenForNode:node];
+    return index >= 0 && index < static_cast<NSInteger>(node.children.count) ? node.children[index] : nil;
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outline_view isItemExpandable:(id)item
+{
+    NCDirectoryTreeNode *node = item ?: _root;
+    BOOL is_dir = NO;
+    return [NSFileManager.defaultManager fileExistsAtPath:node.path isDirectory:&is_dir] && is_dir;
+}
+
+- (NSView *)outlineView:(NSOutlineView *)outline_view viewForTableColumn:(NSTableColumn *)column item:(id)item
+{
+    NCDirectoryTreeNode *node = item ?: _root;
+    NSTableCellView *cell = [outline_view makeViewWithIdentifier:@"NCDirCell" owner:self];
+    if( !cell ) {
+        cell = [[NSTableCellView alloc] initWithFrame:NSZeroRect];
+        cell.identifier = @"NCDirCell";
+        NSImageView *image = [[NSImageView alloc] initWithFrame:NSMakeRect(2, 3, 16, 16)];
+        NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(22, 2, 180, 18)];
+        label.bezeled = NO;
+        label.drawsBackground = NO;
+        label.editable = NO;
+        label.selectable = NO;
+        label.font = [NSFont systemFontOfSize:12];
+        label.lineBreakMode = NSLineBreakByTruncatingTail;
+        [cell addSubview:image];
+        [cell addSubview:label];
+        cell.imageView = image;
+        cell.textField = label;
+    }
+    cell.textField.stringValue = node.name;
+    if( !node.icon ) {
+        node.icon = [NSWorkspace.sharedWorkspace iconForFile:node.path];
+        node.icon.size = NSMakeSize(16, 16);
+    }
+    cell.imageView.image = node.icon;
+    return cell;
+}
+
+- (void)onOutlineClicked:(id)sender
+{
+    const NSInteger row = _outline.selectedRow;
+    if( row < 0 )
+        return;
+    NCDirectoryTreeNode *node = [_outline itemAtRow:row];
+    if( !node )
+        return;
+    [_treeDelegate directoryTreeDidSelectPath:node.path modifiers:NSApp.currentEvent.modifierFlags];
+}
+
+- (void)revealPath:(NSString *)path
+{
+    if( !path.length || ![path hasPrefix:@"/"] )
+        return;
+    NSArray<NSString *> *parts = path.pathComponents;
+    NSMutableArray<NCDirectoryTreeNode *> *chain = [NSMutableArray array];
+    NCDirectoryTreeNode *node = _root;
+    for( NSUInteger i = 1; i < parts.count; ++i ) {
+        [self loadChildrenForNode:node];
+        NSString *component = parts[i];
+        NCDirectoryTreeNode *match = nil;
+        for( NCDirectoryTreeNode *candidate in node.children ) {
+            if( [candidate.name isEqualToString:component] ||
+                [candidate.path.lastPathComponent isEqualToString:component] ) {
+                match = candidate;
+                break;
+            }
+        }
+        if( !match )
+            break;
+        [chain addObject:node];
+        node = match;
+    }
+    [_outline reloadData];
+    for( NCDirectoryTreeNode *ancestor in chain )
+        [_outline expandItem:ancestor];
+    const NSInteger row = [_outline rowForItem:node];
+    if( row >= 0 ) {
+        [_outline selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+        [_outline scrollRowToVisible:row];
+    }
+}
+
+@end
 
 @implementation MainWindowFilePanelState
 
@@ -96,6 +332,7 @@ static NSString *TitleForData(const data::Model *_data);
         m_OverlappedTerminal = std::make_unique<MainWindowFilePanelState_OverlappedTerminalSupport>();
         m_ShowTabs = GlobalConfig().GetBool(g_ConfigGeneralShowTabs);
         m_QLPanelAdaptor = _ql_panel_adaptor;
+        m_CommandHistoryPos = 0;
 
         m_LeftPanelControllers.emplace_back(m_PanelFactory());
         [self attachPanel:m_LeftPanelControllers.front()];
@@ -147,6 +384,23 @@ static NSString *TitleForData(const data::Model *_data);
     const auto right_it = defaults.FindMember(g_InitialStateRightDefaults);
     if( right_it != defaults.MemberEnd() )
         m_ControllerStateJSONDecoder->Decode(right_it->value, m_RightPanelControllers.front());
+
+    [self applyConfiguredLayoutToPanels]; // default layout preference
+}
+
+// macOS window restoration (NSCoder archive) and State.json both
+// restore layoutIndex. On first run we seed the list layout (index 2), whose
+// NSScrollView has a real vertical scroller; afterwards the user's saved
+// preference (nc.defaultPanelLayout) wins. The View -> View Mode menu writes
+// that preference whenever the user switches layouts, so a deliberate switch
+// to brief survives restarts AND app updates.
+- (void)applyConfiguredLayoutToPanels
+{
+    const int layout = nc::panel::DefaultPanelLayout();
+    for( PanelController *pc : m_LeftPanelControllers )
+        pc.layoutIndex = layout;
+    for( PanelController *pc : m_RightPanelControllers )
+        pc.layoutIndex = layout;
 }
 
 - (void)setupNotificationsCallbacks
@@ -274,6 +528,8 @@ static NSString *TitleForData(const data::Model *_data);
     m_SplitView.rightTabbedHolder.tabBar.delegate = self;
     [self addSubview:m_SplitView];
 
+    [self createDirectoryTree];
+
     m_SeparatorLine = [[ColoredSeparatorLine alloc] initWithFrame:NSRect()];
     m_SeparatorLine.translatesAutoresizingMaskIntoConstraints = NO;
     m_SeparatorLine.borderColor = nc::CurrentTheme().FilePanelsGeneralTopSeparatorColor();
@@ -283,16 +539,51 @@ static NSString *TitleForData(const data::Model *_data);
         [[MainWindowFilePanelsStateToolbarDelegate alloc] initWithToolsStorage:NCAppDelegate.me.externalTools
                                                        actionsShortcutsManager:NCAppDelegate.me.actionsShortcutsManager
                                                              andOperationsPool:self.operationsPool];
+    m_ToolbarDelegate.treeToggleTarget = self; // v6
 
-    auto views = NSDictionaryOfVariableBindings(m_SeparatorLine, m_SplitView);
+    auto views = NSDictionaryOfVariableBindings(m_SeparatorLine, m_SplitView, m_DirectoryTree, m_TreeDivider);
     auto contraints = {@"V:|-(==0@250)-[m_SeparatorLine(==1)]-(==0)-[m_SplitView(>=150@500)]",
-                       @"|-(0)-[m_SplitView]-(0)-|",
+                       // tree + 1px divider occupy the left edge; panels start after them.
+                       // divider width is an explicit constraint below so the toolbar
+                       // toggle can collapse tree AND divider together (no leftover 1px line).
+                       @"|-(0)-[m_DirectoryTree]-(0)-[m_TreeDivider]-(0)-[m_SplitView]-(0)-|",
                        @"|-(==0)-[m_SeparatorLine]-(==0)-|"};
     for( auto vis_fmt : contraints )
         [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:vis_fmt
                                                                      options:0
                                                                      metrics:nil
                                                                        views:views]];
+    // the tree and divider must share the SAME flexible bottom as
+    // m_SplitView. Previously they were pinned to the superview bottom at REQUIRED
+    // priority, which fixed the content view's height and made the window
+    // vertically un-resizable (only width could change). Binding them to the
+    // split view's bottom inherits its DragThatCannotResizeWindow priority.
+    [self addConstraints:@[
+        [NSLayoutConstraint constraintWithItem:m_DirectoryTree
+                                     attribute:NSLayoutAttributeTop
+                                     relatedBy:NSLayoutRelationEqual
+                                        toItem:m_SeparatorLine
+                                     attribute:NSLayoutAttributeBottom
+                                    multiplier:1 constant:0],
+        [NSLayoutConstraint constraintWithItem:m_DirectoryTree
+                                     attribute:NSLayoutAttributeBottom
+                                     relatedBy:NSLayoutRelationEqual
+                                        toItem:m_SplitView
+                                     attribute:NSLayoutAttributeBottom
+                                    multiplier:1 constant:0],
+        [NSLayoutConstraint constraintWithItem:m_TreeDivider
+                                     attribute:NSLayoutAttributeTop
+                                     relatedBy:NSLayoutRelationEqual
+                                        toItem:m_SeparatorLine
+                                     attribute:NSLayoutAttributeBottom
+                                    multiplier:1 constant:0],
+        [NSLayoutConstraint constraintWithItem:m_TreeDivider
+                                     attribute:NSLayoutAttributeBottom
+                                     relatedBy:NSLayoutRelationEqual
+                                        toItem:m_SplitView
+                                     attribute:NSLayoutAttributeBottom
+                                    multiplier:1 constant:0]
+    ]];
     m_MainSplitViewBottomConstraint = [NSLayoutConstraint constraintWithItem:m_SplitView
                                                                    attribute:NSLayoutAttributeBottom
                                                                    relatedBy:NSLayoutRelationEqual
@@ -300,8 +591,37 @@ static NSString *TitleForData(const data::Model *_data);
                                                                    attribute:NSLayoutAttributeBottom
                                                                   multiplier:1
                                                                     constant:0];
+    // keep this LOW (490 = DragThatCannotResizeWindow). Any
+    // priority >= WindowSizeStayPut(500) makes the panels' fitting height become
+    // the window's fitting height, which locks vertical resizing entirely.
     m_MainSplitViewBottomConstraint.priority = NSLayoutPriorityDragThatCannotResizeWindow;
+    m_MainSplitViewBottomConstraint.constant = -kFKeyBarTotalHeight; // reserve room for the bottom bar
     [self addConstraint:m_MainSplitViewBottomConstraint];
+
+    m_LeftTreeWidthConstraint = [NSLayoutConstraint constraintWithItem:m_DirectoryTree
+                                                             attribute:NSLayoutAttributeWidth
+                                                             relatedBy:NSLayoutRelationEqual
+                                                                toItem:nil
+                                                             attribute:NSLayoutAttributeNotAnAttribute
+                                                            multiplier:1
+                                                              constant:kDirectoryTreeWidth];
+    [self addConstraint:m_LeftTreeWidthConstraint];
+
+    // explicit divider width, used by the show/hide toggle.
+    m_TreeDividerWidthConstraint = [NSLayoutConstraint constraintWithItem:m_TreeDivider
+                                                                attribute:NSLayoutAttributeWidth
+                                                                relatedBy:NSLayoutRelationEqual
+                                                                   toItem:nil
+                                                                attribute:NSLayoutAttributeNotAnAttribute
+                                                               multiplier:1
+                                                                 constant:1];
+    [self addConstraint:m_TreeDividerWidthConstraint];
+
+    // restore persisted tree visibility (default: visible).
+    m_ShowDirectoryTree = [NSUserDefaults.standardUserDefaults objectForKey:@"nc.showDirectoryTree"] == nil
+                              ? YES
+                              : [NSUserDefaults.standardUserDefaults boolForKey:@"nc.showDirectoryTree"];
+    [self applyDirectoryTreeVisibility];
 
     if( !nc::base::AmISandboxed() ) {
         m_OverlappedTerminal->terminal = [[FilePanelOverlappedTerminal alloc] initWithFrame:self.bounds];
@@ -311,7 +631,7 @@ static NSString *TitleForData(const data::Model *_data);
         auto terminal = m_OverlappedTerminal->terminal;
         views = NSDictionaryOfVariableBindings(terminal, m_SeparatorLine);
         [self
-            addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[m_SeparatorLine]-(0)-[terminal]-(==0)-|"
+            addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[m_SeparatorLine]-(0)-[terminal]-(==30)-|"
                                                                    options:0
                                                                    metrics:nil
                                                                      views:views]];
@@ -335,6 +655,300 @@ static NSString *TitleForData(const data::Model *_data);
                                                                      metrics:nil
                                                                        views:views]];
     }
+
+    [self createFKeyBar];
+}
+
+// creates the always-visible directory tree on the left edge.
+- (void)createDirectoryTree
+{
+    m_DirectoryTree = [[NCDirectoryTreeView alloc] initWithFrame:NSRect()];
+    m_DirectoryTree.translatesAutoresizingMaskIntoConstraints = NO;
+    m_DirectoryTree.treeDelegate = self;
+    [self addSubview:m_DirectoryTree];
+
+    m_TreeDivider = [[ColoredSeparatorLine alloc] initWithFrame:NSRect()];
+    m_TreeDivider.translatesAutoresizingMaskIntoConstraints = NO;
+    m_TreeDivider.borderColor = nc::CurrentTheme().FilePanelsGeneralTopSeparatorColor();
+    [self addSubview:m_TreeDivider];
+}
+
+// reflect m_ShowDirectoryTree in the layout. Width constants go to 0
+// when hidden so the panels reclaim the space; heights are left untouched
+// (see the v5.1 resize fix — never pin new views to the superview bottom).
+- (void)applyDirectoryTreeVisibility
+{
+    m_LeftTreeWidthConstraint.constant = m_ShowDirectoryTree ? kDirectoryTreeWidth : 0.0;
+    m_TreeDividerWidthConstraint.constant = m_ShowDirectoryTree ? 1.0 : 0.0;
+    m_DirectoryTree.hidden = !m_ShowDirectoryTree;
+    m_TreeDivider.hidden = !m_ShowDirectoryTree;
+}
+
+// toolbar action, travels through the first-responder chain.
+- (IBAction)onToggleDirectoryTree:(id) [[maybe_unused]] _sender
+{
+    m_ShowDirectoryTree = !m_ShowDirectoryTree;
+    [NSUserDefaults.standardUserDefaults setBool:m_ShowDirectoryTree forKey:@"nc.showDirectoryTree"];
+    [self applyDirectoryTreeVisibility];
+}
+
+// bottom command line. v4 dropped the F-key row: the real TC/DC
+// workflow is tree + tabs + hotkeys, not a cosmetic strip of buttons.
+- (void)createFKeyBar
+{
+    const auto kHeight = kFKeyBarTotalHeight;
+    m_FKeyBar = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 800, kHeight)];
+    m_FKeyBar.translatesAutoresizingMaskIntoConstraints = NO;
+    m_FKeyBar.wantsLayer = YES;
+    m_FKeyBar.layer.backgroundColor = nc::CurrentTheme().FilePanelsGeneralOverlayColor().CGColor;
+    [self addSubview:m_FKeyBar positioned:NSWindowAbove relativeTo:nil];
+
+    // TC-style command line sitting above the F-key row.
+    m_CommandLine = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    m_CommandLine.placeholderString = @"path↵go  ·  !cmd↵run in terminal  ·  ?↵command palette  ·  ↑↓history";
+    m_CommandLine.font = [NSFont systemFontOfSize:11.0];
+    m_CommandLine.bezelStyle = NSTextFieldRoundedBezel;
+    m_CommandLine.drawsBackground = YES;
+    m_CommandLine.translatesAutoresizingMaskIntoConstraints = NO;
+    m_CommandLine.target = self;
+    m_CommandLine.action = @selector(onCommandLineSubmit:);
+    m_CommandLine.delegate = self;
+    [m_FKeyBar addSubview:m_CommandLine];
+    [m_FKeyBar addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"|-(4)-[cmd]-(4)-|"
+                                                                     options:0
+                                                                     metrics:nil
+                                                                       views:@{@"cmd": m_CommandLine}]];
+    [m_FKeyBar addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(3)-[cmd(==23)]-(4)-|"
+                                                                     options:0
+                                                                     metrics:nil
+                                                                       views:@{@"cmd": m_CommandLine}]];
+
+    NSDictionary *barViews = @{@"bar": m_FKeyBar};
+    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"|-(0)-[bar]-(0)-|"
+                                                                 options:0
+                                                                 metrics:nil
+                                                                   views:barViews]];
+    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[bar(==30)]-(0)-|"
+                                                                 options:0
+                                                                 metrics:nil
+                                                                   views:barViews]];
+}
+
+- (void)onFKeyBarButton:(NSButton *)sender
+{
+    if( NSMenuItem *item = [NSApp.mainMenu itemWithTagHierarchical:static_cast<NSInteger>(sender.tag)] )
+        if( item.isEnabled )
+            [NSApp sendAction:item.action to:item.target from:item];
+}
+
+// tree navigation semantics borrowed from XYplorer:
+//   click                -> navigate the last-focused panel
+//   Option-click         -> navigate the opposite panel, keep focus where it is
+//   Shift+Option-click   -> open that path in a new tab of the opposite panel
+- (void)directoryTreeDidSelectPath:(NSString *)path modifiers:(NSEventModifierFlags)modifiers
+{
+    if( path.length == 0 )
+        return;
+    const std::string directory = path.UTF8String;
+    const BOOL option_held = (modifiers & NSEventModifierFlagOption) != 0;
+    const BOOL shift_held = (modifiers & NSEventModifierFlagShift) != 0;
+
+    // The tree itself owns firstResponder, so activePanelController is nil here.
+    PanelController *focused = m_LastFocusedPanelController ?: self.leftPanelController;
+    if( focused == nil )
+        return;
+    const BOOL focus_is_left = [self isLeftController:focused];
+
+    PanelController *target = focused;
+    if( option_held ) {
+        target = focus_is_left ? self.rightPanelController : self.leftPanelController;
+        if( shift_held ) {
+            NSTabView *tab_view = focus_is_left ? m_SplitView.rightTabbedHolder.tabView
+                                                : m_SplitView.leftTabbedHolder.tabView;
+            target = [self spawnNewTabInTabView:tab_view autoDirectoryLoading:NO activateNewPanel:YES];
+        }
+    }
+    if( target == nil )
+        return;
+
+    [self revealPanel:target];
+    auto request = std::make_shared<DirectoryChangeRequest>();
+    request->RequestedDirectory = directory;
+    request->VFS = nc::bootstrap::NativeVFSHostInstance().SharedPtr();
+    request->PerformAsynchronous = true;
+    request->InitiatedByUser = true;
+    [target GoToDirWithContext:request];
+
+    // A plain click behaves like TC: focus goes back to the file list so
+    // F3/F5/... keep acting on the panel we just navigated.
+    if( !option_held )
+        [self ActivatePanelByController:target];
+}
+
+- (void)onCommandLineSubmit:(NSTextField *)sender
+{
+    const auto raw = [sender.stringValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if( raw.length == 0 )
+        return;
+
+    const std::string input = raw.UTF8String;
+    m_CommandHistory.emplace_back(input);
+    m_CommandHistoryPos = m_CommandHistory.size();
+    sender.stringValue = @"";
+    [self.window makeFirstResponder:m_LastFocusedPanelController ? m_LastFocusedPanelController.view : nil];
+
+    if( input == "?" || input == "？" ) {
+        [self showCommandPalette];
+        return;
+    }
+    if( input.front() == '!' ) {
+        auto command = input.substr(1);
+        while( !command.empty() && (command.front() == ' ' || command.front() == '\t') )
+            command.erase(command.begin());
+        if( !command.empty() )
+            [self executeCommandLineInTerminal:command];
+        return;
+    }
+
+    // The command line owns the first responder while typing, so
+    // activePanelController would be nil here. Use the last focused panel.
+    PanelController *panel = m_LastFocusedPanelController;
+    if( panel == nil )
+        panel = self.leftPanelController;
+    if( panel == nil )
+        return;
+    const auto request = std::make_shared<DirectoryChangeRequest>();
+    request->RequestedDirectory = [panel expandPath:input];
+    request->VFS = nc::bootstrap::NativeVFSHostInstance().SharedPtr();
+    request->PerformAsynchronous = true;
+    request->InitiatedByUser = true;
+    [panel GoToDirWithContext:request];
+    // Hand focus back so F3/F5/... keep acting on the panel, just like TC.
+    dispatch_async(dispatch_get_main_queue(), ^{ [self.window makeFirstResponder:panel.view]; });
+}
+
+// Runs a "!command" in the existing overlapped terminal so its output stays
+// visible, the same way Total Commander's command line hands off to the shell.
+- (void)executeCommandLineInTerminal:(const std::string &)_command
+{
+    if( m_OverlappedTerminal->terminal == nullptr )
+        return;
+    if( ![self overlappedTerminalVisible] )
+        [self activateOverlappedTerminal];
+    // activateOverlappedTerminal reads activePanelController for its cwd, which
+    // is nil while the command line has focus - set the panel cwd explicitly.
+    if( PanelController *panel = m_LastFocusedPanelController )
+        [m_OverlappedTerminal->terminal changeWorkingDirectory:panel.currentDirectoryPath];
+
+    const auto feed = [self, command = _command] {
+        if( m_OverlappedTerminal->terminal.state == nc::term::ShellTask::TaskState::Shell ) {
+            [m_OverlappedTerminal->terminal feedShellWithInput:command];
+            [m_OverlappedTerminal->terminal commitShell];
+        }
+    };
+    feed();
+    if( m_OverlappedTerminal->terminal.state != nc::term::ShellTask::TaskState::Shell ) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, static_cast<int64_t>(0.4 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), feed);
+    }
+}
+
+// VSCode/TC-style command palette. Summoned by typing "?" in the
+// command line. Reuses NCCommandPopover and the real menu items so that every
+// action, title, shortcut and enablement stays in sync with the app itself.
+- (void)showCommandPalette
+{
+    if( m_CommandPalette ) {
+        [m_CommandPalette close];
+        return;
+    }
+
+    NCCommandPopover *const palette = [[NCCommandPopover alloc] initWithTitle:@"Command palette — type to filter"];
+    palette.delegate = self;
+
+    struct Section {
+        const char *prefix;
+        const char *title;
+    };
+    static const Section sections[] = {
+        {"menu.file.",     "File"},
+        {"menu.edit.",     "Edit"},
+        {"menu.view.",     "View"},
+        {"menu.go.",       "Go"},
+        {"menu.command.",  "Command"},
+        {"menu.nimble_commander.", "Application"},
+    };
+    static const size_t section_count = sizeof(sections) / sizeof(sections[0]);
+    const auto action_count = sizeof(nc::bootstrap::g_ActionsTags) / sizeof(nc::bootstrap::g_ActionsTags[0]);
+
+    // One pass per section keeps the list grouped like the real menus.
+    for( size_t s = 0; s < section_count; ++s ) {
+        bool header_added = false;
+        for( size_t i = 0; i < action_count; ++i ) {
+            const auto &action = nc::bootstrap::g_ActionsTags[i];
+            if( strncmp(action.first, sections[s].prefix, strlen(sections[s].prefix)) != 0 )
+                continue;
+            NSMenuItem *const menu_item = [NSApp.mainMenu itemWithTagHierarchical:action.second];
+            if( menu_item == nil || menu_item.hidden || menu_item.isSeparatorItem || menu_item.submenu != nil ||
+                menu_item.action == nil || menu_item.title.length == 0 )
+                continue;
+            if( !header_added ) {
+                [palette addItem:[NCCommandPopoverItem sectionHeaderWithTitle:@(sections[s].title)]];
+                header_added = true;
+            }
+            NCCommandPopoverItem *const item = [NCCommandPopoverItem new];
+            item.title = menu_item.title;
+            NSString *const key = menu_item.keyEquivalent.length ? menu_item.keyEquivalent : @"";
+            item.toolTip = [NSString stringWithFormat:@"%@  ·  %s", key, action.first];
+            item.image = menu_item.image;
+            item.target = self;
+            item.action = @selector(onCommandPaletteItemSelected:);
+            item.representedObject = menu_item;
+            [palette addItem:item];
+        }
+    }
+
+    m_CommandPalette = palette;
+    // Anchor near the middle of the window so the palette reads as a modal-ish
+    // action list, not a corner popup (closer to VSCode/TC command palette).
+    const NSRect anchor = NSMakeRect(NSMidX(self.bounds), NSMidY(self.bounds) + 40, 1, 1);
+    [palette showRelativeToRect:anchor ofView:self alignment:NCCommandPopoverAlignment::Center];
+}
+
+- (void)onCommandPaletteItemSelected:(NCCommandPopoverItem *)sender
+{
+    NSMenuItem *const menu_item = nc::objc_cast<NSMenuItem>(sender.representedObject);
+    [m_CommandPalette close];
+    if( menu_item != nil )
+        [NSApp sendAction:menu_item.action to:menu_item.target from:menu_item];
+}
+
+- (void)commandPopoverDidClose:(NCCommandPopover *)_popover
+{
+    (void)_popover;
+    m_CommandPalette = nil;
+}
+
+- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
+{
+    (void)textView;
+    if( commandSelector == @selector(moveUp:) ) {
+        if( !m_CommandHistory.empty() && m_CommandHistoryPos > 0 ) {
+            --m_CommandHistoryPos;
+            control.stringValue = [NSString stringWithUTF8String:m_CommandHistory[m_CommandHistoryPos].c_str()];
+        }
+        return YES;
+    }
+    if( commandSelector == @selector(moveDown:) ) {
+        if( m_CommandHistoryPos < m_CommandHistory.size() ) {
+            ++m_CommandHistoryPos;
+            control.stringValue = m_CommandHistoryPos == m_CommandHistory.size()
+                                      ? @""
+                                      : [NSString stringWithUTF8String:m_CommandHistory[m_CommandHistoryPos].c_str()];
+        }
+        return YES;
+    }
+    return NO;
 }
 
 - (void)windowStateDidBecomeAssigned
@@ -601,10 +1215,20 @@ static nc::config::Value EncodeUIState(MainWindowFilePanelState *_state)
     if( !_state.IsObject() )
         return false;
 
+    // Directory listings are loaded in streaming chunks, and even the
+    // "synchronous" path applies the patched listing via dispatch_async to the main queue.
+    // Therefore data.IsLoaded() is still false right after Decode() below. The old success
+    // check made restoreDefaultWindowStateFromConfig believe restoration had failed and call
+    // loadDefaultPanelContent, which navigated both first panels back to the home directory
+    // and wiped the restored paths. Track whether we actually decoded saved panels instead.
+    bool did_restore_saved_panels = false;
+
     if( _state.HasMember(g_ResorationPanelsKey) ) {
         const auto &json_panels = _state[g_ResorationPanelsKey];
         if( json_panels.IsArray() && json_panels.Size() == 2 ) {
             const auto &left = json_panels[0];
+            if( left.IsArray() && left.Size() > 0 )
+                did_restore_saved_panels = true;
             if( left.IsArray() )
                 for( auto i = left.Begin(), e = left.End(); i != e; ++i ) {
                     if( i != left.Begin() ) {
@@ -618,6 +1242,8 @@ static nc::config::Value EncodeUIState(MainWindowFilePanelState *_state)
                 }
 
             const auto &right = json_panels[1];
+            if( right.IsArray() && right.Size() > 0 )
+                did_restore_saved_panels = true;
             if( right.IsArray() )
                 for( auto i = right.Begin(), e = right.End(); i != e; ++i ) {
                     if( i != right.Begin() ) {
@@ -658,6 +1284,14 @@ static nc::config::Value EncodeUIState(MainWindowFilePanelState *_state)
             }
         }
     }
+
+    [self applyConfiguredLayoutToPanels]; // default layout preference overrides saved layout
+
+    // if we decoded saved panels, consider restoration successful even though
+    // the streamed listing has not landed in the model yet. Only fall back to default content
+    // when there was no usable saved panel state at all.
+    if( did_restore_saved_panels )
+        return true;
 
     return (m_LeftPanelControllers.front().data.IsLoaded() ||
             m_LeftPanelControllers.front().isDoingBackgroundLoading) &&
@@ -718,6 +1352,9 @@ static nc::config::Value EncodeUIState(MainWindowFilePanelState *_state)
     if( _panel.isUniform ) {
         if( m_FavoriteLocationsStorage )
             m_FavoriteLocationsStorage->ReportLocationVisit(*_panel.vfs, _panel.currentDirectoryPath);
+        // keep the tree's highlighted node in sync with the focused panel.
+        if( _panel == m_LastFocusedPanelController )
+            [m_DirectoryTree revealPath:@(_panel.currentDirectoryPath.c_str())];
     }
 }
 
@@ -907,7 +1544,8 @@ static void AskAboutStoppingRunningOperations(NSWindow *_window, std::function<v
     if( m_OverlappedTerminal->terminal == nullptr )
         return;
 
-    const double gap = [m_OverlappedTerminal->terminal bottomGapForLines:m_OverlappedTerminal->bottom_gap];
+    const double gap = [m_OverlappedTerminal->terminal bottomGapForLines:m_OverlappedTerminal->bottom_gap] +
+                       kFKeyBarTotalHeight; // keep the bottom bar visible below a terminal
     m_MainSplitViewBottomConstraint.constant = -gap;
 
     [self updateOverlappedTerminalVisibility];
@@ -938,12 +1576,14 @@ static void AskAboutStoppingRunningOperations(NSWindow *_window, std::function<v
 
 - (void)addNewControllerOnLeftPane:(PanelController *)_pc
 {
+    _pc.layoutIndex = nc::panel::DefaultPanelLayout(); // new tabs honor the saved default view
     m_LeftPanelControllers.emplace_back(_pc);
     [m_SplitView.leftTabbedHolder addPanel:_pc.view];
 }
 
 - (void)addNewControllerOnRightPane:(PanelController *)_pc
 {
+    _pc.layoutIndex = nc::panel::DefaultPanelLayout(); // v7
     m_RightPanelControllers.emplace_back(_pc);
     [m_SplitView.rightTabbedHolder addPanel:_pc.view];
 }
