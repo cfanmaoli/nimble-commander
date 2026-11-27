@@ -162,7 +162,8 @@ static GoToPopupListActionMediator *g_CurrentMediator = nil;
 - (void)handleTag:(const nc::utility::Tags::Tag &)_tag
 {
     // The Spotlight query is done in a background in the panel's loading queue
-    auto task = [tag = _tag, fetch_flags = m_Panel.vfsFetchingFlags, panel = m_Panel](
+    const uint64_t epoch = [m_Panel beginNavigationEpoch];
+    auto task = [tag = _tag, fetch_flags = m_Panel.vfsFetchingFlags, panel = m_Panel, epoch](
                     const std::function<bool()> &_is_cancelled) {
         auto items = nc::utility::Tags::GatherAllItemsWithTag(tag.Label());
         std::vector<VFSListingPtr> listings(items.size());
@@ -188,7 +189,7 @@ static GoToPopupListActionMediator *g_CurrentMediator = nil;
         auto listing_input = VFSListing::Compose(listings);
         listing_input.title = tag.Label();
         if( const auto combined_listing = VFSListing::Build(std::move(listing_input)) )
-            dispatch_to_main_queue([=] { [panel loadListing:combined_listing]; });
+            dispatch_to_main_queue([=] { [panel loadListing:combined_listing navigationEpoch:epoch]; });
     };
     [m_Panel commitCancelableLoadingTask:std::move(task)];
 }

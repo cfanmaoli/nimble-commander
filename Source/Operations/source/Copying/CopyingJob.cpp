@@ -171,11 +171,15 @@ void CopyingJob::ProcessItems()
     if( BlockIfPaused(); IsStopped() )
         return;
 
-    // be sure to all it only if ALL previous steps wre OK.
-    if( all_matched ) {
-        SetStage(Stage::Cleaning);
-        ClearSourceItems();
+    if( !all_matched ) {
+        // A verification mismatch must not be reported as a successful move/copy.
+        Stop();
+        return;
     }
+
+    // be sure to all it only if ALL previous steps wre OK.
+    SetStage(Stage::Cleaning);
+    ClearSourceItems();
 }
 
 CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
@@ -206,7 +210,15 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // Regular files
         /////////////////////////////////////////////////////////////////////////////////////////////////
-        std::optional<base::Hash> hash; // this optional will be filled with the first call of hash_feedback
+        const bool should_verify = m_Options.verification == ChecksumVerification::Always ||
+                                   (!m_Options.docopy && m_Options.verification >= ChecksumVerification::WhenMoves);
+        std::optional<base::Hash> hash;
+        // Empty files never produce a data-feedback callback, so initialize their digest eagerly;
+        // otherwise they silently bypass verification. A non-empty clone may not read any bytes and
+        // must keep the old behavior of not producing a checksum.
+        if( should_verify && source_size == 0 )
+            hash.emplace(base::Hash::SHA2_256);
+
         const auto hash_feedback = [&](const void *_data, unsigned _sz) {
             if( !hash )
                 hash.emplace(base::Hash::SHA2_256);
@@ -214,10 +226,8 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         };
 
         std::function<void(const void *_data, unsigned _sz)> data_feedback = nullptr;
-        if( m_Options.verification == ChecksumVerification::Always ||
-            (!m_Options.docopy && m_Options.verification >= ChecksumVerification::WhenMoves) ) {
+        if( should_verify )
             data_feedback = hash_feedback;
-        }
 
         if( source_host.IsNativeFS() && m_IsDestinationHostNative ) { // native -> native ///////////////////////
             // native fs processing

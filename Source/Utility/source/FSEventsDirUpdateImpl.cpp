@@ -212,13 +212,11 @@ static void StopStream(FSEventStreamRef _stream)
     assert(_stream != nullptr);
     dispatch_assert_main_queue();
     FSEventStreamStop(_stream);
-    // FSEventStreamInvalidate() also removes the stream from its dispatch queue.
-
-    // FSEventStreamInvalidate can be blocking, so let's do that in a background thread
-    dispatch_to_background([_stream] {
-        FSEventStreamInvalidate(_stream);
-        FSEventStreamRelease(_stream);
-    });
+    // The FSEventStreamContext owns the shared WatchData holder. It must not outlive the stream:
+    // a callback already queued on the main queue still carries the holder pointer as user_data.
+    // Invalidate synchronously so no such callback can arrive after the holder is released.
+    FSEventStreamInvalidate(_stream);
+    FSEventStreamRelease(_stream);
 }
 
 uint64_t FSEventsDirUpdateImpl::AddWatchPathImpl(std::string_view _path,

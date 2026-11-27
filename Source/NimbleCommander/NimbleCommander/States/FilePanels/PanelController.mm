@@ -1724,7 +1724,8 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             });
         }
         if( _request->LoadingResultCallback )
-            _request->LoadingResultCallback(stream_result);
+            dispatch_to_main_queue(
+                [callback = _request->LoadingResultCallback, stream_result] { callback(stream_result); });
         if( !stream_result )
             return std::unexpected(stream_result.error());
     } catch( std::exception &e ) {
@@ -1827,6 +1828,13 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
 - (void)loadListing:(const VFSListingPtr &)_listing
 {
+    [self loadListing:_listing navigationEpoch:m_NavigationEpoch.load()];
+}
+
+- (void)loadListing:(const VFSListingPtr &)_listing navigationEpoch:(uint64_t)_epoch
+{
+    if( _epoch != m_NavigationEpoch.load() )
+        return;
     [self CancelBackgroundOperations]; // clean running operations if any
     dispatch_or_run_in_main_queue([=] {
         const auto perf_begin = std::chrono::steady_clock::now();

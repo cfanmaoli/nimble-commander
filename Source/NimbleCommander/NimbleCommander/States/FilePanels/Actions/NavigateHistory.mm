@@ -58,7 +58,7 @@ void ListingPromiseLoader::Load(const ListingPromise &_promise, PanelController 
                     // A newer Back/Forward or GoTo may have completed while this restore was
                     // running; never install an older listing over the newer view.
                     if( _panel.navigationEpoch == epoch )
-                        [_panel loadListing:listing];
+                        [_panel loadListing:listing navigationEpoch:epoch];
                 });
         } catch( ... ) {
             //...

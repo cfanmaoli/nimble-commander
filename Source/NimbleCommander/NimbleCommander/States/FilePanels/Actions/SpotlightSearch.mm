@@ -105,12 +105,13 @@ void SpotlightSearch::Perform(PanelController *_target, id /*_sender*/) const
     __weak PanelController *wp = _target;
     view.handler = [wp](const std::string &_query) {
         if( PanelController *const panel = wp ) {
+            const uint64_t epoch = [panel beginNavigationEpoch];
             auto task = [=](const std::function<bool()> &_cancelled) {
                 if( const auto l = FetchSearchResultsAsListing(FetchSpotlightResults(_query),
                                                                nc::bootstrap::NativeVFSHostInstance(),
                                                                panel.vfsFetchingFlags,
                                                                _cancelled) )
-                    dispatch_to_main_queue([=] { [panel loadListing:l]; });
+                    dispatch_to_main_queue([=] { [panel loadListing:l navigationEpoch:epoch]; });
             };
             [panel commitCancelableLoadingTask:std::move(task)];
         }

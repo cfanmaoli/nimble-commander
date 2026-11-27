@@ -103,9 +103,8 @@ struct DirectoryChangeRequest {
     bool InitiatedByUser = false;
 
     /**
-     * This will be called from a thread which is loading a vfs listing with the result - either nothing or an error.
-     * This thread may be main or background depending on PerformAsynchronous.
-     * Will be called on any error canceling process or with {} on successful loading.
+     * Called exactly once with the loading result - either an error or {} on success. All paths
+     * dispatch this callback to the main queue; callers may touch main-thread-only model state.
      */
     std::function<void(const std::expected<void, Error> &)> LoadingResultCallback = nullptr;
 };
@@ -199,6 +198,10 @@ using ContextMenuProvider =
  * Loads existing listing into the panel. Save to call from any thread.
  */
 - (void)loadListing:(const VFSListingPtr &)_listing;
+
+// Installs a listing only if the navigation epoch is still the expected one. Async producers must
+// capture the epoch with beginNavigationEpoch before scheduling their work.
+- (void)loadListing:(const VFSListingPtr &)_listing navigationEpoch:(uint64_t)_epoch;
 
 // Monotonic navigation generation, safe to read from background threads. A listing restore must
 // compare it before installing its result on the main queue.
