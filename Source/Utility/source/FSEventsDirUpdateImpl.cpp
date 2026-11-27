@@ -172,6 +172,7 @@ FSEventStreamRef FSEventsDirUpdateImpl::CreateEventStream(const std::string &pat
                                      g_FSEventsLatency,
                                      flags);
         if( stream == nullptr ) {
+            delete watch_holder;
             Log::Warn("FSEventStreamCreate failed to create a stream for '{}'", path);
         }
     };

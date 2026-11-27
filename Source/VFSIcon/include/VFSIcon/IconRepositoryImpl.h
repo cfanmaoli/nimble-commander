@@ -4,6 +4,7 @@
 #include "IconRepository.h"
 #include "IconBuilder.h"
 #include <atomic>
+#include <mutex>
 #include <queue>
 #include <vector>
 #include <stack>
@@ -77,8 +78,16 @@ private:
     struct WorkerContext : base::intrusive_ref_counter<WorkerContext> {
         VFSListingItem item;
         std::atomic_bool must_stop{false};
+        std::atomic_bool wait_released{false};
+        dispatch_semaphore_t wait_semaphore = dispatch_semaphore_create(0);
         NSImage *result_filetype = nil;
         NSImage *result_thumbnail = nil;
+
+        void ReleaseWait() noexcept
+        {
+            if( !wait_released.exchange(true) )
+                dispatch_semaphore_signal(wait_semaphore);
+        }
     };
 
     enum class SlotState : uint8_t {
@@ -110,6 +119,8 @@ private:
 
     std::vector<Slot> m_Slots;
     std::shared_ptr<std::atomic_bool> m_Alive = std::make_shared<std::atomic_bool>(true);
+    std::mutex m_InFlightLock;
+    std::vector<base::intrusive_ptr<WorkerContext>> m_InFlightContexts;
     std::stack<int> m_FreeSlotsIndices;
     int m_IconPxSize = 32;
     const int m_Capacity;

@@ -77,6 +77,34 @@ TEST_CASE(PREFIX "Verifies a copied file with SHA-256")
     REQUIRE(stat((destination_dir.directory / filename).c_str(), &copied_stat) == 0);
 }
 
+TEST_CASE(PREFIX "Skipping an existing destination for an empty file does not fail SHA-256 verification")
+{
+    const TempTestDir source_dir;
+    const TempTestDir destination_dir;
+    const std::string filename = "__nc_empty_skip_verification__";
+    REQUIRE(close(creat((source_dir.directory / filename).c_str(), 0600)) == 0);
+
+    const std::string existing_payload = "existing non-empty destination content";
+    const int dst_fd = open((destination_dir.directory / filename).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    REQUIRE(dst_fd >= 0);
+    REQUIRE(write(dst_fd, existing_payload.data(), existing_payload.size()) ==
+            static_cast<ssize_t>(existing_payload.size()));
+    REQUIRE(close(dst_fd) == 0);
+
+    CopyingOptions opts;
+    opts.docopy = true;
+    opts.verification = CopyingOptions::ChecksumVerification::Always;
+    opts.exist_behavior = CopyingOptions::ExistBehavior::SkipAll;
+
+    const auto host = TestEnv().vfs_native;
+    Copying op(FetchItems(source_dir.directory, {filename}, *host), destination_dir.directory.native(), host, opts);
+    RunOperationAndCheckSuccess(op);
+
+    struct stat dst_stat;
+    REQUIRE(stat((destination_dir.directory / filename).c_str(), &dst_stat) == 0);
+    CHECK(static_cast<size_t>(dst_stat.st_size) == existing_payload.size());
+}
+
 TEST_CASE(PREFIX "Can rename a regular file across firmlink injection points")
 {
     const std::string filename = "__nc_rename_test__";

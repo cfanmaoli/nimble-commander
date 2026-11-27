@@ -158,23 +158,26 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
         std::make_shared<nc::ops::Copying>(std::vector<VFSListingItem>{m_Item}, destination, m_NativeHost, options);
     const auto completion_called = std::make_shared<std::atomic_bool>(false);
     const std::weak_ptr<nc::ops::Operation> weak_operation = operation;
-    const auto finish = [weak_operation, completion_called, _completion_handler](NSError *_Nullable _error) {
+    const auto finish = [completion_called, _completion_handler](NSError *_Nullable _error) {
         if( completion_called->exchange(true) )
             return;
         _completion_handler(_error);
-        // Release the registry only after the job thread has left Execute(). This must not be a
-        // timer race: JobFinished and Job::Execute tail still use the Operation/Job.
-        if( const auto op = weak_operation.lock() ) {
-            const bool deferred = op->SetAfterJobFinishedCallback(
-                [op] { dispatch_to_main_queue([op] { ReleasePromiseOperation(op); }); });
-            if( !deferred )
-                dispatch_to_main_queue([op] { ReleasePromiseOperation(op); });
-        }
     };
 
+    bool started = false;
+    bool has_after_hook = false;
     try {
         RetainPromiseOperation(operation);
-        operation->ObserveUnticketed(nc::ops::Operation::NotifyAboutFinish, [weak_operation, finish] {
+        // Capture only a weak_ptr here: the callback lives on the Job owned by the Operation, so a
+        // strong capture would create a reference cycle. Job::Run() invokes it only after
+        // Job::Execute() has unwound.
+        has_after_hook = operation->SetAfterJobFinishedCallback([weak_operation] {
+            dispatch_to_main_queue([weak_operation] {
+                if( const auto op = weak_operation.lock() )
+                    ReleasePromiseOperation(op);
+            });
+        });
+        operation->ObserveUnticketed(nc::ops::Operation::NotifyAboutFinish, [weak_operation, finish, has_after_hook] {
             if( const auto op = weak_operation.lock() ) {
                 finish(op->State() == nc::ops::OperationState::Completed ? nil : PromiseCopyError());
             }
@@ -183,10 +186,23 @@ static const auto g_PasteboardFileURLUTI = NSPasteboardTypeFileURL;
                 // waiting if it happens.
                 finish(PromiseCopyError());
             }
+            if( !has_after_hook ) {
+                dispatch_to_main_queue([weak_operation] {
+                    if( const auto op = weak_operation.lock() )
+                        ReleasePromiseOperation(op);
+                });
+            }
         });
         operation->Start();
+        started = true;
     } catch( ... ) {
         finish(PromiseCopyError());
+        if( !started ) {
+            dispatch_to_main_queue([weak_operation] {
+                if( const auto op = weak_operation.lock() )
+                    ReleasePromiseOperation(op);
+            });
+        }
     }
 }
 

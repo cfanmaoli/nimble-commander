@@ -19,6 +19,14 @@ TEST_CASE(PREFIX "checksum expectation accepts a SHA-256 digest")
 
     const std::vector<uint8_t> md5(16, 0xCD);
     CHECK_FALSE(expectation == md5);
+
+    const std::vector<uint8_t> same_prefix_md5(16, 0xAB);
+    CHECK_FALSE(expectation == same_prefix_md5);
+
+    CHECK_THROWS_AS(nc::ops::copying::ChecksumExpectation(0, "/tmp/destination", std::vector<uint8_t>{}),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(nc::ops::copying::ChecksumExpectation(0, "/tmp/destination", std::vector<uint8_t>(33, 0x11)),
+                    std::invalid_argument);
 }
 
 TEST_CASE(PREFIX "regular file without extension")

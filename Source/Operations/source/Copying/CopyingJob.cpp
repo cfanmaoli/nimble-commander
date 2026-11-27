@@ -213,11 +213,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         const bool should_verify = m_Options.verification == ChecksumVerification::Always ||
                                    (!m_Options.docopy && m_Options.verification >= ChecksumVerification::WhenMoves);
         std::optional<base::Hash> hash;
-        // Empty files never produce a data-feedback callback, so initialize their digest eagerly;
-        // otherwise they silently bypass verification. A non-empty clone may not read any bytes and
-        // must keep the old behavior of not producing a checksum.
-        if( should_verify && source_size == 0 )
-            hash.emplace(base::Hash::SHA2_256);
+        bool copied = false;
 
         const auto hash_feedback = [&](const void *_data, unsigned _sz) {
             if( !hash )
@@ -232,6 +228,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         if( source_host.IsNativeFS() && m_IsDestinationHostNative ) { // native -> native ///////////////////////
             // native fs processing
             if( m_Options.docopy ) { // copy
+                copied = true;
                 step_result = CopyNativeFileToNativeFile(dynamic_cast<vfs::NativeHost &>(source_host),
                                                          source_path,
                                                          destination_path,
@@ -248,6 +245,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
                         Statistics().CommitProcessed(Statistics::SourceType::Bytes, source_size);
                 }
                 else { // move
+                    copied = true;
                     step_result = CopyNativeFileToNativeFile(dynamic_cast<vfs::NativeHost &>(source_host),
                                                              source_path,
                                                              destination_path,
@@ -260,6 +258,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         }
         else if( m_IsDestinationHostNative ) { // vfs -> native
                                                // ///////////////////////////////////////////////
+            copied = true;
             step_result = CopyVFSFileToNativeFile(source_host,
                                                   source_path,
                                                   dynamic_cast<vfs::NativeHost &>(*m_DestinationHost),
@@ -274,6 +273,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
         else {                       // vfs -> vfs
                                      // /////////////////////////////////////////////////////////////////////////////
             if( m_Options.docopy ) { // copy
+                copied = true;
                 step_result = CopyVFSFileToVFSFile(
                     source_host, source_path, destination_path, data_feedback, nonexistent_dst_req_handler);
             }
@@ -286,6 +286,7 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
                         Statistics().CommitProcessed(Statistics::SourceType::Bytes, source_size);
                 }
                 else { // move
+                    copied = true;
                     step_result = CopyVFSFileToVFSFile(
                         source_host, source_path, destination_path, data_feedback, nonexistent_dst_req_handler);
                     if( step_result == StepResult::Ok )
@@ -294,9 +295,15 @@ CopyingJob::StepResult CopyingJob::ProcessItemNo(int _item_number)
             }
         }
 
-        // check step result?
-        if( hash )
-            m_Checksums.emplace_back(_item_number, destination_path, hash->Final());
+        // Only verify files that were actually copied cleanly. Skipped/failed items must not enter
+        // m_Checksums, and empty files only produce an empty SHA-256 expectation when a copy
+        // succeeded (a non-empty APFS clone skips data_feedback and keeps its existing behavior).
+        if( step_result == StepResult::Ok ) {
+            if( !hash && should_verify && copied && source_size == 0 )
+                hash.emplace(base::Hash::SHA2_256);
+            if( hash )
+                m_Checksums.emplace_back(_item_number, destination_path, hash->Final());
+        }
     }
     else if( S_ISDIR(source_mode) )
         step_result = ProcessDirectoryItem(source_host, source_path, _item_number, destination_path);

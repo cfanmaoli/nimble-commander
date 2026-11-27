@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <thread>
+#include <utility>
 #include <cassert>
 #include <iostream>
 
@@ -26,7 +27,16 @@ void Job::Run()
         return;
 
     m_IsRunning = true;
-    std::thread{[this] { Execute(); }}.detach();
+    try {
+        std::thread{[this] {
+            auto after_execute = Execute();
+            if( after_execute )
+                after_execute();
+        }}.detach();
+    } catch( ... ) {
+        m_IsRunning = false;
+        throw;
+    }
 }
 
 namespace {
@@ -41,7 +51,7 @@ std::string Demangle(const char *_name)
 }
 } // namespace
 
-void Job::Execute()
+std::function<void()> Job::Execute()
 {
     const auto thread_title = "com.magnumbytes.nimblecommander." + Demangle(typeid(*this).name());
     pthread_setname_np(thread_title.c_str());
@@ -73,13 +83,12 @@ void Job::Execute()
     if( callback )
         callback();
 
-    // Execute() is about to leave the job object's stack frame. The callback is expected to defer
-    // any destruction to another queue; it must not destroy the Job synchronously.
+    // Move and clear the callback before returning so it cannot form a reference cycle with the
+    // owning Operation, and invoke it in Run() after Execute() has completely unwound.
     m_CallbackLock.lock();
-    const auto after_execute = m_AfterExecute;
+    auto after_execute = std::exchange(m_AfterExecute, {});
     m_CallbackLock.unlock();
-    if( after_execute )
-        after_execute();
+    return after_execute;
 }
 
 bool Job::IsRunning() const noexcept

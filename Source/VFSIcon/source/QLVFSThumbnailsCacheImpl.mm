@@ -5,6 +5,7 @@
 #include <atomic>
 #include <filesystem>
 #include <memory>
+#include <optional>
 
 namespace nc::vfsicon {
 
@@ -121,18 +122,19 @@ void QLVFSThumbnailsCacheImpl::ProduceThumbnailAsync(const std::string &_file_pa
     }
 
     // QLThumbnailGenerator reads the URL asynchronously. PlacementResult deletes the temporary
-    // file in its destructor, so the completion block must keep it alive until QL is done.
-    auto placement_result = std::make_shared<nc::utility::BriefOnDiskStorage::PlacementResult>(std::move(*placement));
+    // file in its destructor, so keep it alive until QL finishes, then reset immediately so the
+    // 15s fallback timer block does not pin the temporary file on disk after completion.
+    auto placement_result =
+        std::make_shared<std::optional<nc::utility::BriefOnDiskStorage::PlacementResult>>(std::move(placement));
 
-    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:placement_result->Path().c_str()]];
+    NSURL *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:(*placement_result)->Path().c_str()]];
     if( url == nil ) {
         _callback(nil);
         return;
     }
 
     GenerateVFSQuickLookThumbnailAsync(url, CGSizeMake(double(_px_size), double(_px_size)), ^(NSImage *image) {
-      // Keep the temporary file alive until QL has finished reading it.
-      (void)placement_result;
+      placement_result->reset();
       if( image != nil ) {
           const auto lock = std::lock_guard{m_Lock};
           m_Thumbnails.insert(key, image);

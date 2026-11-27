@@ -27,8 +27,26 @@
 using namespace nc::panel;
 
 // The context menu can be released as soon as the selected action returns, while the sharing
-// picker may still be on screen. Keep the active picker alive until a later share request.
+// picker may still be on screen. Keep the active picker alive only until it finishes or is
+// replaced by a later share request.
+@interface NCActiveSharePickerDelegate : NSObject <NSSharingServicePickerDelegate>
+@end
+
 static NSSharingServicePicker *g_ActiveSharePicker = nil;
+static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
+
+@implementation NCActiveSharePickerDelegate
+
+- (void)sharingServicePicker:(NSSharingServicePicker *)_picker
+     didChooseSharingService:(NSSharingService *) [[maybe_unused]] _service
+{
+    if( g_ActiveSharePicker == _picker ) {
+        g_ActiveSharePicker.delegate = nil;
+        g_ActiveSharePicker = nil;
+    }
+}
+
+@end
 
 @implementation NCPanelContextMenu {
     std::vector<VFSListingItem> m_Items;
@@ -353,16 +371,31 @@ static NSSharingServicePicker *g_ActiveSharePicker = nil;
     if( urls.count == 0 )
         return;
 
-    g_ActiveSharePicker = [[NSSharingServicePicker alloc] initWithItems:urls];
+    NSView *const target_view = m_Panel.view;
+    if( target_view == nil )
+        return;
 
-    NSRect anchor = m_Panel.view.bounds;
+    NSRect anchor = target_view.bounds;
     anchor.origin.x = NSMidX(anchor);
     anchor.origin.y = NSMidY(anchor);
     anchor.size = NSMakeSize(1, 1);
     if( const auto item_frame = [m_Panel.view frameOfItemAtSortPos:m_Panel.view.curpos] )
         anchor = *item_frame;
 
-    [g_ActiveSharePicker showRelativeToRect:anchor ofView:m_Panel.view preferredEdge:NSMinYEdge];
+    // Defer showing the picker to the next runloop turn so it does not present synchronously
+    // inside the closing NSMenu tracking callback.
+    __weak NSView *const weak_view = target_view;
+    dispatch_to_main_queue([urls, anchor, weak_view] {
+        NSView *const view = weak_view;
+        if( view == nil || view.window == nil )
+            return;
+        if( g_ActiveSharePickerDelegate == nil )
+            g_ActiveSharePickerDelegate = [NCActiveSharePickerDelegate new];
+        NSSharingServicePicker *const picker = [[NSSharingServicePicker alloc] initWithItems:urls];
+        picker.delegate = g_ActiveSharePickerDelegate;
+        g_ActiveSharePicker = picker;
+        [picker showRelativeToRect:anchor ofView:view preferredEdge:NSMinYEdge];
+    });
 }
 
 - (void)OnDuplicateItem:(id)sender

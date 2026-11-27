@@ -1828,15 +1828,16 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
 - (void)loadListing:(const VFSListingPtr &)_listing
 {
-    [self loadListing:_listing navigationEpoch:m_NavigationEpoch.load()];
+    const uint64_t epoch = [self beginNavigationEpoch];
+    [self loadListing:_listing navigationEpoch:epoch];
 }
 
 - (void)loadListing:(const VFSListingPtr &)_listing navigationEpoch:(uint64_t)_epoch
 {
-    if( _epoch != m_NavigationEpoch.load() )
-        return;
-    [self CancelBackgroundOperations]; // clean running operations if any
     dispatch_or_run_in_main_queue([=] {
+        if( _epoch != m_NavigationEpoch.load() )
+            return;
+        [self CancelBackgroundOperations]; // clean running operations if any
         const auto perf_begin = std::chrono::steady_clock::now();
         [self setListingIncomplete:false];
         [m_View savePathState];

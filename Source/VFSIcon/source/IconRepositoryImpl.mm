@@ -1,5 +1,7 @@
 // Copyright (C) 2018-2021 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconRepositoryImpl.h>
+#include <VFSIcon/Log.h>
+#include <Base/algo.h>
 #include <Base/dispatch_cpp.h>
 
 namespace nc::vfsicon {
@@ -27,11 +29,20 @@ IconRepositoryImpl::IconRepositoryImpl(const std::shared_ptr<IconBuilder> &_icon
 
 IconRepositoryImpl::~IconRepositoryImpl()
 {
-    m_Alive->store(false);
-    for( const auto &slot : m_Slots ) {
-        if( slot.state == SlotState::Production ) {
-            if( slot.production != nullptr )
+    {
+        const std::lock_guard lock{m_InFlightLock};
+        m_Alive->store(false);
+        for( const auto &slot : m_Slots ) {
+            if( slot.state == SlotState::Production && slot.production != nullptr ) {
                 slot.production->must_stop = true;
+                slot.production->ReleaseWait();
+            }
+        }
+        // Also wake workers whose slots were already unregistered (e.g. after navigating away),
+        // otherwise m_ProductionQueue.reset() could stall the main thread until the 20s timeout.
+        for( const auto &ctx : m_InFlightContexts ) {
+            ctx->must_stop = true;
+            ctx->ReleaseWait();
         }
     }
     m_ProductionQueue.reset();
@@ -121,8 +132,8 @@ void IconRepositoryImpl::ScheduleIconProduction(SlotKey _key, const VFSListingIt
     slot.file_mode = _item.UnixMode();
     slot.state = SlotState::Production;
 
-    auto work_block = [this, slot_index, context] {
-        if( context->must_stop )
+    auto work_block = [this, alive = m_Alive, slot_index, context] {
+        if( !alive->load() || context->must_stop )
             return;
 
         StartRealIconProduction(slot_index, context);
@@ -132,29 +143,42 @@ void IconRepositoryImpl::ScheduleIconProduction(SlotKey _key, const VFSListingIt
 
 void IconRepositoryImpl::StartRealIconProduction(int _slot_index, const base::intrusive_ptr<WorkerContext> &_context)
 {
-    // Keep the production queue's concurrency slot occupied until the async builder completes.
-    // Previously the queue block returned immediately after starting QuickLook, so the 4-way
-    // concurrency limit no longer bounded the number of in-flight QL requests.
-    const dispatch_semaphore_t completion = dispatch_semaphore_create(0);
+    // Keep the production queue's concurrency slot occupied until the async builder completes,
+    // while allowing teardown to wake all in-flight waiters immediately so closing a panel never
+    // blocks the main thread on slow or stalled QuickLook requests.
+    const auto alive = m_Alive;
+    const auto client_executor = m_ClientExecutor;
+    {
+        const std::lock_guard lock{m_InFlightLock};
+        if( !alive->load() || _context->must_stop )
+            return;
+        m_InFlightContexts.emplace_back(_context);
+    }
+    const auto unregister_inflight = at_scope_end([this, _context] {
+        const std::lock_guard lock{m_InFlightLock};
+        std::erase(m_InFlightContexts, _context);
+    });
+
     m_IconBuilder->BuildRealIconAsync(
         _context->item,
         m_IconPxSize,
-        [this, _slot_index, _context, completion](IconBuilder::BuildResult result) {
-            if( !_context->must_stop ) {
+        [this, alive, client_executor, _slot_index, _context](IconBuilder::BuildResult result) {
+            if( alive->load() && !_context->must_stop ) {
                 _context->result_filetype = result.filetype;
                 _context->result_thumbnail = result.thumbnail;
-                m_ClientExecutor->Execute([this, _slot_index, _context] {
-                    if( _context->must_stop )
+                client_executor->Execute([this, alive, _slot_index, _context] {
+                    if( !alive->load() || _context->must_stop )
                         return;
                     if( IsValidSlot(FromIndex(_slot_index)) )
                         CommitProductionResult(_slot_index, *_context);
                 });
             }
-            dispatch_semaphore_signal(completion);
+            _context->ReleaseWait();
         },
-        [_context] { return _context->must_stop.load(); });
-    const auto wait_result = dispatch_semaphore_wait(completion, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_SEC));
-    if( wait_result != 0 )
+        [alive, _context] { return !alive->load() || _context->must_stop.load(); });
+    const auto wait_result =
+        dispatch_semaphore_wait(_context->wait_semaphore, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_SEC));
+    if( wait_result != 0 && alive->load() && !_context->must_stop )
         Log::Error("Icon production timed out for '{}'", _context->item.Path());
 }
 

@@ -43,7 +43,7 @@ protected:
     virtual void OnStopped();
 
     void SetCompleted();
-    void Execute();
+    std::function<void()> Execute();
     void BlockIfPaused();
     void TellItemReport(ItemStateReport _report);
 

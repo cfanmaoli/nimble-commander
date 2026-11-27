@@ -207,7 +207,10 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
 {
     // initial directory lookup
     std::vector<std::tuple<std::string, uint64_t, uint8_t>> dirents; // name, inode, entry_type
-    if( auto dirp = fdopendir(dup(_dir_fd)) ) {
+    const int dup_fd = dup(_dir_fd);
+    if( dup_fd < 0 )
+        return errno;
+    if( auto dirp = fdopendir(dup_fd) ) {
         const auto close_dir = at_scope_end([=] { closedir(dirp); });
         static const auto dirents_reserve_amount = 64;
         dirents.reserve(dirents_reserve_amount);
@@ -222,8 +225,11 @@ int Fetching::ReadDirAttributesStat(const int _dir_fd,
             dirents.emplace_back(std::string(entp->d_name, entp->d_namlen), entp->d_ino, entp->d_type);
         }
     }
-    else
-        return errno;
+    else {
+        const int err = errno;
+        close(dup_fd);
+        return err;
+    }
 
     // call stat() for every directory entry
     auto &io = nc::routedio::RoutedIO::Default;

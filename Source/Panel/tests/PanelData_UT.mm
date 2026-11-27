@@ -13,27 +13,11 @@
 #define PREFIX "PanelData "
 
 namespace {
-VFSListingPtr ProduceDummyListing(const std::vector<std::string> &_filenames);
-}
-
-TEST_CASE(PREFIX "incomplete state is cleared by a new load")
-{
-    Model model;
-    CHECK_FALSE(model.IsIncomplete());
-    model.SetIncomplete(true);
-    CHECK(model.IsIncomplete());
-
-    model.Load(ProduceDummyListing({"a"}), Model::PanelType::Directory);
-    CHECK_FALSE(model.IsIncomplete());
-}
-
-namespace {
 
 using namespace nc;
 using namespace nc::base;
 using namespace nc::panel;
-using data::ItemVolatileData;
-using data::Model;
+using namespace nc::panel::data;
 
 VFSListingPtr ProduceDummyListing(const std::vector<std::string> &_filenames)
 {
@@ -818,6 +802,17 @@ TEST_CASE("PrepareLoad and InstallLoad produce the same state as Load")
     // the lookups still work
     CHECK(prepared.SortedIndexForName("apple") >= 0);
     CHECK(prepared.SortedIndexForName("kiwi") == -1);
+}
+
+TEST_CASE(PREFIX "incomplete state is cleared by a new load")
+{
+    Model model;
+    CHECK_FALSE(model.IsIncomplete());
+    model.SetIncomplete(true);
+    CHECK(model.IsIncomplete());
+
+    model.Load(ProduceDummyListing({"a"}), Model::PanelType::Directory);
+    CHECK_FALSE(model.IsIncomplete());
 }
 
 TEST_CASE(PREFIX "Quick-search highlights live next to the volatile data")
