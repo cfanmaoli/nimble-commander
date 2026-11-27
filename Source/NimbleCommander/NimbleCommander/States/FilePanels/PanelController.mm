@@ -1583,7 +1583,10 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
 
     try {
         if( ![self probeDirectoryAccessForRequest:*_request] ) {
-            return std::unexpected(Error{Error::POSIX, EPERM});
+            const std::expected<void, Error> err = std::unexpected(Error{Error::POSIX, EPERM});
+            if( _request->LoadingResultCallback )
+                dispatch_or_run_in_main_queue([callback = _request->LoadingResultCallback, err] { callback(err); });
+            return err;
         }
 
         auto directory = _request->RequestedDirectory;
@@ -1616,7 +1619,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
             }
             if( batch->empty() )
                 return;
-            dispatch_to_main_queue([self, stream_id, batch] {
+            dispatch_or_run_in_main_queue([self, stream_id, batch] {
                 if( m_StreamingLoadId.load() != stream_id )
                     return;
                 const VFSListingPtr base = m_Data.ListingPtr();
@@ -1656,7 +1659,7 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
                 // the expensive part of the model setup happens here, on the fetching queue
                 auto prepared = std::make_shared<data::Model::PreparedLoad>(data::Model::PrepareLoad(
                     _chunk, data::Model::PanelType::Directory, _sort_mode, _hard_filter, _soft_filter));
-                dispatch_to_main_queue([self, stream_id, prepared, _request] {
+                dispatch_or_run_in_main_queue([self, stream_id, prepared, _request] {
                     if( m_StreamingLoadId.load() != stream_id )
                         return;
                     const auto perf_begin = std::chrono::steady_clock::now();
@@ -1718,13 +1721,13 @@ static void ShowAlertAboutInvalidFilename(const std::string &_filename)
         if( !stream_result && !IsCancellation(stream_result.error()) && *saw_first_chunk ) {
             // The first screenful is already visible, so do not throw it away on a late error;
             // mark the header instead and let the user retry/refresh.
-            dispatch_to_main_queue([self, stream_id] {
+            dispatch_or_run_in_main_queue([self, stream_id] {
                 if( m_StreamingLoadId.load() == stream_id )
                     [self setListingIncomplete:true];
             });
         }
         if( _request->LoadingResultCallback )
-            dispatch_to_main_queue(
+            dispatch_or_run_in_main_queue(
                 [callback = _request->LoadingResultCallback, stream_result] { callback(stream_result); });
         if( !stream_result )
             return std::unexpected(stream_result.error());

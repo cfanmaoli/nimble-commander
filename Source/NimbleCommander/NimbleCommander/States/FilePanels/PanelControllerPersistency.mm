@@ -83,7 +83,7 @@ static void EnsureNonEmptyStateAsync(PanelController *_panel)
         // the VFS was not recovered.
         // we should not leave panel in empty/dummy state,
         // lets go to home directory as a fallback path
-        dispatch_to_main_queue([=] { LoadHomeDirectory(_panel); });
+        dispatch_or_run_in_main_queue([=] { LoadHomeDirectory(_panel); });
     }
 }
 
@@ -158,10 +158,10 @@ void ControllerStateJSONDecoder::RecoverSavedContentSync(const PersistentLocatio
 
             if( fs_path.has_parent_path() ) {
                 const auto upper_dir = fs_path.parent_path().native();
-                dispatch_to_main_queue([=] { RecoverSavedPathAtVFSAsync(host, upper_dir, _panel); });
+                dispatch_or_run_in_main_queue([=] { RecoverSavedPathAtVFSAsync(host, upper_dir, _panel); });
             }
             else {
-                dispatch_to_main_queue([=] { LoadHomeDirectory(_panel); });
+                dispatch_or_run_in_main_queue([=] { LoadHomeDirectory(_panel); });
             }
         }
     };
