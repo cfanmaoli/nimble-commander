@@ -37,24 +37,6 @@
         }
       }
     },
-    "Tr5-Et-ET1.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Empty Trash…\"; ObjectID = \"Tr5-Et-ET1\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Empty Trash…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空废纸篓…"
-          }
-        }
-      }
-    },
     "0D4-mI-wvg.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"5\"; ObjectID = \"0D4-mI-wvg\";",
       "extractionState" : "extracted_with_value",

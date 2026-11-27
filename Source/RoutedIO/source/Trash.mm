@@ -23,8 +23,8 @@
 namespace nc::routedio {
 
 namespace {
-// Closes a descriptor or a directory on scope exit. The errno of a failed operation is kept
-// intact: close() itself may fail and overwrite it, and the callers report the original error.
+// Closes a descriptor on scope exit. The errno of a failed operation is kept intact: close()
+// itself may fail and overwrite it, and the callers report the original error.
 class ScopedFd
 {
 public:
@@ -43,31 +43,8 @@ public:
         m_Fd = -1;
     }
 
-    [[nodiscard]] int Release() noexcept
-    {
-        const int fd = m_Fd;
-        m_Fd = -1;
-        return fd;
-    }
-
 private:
     int m_Fd;
-};
-
-class ScopedDir
-{
-public:
-    explicit ScopedDir(DIR *_dir) noexcept : m_Dir(_dir) {}
-    ScopedDir(const ScopedDir &) = delete;
-    ScopedDir &operator=(const ScopedDir &) = delete;
-    ~ScopedDir() noexcept
-    {
-        if( m_Dir )
-            ::closedir(m_Dir);
-    }
-
-private:
-    DIR *m_Dir;
 };
 
 constexpr const char *g_OriginalPathAttr = "info.filesmanager.trash.originalPath";
@@ -759,116 +736,6 @@ std::vector<std::string> ListTrashDirectory(const std::string &_directory, int &
         result.push_back(std::move(path));
     }
     closedir(dir);
-    return result;
-}
-
-// Deletes one entry relative to '_dir_fd'. Every level is opened with O_NOFOLLOW and checked with
-// fstat(), so validation and deletion are bound to the very same object: a symlink can't be swapped
-// in between, and a directory on another device (a mounted volume inside the trash) is refused.
-static bool RemoveTrashEntry(const int _dir_fd, const char *_name, const dev_t _trash_dev, const uid_t _owner) noexcept
-{
-    struct stat st;
-    if( ::fstatat(_dir_fd, _name, &st, AT_SYMLINK_NOFOLLOW) != 0 )
-        return false;
-    if( st.st_uid != _owner )
-        return false;
-    if( !S_ISDIR(st.st_mode) )
-        return ::unlinkat(_dir_fd, _name, 0) == 0; // a symlink is removed as a link, never followed
-
-    if( st.st_dev != _trash_dev )
-        return false;
-
-    const int fd = ::openat(_dir_fd, _name, O_RDONLY | O_NONBLOCK | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
-    if( fd < 0 )
-        return false;
-    const ScopedFd close_fd{fd};
-
-    struct stat opened;
-    if( ::fstat(fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_dev != _trash_dev ||
-        opened.st_uid != _owner )
-        return false;
-
-    DIR *const dir = ::fdopendir(dup(fd));
-    if( dir == nullptr )
-        return false;
-    const ScopedDir close_dir{dir};
-
-    std::vector<std::string> children;
-    bool read_ok = true;
-    for( ;; ) {
-        errno = 0;
-        const dirent *const entry = ::readdir(dir);
-        if( entry == nullptr ) {
-            if( errno != 0 )
-                read_ok = false;
-            break;
-        }
-        const std::string name = entry->d_name;
-        if( name == "." || name == ".." )
-            continue;
-        children.push_back(name);
-    }
-
-    bool ok = read_ok;
-    for( const std::string &child : children )
-        if( !RemoveTrashEntry(fd, child.c_str(), _trash_dev, _owner) )
-            ok = false;
-    if( ok && ::unlinkat(_dir_fd, _name, AT_REMOVEDIR) != 0 )
-        ok = false;
-    return ok;
-}
-
-EmptyTrashResult EmptyTrashDirectory(const std::string &_trash_directory)
-{
-    EmptyTrashResult result;
-
-    // Opening and validation share pinned descriptors all the way through the trash parent; a
-    // replacement of '.Trashes' cannot redirect the later lookup of the uid directory.
-    const int dir_fd = detail::OpenTrashDirectory(_trash_directory);
-    if( dir_fd < 0 ) {
-        result.error = errno;
-        return result;
-    }
-    const ScopedFd close_fd{dir_fd};
-
-    struct stat opened;
-    if( ::fstat(dir_fd, &opened) != 0 || !S_ISDIR(opened.st_mode) || opened.st_uid != getuid() ) {
-        result.error = EINVAL;
-        return result;
-    }
-
-    DIR *const dir = ::fdopendir(dup(dir_fd));
-    if( dir == nullptr ) {
-        result.error = errno;
-        return result;
-    }
-    const ScopedDir close_dir{dir};
-    std::vector<std::string> names;
-    int read_error = 0;
-    for( ;; ) {
-        errno = 0;
-        const dirent *const entry = ::readdir(dir);
-        if( entry == nullptr ) {
-            if( errno != 0 )
-                read_error = errno;
-            break;
-        }
-        const std::string name = entry->d_name;
-        if( name == "." || name == ".." || name == ".DS_Store" )
-            continue;
-        names.emplace_back(name);
-    }
-    if( read_error != 0 ) {
-        result.error = read_error;
-        return result;
-    }
-
-    for( const std::string &name : names ) {
-        if( RemoveTrashEntry(dir_fd, name.c_str(), opened.st_dev, opened.st_uid) )
-            ++result.deleted;
-        else
-            ++result.failed;
-    }
     return result;
 }
 

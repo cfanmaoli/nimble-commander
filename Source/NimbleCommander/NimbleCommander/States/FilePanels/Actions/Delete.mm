@@ -273,68 +273,6 @@ void GoToTrash::Perform(PanelController *_target, id /*_sender*/) const
     [_target GoToDirWithContext:request];
 }
 
-bool EmptyTrash::Predicate(PanelController * /*_target*/) const
-{
-    return true;
-}
-
-void EmptyTrash::Perform(PanelController *_target, id /*_sender*/) const
-{
-    // Like the Finder, empty the trashes of all mounted volumes, not just the boot one.
-    const std::vector<std::string> locations = nc::routedio::TrashLocations();
-    size_t item_count = 0;
-    int first_error = 0;
-    for( const std::string &location : locations ) {
-        int error = 0;
-        item_count += nc::routedio::ListTrashDirectory(location, error).size();
-        if( error != 0 && first_error == 0 )
-            first_error = error;
-    }
-    if( first_error != 0 && item_count == 0 ) {
-        if( first_error == EPERM || first_error == EACCES )
-            ShowTrashAccessDeniedAlert(_target);
-        else
-            ShowTrashErrorAlert(_target, TrashLocalizedText(@"Failed to access the Trash."), nil);
-        return;
-    }
-    if( item_count == 0 ) {
-        ShowTrashErrorAlert(_target, TrashLocalizedText(@"The Trash is empty."), nil);
-        return;
-    }
-
-    NSAlert *const alert = [NSAlert new];
-    alert.alertStyle = NSAlertStyleCritical;
-    alert.messageText = TrashLocalizedText(@"Are you sure you want to permanently delete all items in the Trash?");
-    [alert addButtonWithTitle:TrashLocalizedText(@"Empty Trash")];
-    [alert addButtonWithTitle:TrashLocalizedText(@"Cancel")];
-    __weak PanelController *weak_target = _target;
-    [alert beginSheetModalForWindow:_target.window
-                  completionHandler:^(NSModalResponse _response) {
-                    if( _response != NSAlertFirstButtonReturn )
-                        return;
-                    // The deletion itself is done by RoutedIO: it re-checks every entry, so that a
-                    // crafted volume can't make "empty the trash" delete through a link or into a
-                    // volume mounted inside the trash folder.
-                    dispatch_to_default([locations, weak_target] {
-                        size_t failures = 0;
-                        for( const std::string &location : locations ) {
-                            const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(location);
-                            failures += result.failed;
-                            if( result.error != 0 )
-                                ++failures;
-                        }
-                        dispatch_to_main_queue([failures, weak_target] {
-                            PanelController *const target = weak_target;
-                            if( target == nil )
-                                return;
-                            [target hintAboutFilesystemChange];
-                            if( failures > 0 )
-                                ShowTrashErrorAlert(target, TrashLocalizedText(@"Failed to empty the Trash."), nil);
-                        });
-                    });
-                  }];
-}
-
 bool PutBack::Predicate(PanelController *_target) const
 {
     if( _target.vfs == nullptr || !_target.vfs->IsNativeFS() )

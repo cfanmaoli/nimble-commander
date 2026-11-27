@@ -46,7 +46,6 @@ using PanelActionsMap = ankerl::unordered_dense::map<SEL, std::unique_ptr<const 
 - (IBAction)OnDeletePermanentlyCommand:(id)sender;
 - (IBAction)OnMoveToTrash:(id)sender;
 - (IBAction)OnGoToTrash:(id)sender;
-- (IBAction)OnEmptyTrash:(id)sender;
 - (IBAction)OnPutBack:(id)sender;
 - (IBAction)OnGoToSavedConnectionItem:(id)sender;
 - (IBAction)OnGoToFTP:(id)sender;

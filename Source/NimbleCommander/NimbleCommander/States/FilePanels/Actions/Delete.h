@@ -33,11 +33,6 @@ struct GoToTrash final : PanelAction {
     void Perform(PanelController *_target, id _sender) const override;
 };
 
-struct EmptyTrash final : PanelAction {
-    [[nodiscard]] bool Predicate(PanelController *_target) const override;
-    void Perform(PanelController *_target, id _sender) const override;
-};
-
 struct PutBack final : PanelAction {
     [[nodiscard]] bool Predicate(PanelController *_target) const override;
     void Perform(PanelController *_target, id _sender) const override;

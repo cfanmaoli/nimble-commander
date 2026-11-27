@@ -431,31 +431,6 @@ TEST_CASE(PREFIX "staging cleanup leaves symlink targets outside the copy alone"
     CHECK(ReadFile(external + "/file.txt") == "untouched");
 }
 
-TEST_CASE(PREFIX "emptying a trash folder removes items without following links")
-{
-    TestDir dir;
-    const std::string external = (dir.directory / "external").string();
-    WriteFile(external + "/keep.txt", "keep");
-    const std::string trash = (dir.directory / "trash").string();
-    WriteFile(trash + "/file.txt", "x");
-    WriteFile(trash + "/sub/child.txt", "y");
-    REQUIRE(::symlink(external.c_str(), (trash + "/link").c_str()) == 0);
-    REQUIRE(::symlink((external + "/keep.txt").c_str(), (trash + "/file-link").c_str()) == 0);
-    WriteFile(trash + "/.DS_Store", "ds");
-
-    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(trash);
-    CHECK(result.error == 0);
-    CHECK(result.deleted == 4); // file.txt, sub, link, file-link
-    CHECK(result.failed == 0);
-    CHECK(!std::filesystem::exists(trash + "/file.txt"));
-    CHECK(!std::filesystem::exists(trash + "/sub"));
-    CHECK(!std::filesystem::exists(trash + "/link"));
-    // The links were deleted as entries - their targets are untouched.
-    CHECK(ReadFile(external + "/keep.txt") == "keep");
-    // The Finder's bookkeeping file is not ours to delete.
-    CHECK(std::filesystem::exists(trash + "/.DS_Store"));
-}
-
 TEST_CASE(PREFIX "a trash folder that is a symlink is refused")
 {
     TestDir dir;
@@ -464,35 +439,11 @@ TEST_CASE(PREFIX "a trash folder that is a symlink is refused")
     const std::string fake_trash = (dir.directory / "trash-link").string();
     REQUIRE(::symlink(external.c_str(), fake_trash.c_str()) == 0);
 
-    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(fake_trash);
-    CHECK(result.error == ENOTDIR);
-    CHECK(result.deleted == 0);
+    const int fd = nc::routedio::detail::OpenTrashDirectory(fake_trash, false);
+    CHECK(fd < 0);
+    if( fd >= 0 )
+        ::close(fd);
     CHECK(ReadFile(external + "/keep.txt") == "keep");
-}
-
-TEST_CASE(PREFIX "emptying a trash folder never deletes into a volume mounted below an item")
-{
-    TestDir dir;
-    const std::string trash = (dir.directory / "trash").string();
-    const std::string mount = trash + "/sub/nested";
-    WriteFile(trash + "/item.txt", "x");
-    std::filesystem::create_directories(mount);
-
-    const auto image = (dir.directory / "volume.dmg").string();
-    if( std::system(("hdiutil create -quiet -size 16m -fs APFS -volname NCEmptyUT '" + image + "'").c_str()) != 0 )
-        SKIP("can't create a temporary disk image");
-    const auto detach = at_scope_end(
-        [&] { std::ignore = std::system(("hdiutil detach -quiet '" + mount + "' >/dev/null 2>&1").c_str()); });
-    if( std::system(("hdiutil attach -quiet -nobrowse -mountpoint '" + mount + "' '" + image + "'").c_str()) != 0 )
-        SKIP("can't attach a temporary disk image");
-    WriteFile(mount + "/keep.txt", "keep");
-
-    const nc::routedio::EmptyTrashResult result = nc::routedio::EmptyTrashDirectory(trash);
-    CHECK(result.error == 0);
-    CHECK(result.deleted == 1); // just item.txt
-    CHECK(result.failed == 1);  // 'sub' is left alone because it contains a mounted volume
-    CHECK(ReadFile(mount + "/keep.txt") == "keep");
-    CHECK(std::filesystem::exists(trash + "/sub"));
 }
 
 TEST_CASE(PREFIX "a put-back can be cancelled before it starts")
@@ -595,13 +546,11 @@ TEST_CASE(PREFIX "put-back refuses a recorded location that isn't a sane absolut
     }
 }
 
-TEST_CASE(PREFIX "emptying a trash folder behind a symlinked .Trashes is refused")
+TEST_CASE(PREFIX "a trash folder behind a symlinked .Trashes is refused")
 {
     TestDir dir;
     // The documented layout is '<volume>/.Trashes/<uid>', but here '.Trashes' is a symlink to an
-    // ordinary directory that happens to contain a folder named like the uid. lstat() on the final
-    // component alone resolves the link and accepts it - the same-device redirection that must be
-    // refused before anything is deleted.
+    // ordinary directory that happens to contain a folder named like the uid.
     const std::string drive = (dir.directory / "drive").string();
     std::filesystem::create_directories(drive);
     const std::string unrelated = (dir.directory / "unrelated").string();
@@ -609,27 +558,11 @@ TEST_CASE(PREFIX "emptying a trash folder behind a symlinked .Trashes is refused
     WriteFile(uid_dir + "/keep.txt", "keep");
     REQUIRE(::symlink(unrelated.c_str(), (drive + "/.Trashes").c_str()) == 0);
 
-    const nc::routedio::EmptyTrashResult result =
-        nc::routedio::EmptyTrashDirectory(drive + "/.Trashes/" + std::to_string(getuid()));
-    CHECK(result.error != 0);
-    CHECK(result.deleted == 0);
+    const int fd = nc::routedio::detail::OpenTrashDirectory(drive + "/.Trashes/" + std::to_string(getuid()), false);
+    CHECK(fd < 0);
+    if( fd >= 0 )
+        ::close(fd);
     CHECK(ReadFile(uid_dir + "/keep.txt") == "keep");
-}
-
-TEST_CASE(PREFIX "emptying a trash folder only needs search access to its parent")
-{
-    TestDir dir;
-    const auto parent = dir.directory / ".Trashes";
-    const auto trash = parent / std::to_string(getuid());
-    WriteFile((trash / "item.txt").string(), "trash");
-    REQUIRE(::chmod(parent.c_str(), 01333) == 0);
-    const auto restore_mode = at_scope_end([&] { std::ignore = ::chmod(parent.c_str(), 0700); });
-
-    const auto result = nc::routedio::EmptyTrashDirectory(trash.string());
-    CHECK(result.error == 0);
-    CHECK(result.deleted == 1);
-    CHECK(result.failed == 0);
-    CHECK(!std::filesystem::exists(trash / "item.txt"));
 }
 
 TEST_CASE(PREFIX "an opened trash stays bound when its parent name is replaced")
@@ -656,7 +589,10 @@ TEST_CASE(PREFIX "an opened trash stays bound when its parent name is replaced")
     REQUIRE(::lstat((drive / "saved" / uid / "keep.txt").c_str(), &expected) == 0);
     CHECK(actual.st_ino == expected.st_ino);
     CHECK(actual.st_dev == expected.st_dev);
-    CHECK(nc::routedio::EmptyTrashDirectory(trash.string()).error != 0);
+    const int reopened = nc::routedio::detail::OpenTrashDirectory(trash.string());
+    CHECK(reopened < 0);
+    if( reopened >= 0 )
+        ::close(reopened);
     CHECK(ReadFile((unrelated / uid / "keep.txt").string()) == "external");
     CHECK(ReadFile((drive / "saved" / uid / "keep.txt").string()) == "original");
 }
@@ -672,8 +608,10 @@ TEST_CASE(PREFIX "trash discovery does not require permission to read its conten
     REQUIRE(fd >= 0);
     ::close(fd);
 
-    // It is still a known trash location, but an attempt to enumerate/delete it must report denial.
-    CHECK(nc::routedio::EmptyTrashDirectory(trash.string()).error == EACCES);
+    // It is still a known trash location, but an attempt to enumerate it must report denial.
+    int list_error = 0;
+    CHECK(nc::routedio::ListTrashDirectory(trash.string(), list_error).empty());
+    CHECK(list_error == EACCES);
 }
 
 #undef PREFIX

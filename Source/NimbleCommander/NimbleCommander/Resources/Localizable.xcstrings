@@ -375,23 +375,6 @@
         }
       }
     },
-    "Are you sure you want to permanently delete all items in the Trash?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to permanently delete all items in the Trash?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要永久删除废纸篓中的所有项目吗？"
-          }
-        }
-      }
-    },
     "Are you sure you want to remove this editor?" : {
       "comment" : "Asking the user for confirmation on deleting the external editor - message",
       "localizations" : {
@@ -717,23 +700,6 @@
       },
       "shouldTranslate" : false
     },
-    "Empty Trash" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty Trash"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空废纸篓"
-          }
-        }
-      }
-    },
     "Enable Admin Mode" : {
       "comment" : "Menu item title for enabling an admin mode",
       "localizations" : {
@@ -856,23 +822,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法创建空文件："
-          }
-        }
-      }
-    },
-    "Failed to empty the Trash." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to empty the Trash."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空废纸篓失败。"
           }
         }
       }
@@ -2270,23 +2219,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所选内容的大小为 %@。\n确定要打开它们吗？"
-          }
-        }
-      }
-    },
-    "The Trash is empty." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Trash is empty."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "废纸篓是空的。"
           }
         }
       }

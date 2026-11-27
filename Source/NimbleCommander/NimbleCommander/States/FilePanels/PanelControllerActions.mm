@@ -148,7 +148,6 @@ PanelActionsMap BuildPanelActionsMap(nc::config::Config &_global_config,
     add(@selector(OnOpenExtendedAttributes:), new OpenXAttr);
     add(@selector(OnMoveToTrash:), new MoveToTrash{_native_fs_mgr});
     add(@selector(OnGoToTrash:), new GoToTrash);
-    add(@selector(OnEmptyTrash:), new EmptyTrash);
     add(@selector(OnPutBack:), new PutBack);
     add(@selector(OnDeleteCommand:), new Delete{_native_fs_mgr});
     add(@selector(OnDeletePermanentlyCommand:), new Delete{_native_fs_mgr, true});

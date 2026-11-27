@@ -542,7 +542,7 @@ Nimble Commander-Fork lets you move items to the Trash or delete them permanentl
 
 - Press `Cmd + Backward Delete` (`Command > Move To Trash`) to move selected items to the Trash. If the current volume doesn't support a Trash folder, a Delete confirmation dialog appears instead.
 - Press `F8` (`Command > Delete...`) or `Shift + F8` (`Command > Delete Permanently...`) to open the Delete dialog, where the default action differs between moving to Trash and permanent deletion. In context menus, holding `Opt` reveals **Delete Permanently** highlighted in red.
-- Open the Trash folder with `Go > Trash`, restore trashed items with `Command > Put Back`, or empty the Trash with `Command > Empty Trash…` (which intentionally has no keyboard shortcut to prevent accidental triggers).
+- Open the Trash folder with `Go > Trash` and restore trashed items with `Command > Put Back`. Emptying the Trash is intentionally left to the macOS system Trash.
 
 ## Create Folder
 There are two ways to create a folder in Nimble Commander-Fork:
@@ -839,7 +839,6 @@ Actions with an empty key column have no default hotkey and can be invoked from 
 | &nbsp; Create Directory In Opposite Panel... | Shift + F7                |
 | &nbsp; Move To Trash                         | Cmd + Backward Delete     |
 | &nbsp; Put Back                              |                           |
-| &nbsp; Empty Trash…                          |                           |
 | &nbsp; Delete...                             | F8                        |
 | &nbsp; Delete Permanently...                 | Shift + F8                |
 | &nbsp; Compress...                           | F9                        |
