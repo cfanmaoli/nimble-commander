@@ -20,6 +20,11 @@ public:
 
     NSImage *ThumbnailIfHas(const std::string &_filename, int _px_size) override;
 
+    NSImage *ThumbnailIfFresh(const std::string &_filename, int _px_size, const FileStateHint &_hint) override;
+
+    void
+    StoreThumbnail(const std::string &_filename, int _px_size, const FileStateHint &_hint, NSImage *_image) override;
+
     void ProduceThumbnailAsync(const std::string &_filename,
                                int _px_size,
                                const std::optional<FileStateHint> &_hint,

@@ -30,6 +30,27 @@ public:
     };
 
     using ThumbnailCallback = std::function<void(NSImage *)>;
+    /**
+     * Returns a cached thumbnail only if its recorded file state matches _hint.
+     * May return nil.
+     */
+    virtual NSImage *
+    ThumbnailIfFresh(const std::string & /*_file_path*/, int /*_px_size*/, const FileStateHint & /*_hint*/)
+    {
+        return nullptr;
+    }
+
+    /**
+     * Stores an externally produced thumbnail (for instance decoded directly via ImageIO) into
+     * the cache under the given file state.
+     */
+    virtual void StoreThumbnail(const std::string & /*_file_path*/,
+                                int /*_px_size*/,
+                                const FileStateHint & /*_hint*/,
+                                NSImage * /*_image*/)
+    {
+    }
+
     /** Starts an asynchronous thumbnail request; the callback is invoked on a background queue. */
     virtual void ProduceThumbnailAsync(const std::string &_file_path,
                                        int _px_size,

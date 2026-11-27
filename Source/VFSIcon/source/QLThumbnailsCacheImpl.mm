@@ -161,6 +161,43 @@ NSImage *QLThumbnailsCacheImpl::ThumbnailIfHas(const std::string &_filename, int
     }
 }
 
+NSImage *QLThumbnailsCacheImpl::ThumbnailIfFresh(const std::string &_filename, int _px_size, const FileStateHint &_hint)
+{
+    const auto temp_key = Key{std::string_view{_filename}, _px_size, Key::no_ownership};
+    const auto lock = std::lock_guard{m_ItemsLock};
+    if( m_Items.count(temp_key) != 0 ) {
+        const auto &info = m_Items[temp_key];
+        assert(info != nullptr);
+        if( info->file_size == _hint.size && info->mtime == _hint.mtime && info->image != nil )
+            return info->image;
+    }
+    return nil;
+}
+
+void QLThumbnailsCacheImpl::StoreThumbnail(const std::string &_filename,
+                                           int _px_size,
+                                           const FileStateHint &_hint,
+                                           NSImage *_image)
+{
+    if( _image == nil )
+        return;
+    const auto temp_key = Key{std::string_view{_filename}, _px_size, Key::no_ownership};
+    const auto lock = std::lock_guard{m_ItemsLock};
+    base::intrusive_ptr<Info> info;
+    if( m_Items.count(temp_key) ) {
+        info = m_Items[temp_key];
+    }
+    else {
+        auto key = Key{_filename, _px_size};
+        info = base::intrusive_ptr{new Info};
+        m_Items.insert(std::move(key), info);
+    }
+    assert(info != nullptr);
+    info->image = _image;
+    info->file_size = _hint.size;
+    info->mtime = _hint.mtime;
+}
+
 QLThumbnailsCacheImpl::QLThumbnailsCacheImpl() = default;
 
 QLThumbnailsCacheImpl::~QLThumbnailsCacheImpl() = default;

@@ -1,6 +1,11 @@
 // Copyright (C) 2018-2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <VFSIcon/IconRepositoryImpl.h>
+#include <VFSIcon/QLThumbnailsCacheImpl.h>
 #include <VFS/VFSListingInput.h>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include "Tests.h"
 
 using namespace nc::vfsicon;
@@ -400,6 +405,92 @@ TEST_CASE("IconRepositoryImpl doesn't call IconBuilder concurrently when prod qu
     const auto key2 = repository.Register(item);
     repository.ScheduleIconProduction(key1, item);
     repository.ScheduleIconProduction(key2, item);
+}
+
+TEST_CASE("IconRepositoryImpl teardown does not hang on stalled async builder and ignores late callbacks")
+{
+    struct StalledIconBuilder final : IconBuilder {
+        LookupResult LookupExistingIcon(const VFSListingItem & /*_item*/, int /*_icon_px_size*/) override { return {}; }
+        void BuildRealIconAsync(const VFSListingItem & /*_item*/,
+                                int /*_icon_px_size*/,
+                                BuildCallback _callback,
+                                const CancelChecker & /*_cancel_checker*/) override
+        {
+            const std::lock_guard lock{mutex};
+            captured_callbacks.emplace_back(std::move(_callback));
+            cv.notify_all();
+        }
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::vector<BuildCallback> captured_callbacks;
+    };
+
+    const auto icon_builder = std::make_shared<StalledIconBuilder>();
+    const auto executor = std::make_shared<ExecutorMock>();
+    std::vector<std::function<void()>> queued_ui_blocks;
+    EXPECT_CALL(*executor, Execute).WillRepeatedly([&](std::function<void()> f) {
+        queued_ui_blocks.emplace_back(std::move(f));
+    });
+
+    bool updated = false;
+    const auto begin = [&] {
+        auto queue = std::make_unique<base::GCDLimitedConcurrentQueue>(2);
+        IconRepositoryImpl repository{icon_builder, std::move(queue), executor};
+        repository.SetUpdateCallback([&](IconRepository::SlotKey, NSImage *) { updated = true; });
+
+        const auto item1 = CookListingItem(1, 2, 3);
+        const auto item2 = CookListingItem(4, 5, 6);
+        const auto key1 = repository.Register(item1);
+        const auto key2 = repository.Register(item2);
+        repository.ScheduleIconProduction(key1, item1);
+        repository.ScheduleIconProduction(key2, item2);
+
+        {
+            std::unique_lock lock{icon_builder->mutex};
+            REQUIRE(icon_builder->cv.wait_for(
+                lock, std::chrono::seconds{5}, [&] { return icon_builder->captured_callbacks.size() == 2; }));
+        }
+
+        // Unregister one slot before destroying to ensure already-unregistered in-flight workers
+        // are woken up as well.
+        repository.Unregister(key2);
+
+        return std::chrono::steady_clock::now();
+    }();
+    const auto elapsed = std::chrono::steady_clock::now() - begin;
+    CHECK(elapsed < std::chrono::seconds{2});
+
+    // Late callbacks arriving after repository destruction must be ignored safely.
+    const auto result = CookSomeBuildResult();
+    for( auto &cb : icon_builder->captured_callbacks )
+        cb(result);
+    for( auto &block : queued_ui_blocks )
+        block();
+    CHECK_FALSE(updated);
+}
+
+TEST_CASE("QLThumbnailsCacheImpl stores and validates externally decoded thumbnails")
+{
+    QLThumbnailsCacheImpl cache;
+    const std::string path = "/tmp/nonexistent-direct-image.png";
+    const QLThumbnailsCache::FileStateHint hint1{.size = 1024, .mtime = 1700000000};
+    const QLThumbnailsCache::FileStateHint hint2{.size = 2048, .mtime = 1700000001};
+    NSImage *const img1 = [[NSImage alloc] initWithSize:NSMakeSize(64, 48)];
+    NSImage *const img2 = [[NSImage alloc] initWithSize:NSMakeSize(64, 36)];
+
+    CHECK(cache.ThumbnailIfHas(path, 64) == nil);
+    CHECK(cache.ThumbnailIfFresh(path, 64, hint1) == nil);
+
+    cache.StoreThumbnail(path, 64, hint1, img1);
+    CHECK(cache.ThumbnailIfHas(path, 64) == img1);
+    CHECK(cache.ThumbnailIfFresh(path, 64, hint1) == img1);
+    CHECK(cache.ThumbnailIfFresh(path, 64, hint2) == nil);
+    CHECK(cache.ThumbnailIfHas(path, 32) == nil);
+
+    cache.StoreThumbnail(path, 64, hint2, img2);
+    CHECK(cache.ThumbnailIfHas(path, 64) == img2);
+    CHECK(cache.ThumbnailIfFresh(path, 64, hint2) == img2);
+    CHECK(cache.ThumbnailIfFresh(path, 64, hint1) == nil);
 }
 
 static IconBuilder::BuildResult CookSomeBuildResult()

@@ -30,9 +30,11 @@ ROOT_DIR=$(cd "$SCRIPTS_DIR/.." && pwd)
 XCODEPROJ="../Source/NimbleCommander/NimbleCommander.xcodeproj"
 PBUDDY=/usr/libexec/PlistBuddy
 
-# Build Help.pdf and copy it into the NC sources
-${SCRIPTS_DIR}/build_help.sh
-cp -f "${SCRIPTS_DIR}/build_help.tmp/Help.pdf" "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf"
+# Help.pdf is a tracked artifact; only build it if missing or empty so builds do not dirty the tree.
+if [ ! -s "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf" ]; then
+    ${SCRIPTS_DIR}/build_help.sh
+    cp -f "${SCRIPTS_DIR}/build_help.tmp/Help.pdf" "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf"
+fi
 
 XC="xcodebuild \
  -project ${XCODEPROJ} \
