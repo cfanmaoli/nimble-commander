@@ -40,59 +40,35 @@ While this source code mirrors that of the official Nimble Commander-Fork builds
 
 ## Admin Mode and the privileged helper
 
-Admin Mode runs a privileged helper as a launchd daemon:
+Admin Mode runs a privileged helper as a launchd daemon registered through `SMAppService` (macOS 13+):
 
-* `/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist`
-* `/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2`
+* plist inside the app bundle: `Contents/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV3.plist`
+* helper executable inside the app bundle: `Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV2`
 
-The application installs it with `SMJobBless()` the first time Admin Mode is enabled, and macOS asks
-for administrator credentials. Both sides declare the code-signing requirement the other has to
-satisfy:
+The first time Admin Mode is enabled, the application registers the daemon with `SMAppService` and
+prompts you to approve **Nimble Commander-Fork** in *System Settings → General → Login Items &
+Extensions*. Once approved, `launchd` starts the helper on demand directly from inside the
+application bundle (no copy is placed in `/Library/PrivilegedHelperTools`).
 
-* the application lists the helper in `SMPrivilegedExecutables` (`NimbleCommander-NonMAS-Info.plist`);
-* the helper lists its clients in `SMAuthorizedClients` (`Source/RoutedIO/source/PrivilegedIOHelper-Info.plist`).
+The helper verifies incoming XPC clients against the team-bound code-signing requirement
+(`certificate leaf[subject.OU] = "359W39ZS37"`) in `Source/RoutedIO/source/PrivilegedIOHelper.cpp`
+using both `SecStaticCodeCheckValidity` and `xpc_connection_set_peer_code_signing_requirement`,
+along with hardened runtime / library validation. Using `subject.OU` rather than a certificate's
+common name keeps the requirement working across both Apple Development and Developer ID
+certificates of the same team. If the signing team changes, update `g_SignatureRequirement` in
+`Source/RoutedIO/source/PrivilegedIOHelper.cpp`.
 
-With a locally signed build both requirements point at the signing team rather than at a developer's
-name - e.g. `certificate leaf[subject.OU] = "359W39ZS37"` - because the CN of an Apple Development
-certificate contains the developer's Apple ID, which has no business being in the sources. If the
-certificate or the team ever changes, update both plists, otherwise the helper will silently reject
-the application.
-
-Two things to keep in mind while developing:
-
-* The helper lives outside the application bundle, so it is **not** replaced when the application is
-  rebuilt and reinstalled - it is updated only when Admin Mode is enabled again.
-  Reinstalling the app does not update the installed helper; a fresh Admin Mode toggle (with an
-  administrator password) updates it.
-* `SMJobBless()` replaces an installed helper only when its `CFBundleVersion`
-  (`Source/RoutedIO/source/PrivilegedIOHelper-Info.plist`) is greater - bump it whenever the helper's
-  code changes.
-
-The helper identifies its clients by the requirement above plus the fact that the client lives in an
-application bundle. It deliberately does not match the executable's file name, which used to break
-every time the application was renamed.
-
-To check what is installed:
+To check or reset the registered daemon:
 
 ```sh
-# is the installed helper the same as the bundled one?
-shasum /Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2 \
-       "/Applications/Nimble Commander-Fork.app/Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV2"
-
-# is the daemon running?
-launchctl print system/info.filesmanager.Files.PrivilegedIOHelperV2
+# is the SMAppService daemon loaded?
+launchctl print system/info.filesmanager.Files.PrivilegedIOHelperV3
 
 # did the helper accept or reject a connection?
 log show --last 10m --style compact --predicate 'process == "info.filesmanager.Files.PrivilegedIOHelperV2"'
-```
 
-If the application reports *"Failed to access the privileged helper."* and cannot recover by itself,
-remove the outdated helper and enable Admin Mode again:
-
-```sh
-sudo launchctl bootout system/info.filesmanager.Files.PrivilegedIOHelperV2
-sudo rm -f /Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist \
-           /Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2
+# unregister the SMAppService daemon (and remove any legacy 1.9.x SMJobBless helper when run with sudo)
+sudo "/Applications/Nimble Commander-Fork.app/Contents/MacOS/Nimble Commander-Fork" --uninstall-privileged-helper
 ```
 
 ## Implementation Notes

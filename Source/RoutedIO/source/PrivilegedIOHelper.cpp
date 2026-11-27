@@ -20,7 +20,7 @@ static const char *g_SignatureRequirement = "identifier info.filesmanager.Files 
                                             "anchor apple generic and "
                                             "certificate leaf[subject.OU] = \"359W39ZS37\"";
 
-static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV2";
+static const char *g_ServiceName = "info.filesmanager.Files.PrivilegedIOHelperV3";
 
 #define syslog_error(...) syslog(LOG_ERR, __VA_ARGS__)
 #define syslog_warning(...) syslog(LOG_WARNING, __VA_ARGS__)
@@ -70,8 +70,14 @@ static bool HandleHeartbeat(xpc_object_t _event) noexcept
 
 static bool HandleUninstall(xpc_object_t _event) noexcept
 {
-    char path[1024];
+    char path[1024] = {0};
     proc_pidpath(getpid(), path, sizeof(path));
+    // Under SMAppService the helper lives inside the application bundle and must never unlink
+    // itself; only allow legacy /Library/PrivilegedHelperTools/ binaries to self-remove.
+    if( !std::string_view{path}.starts_with("/Library/PrivilegedHelperTools/") ) {
+        send_reply_error(_event, EPERM);
+        return true;
+    }
     if( unlink(path) == 0 ) {
         send_reply_ok(_event);
     }

@@ -788,6 +788,39 @@
         }
       }
     },
+    "Approval Required for Admin Mode" : {
+      "comment" : "Alert title when SMAppService privileged daemon requires approval",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理员模式需要系统批准"
+          }
+        }
+      }
+    },
+    "Enable Nimble Commander-Fork in System Settings \u2192 General \u2192 Login Items & Extensions, then turn Admin Mode on again." : {
+      "comment" : "Alert text explaining how to approve the privileged helper daemon in System Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在“系统设置 → 通用 → 登录项与扩展”中允许 Nimble Commander-Fork，然后重新启用管理员模式。"
+          }
+        }
+      }
+    },
+    "Open System Settings" : {
+      "comment" : "Button to open System Settings Login Items for daemon approval",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开系统设置"
+          }
+        }
+      }
+    },
     "Failed to access the privileged helper." : {
       "comment" : "Information that toggling admin mode on has failed",
       "localizations" : {

@@ -2,6 +2,7 @@
 #include "Interactions.h"
 #include <Base/CommonPaths.h>
 #include <NimbleCommander/Core/Alert.h>
+#include <RoutedIO/RoutedIO.h>
 #include <Utility/StringExtras.h>
 
 namespace nc::bootstrap {
@@ -47,6 +48,25 @@ void WarnAboutFailingToAccessPrivilegedHelper()
     alert.messageText = msg;
     [alert addButtonWithTitle:NSLocalizedString(@"OK", "")];
     [alert runModal];
+}
+
+void InformAboutPrivilegedHelperApprovalRequired()
+{
+    const auto msg = NSLocalizedString(@"Approval Required for Admin Mode",
+                                       "Alert title when SMAppService privileged daemon requires approval");
+    const auto info = NSLocalizedString(
+        @"Enable Nimble Commander-Fork in System Settings \u2192 General \u2192 Login Items & Extensions, then turn "
+        @"Admin Mode on again.",
+        "Alert text explaining how to approve the privileged helper daemon in System Settings");
+
+    Alert *const alert = [[Alert alloc] init];
+    alert.messageText = msg;
+    alert.informativeText = info;
+    [alert addButtonWithTitle:NSLocalizedString(@"Open System Settings",
+                                                "Button to open System Settings Login Items for daemon approval")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Cancel", "")];
+    if( [alert runModal] == NSAlertFirstButtonReturn )
+        nc::routedio::RoutedIO::OpenSystemSettingsLoginItems();
 }
 
 } // namespace nc::bootstrap

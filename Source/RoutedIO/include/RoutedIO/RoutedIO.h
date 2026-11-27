@@ -61,25 +61,28 @@ public:
     static RoutedIO &Instance();
 
     bool Enabled() const noexcept;
+    bool RequiresApproval() const noexcept;
     bool TurnOn();
     void TurnOff();
 
     xpc_connection_t Connection();
     bool IsHelperAlive(); // blocking I/O
 
+    static void OpenSystemSettingsLoginItems() noexcept;
     static void InstallViaRootCLI();
     static void UninstallViaRootCLI();
 
 private:
     bool Connect();
-    bool AskToInstallHelper();
-    static bool IsHelperInstalled();
-    static bool IsHelperCurrent();
+    bool EnsureHelperRegistered();
+    bool ReRegisterHelper();
+    void CleanupLegacyHelperIfPresent();
     bool ConnectionAvailable();
     bool AuthenticateAsAdmin();
     bool SayImAuthenticated(xpc_connection_t _connection) noexcept;
 
     std::atomic_bool m_Enabled{false};
+    std::atomic_bool m_RequiresApproval{false};
     std::atomic_bool m_AuthenticatedAsAdmin{false};
     xpc_connection_t m_Connection = nullptr;
     bool m_Sandboxed = false;

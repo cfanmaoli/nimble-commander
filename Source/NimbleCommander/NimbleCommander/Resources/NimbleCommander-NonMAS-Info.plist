@@ -86,11 +86,6 @@ All rights reserved.</string>
 			</array>
 		</dict>
 	</array>
-	<key>SMPrivilegedExecutables</key>
-	<dict>
-		<key>info.filesmanager.Files.PrivilegedIOHelperV2</key>
-		<string>identifier info.filesmanager.Files.PrivilegedIOHelperV2 and anchor apple generic and certificate leaf[subject.OU] = "359W39ZS37"</string>
-	</dict>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/cfanmaoli/nimble-commander/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>

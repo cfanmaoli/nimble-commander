@@ -347,6 +347,8 @@
 		CFC706622B49831B0045D2C9 /* Sparkle.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		CF2026112700000000000002 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = CF2026112700000000000001 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist */; };
+		CF2026112700000000000003 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = CF2026112700000000000001 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist */; };
 		CFC7066E2B49AF6D0045D2C9 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; };
 		CFC762782D3C53B6000498AA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CFC762772D3C53B6000498AA /* Localizable.xcstrings */; };
 		CFC762792D3C53B6000498AA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CFC762772D3C53B6000498AA /* Localizable.xcstrings */; };
@@ -866,6 +868,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CF2026112700000000000004 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				CF2026112700000000000002 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF2026112700000000000005 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				CF2026112700000000000003 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -1087,6 +1109,7 @@
 		AB12CD34EF5600000000002C /* ParallelContentSearch_UT.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ParallelContentSearch_UT.mm; path = NimbleCommander/Tests/ParallelContentSearch_UT.mm; sourceTree = "<group>"; };
 		CF67F1C42954BF9400B92944 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PreferencesWindowThemesTabAutomaticSwitchingSheet.xib; sourceTree = "<group>"; };
 		CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RoutedIO.xcodeproj; path = ../RoutedIO/RoutedIO.xcodeproj; sourceTree = "<group>"; };
+		CF2026112700000000000001 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = info.filesmanager.Files.PrivilegedIOHelperV3.plist; path = ../RoutedIO/source/info.filesmanager.Files.PrivilegedIOHelperV3.plist; sourceTree = SOURCE_ROOT; };
 		CF69CFD61DA2250C00992B84 /* VFS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VFS.xcodeproj; path = ../VFS/VFS.xcodeproj; sourceTree = "<group>"; };
 		CF6BF80C219140360017CECB /* PanelBriefViewFixedWidthLayout.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = PanelBriefViewFixedWidthLayout.mm; path = NimbleCommander/States/FilePanels/Brief/PanelBriefViewFixedWidthLayout.mm; sourceTree = "<group>"; };
 		CF6BF820219140360017CECB /* PanelBriefViewFixedWidthLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PanelBriefViewFixedWidthLayout.h; path = NimbleCommander/States/FilePanels/Brief/PanelBriefViewFixedWidthLayout.h; sourceTree = "<group>"; };
@@ -2413,6 +2436,7 @@
 			buildPhases = (
 				CFA53A681D433E2A00C562A7 /* Copy Files */,
 				CFA53A661D433E2A00C562A7 /* CopyFiles */,
+				CF2026112700000000000005 /* CopyFiles */,
 				CF4AC4F52C11066200475EDC /* CopyFiles */,
 				CFA5395C1D433E2A00C562A7 /* Sources */,
 				CFA53A181D433E2A00C562A7 /* Frameworks */,
@@ -2439,6 +2463,7 @@
 				CF52C3CD22BEA5570043E825 /* CopyFiles */,
 				CF4AC4F12C10F8E700475EDC /* CopyFiles */,
 				CFD54FC41A29C67C0098A4A9 /* CopyFiles */,
+				CF2026112700000000000004 /* CopyFiles */,
 				CFC5120D16C4BD3D00D247EE /* Sources */,
 				CFC5120E16C4BD3D00D247EE /* Frameworks */,
 				CFC5120F16C4BD3D00D247EE /* Resources */,

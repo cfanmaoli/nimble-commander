@@ -5,6 +5,7 @@
 #include <Cocoa/Cocoa.h>
 #endif
 
+#include <cstdint>
 #include <string>
 
 namespace nc::routedio {
@@ -17,7 +18,24 @@ NSString *NSLocalizedString(NSString *_key, const char *_comment) noexcept;
 
 #endif
 
+enum class DaemonServiceStatus : uint8_t {
+    NotRegistered,
+    Enabled,
+    RequiresApproval,
+    NotFound,
+};
+
+struct DaemonServiceResult {
+    bool ok = false;
+    DaemonServiceStatus status = DaemonServiceStatus::NotFound;
+    std::string error;
+};
+
+DaemonServiceStatus QueryDaemonServiceStatus(const char *_plist_name) noexcept;
+DaemonServiceResult RegisterDaemonService(const char *_plist_name) noexcept;
+DaemonServiceResult UnregisterDaemonService(const char *_plist_name) noexcept;
+void OpenSystemSettingsLoginItems() noexcept;
+
 std::string MessageAuthAsAdmin() noexcept;
-std::string MessageInstallHelperApp() noexcept;
 
 } // namespace nc::routedio

@@ -633,8 +633,12 @@ static NCAppDelegate *g_Me = nil;
         RoutedIO::Instance().TurnOff();
     else {
         const auto turned_on = RoutedIO::Instance().TurnOn();
-        if( !turned_on )
-            WarnAboutFailingToAccessPrivilegedHelper();
+        if( !turned_on ) {
+            if( RoutedIO::Instance().RequiresApproval() )
+                InformAboutPrivilegedHelperApprovalRequired();
+            else
+                WarnAboutFailingToAccessPrivilegedHelper();
+        }
     }
 
     self.dock.SetAdminBadge(RoutedIO::Instance().Enabled());

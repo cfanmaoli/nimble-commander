@@ -1044,10 +1044,8 @@ Hovering the mouse cursor over a UI element will display context help, which may
 `~/Library/Saved Application State/info.filesmanager.Files.savedState`
 - Application defaults (managed by macOS):  
 `~/Library/Preferences/info.filesmanager.Files.plist`
-- Admin Mode helper binary (managed by macOS):  
-`/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2`
-- Admin Mode helper configuration (managed by macOS):  
-`/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist`
+- Admin Mode helper daemon (managed by macOS via `SMAppService`):  
+  embedded inside the application bundle (`Contents/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV3.plist`) and controlled in *System Settings → General → Login Items & Extensions*
 
 ---
 

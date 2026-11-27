@@ -33,6 +33,10 @@
 - Replaced deprecated per-service sharing enumeration with the system sharing picker anchored to
   the selected row, and removed the keyboard shortcut from Empty Trash while highlighting
   Option-Delete Permanently in red.
+- Migrated Admin Mode's privileged helper daemon from deprecated `SMJobBless` to `SMAppService`
+  (`Contents/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV3.plist`), running
+  on demand from inside the application bundle with guided System Settings approval and automatic
+  cleanup of legacy `SMJobBless` helper files.
 - Switched the Help menu action to open the online user guide (`Docs/Help.md`) in the default
   browser instead of bundling `Help.pdf` inside the app.
 

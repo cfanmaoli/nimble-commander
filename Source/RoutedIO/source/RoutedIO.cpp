@@ -1,15 +1,11 @@
-// Copyright (C) 2014-2023 Michael Kazakov. Subject to GNU General Public License version 3.
-#include <ServiceManagement/ServiceManagement.h>
+// Copyright (C) 2014-2026 Michael Kazakov. Subject to GNU General Public License version 3.
 #include <Security/Security.h>
-#include <Base/CommonPaths.h>
-#include <Base/CFString.h>
-#include <Base/CFPtr.h>
 #include <Utility/SystemInformation.h>
 #include <RoutedIO/RoutedIO.h>
 #include <RoutedIO/Log.h>
-#include <optional>
-#include <vector>
 #include <iostream>
+#include <string>
+#include <unistd.h>
 #include "RoutedIOInterfaces.h"
 #include "Internal.h"
 
@@ -21,8 +17,11 @@ static PosixIOInterface &IOWrappedCreateProxy();
 PosixIOInterface &RoutedIO::Direct = IODirectCreateProxy();
 PosixIOInterface &RoutedIO::Default = IOWrappedCreateProxy();
 
-static const char *g_HelperLabel = "info.filesmanager.Files.PrivilegedIOHelperV2";
-static CFStringRef g_HelperLabelCF = base::CFStringCreateWithUTF8StringNoCopy(g_HelperLabel);
+static const char *g_HelperLabel = "info.filesmanager.Files.PrivilegedIOHelperV3";
+static const char *g_HelperPlistName = "info.filesmanager.Files.PrivilegedIOHelperV3.plist";
+static const char *g_LegacyHelperLabel = "info.filesmanager.Files.PrivilegedIOHelperV2";
+static const char *g_LegacyPlistPath = "/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV2.plist";
+static const char *g_LegacyBinaryPath = "/Library/PrivilegedHelperTools/info.filesmanager.Files.PrivilegedIOHelperV2";
 
 static const char *AuthRCToString(OSStatus _rc) noexcept;
 
@@ -41,47 +40,6 @@ static PosixIOInterface &IOWrappedCreateProxy()
     return *interface;
 }
 
-static std::optional<std::vector<std::uint8_t>> ReadFile(const char *_path)
-{
-    const int fd = open(_path, O_RDONLY);
-    if( fd < 0 )
-        return std::nullopt;
-
-    const long size = lseek(fd, 0, SEEK_END);
-    lseek(fd, 0, SEEK_SET);
-
-    auto buf = std::vector<std::uint8_t>(size);
-
-    uint8_t *buftmp = buf.data();
-    uint64_t szleft = size;
-    while( szleft ) {
-        const ssize_t r = read(fd, buftmp, szleft);
-        if( r < 0 ) {
-            close(fd);
-            return std::nullopt;
-        }
-        szleft -= r;
-        buftmp += r;
-    }
-
-    close(fd);
-    return std::move(buf);
-}
-
-static const char *InstalledPath()
-{
-    using namespace std::string_literals;
-    [[clang::no_destroy]] static const std::string s = "/Library/PrivilegedHelperTools/"s + g_HelperLabel;
-    return s.c_str();
-}
-
-static const char *BundledPath()
-{
-    [[clang::no_destroy]] static const std::string s =
-        nc::base::CommonPaths::AppBundle() + "Contents/Library/LaunchServices/" + g_HelperLabel;
-    return s.c_str();
-}
-
 RoutedIO::RoutedIO() : m_Sandboxed(nc::utility::IsThisProcessSandboxed())
 {
 }
@@ -92,23 +50,93 @@ RoutedIO &RoutedIO::Instance()
     return inst;
 }
 
-bool RoutedIO::IsHelperInstalled()
+bool RoutedIO::RequiresApproval() const noexcept
 {
-    return access(InstalledPath(), R_OK) == 0;
+    return m_RequiresApproval;
 }
 
-bool RoutedIO::IsHelperCurrent()
+void RoutedIO::OpenSystemSettingsLoginItems() noexcept
 {
-    auto inst = ReadFile(InstalledPath());
-    auto bund = ReadFile(BundledPath());
+    nc::routedio::OpenSystemSettingsLoginItems();
+}
 
-    if( !inst || !bund )
+bool RoutedIO::EnsureHelperRegistered()
+{
+    if( m_Sandboxed ) {
+        Log::Error("RoutedIO::EnsureHelperRegistered() was called in a sandboxed process");
         return false;
+    }
 
-    if( inst->size() != bund->size() )
+    DaemonServiceStatus status = QueryDaemonServiceStatus(g_HelperPlistName);
+    if( status == DaemonServiceStatus::Enabled )
+        return true;
+
+    if( status == DaemonServiceStatus::NotRegistered || status == DaemonServiceStatus::NotFound ) {
+        const DaemonServiceResult res = RegisterDaemonService(g_HelperPlistName);
+        status = res.status;
+        if( res.ok && status == DaemonServiceStatus::Enabled ) {
+            Log::Info("Registered privileged helper daemon via SMAppService");
+            return true;
+        }
+        if( status == DaemonServiceStatus::RequiresApproval ) {
+            Log::Info("Privileged helper daemon registered; awaiting user approval in System Settings");
+            m_RequiresApproval = true;
+            return false;
+        }
+        if( !res.ok ) {
+            Log::Error("Failed to register privileged helper daemon via SMAppService: {}", res.error);
+            return false;
+        }
+    }
+
+    if( status == DaemonServiceStatus::RequiresApproval ) {
+        Log::Info("Privileged helper daemon requires approval in System Settings");
+        m_RequiresApproval = true;
         return false;
+    }
 
-    return memcmp(inst->data(), bund->data(), inst->size()) == 0;
+    return status == DaemonServiceStatus::Enabled;
+}
+
+bool RoutedIO::ReRegisterHelper()
+{
+    Log::Warn("Re-registering privileged helper daemon via SMAppService");
+    const DaemonServiceResult unreg = UnregisterDaemonService(g_HelperPlistName);
+    if( !unreg.ok )
+        Log::Warn("SMAppService unregister returned: {}", unreg.error);
+
+    const DaemonServiceResult reg = RegisterDaemonService(g_HelperPlistName);
+    if( reg.status == DaemonServiceStatus::RequiresApproval ) {
+        m_RequiresApproval = true;
+        return false;
+    }
+    if( !reg.ok && reg.status != DaemonServiceStatus::Enabled ) {
+        Log::Error("SMAppService re-register failed: {}", reg.error);
+        return false;
+    }
+    return reg.status == DaemonServiceStatus::Enabled;
+}
+
+void RoutedIO::CleanupLegacyHelperIfPresent()
+{
+    if( !m_Connection )
+        return;
+
+    const auto unlink_via_helper = [this](const char *_path) {
+        if( access(_path, F_OK) != 0 )
+            return;
+        xpc_object_t message = xpc_dictionary_create(nullptr, nullptr, 0);
+        xpc_dictionary_set_string(message, "operation", "unlink");
+        xpc_dictionary_set_string(message, "path", _path);
+        xpc_object_t reply = xpc_connection_send_message_with_reply_sync(m_Connection, message);
+        xpc_release(message);
+        if( xpc_get_type(reply) != XPC_TYPE_ERROR && xpc_dictionary_get_bool(reply, "ok") )
+            Log::Info("Removed legacy SMJobBless helper artifact: {}", _path);
+        xpc_release(reply);
+    };
+
+    unlink_via_helper(g_LegacyPlistPath);
+    unlink_via_helper(g_LegacyBinaryPath);
 }
 
 bool RoutedIO::TurnOn()
@@ -123,70 +151,41 @@ bool RoutedIO::TurnOn()
     if( m_Enabled )
         return true;
 
-    if( !IsHelperInstalled() ) {
-        Log::Info("The privileged helper is not installed.");
-        if( !AskToInstallHelper() ) {
-            Log::Error("Failed to install the privileged helper.");
-            return false;
-        }
-    }
+    m_RequiresApproval = false;
+
+    if( !EnsureHelperRegistered() )
+        return false;
 
     if( !AuthenticateAsAdmin() ) {
         Log::Error("Failed to authenticate as admin, cannot turn RoutedIO on");
         return false;
     }
 
-    if( IsHelperCurrent() ) {
-        Log::Info("The installed privileged helper is the same as the bundled one.");
-    }
-    else {
-        Log::Warn("Detected an outdated privileged helper.");
-        // we have another version of a helper app
-        if( Connect() && IsHelperAlive() ) {
-            // ask helper it remove itself and then to exit gracefully
-            xpc_connection_t connection = m_Connection;
-
-            xpc_object_t message = xpc_dictionary_create(nullptr, nullptr, 0);
-            xpc_dictionary_set_string(message, "operation", "uninstall");
-            xpc_object_t reply = xpc_connection_send_message_with_reply_sync(connection, message);
-            xpc_release(message);
-            xpc_release(reply);
-
-            message = xpc_dictionary_create(nullptr, nullptr, 0);
-            xpc_dictionary_set_string(message, "operation", "exit");
-            xpc_connection_send_message_with_reply(connection,
-                                                   message,
-                                                   dispatch_get_main_queue(),
-                                                   ^([[maybe_unused]] xpc_object_t _event){
-                                                   });
-            xpc_release(message);
-
+    if( !Connect() || !IsHelperAlive() ) {
+        if( m_Connection ) {
+            xpc_connection_cancel(m_Connection);
             xpc_release(m_Connection);
             m_Connection = nullptr;
-
-            if( !AskToInstallHelper() ) {
-                Log::Error("Failed to install the privileged helper.");
-                return false;
-            }
         }
-        else {
-            // The helper is not current and we can't ask it to remove itself - it may be an old
-            // build whose client checks no longer accept this application. Ask to install the
-            // bundled helper anyway: SMJobBless replaces an installed helper with a newer
-            // CFBundleVersion, so this is the way out of that state.
-            Log::Warn("Failed to communicate with an outdated helper, replacing it directly.");
-            if( !AskToInstallHelper() ) {
-                Log::Error("Failed to install the privileged helper.");
-                return false;
+        // Per SMAppService documentation, updating the app bundle can require unregistering and
+        // re-registering the daemon before launchd will bootstrap the updated binary.
+        if( !ReRegisterHelper() )
+            return false;
+        if( !Connect() || !IsHelperAlive() ) {
+            if( m_Connection ) {
+                xpc_connection_cancel(m_Connection);
+                xpc_release(m_Connection);
+                m_Connection = nullptr;
             }
+            Log::Error("Failed to connect to privileged helper after re-registration.");
+            return false;
         }
     }
 
-    if( Connect() )
-        m_Enabled = true;
+    m_Enabled = true;
+    CleanupLegacyHelperIfPresent();
 
     Log::Info("RoutedIO enabled={}", m_Enabled.load());
-
     return m_Enabled;
 }
 
@@ -200,6 +199,7 @@ void RoutedIO::TurnOff()
         m_Connection = nullptr;
     }
     m_Enabled = false;
+    m_RequiresApproval = false;
     m_AuthenticatedAsAdmin = false;
 
     Log::Info("RoutedIO enabled={}", m_Enabled.load());
@@ -219,71 +219,6 @@ bool RoutedIO::SayImAuthenticated(xpc_connection_t _connection) noexcept
             result = true;
 
     xpc_release(reply);
-    return result;
-}
-
-bool RoutedIO::AskToInstallHelper()
-{
-    if( m_Sandboxed ) {
-        Log::Error("RoutedIO::AskToInstallHelper() was called in a sandboxed process");
-        return false;
-    }
-
-    AuthorizationItem auth_item = {
-        .name = kSMRightBlessPrivilegedHelper, .valueLength = 0, .value = nullptr, .flags = 0};
-    const AuthorizationRights auth_rights = {.count = 1, .items = &auth_item};
-    const AuthorizationFlags flags =
-        kAuthorizationFlagInteractionAllowed | kAuthorizationFlagPreAuthorize | kAuthorizationFlagExtendRights;
-    AuthorizationRef auth_ref = nullptr;
-
-    // Provide a text prompt for the request
-    std::string prompt = MessageInstallHelperApp();
-    AuthorizationItem auth_env_item = {
-        .name = kAuthorizationEnvironmentPrompt, .valueLength = prompt.size(), .value = prompt.data(), .flags = 0};
-    const AuthorizationEnvironment auth_env = {.count = 1, .items = &auth_env_item};
-
-    // Obtain the right to install privileged helper tools (kSMRightBlessPrivilegedHelper).
-    const OSStatus status = AuthorizationCreate(&auth_rights, &auth_env, flags, &auth_ref);
-    if( status == errAuthorizationSuccess ) {
-        Log::Info("Successfully authenticated for SMRightBless");
-    }
-    else {
-        Log::Error("RoutedIO::AskToInstallHelper() failed to execute AuthorizationCreate() with "
-                   "the error: {}.",
-                   AuthRCToString(status));
-        return false;
-    }
-
-    // We implicitly assume that admin auth was provided
-    m_AuthenticatedAsAdmin = true;
-    CFErrorRef error;
-
-    // SMJobBless is deprecated in macOS 13 in favour of SMAppService, but the helper registration
-    // and on-disk layout still use SMJobBless; keep it until that migration is done.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    const bool result = SMJobBless(kSMDomainSystemLaunchd, g_HelperLabelCF, auth_ref, &error);
-#pragma clang diagnostic pop
-    if( result ) {
-        Log::Info("Successfully installed a privileged helper");
-    }
-    else if( error != nullptr ) {
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyDescription(error)) )
-            Log::Error("RoutedIO::AskToInstallHelper() SMJobBless failed with error: {}. ",
-                       base::CFStringGetUTF8StdString(desc.get()));
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyFailureReason(error)) )
-            Log::Error("RoutedIO::AskToInstallHelper() SMJobBless failed with "
-                       "failure reason: {}. ",
-                       base::CFStringGetUTF8StdString(desc.get()));
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyRecoverySuggestion(error)) )
-            Log::Error("RoutedIO::AskToInstallHelper() SMJobBless failed with "
-                       "recovery suggestion: {}. ",
-                       base::CFStringGetUTF8StdString(desc.get()));
-        CFRelease(error);
-    }
-
-    AuthorizationFree(auth_ref, kAuthorizationFlagDefaults);
-
     return result;
 }
 
@@ -362,6 +297,7 @@ bool RoutedIO::Connect()
     if( !SayImAuthenticated(connection) ) {
         Log::Error("RoutedIO::Connect() failed to call SayImAuthenticated()");
         xpc_connection_cancel(connection);
+        xpc_release(connection);
         return false;
     }
 
@@ -423,63 +359,44 @@ bool RoutedIO::Enabled() const noexcept
 
 void RoutedIO::InstallViaRootCLI()
 {
-    if( geteuid() != 0 ) {
-        std::cerr << "this command must be executed with root rights." << '\n';
-        return;
-    }
-
     if( utility::IsThisProcessSandboxed() ) {
         std::cerr << "must be not a sandboxed process." << '\n';
         return;
     }
 
-    AuthorizationItem auth_item = {
-        .name = kSMRightBlessPrivilegedHelper, .valueLength = 0, .value = nullptr, .flags = 0};
-    const AuthorizationRights auth_rights = {.count = 1, .items = &auth_item};
-    const AuthorizationFlags flags = kAuthorizationFlagPreAuthorize | kAuthorizationFlagExtendRights;
-    AuthorizationRef auth_ref = nullptr;
-
-    // Obtain the right to install privileged helper tools (kSMRightBlessPrivilegedHelper).
-    const OSStatus status = AuthorizationCreate(&auth_rights, nullptr, flags, &auth_ref);
-    if( status != errAuthorizationSuccess ) {
-        std::cerr << "AuthorizationCreate() failed with the error: " << AuthRCToString(status) << "." << '\n';
-        return;
+    const DaemonServiceResult res = RegisterDaemonService(g_HelperPlistName);
+    if( res.status == DaemonServiceStatus::Enabled ) {
+        std::cout << "Privileged helper daemon is registered and enabled." << '\n';
     }
-
-    CFErrorRef error = nullptr;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    const bool result = SMJobBless(kSMDomainSystemLaunchd, g_HelperLabelCF, auth_ref, &error);
-#pragma clang diagnostic pop
-    if( !result && error != nullptr ) {
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyDescription(error)) )
-            std::cerr << base::CFStringGetUTF8StdString(desc.get()) << '\n';
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyFailureReason(error)) )
-            std::cerr << base::CFStringGetUTF8StdString(desc.get()) << '\n';
-        if( const auto desc = base::CFPtr<CFStringRef>::adopt(CFErrorCopyRecoverySuggestion(error)) )
-            std::cerr << base::CFStringGetUTF8StdString(desc.get()) << '\n';
-        CFRelease(error);
+    else if( res.status == DaemonServiceStatus::RequiresApproval ) {
+        std::cout << "Privileged helper daemon registered. Approve Nimble Commander-Fork in "
+                     "System Settings -> General -> Login Items & Extensions."
+                  << '\n';
     }
-
-    AuthorizationFree(auth_ref, kAuthorizationFlagDefaults);
+    else {
+        std::cerr << "Failed to register privileged helper daemon: " << res.error << '\n';
+    }
 }
+
 void RoutedIO::UninstallViaRootCLI()
 {
     using namespace std::string_literals;
 
-    if( geteuid() != 0 ) {
-        std::cerr << "this command must be executed with root rights." << '\n';
-        return;
-    }
-
     if( utility::IsThisProcessSandboxed() ) {
         std::cerr << "must be not a sandboxed process." << '\n';
         return;
     }
 
-    system(("launchctl unload /Library/LaunchDaemons/"s + g_HelperLabel + ".plist"s).c_str());
-    system(("rm -v /Library/LaunchDaemons/"s + g_HelperLabel + ".plist"s).c_str());
-    system(("rm -v /Library/PrivilegedHelperTools/"s + g_HelperLabel).c_str());
+    const DaemonServiceResult res = UnregisterDaemonService(g_HelperPlistName);
+    if( !res.ok )
+        std::cerr << "SMAppService unregister: " << res.error << '\n';
+
+    // Also remove any legacy SMJobBless V2 helper left behind by older releases when run as root.
+    if( geteuid() == 0 && (access(g_LegacyPlistPath, F_OK) == 0 || access(g_LegacyBinaryPath, F_OK) == 0) ) {
+        system(("launchctl bootout system/"s + g_LegacyHelperLabel).c_str());
+        unlink(g_LegacyPlistPath);
+        unlink(g_LegacyBinaryPath);
+    }
 }
 
 PosixIOInterface::~PosixIOInterface() = default;
@@ -521,4 +438,5 @@ static const char *AuthRCToString(OSStatus _rc) noexcept
             return "Unknown OSStatus";
     }
 }
+
 } // namespace nc::routedio
