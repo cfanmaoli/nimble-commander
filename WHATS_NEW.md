@@ -1,5 +1,22 @@
 # What's New in Nimble Commander-Fork
 
+## Version 2.0.1 (27 Nov 2026)
+
+### Admin Mode & Privileged Helper
+- Automatically unloads (`launchctl bootout`) any leftover legacy `SMJobBless` V2 daemon once the
+  `SMAppService` V3 helper activates, and validates the running helper's protocol version and bundle
+  path so outdated instances are cleanly replaced.
+- Fixed an `SMAppService` re-registration race with `backgroundtaskmanagementd` by trying direct
+  registration first when `launchd` has not bootstrapped the job and spacing out retries after
+  `unregister`.
+
+### Trash & Documentation
+- Removed the built-in Empty Trash command (`Command > Empty Trash…`); emptying the Trash is
+  intentionally left to the macOS system Trash, while `Move To Trash`, `Go > Trash`, and `Put Back`
+  remain available.
+- Audited and updated `Docs/Help.md` for 2.0+ accuracy and added a Simplified Chinese user guide
+  (`Docs/Help.zh-Hans.md`).
+
 ## Version 2.0 (27 Nov 2026)
 
 ### Platform and architecture
