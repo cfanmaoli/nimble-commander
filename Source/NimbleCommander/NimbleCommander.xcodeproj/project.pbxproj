@@ -345,8 +345,8 @@
 		CFC706582B497FB90045D2C9 /* ViewerResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CFC706102B497D680045D2C9 /* ViewerResources.bundle */; };
 		CFC706602B4983020045D2C9 /* Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CFC706622B49831B0045D2C9 /* Sparkle.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 in CopyFiles */ = {isa = PBXBuildFile; fileRef = CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		CF2026112700000000000002 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = CF2026112700000000000001 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist */; };
 		CF2026112700000000000003 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = CF2026112700000000000001 /* info.filesmanager.Files.PrivilegedIOHelperV3.plist */; };
 		CFC7066E2B49AF6D0045D2C9 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFC706462B497F5C0045D2C9 /* Sparkle.framework */; };
@@ -447,7 +447,7 @@
 			containerPortal = CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = CF69CFB31DA209F000992B84;
-			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV2;
+			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV3;
 		};
 		CF5BF7132BF2B3330057C92E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -461,7 +461,7 @@
 			containerPortal = CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = CF69CFB31DA209F000992B84;
-			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV2;
+			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV3;
 		};
 		CF5BF7DC2C0B8D230057C92E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -573,7 +573,7 @@
 			containerPortal = CF69CF961DA2003C00992B84 /* RoutedIO.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = CF69CFB41DA209F000992B84;
-			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV2;
+			remoteInfo = info.filesmanager.Files.PrivilegedIOHelperV3;
 		};
 		CFC705E02B497D1A0045D2C9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -843,7 +843,7 @@
 			dstPath = Contents/Library/LaunchServices;
 			dstSubfolderSpec = 1;
 			files = (
-				CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */,
+				CFC7066B2B4986150045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -864,7 +864,7 @@
 			dstPath = Contents/Library/LaunchServices;
 			dstSubfolderSpec = 1;
 			files = (
-				CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 in CopyFiles */,
+				CFC7066A2B4986080045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2254,7 +2254,7 @@
 		CFC705D92B497D190045D2C9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */,
+				CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 */,
 				CFC705E12B497D1A0045D2C9 /* libRoutedIO.a */,
 				CFC705E32B497D1A0045D2C9 /* RoutedIOResources.bundle */,
 			);
@@ -2709,10 +2709,10 @@
 			remoteRef = CFC705D72B497D110045D2C9 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV2 */ = {
+		CFC705DF2B497D1A0045D2C9 /* info.filesmanager.Files.PrivilegedIOHelperV3 */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = info.filesmanager.Files.PrivilegedIOHelperV2;
+			path = info.filesmanager.Files.PrivilegedIOHelperV3;
 			remoteRef = CFC705DE2B497D1A0045D2C9 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
@@ -3362,7 +3362,7 @@
 		};
 		CF5BF7122BF2B32A0057C92E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = info.filesmanager.Files.PrivilegedIOHelperV2;
+			name = info.filesmanager.Files.PrivilegedIOHelperV3;
 			targetProxy = CF5BF7112BF2B32A0057C92E /* PBXContainerItemProxy */;
 		};
 		CF5BF7142BF2B3330057C92E /* PBXTargetDependency */ = {
@@ -3372,7 +3372,7 @@
 		};
 		CF5BF7162BF2B3330057C92E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = info.filesmanager.Files.PrivilegedIOHelperV2;
+			name = info.filesmanager.Files.PrivilegedIOHelperV3;
 			targetProxy = CF5BF7152BF2B3330057C92E /* PBXContainerItemProxy */;
 		};
 		CFC706272B497E470045D2C9 /* PBXTargetDependency */ = {

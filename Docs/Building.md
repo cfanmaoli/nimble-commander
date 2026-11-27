@@ -43,7 +43,7 @@ While this source code mirrors that of the official Nimble Commander-Fork builds
 Admin Mode runs a privileged helper as a launchd daemon registered through `SMAppService` (macOS 13+):
 
 * plist inside the app bundle: `Contents/Library/LaunchDaemons/info.filesmanager.Files.PrivilegedIOHelperV3.plist`
-* helper executable inside the app bundle: `Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV2`
+* helper executable inside the app bundle: `Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV3`
 
 The first time Admin Mode is enabled, the application registers the daemon with `SMAppService` and
 prompts you to approve **Nimble Commander-Fork** in *System Settings → General → Login Items &
@@ -65,7 +65,7 @@ To check or reset the registered daemon:
 launchctl print system/info.filesmanager.Files.PrivilegedIOHelperV3
 
 # did the helper accept or reject a connection?
-log show --last 10m --style compact --predicate 'process == "info.filesmanager.Files.PrivilegedIOHelperV2"'
+log show --last 10m --style compact --predicate 'process == "info.filesmanager.Files.PrivilegedIOHelperV3"'
 
 # unregister the SMAppService daemon (and remove any legacy 1.9.x SMJobBless helper when run with sudo)
 sudo "/Applications/Nimble Commander-Fork.app/Contents/MacOS/Nimble Commander-Fork" --uninstall-privileged-helper

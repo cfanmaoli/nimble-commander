@@ -5,7 +5,7 @@
 	<key>Label</key>
 	<string>info.filesmanager.Files.PrivilegedIOHelperV3</string>
 	<key>BundleProgram</key>
-	<string>Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV2</string>
+	<string>Contents/Library/LaunchServices/info.filesmanager.Files.PrivilegedIOHelperV3</string>
 	<key>AssociatedBundleIdentifiers</key>
 	<string>info.filesmanager.Files</string>
 	<key>MachServices</key>

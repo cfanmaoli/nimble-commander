@@ -58,8 +58,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CF69CFB31DA209F000992B84"
-               BuildableName = "info.filesmanager.Files.PrivilegedIOHelperV2"
-               BlueprintName = "info.filesmanager.Files.PrivilegedIOHelperV2"
+               BuildableName = "info.filesmanager.Files.PrivilegedIOHelperV3"
+               BlueprintName = "info.filesmanager.Files.PrivilegedIOHelperV3"
                ReferencedContainer = "container:../RoutedIO/RoutedIO.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>info.filesmanager.Files.PrivilegedIOHelperV2</string>
+	<string>info.filesmanager.Files.PrivilegedIOHelperV3</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>PrivilegedIOHelperV2</string>
+	<string>PrivilegedIOHelperV3</string>
 	<key>CFBundleVersion</key>
-	<string>2.0</string>
+	<string>3.0</string>
 </dict>
 </plist>
