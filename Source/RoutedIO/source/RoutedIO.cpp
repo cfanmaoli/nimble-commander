@@ -3,8 +3,11 @@
 #include <Utility/SystemInformation.h>
 #include <RoutedIO/RoutedIO.h>
 #include <RoutedIO/Log.h>
+#include <array>
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include "RoutedIOInterfaces.h"
 #include "Internal.h"
@@ -108,16 +111,32 @@ bool RoutedIO::ReRegisterHelper()
     if( !unreg.ok )
         Log::Warn("SMAppService unregister returned: {}", unreg.error);
 
-    const DaemonServiceResult reg = RegisterDaemonService(g_HelperPlistName);
-    if( reg.status == DaemonServiceStatus::RequiresApproval ) {
-        m_RequiresApproval = true;
-        return false;
+    // backgroundtaskmanagementd coalesces userDataDidChange (~0.5s) and BTMStore persistence
+    // (~2-3s) asynchronously after unregisterWithCompletionHandler: fires. Calling register too
+    // soon or polling rapidly fails with "Job is not allowed to bootstrap". Space retries out so
+    // BTM can finish committing the unregistered state before re-registering.
+    constexpr std::array<int, 4> retry_delays_ms = {750, 1200, 2000, 3000};
+    DaemonServiceResult reg;
+    for( size_t i = 0; i < retry_delays_ms.size(); ++i ) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(retry_delays_ms[i]));
+        reg = RegisterDaemonService(g_HelperPlistName);
+        if( reg.ok && reg.status == DaemonServiceStatus::Enabled )
+            return true;
+        if( reg.status == DaemonServiceStatus::RequiresApproval ) {
+            m_RequiresApproval = true;
+            return false;
+        }
+        Log::Warn("SMAppService re-register attempt {} failed (status={}): {}",
+                  i + 1,
+                  static_cast<int>(reg.status),
+                  reg.error);
     }
-    if( !reg.ok && reg.status != DaemonServiceStatus::Enabled ) {
-        Log::Error("SMAppService re-register failed: {}", reg.error);
-        return false;
-    }
-    return reg.status == DaemonServiceStatus::Enabled;
+
+    if( reg.status == DaemonServiceStatus::Enabled )
+        return true;
+
+    Log::Error("SMAppService re-register failed: {}", reg.error);
+    return false;
 }
 
 void RoutedIO::CleanupLegacyHelperIfPresent()
@@ -160,31 +179,46 @@ bool RoutedIO::TurnOn()
     }
 
     if( !Connect() || !IsHelperAlive() ) {
-        if( m_Connection ) {
-            // Ask a stale helper instance to exit cleanly before re-registering so launchd starts
-            // the current bundle's PrivilegedIOHelperV3 binary.
-            xpc_object_t exit_msg = xpc_dictionary_create(nullptr, nullptr, 0);
-            xpc_dictionary_set_string(exit_msg, "operation", "exit");
-            xpc_object_t exit_reply = xpc_connection_send_message_with_reply_sync(m_Connection, exit_msg);
-            xpc_release(exit_msg);
-            xpc_release(exit_reply);
-
-            xpc_connection_cancel(m_Connection);
-            xpc_release(m_Connection);
-            m_Connection = nullptr;
+        bool recovered = false;
+        if( !m_Connection ) {
+            // If launchd simply has not bootstrapped the daemon yet while BTM already reports
+            // Enabled, try registering directly before falling back to unregister+register.
+            const DaemonServiceResult reg = RegisterDaemonService(g_HelperPlistName);
+            if( reg.status == DaemonServiceStatus::RequiresApproval ) {
+                m_RequiresApproval = true;
+                return false;
+            }
+            if( reg.ok && reg.status == DaemonServiceStatus::Enabled )
+                recovered = Connect() && IsHelperAlive();
         }
-        // Per SMAppService documentation, updating the app bundle can require unregistering and
-        // re-registering the daemon before launchd will bootstrap the updated binary.
-        if( !ReRegisterHelper() )
-            return false;
-        if( !Connect() || !IsHelperAlive() ) {
+
+        if( !recovered ) {
             if( m_Connection ) {
+                // Ask a stale helper instance to exit cleanly before re-registering so launchd
+                // starts the current bundle's PrivilegedIOHelperV3 binary.
+                xpc_object_t exit_msg = xpc_dictionary_create(nullptr, nullptr, 0);
+                xpc_dictionary_set_string(exit_msg, "operation", "exit");
+                xpc_object_t exit_reply = xpc_connection_send_message_with_reply_sync(m_Connection, exit_msg);
+                xpc_release(exit_msg);
+                xpc_release(exit_reply);
+
                 xpc_connection_cancel(m_Connection);
                 xpc_release(m_Connection);
                 m_Connection = nullptr;
             }
-            Log::Error("Failed to connect to privileged helper after re-registration.");
-            return false;
+            // Per SMAppService documentation, updating the app bundle can require unregistering and
+            // re-registering the daemon before launchd will bootstrap the updated binary.
+            if( !ReRegisterHelper() )
+                return false;
+            if( !Connect() || !IsHelperAlive() ) {
+                if( m_Connection ) {
+                    xpc_connection_cancel(m_Connection);
+                    xpc_release(m_Connection);
+                    m_Connection = nullptr;
+                }
+                Log::Error("Failed to connect to privileged helper after re-registration.");
+                return false;
+            }
         }
     }
 
