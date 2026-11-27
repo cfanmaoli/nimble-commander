@@ -5,9 +5,6 @@ The `Scripts` directory contains a set of useful scripts to be used during devel
 Builds tests and the main application without running so that CodeQL can intercept the commands and perform its analysis afterwards.  
 `xcodebuild` and `xcpretty` must be available in the environment in order for this script to run.  
 
-## `build_help.sh`
-Converts the markdown documention into a pdf placed in `build_help.tmp/Help.pdf`
-
 ## `build_mas_archive.sh`
 Builds and archive Nimble Commander-Fork for submission to MacAppStore.
 

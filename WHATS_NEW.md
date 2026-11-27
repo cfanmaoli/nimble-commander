@@ -33,7 +33,8 @@
 - Replaced deprecated per-service sharing enumeration with the system sharing picker anchored to
   the selected row, and removed the keyboard shortcut from Empty Trash while highlighting
   Option-Delete Permanently in red.
-- Refreshed the bundled Help guide and PDF for 2.0.
+- Switched the Help menu action to open the online user guide (`Docs/Help.md`) in the default
+  browser instead of bundling `Help.pdf` inside the app.
 
 ### Reliability
 - Promise file writes now complete exactly once and release their operation cleanly after the job
@@ -45,9 +46,8 @@
 - Fixed Admin Mode `stat` access/change timestamp mapping and duplicate unlink cleanup on stopped
   compression jobs.
 - Settings import applies atomically after revalidation and handles cleanup failures cleanly.
-- Nightly publishing is gated by integration tests; release builds require a clean tagged tree,
-  non-empty Help.pdf, and verified team signing, and `update_appcast.py` supports two-component
-  release tags (`v2.0`).
+- Nightly publishing is gated by integration tests; release builds require a clean tagged tree and
+  verified team signing, and `update_appcast.py` supports two-component release tags (`v2.0`).
 
 This build is signed with the maintainer's Apple Development identity (team 359W39ZS37), so
 Administrator Mode works; it is not notarised.

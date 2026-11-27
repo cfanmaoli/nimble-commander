@@ -110,9 +110,7 @@ jobs:
           }
 
           const is_documentation = name => typeof name === 'string' &&
-              (name.toLowerCase().endsWith('.md') || name.toLowerCase() === 'appcast.xml') &&
-              // Help.md is rendered into Help.pdf and copied into the app by build_unsigned.sh.
-              name.toLowerCase() !== 'docs/help.md';
+              (name.toLowerCase().endsWith('.md') || name.toLowerCase() === 'appcast.xml');
           const docs_only = files.every(file => {
             if (!is_documentation(file.filename)) return false;
             // A rename from a non-documentation path (or to one) is a code change in disguise.
@@ -324,17 +322,14 @@ jobs:
         path: ~/Library/Caches/Homebrew
         key: brew-${{ runner.os }}-packaging-${{ hashFiles('.github/workflows/build.yml') }}
     - name: Install the dependencies
-      run: brew install create-dmg pandoc basictex
+      run: brew install create-dmg
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0 # the bundle version is the number of commits
     - name: Install the test dependencies
-      # 'gem install' has to happen before path_helper reshuffles the PATH - afterwards it resolves
-      # to the un-writable system ruby.
       run: command -v xcpretty >/dev/null 2>&1 || gem install xcpretty
     - name: Build and package
       run: |
-        eval "$(/usr/libexec/path_helper)"
         cd Scripts && ./build_unsigned.sh
     - uses: actions/upload-artifact@v6
       with:

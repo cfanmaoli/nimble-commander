@@ -616,7 +616,7 @@ static NCAppDelegate *g_Me = nil;
 
 - (IBAction)OnShowHelp:(id) [[maybe_unused]] _sender
 {
-    const auto url = [NSBundle.mainBundle URLForResource:@"Help" withExtension:@"pdf"];
+    const auto url = [NSURL URLWithString:@"https://github.com/cfanmaoli/nimble-commander/blob/main/Docs/Help.md"];
     [NSWorkspace.sharedWorkspace openURL:url];
 }
 

@@ -38,12 +38,6 @@ BUILT_PATH="${BUILD_DIR}/built"
 mkdir -p "${BUILD_DIR}"
 mkdir -p "${ARCHIVE_PATH}"
 
-# Help.pdf is a tracked artifact; only build it if missing or empty so builds do not dirty the tree.
-if [ ! -s "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf" ]; then
-    ${SCRIPTS_DIR}/build_help.sh
-    cp -f "${SCRIPTS_DIR}/build_help.tmp/Help.pdf" "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf"
-fi
-
 # Gather common flags in the XC variable
 XC="xcodebuild \
  -project ${XCODEPROJ} \

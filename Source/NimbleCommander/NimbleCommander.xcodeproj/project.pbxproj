@@ -392,9 +392,6 @@
 		CFDAC2331DFBDE2B0039A104 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CFDAC2321DFBDE2B0039A104 /* main.cpp */; };
 		CFDF44A01D2B990A0062F7AD /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFDF449F1D2B990A0062F7AD /* Media.xcassets */; };
 		CFDF44A11D2B990A0062F7AD /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFDF449F1D2B990A0062F7AD /* Media.xcassets */; };
-		CFE5AF2A2C4434010035CCFA /* Help.pdf in Resources */ = {isa = PBXBuildFile; fileRef = CFE5AF292C4434010035CCFA /* Help.pdf */; };
-		CFE5AF2B2C4434010035CCFA /* Help.pdf in Resources */ = {isa = PBXBuildFile; fileRef = CFE5AF292C4434010035CCFA /* Help.pdf */; };
-		CFE5AF2C2C4434010035CCFA /* Help.pdf in Resources */ = {isa = PBXBuildFile; fileRef = CFE5AF292C4434010035CCFA /* Help.pdf */; };
 		CFEADD48259CF60D009ECA14 /* ChangePanelsPosition.mm in Sources */ = {isa = PBXBuildFile; fileRef = CFEADD2E259CF60D009ECA14 /* ChangePanelsPosition.mm */; };
 		CFEADD49259CF60D009ECA14 /* ChangePanelsPosition.h in Headers */ = {isa = PBXBuildFile; fileRef = CFEADD47259CF60D009ECA14 /* ChangePanelsPosition.h */; };
 		CFEADD54259D01AD009ECA14 /* FocusOverlappedTerminal.h in Headers */ = {isa = PBXBuildFile; fileRef = CFEADD52259D01AD009ECA14 /* FocusOverlappedTerminal.h */; };
@@ -1386,7 +1383,6 @@
 		CFDB17C219B3075000781976 /* SFTPConnectionSheetController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SFTPConnectionSheetController.mm; path = NimbleCommander/States/FilePanels/Views/SFTPConnectionSheetController.mm; sourceTree = SOURCE_ROOT; };
 		CFDF449F1D2B990A0062F7AD /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Media.xcassets; path = NimbleCommander/Resources/Media.xcassets; sourceTree = SOURCE_ROOT; };
 		CFE08B0C23D4BE3D007E99B8 /* NativeVFSHostInstance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NativeVFSHostInstance.h; path = NimbleCommander/Bootstrap/NativeVFSHostInstance.h; sourceTree = "<group>"; };
-		CFE5AF292C4434010035CCFA /* Help.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = Help.pdf; path = NimbleCommander/Resources/Help.pdf; sourceTree = "<group>"; };
 		CFEADD2E259CF60D009ECA14 /* ChangePanelsPosition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = ChangePanelsPosition.mm; path = NimbleCommander/States/FilePanels/Actions/ChangePanelsPosition.mm; sourceTree = "<group>"; };
 		CFEADD47259CF60D009ECA14 /* ChangePanelsPosition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ChangePanelsPosition.h; path = NimbleCommander/States/FilePanels/Actions/ChangePanelsPosition.h; sourceTree = "<group>"; };
 		CFEADD52259D01AD009ECA14 /* FocusOverlappedTerminal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FocusOverlappedTerminal.h; path = NimbleCommander/States/FilePanels/Actions/FocusOverlappedTerminal.h; sourceTree = "<group>"; };
@@ -2098,7 +2094,6 @@
 		CFB598BF196E3A0400D4C108 /* Doc */ = {
 			isa = PBXGroup;
 			children = (
-				CFE5AF292C4434010035CCFA /* Help.pdf */,
 				CFC5122316C4BD3D00D247EE /* Credits.rtf */,
 			);
 			name = Doc;
@@ -2825,7 +2820,6 @@
 				CF9F4B431ECD81BC00E0AF82 /* NetworkShareSheetController.xib in Resources */,
 				CF4E56C11D50691B00452912 /* PreferencesWindowPanelsTabColoringFilterSheet.xib in Resources */,
 				CFC7628B2D3C59BF000498AA /* FilePanelsQuickSearch.xcstrings in Resources */,
-				CFE5AF2C2C4434010035CCFA /* Help.pdf in Resources */,
 				CF7C7CD11E5C3EE2002DB0E2 /* PreferencesWindowThemesTabImportSheet.xib in Resources */,
 				CF4E56A21D5068CC00452912 /* PreferencesWindowExternalEditorsTab.xib in Resources */,
 				CF7C7CC51E5C3EB9002DB0E2 /* PreferencesWindowThemesTab.xib in Resources */,
@@ -2883,7 +2877,6 @@
 				CF4E56BC1D5068F800452912 /* PreferencesWindowPanelsTab.xib in Resources */,
 				CFA53A3C1D433E2A00C562A7 /* MainMenu.xib in Resources */,
 				CFC7627F2D3C59BD000498AA /* FilePanelsContextMenu.xcstrings in Resources */,
-				CFE5AF2A2C4434010035CCFA /* Help.pdf in Resources */,
 				CF4E56C81D50692400452912 /* PreferencesWindowTerminalTab.xib in Resources */,
 				CFA53A421D433E2A00C562A7 /* DetailedVolumeInformationSheetController.xib in Resources */,
 				CFD2F3562709D7DD00ADC852 /* PreferencesWindowPanelsTabOperationsConcurrencySheet.xib in Resources */,
@@ -2947,7 +2940,6 @@
 				CF8D0CF81D963E1F00ADFF14 /* SpotlightSearchPopupViewController.xib in Resources */,
 				CF4E568A1D5066A400452912 /* PreferencesWindowViewerTab.xib in Resources */,
 				CFC762802D3C59BD000498AA /* FilePanelsContextMenu.xcstrings in Resources */,
-				CFE5AF2B2C4434010035CCFA /* Help.pdf in Resources */,
 				CFC5122B16C4BD3D00D247EE /* MainMenu.xib in Resources */,
 				CF4E56751D50668A00452912 /* PreferencesWindowExternalEditorsTabNewEditorSheet.xib in Resources */,
 				CF4E56DA1D506BA100452912 /* FindFilesSheetController.xib in Resources */,

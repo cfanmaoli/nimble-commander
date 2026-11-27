@@ -54,13 +54,6 @@ fi
 mkdir -p "${BUILD_DIR}"
 mkdir -p "${ARCHIVE_PATH}"
 
-# Help.pdf is a tracked release artifact. Regenerating it here would dirty the tagged tree and
-# package a PDF that is absent from the tag; update it and commit it before creating the release tag.
-if [ ! -s "${ROOT_DIR}/Source/NimbleCommander/NimbleCommander/Resources/Help.pdf" ]; then
-    echo 'Resources/Help.pdf is missing or empty; regenerate and commit it before releasing.' >&2
-    exit 1
-fi
-
 # Gather common flags in the XC variable
 XC="xcodebuild \
  -project ${XCODEPROJ} \
