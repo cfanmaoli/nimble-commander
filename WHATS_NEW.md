@@ -1,28 +1,56 @@
 # What's New in Nimble Commander-Fork
 
-## Version 2.0 (unreleased)
+## Version 2.0 (27 Nov 2026)
 
 ### Platform and architecture
 - The minimum supported macOS is now 13 Ventura.
 - The unused x86_64 slice was removed from the bundled Sparkle framework.
 
+### Performance and navigation
+- Navigation now interrupts an in-progress streaming directory load at the next fetch batch
+  (including Admin Mode `readdir` scans), instead of making you wait for a huge directory to finish
+  enumerating.
+- The list viewport stays anchored during append-only streaming updates, and partially streamed
+  directories are marked as incomplete instead of silently dropping entries.
+- Empty directories now stream cleanly when the `..` entry is hidden, and pressing Enter on `..`
+  no longer bounces back to the current directory.
+- Image-heavy directories decode thumbnails up to 64 MiB directly via ImageIO at their true aspect
+  ratio (aspect-fitted in List, Brief and Gallery views) and populate the memory thumbnail cache.
+
 ### Modern APIs and cleanup
 - Removed LetsMove and the deprecated AuthorizationExecuteWithPrivileges path used when the app
   was launched outside /Applications.
-- Removed MD2/MD4/MD5; copy verification and temporary-file change detection use SHA-256.
+- Removed MD2/MD4/MD5; copy verification (including empty files) and temporary-file change
+  detection use SHA-256, and verification mismatches now stop the operation instead of reporting
+  success.
 - Migrated the LaunchServices UTType C API to UniformTypeIdentifiers.
 - Replaced QLThumbnailImageCreate with QuickLookThumbnailing and made thumbnail production fully
-  asynchronous.
+  asynchronous with bounded waits and immediate teardown cancellation so closing a panel never
+  stalls the UI.
 - Removed the unsupported Finder-favorites importer based on LSSharedFileListFavoriteItems.
 - Removed Carbon keycode dependencies except for the isolated TIS/UCKeyTranslate translator.
 - Pinned pstld and rapidjson and replaced std::regex/rand() in small utility paths.
-- Replaced deprecated per-service sharing enumeration with the system sharing picker.
+- Replaced deprecated per-service sharing enumeration with the system sharing picker anchored to
+  the selected row, and removed the keyboard shortcut from Empty Trash while highlighting
+  Option-Delete Permanently in red.
+- Refreshed the bundled Help guide and PDF for 2.0.
 
 ### Reliability
-- Promise writes now complete exactly once and no longer leak their operation.
-- Security-scoped drag-in URLs remain valid for the whole copy.
-- Settings import applies atomically after revalidation.
-- Nightly publishing is gated by integration tests; release builds require a clean tagged tree.
+- Promise file writes now complete exactly once and release their operation cleanly after the job
+  thread exits, with no UAF or reference-cycle leak.
+- Security-scoped drag-in URLs remain valid for the whole copy, and APFS clones / cancellable
+  copy scans are supported.
+- Directory and file FSEvents watchers keep their context alive and invalidate synchronously on
+  the main thread; listing restores and panel loads are guarded by navigation epochs.
+- Fixed Admin Mode `stat` access/change timestamp mapping and duplicate unlink cleanup on stopped
+  compression jobs.
+- Settings import applies atomically after revalidation and handles cleanup failures cleanly.
+- Nightly publishing is gated by integration tests; release builds require a clean tagged tree,
+  non-empty Help.pdf, and verified team signing, and `update_appcast.py` supports two-component
+  release tags (`v2.0`).
+
+This build is signed with the maintainer's Apple Development identity (team 359W39ZS37), so
+Administrator Mode works; it is not notarised.
 
 ## Version 1.9.3c (20 Nov 2026)
 
