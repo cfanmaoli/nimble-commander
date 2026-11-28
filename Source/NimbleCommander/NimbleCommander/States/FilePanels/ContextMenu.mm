@@ -7,8 +7,13 @@
 #include "Actions/Delete.h"
 #include "Actions/Duplicate.h"
 #include "Actions/OpenFile.h"
+#include "MainWindowFilePanelState.h"
+#include "MainWindowFilePanelState+TabsSupport.h"
+#include "Views/FilePanelMainSplitView.h"
 #include "NCPanelOpenWithMenuDelegate.h"
 #include "PanelController.h"
+#include <Base/dispatch_cpp.h>
+#include <Panel/PanelData.h>
 #include <Panel/TagsStorage.h>
 #include <Panel/UI/TagsPresentation.h>
 #include <Utility/ObjCpp.h>
@@ -27,26 +32,8 @@
 using namespace nc::panel;
 
 // The context menu can be released as soon as the selected action returns, while the sharing
-// picker may still be on screen. Keep the active picker alive only until it finishes or is
-// replaced by a later share request.
-@interface NCActiveSharePickerDelegate : NSObject <NSSharingServicePickerDelegate>
-@end
-
+// picker may still be on screen. Keep the active picker alive until a later share request.
 static NSSharingServicePicker *g_ActiveSharePicker = nil;
-static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
-
-@implementation NCActiveSharePickerDelegate
-
-- (void)sharingServicePicker:(NSSharingServicePicker *)_picker
-     didChooseSharingService:(NSSharingService *) [[maybe_unused]] _service
-{
-    if( g_ActiveSharePicker == _picker ) {
-        g_ActiveSharePicker.delegate = nil;
-        g_ActiveSharePicker = nil;
-    }
-}
-
-@end
 
 @implementation NCPanelContextMenu {
     std::vector<VFSListingItem> m_Items;
@@ -114,6 +101,16 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
     [self addItem:open_item];
 
     //////////////////////////////////////////////////////////////////////
+    // Open in New Tab — open a directory on the same side in a new tab,
+    // leaving the current tab's directory untouched.
+    const auto open_in_new_tab_item = [NSMenuItem new];
+    open_in_new_tab_item.title = NSLocalizedStringFromTable(
+        @"Open in New Tab", @"FilePanelsContextMenu", "Menu item: open a directory in a new tab on the same side");
+    open_in_new_tab_item.target = self;
+    open_in_new_tab_item.action = @selector(OnOpenInNewTab:);
+    [self addItem:open_in_new_tab_item];
+
+    //////////////////////////////////////////////////////////////////////
     // Open With... stuff
     {
         NSMenu *openwith_submenu = [NSMenu new];
@@ -148,6 +145,19 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
 
         [self addItem:NSMenuItem.separatorItem];
     }
+
+    //////////////////////////////////////////////////////////////////////
+    // Rename — renames the clicked item in place, the same way a click on an already
+    // selected filename does. Only reachable from the File menu otherwise.
+    const auto rename_item = [NSMenuItem new];
+    rename_item.title = NSLocalizedStringFromTable(
+        @"Rename", @"FilePanelsContextMenu", "Menu item title to rename an item in place, for English is 'Rename'");
+    rename_item.target = self;
+    rename_item.action = @selector(OnRename:);
+    rename_item.keyEquivalent = @"";
+    [self addItem:rename_item];
+
+    [self addItem:NSMenuItem.separatorItem];
 
     //////////////////////////////////////////////////////////////////////
     // Put Back / Move to Trash / Delete Permanently stuff
@@ -294,8 +304,6 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
-    if( item.action == @selector(OnShare:) )
-        return std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); });
     if( item.action == @selector(OnCopyPaths:) )
         return m_CopyAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnCopyPathname:) )
@@ -314,6 +322,10 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
         return m_CompressToOppositeAction->ValidateMenuItem(m_Panel, item);
     if( item.action == @selector(OnRegularOpen:) )
         return m_OpenFileAction->ValidateMenuItem(m_Panel, item);
+    if( item.action == @selector(OnOpenInNewTab:) )
+        return m_Items.size() == 1 && m_Items.front().IsDir();
+    if( item.action == @selector(OnRename:) )
+        return m_Items.size() == 1 && !m_Items.front().IsDotDot() && m_Items.front().Host()->IsWritable();
 
     return true;
 }
@@ -323,9 +335,68 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
     m_OpenFileAction->Perform(m_Panel, sender);
 }
 
+- (void)OnOpenInNewTab:(id)sender
+{
+    if( m_Items.size() != 1 )
+        return;
+    const auto &item = m_Items.front();
+    if( !item.IsDir() )
+        return;
+
+    MainWindowFilePanelState *const state = m_Panel.state;
+    if( !state )
+        return;
+
+    NSTabView *tab_view = nil;
+    if( [state isLeftController:m_Panel] )
+        tab_view = state.splitView.leftTabbedHolder.tabView;
+    else if( [state isRightController:m_Panel] )
+        tab_view = state.splitView.rightTabbedHolder.tabView;
+    if( !tab_view )
+        return;
+
+    PanelController *const new_panel = [state spawnNewTabInTabView:tab_view
+                                            autoDirectoryLoading:false
+                                                activateNewPanel:false];
+    if( !new_panel )
+        return;
+
+    const auto request = std::make_shared<DirectoryChangeRequest>();
+    request->VFS = item.Host();
+    request->RequestedDirectory = item.Path();
+    request->PerformAsynchronous = true;
+    request->InitiatedByUser = true;
+    [new_panel GoToDirWithContext:request];
+    [state ActivatePanelByController:new_panel];
+}
+
 - (void)OnMoveToTrash:(id)sender
 {
     m_MoveToTrashAction->Perform(m_Panel, sender);
+}
+
+- (void)OnRename:(id) [[maybe_unused]] sender
+{
+    if( m_Items.size() != 1 )
+        return;
+    const auto &item = m_Items.front();
+    if( item.IsDotDot() || !item.Host()->IsWritable() )
+        return;
+
+    const int sort_pos = m_Panel.data.SortPositionOfEntry(item);
+    if( sort_pos < 0 )
+        return;
+
+    // The menu's own teardown (menuDidClose:) reloads the panel, which would detach a field editor
+    // created right away, so start the renaming on the next turn of the main runloop.
+    __weak PanelController *weak_panel = m_Panel;
+    dispatch_to_main_queue([weak_panel, sort_pos] {
+        PanelController *const panel = weak_panel;
+        if( !panel )
+            return;
+        panel.view.curpos = sort_pos;
+        [panel.view startFieldEditorRenaming];
+    });
 }
 
 - (void)OnPutBack:(id)sender
@@ -360,9 +431,6 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
 
 - (void)OnShare:(id) [[maybe_unused]] sender
 {
-    if( !std::ranges::all_of(m_Items, [](const auto &_i) { return _i.Host()->IsNativeFS(); }) )
-        return;
-
     NSMutableArray<NSURL *> *const urls = [NSMutableArray arrayWithCapacity:m_Items.size()];
     for( const auto &item : m_Items )
         if( NSString *const path = [NSString stringWithUTF8StdString:item.Path()] )
@@ -371,31 +439,16 @@ static NCActiveSharePickerDelegate *g_ActiveSharePickerDelegate = nil;
     if( urls.count == 0 )
         return;
 
-    NSView *const target_view = m_Panel.view;
-    if( target_view == nil )
-        return;
+    g_ActiveSharePicker = [[NSSharingServicePicker alloc] initWithItems:urls];
 
-    NSRect anchor = target_view.bounds;
+    NSRect anchor = m_Panel.view.bounds;
     anchor.origin.x = NSMidX(anchor);
     anchor.origin.y = NSMidY(anchor);
     anchor.size = NSMakeSize(1, 1);
     if( const auto item_frame = [m_Panel.view frameOfItemAtSortPos:m_Panel.view.curpos] )
         anchor = *item_frame;
 
-    // Defer showing the picker to the next runloop turn so it does not present synchronously
-    // inside the closing NSMenu tracking callback.
-    __weak NSView *const weak_view = target_view;
-    dispatch_to_main_queue([urls, anchor, weak_view] {
-        NSView *const view = weak_view;
-        if( view == nil || view.window == nil )
-            return;
-        if( g_ActiveSharePickerDelegate == nil )
-            g_ActiveSharePickerDelegate = [NCActiveSharePickerDelegate new];
-        NSSharingServicePicker *const picker = [[NSSharingServicePicker alloc] initWithItems:urls];
-        picker.delegate = g_ActiveSharePickerDelegate;
-        g_ActiveSharePicker = picker;
-        [picker showRelativeToRect:anchor ofView:view preferredEdge:NSMinYEdge];
-    });
+    [g_ActiveSharePicker showRelativeToRect:anchor ofView:m_Panel.view preferredEdge:NSMinYEdge];
 }
 
 - (void)OnDuplicateItem:(id)sender

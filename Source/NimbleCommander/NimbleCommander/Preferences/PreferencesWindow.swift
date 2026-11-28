@@ -104,7 +104,7 @@ private typealias ViewController = NSViewController & PreferencesViewControllerP
         selectedController = controller
         
         let currentSize = window.contentRect(forFrameRect: window.frame).size
-        let newSize = controller.view.bounds.size
+        let newSize = fittedContentSize(controller.view.bounds.size)
         let diff = hypot(abs(currentSize.width - newSize.width), abs(currentSize.height - newSize.height))
         let duration = 0.01 + diff * 0.001
         resizeWindowForContentSize(controller.view.bounds.size, duration: duration)
@@ -128,12 +128,26 @@ private typealias ViewController = NSViewController & PreferencesViewControllerP
         window.toolbar!.selectedItemIdentifier = NSToolbarItem.Identifier(controller.identifier)
     }
     
+    // 2.1.24: a tab's bounds are only its *ideal* layout size - never assume one
+    // particular display. The window follows the screen it is on (clamshell,
+    // rotated external monitors and scaled resolutions included) and shrinks to
+    // the usable area when the ideal size does not fit; it is never widened past
+    // the layout size, which would just leave empty margins.
+    fileprivate func fittedContentSize(_ ideal: NSSize) -> NSSize {
+        guard let screen = window?.screen ?? NSScreen.main else { return ideal }
+        let available = screen.visibleFrame.size
+        let usableFraction = 0.85
+        return NSSize(width: min(ideal.width, available.width * usableFraction),
+                      height: min(ideal.height, available.height * usableFraction))
+    }
+    
     func resizeWindowForContentSize(_ size: NSSize, duration: Double) {
         guard let window = window else { return }
         
+        let fitted = fittedContentSize(size)
         let frame = window.contentRect(forFrameRect: window.frame)
-        let newX = NSMinX(frame) + (0.5 * (NSWidth(frame) - size.width))
-        let newFrame = window.frameRect(forContentRect: NSRect(x: newX, y: NSMaxY(frame) - size.height, width: size.width, height: size.height))
+        let newX = NSMinX(frame) + (0.5 * (NSWidth(frame) - fitted.width))
+        let newFrame = window.frameRect(forContentRect: NSRect(x: newX, y: NSMaxY(frame) - fitted.height, width: fitted.width, height: fitted.height))
         
         if duration > 0.0 {
             NSAnimationContext.beginGrouping()

@@ -55,6 +55,17 @@ enum class NCCommandPopoverAlignment : uint8_t {
 // Adds a new item to be shown in the list later
 - (void)addItem:(NCCommandPopoverItem *_Nonnull)_newItem;
 
+// When YES, filtering uses subsequence (fuzzy) matching like VSCode's command
+// palette ("gof" matches "Go To Folder") instead of plain substring matching.
+// Default is NO, so existing menus keep their original behaviour.
+@property(nonatomic) bool fuzzyFiltering;
+
+// Number of columns the items are laid out in. 1 (the default) keeps the classic
+// single-column list; 2 or 3 spread the items column-major so a wide screen can
+// show many more commands at once without scrolling. Only callers that opt in
+// (e.g. the command palette) set this - other popovers keep the default of 1.
+@property(nonatomic) int columns;
+
 // Shows the popover positioning it under the specified rectangle of a particular view.
 // Can be aligned horizontally.
 - (void)showRelativeToRect:(NSRect)_positioning_rect

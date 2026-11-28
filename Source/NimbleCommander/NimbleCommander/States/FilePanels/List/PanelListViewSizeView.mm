@@ -7,6 +7,8 @@
 #include "PanelListViewSizeView.h"
 #include "PanelListViewTableView.h"
 #include <Utility/ObjCpp.h>
+#include "../PanelViewPresentationSettings.h"
+#include <algorithm>
 
 using namespace nc::panel;
 
@@ -51,8 +53,10 @@ static NSString *SizeStringFromEncodedSize(uint64_t _sz)
     NSString *m_String;
     NSDictionary *m_TextAttributes;
     uint64_t m_Size;
+    uint64_t m_SizeScaleMax;
     __weak PanelListViewRowView *m_RowView;
 }
+@synthesize sizeScaleMax = m_SizeScaleMax;
 
 - (id)initWithFrame:(NSRect)frameRect
 {
@@ -112,6 +116,8 @@ static NSString *SizeStringFromEncodedSize(uint64_t _sz)
             NSRectFill(self.bounds);
             [PanelListViewTableView drawVerticalSeparatorForView:self];
 
+            [self drawSizeBarForRowView:rv];
+
             const auto text_rect = NSMakeRect(nc::panel::PanelListViewGeometry::LeftInset(),
                                               geometry.TextBaseLine(),
                                               bounds.size.width - nc::panel::PanelListViewGeometry::LeftInset() -
@@ -144,6 +150,30 @@ static NSParagraphStyle *PStyle()
         m_String = SizeStringFromEncodedSize(m_Size);
         [self setNeedsDisplay:true];
     }
+}
+
+- (void)drawSizeBarForRowView:(PanelListViewRowView *)_rv
+{
+    if( !nc::panel::ListSizeBarsEnabled() || m_SizeScaleMax == 0 || m_Size == 0 )
+        return;
+    // the sentinels encode folders and "not calculated yet" - they have no meaningful ratio
+    if( m_Size == g_InvalidSize || m_Size == g_NonCalculatedSizeForDir || m_Size == g_NonCalculatedSizeForDotDot )
+        return;
+
+    const auto bounds = self.bounds;
+    const auto usable = bounds.size.width - nc::panel::PanelListViewGeometry::LeftInset() -
+                        nc::panel::PanelListViewGeometry::RightInset();
+    if( usable <= 0 )
+        return;
+
+    const auto fraction = std::min(1.0, static_cast<double>(m_Size) / static_cast<double>(m_SizeScaleMax));
+    const auto bar_width = std::max(2.0, usable * fraction);
+    const NSRect bar = NSMakeRect(nc::panel::PanelListViewGeometry::LeftInset(),
+                                  NSMinY(bounds) + 1.0,
+                                  bar_width,
+                                  2.0);
+    [[_rv.rowSecondaryTextColor colorWithAlphaComponent:0.28] set];
+    NSRectFillUsingOperation(bar, NSCompositingOperationSourceOver);
 }
 
 - (void)buildPresentation

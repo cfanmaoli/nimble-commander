@@ -21,6 +21,13 @@ public:
      */
     static NSString *Format(Style _style, time_t _time);
 
+    /**
+     * Locale-aware "smart" stamp: the wording for today/yesterday comes from the system's
+     * relative formatter ("today"/"yesterday"), the last week shows a weekday, older dates fall
+     * back to the orthodox numeric stamp.
+     */
+    static NSString *FormatSmart(time_t _time);
+
     static Style SuitableStyleForWidth(int _width, NSFont *_font);
 
 private:

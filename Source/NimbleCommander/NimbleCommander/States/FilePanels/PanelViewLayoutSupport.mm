@@ -258,6 +258,27 @@ int PanelViewLayoutsStorage::DefaultLayoutIndex() const
     return -1;
 }
 
+// user-chosen default panel layout, persisted in NSUserDefaults.
+// Bundle id never changes between builds, so this key survives updates.
+// 2 == "Full" list layout, which is the only layout with a vertical scroller.
+static NSString *const g_DefaultPanelLayoutKey = @"nc.defaultPanelLayout";
+
+int DefaultPanelLayout() noexcept
+{
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    if( [defaults objectForKey:g_DefaultPanelLayoutKey] == nil )
+        return 2; // first run: list view, so users can scroll up/down
+    const int value = static_cast<int>([defaults integerForKey:g_DefaultPanelLayoutKey]);
+    return value >= 0 && value <= 9 ? value : 2;
+}
+
+void SetDefaultPanelLayout(int _index) noexcept
+{
+    if( _index < 0 || _index > 9 )
+        return;
+    [NSUserDefaults.standardUserDefaults setInteger:_index forKey:g_DefaultPanelLayoutKey];
+}
+
 void PanelViewLayoutsStorage::ReplaceLayout(PanelViewLayout _layout, int _at_index)
 {
     ReplaceLayout(std::move(_layout), _at_index, false);

@@ -37,6 +37,9 @@ static void Perform(const ActionsT &_actions, SEL _sel, MainWindowFilePanelState
     m_Actions[@selector(onAddNewTab:)] = std::make_unique<AddNewTab>(m_CurrentPanel);
     m_Actions[@selector(onCloseTab:)] = std::make_unique<CloseTab>(m_CurrentPanel);
     m_Actions[@selector(onCloseOtherTabs:)] = std::make_unique<CloseOtherTabs>(m_CurrentPanel);
+    m_Actions[@selector(onSendTabToOtherPanel:)] = std::make_unique<SendTabToOtherPanel>(m_CurrentPanel);
+    m_Actions[@selector(onCopyTabToOtherPanel:)] = std::make_unique<CopyTabToOtherPanel>(m_CurrentPanel);
+    m_Actions[@selector(onDuplicateTab:)] = std::make_unique<DuplicateTab>(m_CurrentPanel);
 }
 
 - (void)buildMenuItems
@@ -58,6 +61,26 @@ static void Perform(const ActionsT &_actions, SEL _sel, MainWindowFilePanelState
     close_other_tabs.target = self;
     close_other_tabs.action = @selector(onCloseOtherTabs:);
     [self addItem:close_other_tabs];
+
+    [self addItem:[NSMenuItem separatorItem]];
+
+    const auto send_to_other_panel = [[NSMenuItem alloc] init];
+    send_to_other_panel.title = NSLocalizedString(@"Send Tab to Other Panel", "");
+    send_to_other_panel.target = self;
+    send_to_other_panel.action = @selector(onSendTabToOtherPanel:);
+    [self addItem:send_to_other_panel];
+
+    const auto copy_to_other_panel = [[NSMenuItem alloc] init];
+    copy_to_other_panel.title = NSLocalizedString(@"Copy Tab to Other Panel", "");
+    copy_to_other_panel.target = self;
+    copy_to_other_panel.action = @selector(onCopyTabToOtherPanel:);
+    [self addItem:copy_to_other_panel];
+
+    const auto duplicate_tab = [[NSMenuItem alloc] init];
+    duplicate_tab.title = NSLocalizedString(@"Duplicate Tab", "");
+    duplicate_tab.target = self;
+    duplicate_tab.action = @selector(onDuplicateTab:);
+    [self addItem:duplicate_tab];
 }
 
 - (IBAction)onAddNewTab:(id)sender
@@ -67,6 +90,15 @@ static void Perform(const ActionsT &_actions, SEL _sel, MainWindowFilePanelState
 { [self perform:_cmd for:sender];
 }
 - (IBAction)onCloseOtherTabs:(id)sender
+{ [self perform:_cmd for:sender];
+}
+- (IBAction)onSendTabToOtherPanel:(id)sender
+{ [self perform:_cmd for:sender];
+}
+- (IBAction)onCopyTabToOtherPanel:(id)sender
+{ [self perform:_cmd for:sender];
+}
+- (IBAction)onDuplicateTab:(id)sender
 { [self perform:_cmd for:sender];
 }
 

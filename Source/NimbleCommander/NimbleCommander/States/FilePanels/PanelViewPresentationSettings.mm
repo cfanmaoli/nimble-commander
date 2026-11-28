@@ -43,4 +43,18 @@ ByteCountFormatter::Type GetSelectionSizeFormat() noexcept
     return format;
 }
 
+static const auto g_UserDefaultsSmartDates = @"nc.list.smartDates";
+bool ListSmartDatesEnabled() noexcept
+{
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    return [defaults objectForKey:g_UserDefaultsSmartDates] ? [defaults boolForKey:g_UserDefaultsSmartDates] : YES;
+}
+
+static const auto g_UserDefaultsSizeBars = @"nc.list.sizeBars";
+bool ListSizeBarsEnabled() noexcept
+{
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    return [defaults objectForKey:g_UserDefaultsSizeBars] ? [defaults boolForKey:g_UserDefaultsSizeBars] : YES;
+}
+
 } // namespace nc::panel

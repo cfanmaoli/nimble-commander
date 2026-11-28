@@ -19,6 +19,18 @@
         }
       }
     },
+    "Rename" : {
+      "comment" : "Menu item title to rename an item in place, for English is 'Rename'",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
+          }
+        }
+      }
+    },
     "<None>" : {
       "comment" : "Menu item for case when no handlers are available, for English is '<None>'",
       "extractionState" : "manual",
@@ -255,6 +267,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开"
+          }
+        }
+      }
+    },
+    "Open in New Tab" : {
+      "comment" : "Menu item: open a directory in a new tab on the same side",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in New Tab"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在新标签页中打开"
           }
         }
       }

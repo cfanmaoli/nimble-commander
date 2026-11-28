@@ -24,15 +24,14 @@ static bool IsDark(NSColor *_color);
 
     ColoredSeparatorLine *m_SeparatorLine;
     NSColor *m_Background;
-    NSColor *m_NormalPathTextColor;
-    NSString *m_Path;
-    bool m_Incomplete;
     NSString *m_SearchPrompt;
     NSButton *m_SortButton;
     NSProgressIndicator *m_BusyIndicator;
     data::SortMode m_SortMode;
     std::function<void(data::SortMode)> m_SortModeChangeCallback;
     std::function<void(NSString *)> m_SearchRequestChangeCallback;
+    std::function<void(NSString *)> m_PathJumpCallback;
+    bool m_PathFieldEditing;
     std::unique_ptr<nc::panel::HeaderTheme> m_Theme;
     bool m_Active;
 }
@@ -53,15 +52,28 @@ static bool IsDark(NSColor *_color);
         // NB! Don't use "single line mode" - it doesn't do what you expect.
         // https://stackoverflow.com/questions/36179012/nstextfield-non-system-font-content-clipped-when-usessinglelinemode-is-true
 
+        m_PathFieldEditing = false;
         m_PathTextField = [[NSTextField alloc] initWithFrame:NSRect()];
         m_PathTextField.translatesAutoresizingMaskIntoConstraints = false;
         m_PathTextField.stringValue = @"";
         m_PathTextField.bordered = false;
-        m_PathTextField.editable = false;
+        m_PathTextField.editable = true; // lidw: editable path bar — type a path + Return to navigate
+        m_PathTextField.selectable = true;
         m_PathTextField.drawsBackground = false;
         m_PathTextField.lineBreakMode = NSLineBreakByTruncatingHead;
         m_PathTextField.maximumNumberOfLines = 1;
         m_PathTextField.alignment = NSTextAlignmentCenter;
+        m_PathTextField.target = self;
+        m_PathTextField.action = @selector(onPathFieldAction:);
+        m_PathTextField.delegate = self;
+        // Right-click copies the current directory path.
+        NSMenu *pathMenu = [[NSMenu alloc] init];
+        [pathMenu addItemWithTitle:NSLocalizedString(@"Copy Path", "Path bar context menu")
+                           action:@selector(onCopyPathFromPathField:)
+                    keyEquivalent:@""];
+        for( NSMenuItem *mi in pathMenu.itemArray )
+            mi.target = self;
+        m_PathTextField.menu = pathMenu;
         [self addSubview:m_PathTextField];
 
         m_SearchTextField = [[NSTextField alloc] initWithFrame:NSRect()];
@@ -162,8 +174,7 @@ static bool IsDark(NSColor *_color);
     m_Background = active ? m_Theme->ActiveBackgroundColor() : m_Theme->InactiveBackgroundColor();
 
     NSColor *text_color = active ? m_Theme->ActiveTextColor() : m_Theme->TextColor();
-    m_NormalPathTextColor = text_color;
-    [self updatePathDisplay];
+    m_PathTextField.textColor = text_color;
     m_SearchTextField.textColor = text_color;
     m_SearchMatchesField.textColor = text_color;
 
@@ -250,29 +261,52 @@ static bool IsDark(NSColor *_color);
 
 - (void)setPath:(NSString *)_path
 {
-    m_Path = _path;
-    [self updatePathDisplay];
-}
-
-- (BOOL)incomplete
-{
-    return m_Incomplete;
-}
-
-- (void)setIncomplete:(bool)_incomplete
-{
-    if( m_Incomplete == _incomplete )
+    // Don't clobber what the user is typing in the path field.
+    if( m_PathFieldEditing )
         return;
-    m_Incomplete = _incomplete;
-    [self updatePathDisplay];
+    m_PathTextField.stringValue = _path;
 }
 
-- (void)updatePathDisplay
+- (void)setPathJumpCallback:(std::function<void(NSString *)>)pathJumpCallback
 {
-    NSString *const path = m_Path ?: @"";
-    m_PathTextField.stringValue = m_Incomplete ? [path stringByAppendingString:@"  ⚠"] : path;
-    m_PathTextField.textColor = m_Incomplete ? NSColor.systemOrangeColor : m_NormalPathTextColor;
-    m_PathTextField.toolTip = m_Incomplete ? NSLocalizedString(@"The directory listing is incomplete", "") : nil;
+    m_PathJumpCallback = std::move(pathJumpCallback);
+}
+
+- (std::function<void(NSString *)>)pathJumpCallback
+{
+    return m_PathJumpCallback;
+}
+
+- (void)onPathFieldAction:(id) [[maybe_unused]] _sender
+{
+    m_PathFieldEditing = false;
+    NSString *const path = m_PathTextField.stringValue;
+    if( path.length != 0 && m_PathJumpCallback )
+        m_PathJumpCallback(path);
+    // Restore the display path if navigation didn't change it (e.g. bad path).
+    dispatch_async(dispatch_get_main_queue(), ^{ [self.window makeFirstResponder:self.defaultResponder]; });
+}
+
+- (void)onCopyPathFromPathField:(id) [[maybe_unused]] _sender
+{
+    NSString *const path = m_PathTextField.stringValue;
+    if( path.length != 0 ) {
+        NSPasteboard *pb = NSPasteboard.generalPasteboard;
+        [pb clearContents];
+        [pb setString:path forType:NSPasteboardTypeString];
+    }
+}
+
+- (void)controlTextDidBeginEditing:(NSNotification *)_obj
+{
+    if( _obj.object == m_PathTextField )
+        m_PathFieldEditing = true;
+}
+
+- (void)controlTextDidEndEditing:(NSNotification *)_obj
+{
+    if( _obj.object == m_PathTextField )
+        m_PathFieldEditing = false;
 }
 
 - (void)setupBindings

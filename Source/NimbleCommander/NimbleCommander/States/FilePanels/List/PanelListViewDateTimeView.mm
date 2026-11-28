@@ -6,6 +6,7 @@
 #include "PanelListViewTableView.h"
 #include <NimbleCommander/Core/Theming/Theme.h>
 #include <Utility/ObjCpp.h>
+#include "../PanelViewPresentationSettings.h"
 
 using nc::utility::AdaptiveDateFormatting;
 
@@ -121,7 +122,8 @@ using nc::utility::AdaptiveDateFormatting;
 {
     const auto new_string = [&] {
         if( m_Time >= 0 ) {
-            const auto dts = AdaptiveDateFormatting::Format(m_Style, m_Time);
+            const auto dts = nc::panel::ListSmartDatesEnabled() ? AdaptiveDateFormatting::FormatSmart(m_Time)
+                                                               : AdaptiveDateFormatting::Format(m_Style, m_Time);
             return dts ? dts : @"";
         }
         else
