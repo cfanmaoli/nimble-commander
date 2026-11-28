@@ -23,6 +23,7 @@
 #include "PanelListViewTableView.h"
 #include "PanelListViewTagsView.h"
 #include <algorithm>
+#include "../PanelViewPresentationSettings.h"
 
 #include <swiftToCxx/_SwiftCxxInteroperability.h>
 #include <NimbleCommanderCommon-Swift.h>
@@ -55,6 +56,7 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 @property(nonatomic) AdaptiveDateFormatting::Style dateAddedFormattingStyle;
 @property(nonatomic) AdaptiveDateFormatting::Style dateModifiedFormattingStyle;
 @property(nonatomic) AdaptiveDateFormatting::Style dateAccessedFormattingStyle;
+@property(nonatomic) uint64_t sizeBarScale;
 
 @end
 
@@ -77,6 +79,7 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
     AdaptiveDateFormatting::Style m_DateAddedFormattingStyle;
     AdaptiveDateFormatting::Style m_DateModifiedFormattingStyle;
     AdaptiveDateFormatting::Style m_DateAccessedFormattingStyle;
+    uint64_t m_SizeBarScale;
 
     std::vector<PanelListViewRowView *> m_RowsStash;
 
@@ -95,6 +98,7 @@ static NSString *ToKindIdentifier(PanelListViewColumns _kind) noexcept;
 @synthesize dateAddedFormattingStyle = m_DateAddedFormattingStyle;
 @synthesize dateModifiedFormattingStyle = m_DateModifiedFormattingStyle;
 @synthesize dateAccessedFormattingStyle = m_DateAccessedFormattingStyle;
+@synthesize sizeBarScale = m_SizeBarScale;
 @synthesize sortModeChangeCallback = m_SortModeChangeCallback;
 
 - (id)initWithFrame:(NSRect)_frame iconRepository:(nc::vfsicon::IconRepository &)_ir
@@ -553,7 +557,28 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
                    withItem:(const VFSListingItem &)_item
                       andVD:(const data::ItemVolatileData &)_vd
 {
+    _view.sizeScaleMax = self.sizeBarScale;
     [_view setSizeWithItem:_item andVD:_vd];
+}
+
+// 2.1.28: the proportion bar is scaled against the biggest regular file of the current listing.
+// Walks the sorted entries once per data change - only when the bar is actually enabled, since
+// otherwise the walk buys nothing.
+- (void)recalculateSizeBarScale
+{
+    self.sizeBarScale = 0;
+    if( !m_Data || !nc::panel::ListSizeBarsEnabled() )
+        return;
+
+    uint64_t largest = 0;
+    const int rows = m_Data->SortedEntriesCount();
+    for( int i = 0; i < rows; ++i ) {
+        const auto item = m_Data->EntryAtSortPosition(i);
+        if( !item || item.IsDir() || !item.HasSize() )
+            continue;
+        largest = std::max(largest, item.Size());
+    }
+    self.sizeBarScale = largest;
 }
 
 - (void)fillDataForDateCreatedView:(PanelListViewDateTimeView *)_view withItem:(const VFSListingItem &)_item
@@ -595,6 +620,7 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
 - (void)onDataChanged
 {
     data::Model *const data = m_Data;
+    [self recalculateSizeBarScale];
     const auto old_rows_count = static_cast<int>(m_TableView.numberOfRows);
     const auto new_rows_count = data->SortedEntriesCount();
 
@@ -725,16 +751,6 @@ static View *RetrieveOrSpawnView(NSTableView *_tv, NSString *_identifier)
     if( row < 0 || row >= static_cast<NSInteger>(m_Data->SortedEntriesCount()) )
         return std::nullopt;
     return m_Data->EntryAtSortPosition(static_cast<int>(row)).Filename();
-}
-
-- (NSPoint)viewportScrollPosition
-{
-    return m_ScrollView.contentView.bounds.origin;
-}
-
-- (void)restoreViewportScrollPosition:(NSPoint)_position
-{
-    [m_ScrollView.contentView setBoundsOrigin:_position];
 }
 
 - (void)scrollToTopItemNamed:(std::string_view)_filename

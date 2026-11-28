@@ -1,6 +1,174 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add to Favorites" : {
+      "comment" : "Sidebar menu item to save the folder as a favorite",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加到收藏"
+          }
+        }
+      }
+    },
+    "Folders" : {
+      "comment" : "Sidebar section with the folder tree",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目录"
+          }
+        }
+      }
+    },
+    "Manage Favorites…" : {
+      "comment" : "Sidebar menu item to open the favorites manager",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理收藏…"
+          }
+        }
+      }
+    },
+    "Open in Other Pane" : {
+      "comment" : "Sidebar menu item to open the location in the opposite panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在另一分栏打开"
+          }
+        }
+      }
+    },
+    "Recent" : {
+      "comment" : "Sidebar section with recently visited folders",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近"
+          }
+        }
+      }
+    },
+    "Remove from Favorites" : {
+      "comment" : "Sidebar menu item to remove a saved favorite",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从收藏中移除"
+          }
+        }
+      }
+    },
+    "Delete Workspace" : {
+      "comment" : "Sidebar menu item to delete a saved workspace",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除工作区"
+          }
+        }
+      }
+    },
+    "New Workspace" : {
+      "comment" : "Default name of a new workspace",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建工作区"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "comment" : "User action to save",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
+          }
+        }
+      }
+    },
+    "Save Workspace" : {
+      "comment" : "Alert title for saving a workspace",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存工作区"
+          }
+        }
+      }
+    },
+    "Save Workspace…" : {
+      "comment" : "Sidebar menu item to save the current layout",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存工作区…"
+          }
+        }
+      }
+    },
+    "The current tabs, folders and window size will be stored under this name." : {
+      "comment" : "Alert body for saving a workspace",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前标签页、目录和窗口尺寸会以这个名称保存。"
+          }
+        }
+      }
+    },
+    "Update Workspace" : {
+      "comment" : "Sidebar menu item to overwrite a workspace with the current layout",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用当前布局更新"
+          }
+        }
+      }
+    },
+    "Workspaces" : {
+      "comment" : "Sidebar section with saved window layouts",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作区"
+          }
+        }
+      }
+    },
     "%@ available" : {
       "comment" : "Panels bottom volume bar, showing amount of bytes available",
       "localizations" : {
@@ -375,6 +543,23 @@
         }
       }
     },
+    "Are you sure you want to permanently delete all items in the Trash?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to permanently delete all items in the Trash?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要永久删除废纸篓中的所有项目吗？"
+          }
+        }
+      }
+    },
     "Are you sure you want to remove this editor?" : {
       "comment" : "Asking the user for confirmation on deleting the external editor - message",
       "localizations" : {
@@ -622,6 +807,18 @@
         }
       }
     },
+    "Copy Tab to Other Panel" : {
+      "comment" : "Tab context menu item title to open a copy of this tab's folder in the other panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制到另一个分栏"
+          }
+        }
+      }
+    },
     "CPU" : {
       "comment" : "Brief System Information cpu box title",
       "localizations" : {
@@ -700,6 +897,35 @@
       },
       "shouldTranslate" : false
     },
+    "Duplicate Tab" : {
+      "comment" : "Tab context menu item title to duplicate the tab in the same panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制标签页"
+          }
+        }
+      }
+    },
+    "Empty Trash" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty Trash"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空废纸篓"
+          }
+        }
+      }
+    },
     "Enable Admin Mode" : {
       "comment" : "Menu item title for enabling an admin mode",
       "localizations" : {
@@ -754,39 +980,6 @@
         }
       }
     },
-    "Approval Required for Admin Mode" : {
-      "comment" : "Alert title when SMAppService privileged daemon requires approval",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理员模式需要系统批准"
-          }
-        }
-      }
-    },
-    "Enable Nimble Commander-Fork in System Settings \u2192 General \u2192 Login Items & Extensions, then turn Admin Mode on again." : {
-      "comment" : "Alert text explaining how to approve the privileged helper daemon in System Settings",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在“系统设置 → 通用 → 登录项与扩展”中允许 Nimble Commander-Fork，然后重新启用管理员模式。"
-          }
-        }
-      }
-    },
-    "Open System Settings" : {
-      "comment" : "Button to open System Settings Login Items for daemon approval",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开系统设置"
-          }
-        }
-      }
-    },
     "Failed to access the privileged helper." : {
       "comment" : "Information that toggling admin mode on has failed",
       "localizations" : {
@@ -822,6 +1015,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法创建空文件："
+          }
+        }
+      }
+    },
+    "Failed to empty the Trash." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to empty the Trash."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空废纸篓失败。"
           }
         }
       }
@@ -1950,6 +2160,18 @@
         }
       }
     },
+    "Send Tab to Other Panel" : {
+      "comment" : "Tab context menu item title to move this tab's folder into the other panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到另一个分栏"
+          }
+        }
+      }
+    },
     "Show Panels" : {
       "comment" : "Menu item for showing panels",
       "localizations" : {
@@ -2219,6 +2441,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所选内容的大小为 %@。\n确定要打开它们吗？"
+          }
+        }
+      }
+    },
+    "The Trash is empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Trash is empty."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "废纸篓是空的。"
           }
         }
       }

@@ -12,10 +12,6 @@
 // Updates header title according to the new path. Should be called by controller when path is changed.
 - (void)setPath:(NSString *)_path;
 
-// Marks the displayed listing as incomplete (for example, when a streaming load failed after the
-// first screenful was installed).
-@property(nonatomic) bool incomplete;
-
 // Progress indicator located in the header. Shown only when displaying activity.
 @property(nonatomic, readonly) NSProgressIndicator *busyIndicator;
 
@@ -34,6 +30,9 @@
 // Called by the view when search query is changed by user via search field in header.
 // When the argument is nil this should be interpreted as discarding the search via (X) or Esc button.
 @property(nonatomic) std::function<void(NSString *_query)> searchRequestChangeCallback;
+
+// Called when the user types a path into the (editable) path field and presses Return.
+@property(nonatomic) std::function<void(NSString *_path)> pathJumpCallback;
 
 // Updates the look of the header depending on the parent panel being active or not.
 @property(nonatomic) bool active;

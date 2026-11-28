@@ -475,6 +475,19 @@ private class TabBarItem: NSCollectionViewItem {
 }
 
 private class CollectionView: NSCollectionView {
+    // browser-style "double-click empty tab strip to open a new tab".
+    weak var ncTabBar: NCPanelTabBarView?
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            let local = convert(event.locationInWindow, from: nil)
+            if indexPathForItem(at: local) == nil {
+                ncTabBar?.addTabButtonPressed()
+                return
+            }
+        }
+        super.mouseDown(with: event)
+    }
+
     override func draggingExited(_ sender: (any NSDraggingInfo)?) {
         if let tabBarView = delegate as? NCPanelTabBarView {
             tabBarView.collectionView(self, draggingExited: sender)
@@ -768,6 +781,7 @@ public class NCPanelTabBarView: NSView,
         
         collectionView.collectionViewLayout = flowLayout
         collectionView.delegate = self
+        collectionView.ncTabBar = self // double-click blank area -> new tab
         collectionView.isSelectable = true
         collectionView.allowsMultipleSelection = false
         collectionView.backgroundColors = [.clear]

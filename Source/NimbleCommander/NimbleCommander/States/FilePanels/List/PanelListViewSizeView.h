@@ -6,6 +6,10 @@
 
 @interface PanelListViewSizeView : NSView
 
+// 2.1.28: biggest regular file in the listing, used as the scale of the proportion bar.
+// zero disables the bar.
+@property(nonatomic) uint64_t sizeScaleMax;
+
 - (void)buildPresentation;
 
 // PanelListViewSizeView has no right to store listing item and hold a reference to it!

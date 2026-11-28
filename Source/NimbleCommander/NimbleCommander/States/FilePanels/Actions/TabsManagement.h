@@ -64,6 +64,42 @@ private:
     PanelController *m_CurrentPC;
 };
 
+/**
+ * Recreates the tab's location as a new tab in the same pane.
+ */
+struct DuplicateTab final : StateAction {
+    DuplicateTab(PanelController *_current_pc);
+    void Perform(MainWindowFilePanelState *_target, id _sender) const override;
+
+private:
+    PanelController *m_CurrentPC;
+};
+
+/**
+ * Recreates the tab's location as a new tab in the opposite pane, keeping this tab in place.
+ */
+struct CopyTabToOtherPanel final : StateAction {
+    CopyTabToOtherPanel(PanelController *_current_pc);
+    [[nodiscard]] bool Predicate(MainWindowFilePanelState *_target) const override;
+    void Perform(MainWindowFilePanelState *_target, id _sender) const override;
+
+private:
+    PanelController *m_CurrentPC;
+};
+
+/**
+ * Recreates the tab's location as a new tab in the opposite pane and closes this tab, unless it is
+ * the only tab on its side - a pane must always keep at least one tab.
+ */
+struct SendTabToOtherPanel final : StateAction {
+    SendTabToOtherPanel(PanelController *_current_pc);
+    [[nodiscard]] bool Predicate(MainWindowFilePanelState *_target) const override;
+    void Perform(MainWindowFilePanelState *_target, id _sender) const override;
+
+private:
+    PanelController *m_CurrentPC;
+};
+
 } // namespace context
 
 } // namespace nc::panel::actions

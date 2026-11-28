@@ -23,5 +23,10 @@ class Pool;
 @property(nonatomic, readonly) NSButton *leftPanelGoToButton;
 @property(nonatomic, readonly) NSButton *rightPanelGoToButton;
 @property(nonatomic, readonly) NCOpsPoolViewController *operationsPoolViewController;
+// explicit targets for items implemented on MainWindowFilePanelState, which is
+// NOT on the file panel's responder chain once the command line / toolbar owns
+// first responder. Weak to avoid a cycle.
+@property(nonatomic, weak) id treeToggleTarget;
+@property(nonatomic, weak) id commandPaletteTarget;
 
 @end

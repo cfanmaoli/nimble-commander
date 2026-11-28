@@ -34,11 +34,25 @@ class Model;
 @class MainWindowFilePanelsStateToolbarDelegate;
 @class ColoredSeparatorLine;
 @class NCPanelQLPanelAdaptor;
-@class NCCommandPopover;
+@class NCDirectoryTreeView;
+@class AnyHolder;
+#include <CUI/CommandPopover.h>
 
 struct MainWindowFilePanelState_OverlappedTerminalSupport;
 
-@interface MainWindowFilePanelState : NSView <NCMainWindowState, NCPanelViewKeystrokeSink, NCPanelTabBarViewDelegate> {
+@protocol NCDirectoryTreeDelegate <NSObject>
+- (void)directoryTreeDidSelectPath:(NSString *)path modifiers:(NSEventModifierFlags)modifiers;
+// Favorites/recents may point outside the native filesystem, so they travel as a
+// PersistentLocation wrapped into an AnyHolder.
+- (void)directoryTreeDidSelectLocation:(AnyHolder *)location modifiers:(NSEventModifierFlags)modifiers;
+// Workspaces: apply the stored layout, or ask for the save/overwrite/delete flow.
+- (void)directoryTreeDidApplyWorkspaceAtIndex:(NSInteger)index;
+- (void)directoryTreeDidRequestSaveWorkspace;
+- (void)directoryTreeDidRequestOverwriteWorkspaceAtIndex:(NSInteger)index;
+- (void)directoryTreeDidRequestDeleteWorkspaceAtIndex:(NSInteger)index;
+@end
+
+@interface MainWindowFilePanelState : NSView <NCMainWindowState, NCPanelViewKeystrokeSink, NCPanelTabBarViewDelegate, NSTextFieldDelegate, NCCommandPopoverDelegate, NCDirectoryTreeDelegate> {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-interface-ivars"
     std::function<PanelController *()> m_PanelFactory;
@@ -49,6 +63,20 @@ struct MainWindowFilePanelState_OverlappedTerminalSupport;
     AttachedResponder *m_AttachedResponder;
 
     FilePanelMainSplitView *m_SplitView;
+    NCDirectoryTreeView *m_DirectoryTree; // always-visible directory tree on the left
+    NSView *m_TreeDivider; // 2.1.16: drag handle, a hairline inside a wider hit area
+    NSLayoutConstraint *m_LeftTreeWidthConstraint;
+    NSLayoutConstraint *m_TreeDividerWidthConstraint; // collapse divider together with the tree
+    BOOL m_ShowDirectoryTree; // toolbar-toggleable tree visibility
+    double m_TreeDragStartWidth; // sidebar width when the divider drag began
+    int m_LastSidebarRecentLimit;
+    BOOL m_LastSmartDates;
+    BOOL m_LastSizeBars; // last seen nc.sidebar.recentLimit, for change detection
+    NSView *m_FKeyBar; // bottom bar (command line)
+    NSTextField *m_CommandLine; // TC-style bottom command line
+    NCCommandPopover *m_CommandPalette; // searchable action palette, summoned with "?"
+    std::vector<std::string> m_CommandHistory;
+    size_t m_CommandHistoryPos;
     NSLayoutConstraint *m_MainSplitViewBottomConstraint;
 
     std::unique_ptr<MainWindowFilePanelState_OverlappedTerminalSupport> m_OverlappedTerminal;
@@ -100,6 +128,11 @@ struct MainWindowFilePanelState_OverlappedTerminalSupport;
  * Called by panel controller when it sucessfuly changes it's current path
  */
 - (void)PanelPathChanged:(PanelController *)_panel;
+
+// toggle the left directory tree from the toolbar.
+- (IBAction)onToggleDirectoryTree:(id)sender;
+// 2.1.5: open the full command palette from the toolbar button.
+- (IBAction)onShowCommandPalette:(id)sender;
 
 /**
  * result may contain duplicates
@@ -180,6 +213,17 @@ struct MainWindowFilePanelState_OverlappedTerminalSupport;
 @interface MainWindowFilePanelState ()
 
 - (void)updateBottomConstraint;
+- (void)createFKeyBar; // function key bar + command line
+- (void)onFKeyBarButton:(NSButton *)sender;
+- (void)onCommandLineSubmit:(NSTextField *)sender;
+- (void)executeCommandLineInTerminal:(const std::string &)_command;
+- (void)showCommandPalette;
+- (void)showFrecencyJump;
+- (void)onCommandPaletteItemSelected:(NCCommandPopoverItem *)sender;
+- (void)createDirectoryTree; // v4
+- (void)applyDirectoryTreeVisibility; // v6
+- (void)applyConfiguredLayoutToPanels; // honor nc.defaultPanelLayout (default = list)
+- (void)directoryTreeDidSelectPath:(NSString *)path modifiers:(NSEventModifierFlags)modifiers;
 
 - (void)addNewControllerOnLeftPane:(PanelController *)_pc;
 - (void)addNewControllerOnRightPane:(PanelController *)_pc;

@@ -25,6 +25,11 @@ bool ToggleLayout::ValidateMenuItem(PanelController *_target, NSMenuItem *_item)
 void ToggleLayout::Perform(PanelController *_target, [[maybe_unused]] id _sender) const
 {
     [_target setLayoutIndex:m_Index];
+    // remember an explicit View -> View Mode choice as the default.
+    // Only persist when the layout was actually applied (disabled slots are ignored
+    // by setLayoutIndex). Stored under a stable key, so app updates keep it.
+    if( _target.layoutIndex == m_Index )
+        SetDefaultPanelLayout(m_Index);
 }
 
 } // namespace nc::panel::actions

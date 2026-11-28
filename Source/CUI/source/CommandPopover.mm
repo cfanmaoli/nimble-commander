@@ -8,9 +8,16 @@ using namespace nc::base::keycodes;
 #include <numeric>
 #include <span>
 #include <cmath>
+#include <cwctype>
 #include <optional>
 
 static constexpr double g_ContentViewCornerRadius = 10.;
+
+// Carbon virtual key codes for the arrow keys. Base/KeyCodes.h only lists the
+// keys this component historically used, so define the two we need for column
+// navigation locally instead of adding a dependency on HIToolbox.
+static constexpr unsigned short g_LeftArrowKeyCode = 0x7B;
+static constexpr unsigned short g_RightArrowKeyCode = 0x7C;
 
 @interface NCCommandPopover (Private)
 - (std::span<NCCommandPopoverItem *const>)commandItems;
@@ -31,6 +38,17 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 - (instancetype _Nonnull)initWithPopover:(NCCommandPopover *)_popover andTitle:(NSString *)_title;
 - (void)tableView:(NSTableView *)_table didClickTableRow:(NSInteger)_row;
 - (bool)processKeyDown:(NSEvent *)_event;
+// A grid is made of N side-by-side table views. Each table view's tag is its
+// column index; these helpers map a (table view, row) pair to the flat index
+// in m_FilteredItems and activate/select that item.
+- (NSInteger)flatIndexInTableView:(NSTableView *)_table forRow:(NSInteger)_row;
+- (NCCommandPopoverItem *)itemInTableView:(NSTableView *)_table row:(NSInteger)_row;
+- (NCCommandPopoverItem *)itemAtFlatIndex:(NSInteger)_flat;
+- (void)activateItemAtFlatIndex:(NSInteger)_flat_index;
+- (void)clearSelectionInOtherTableViews:(NSTableView *)_except;
+- (void)moveFocusFrom:(NSTableView *)_from byColumns:(int)_delta;
+- (void)recomputeRowsPerColumn;
+- (void)updateScrollViewHeighConstraint;
 @property(readonly, nonatomic) bool numericHotkeysEnabled;
 @end
 
@@ -131,8 +149,8 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     NSString *m_Title;
     NSTextField *m_LabelTextField;
     NSImageView *m_SearchIcon;
-    NCCommandPopoverTableView *m_TableView;
-    NSScrollView *m_ScrollView;
+    NCCommandPopoverTableView *m_TableView; // primary (column 0) table view, also the keyboard first responder
+    NSScrollView *m_ScrollView;             // primary (column 0) scroll view
     NSLayoutConstraint *m_ScrollViewHeightConstraint;
     NSFont *m_LabelFont;
     NSFont *m_SectionFont;
@@ -143,6 +161,16 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     std::array<int, 12> m_HotKeyIdxToItemIdx;      // negative means no mapping
     double m_RegularRowHeight;
     double m_SeparatorRowHeight;
+
+    // Multi-column grid (2.1.7). One table view per column, laid out side by
+    // side. Items are distributed column-major: column c shows the flat items
+    // [c*m_RowsPerColumn, (c+1)*m_RowsPerColumn). m_TableView is column 0.
+    std::vector<NCCommandPopoverTableView *> m_TableViews;
+    std::vector<NSScrollView *> m_ScrollViews;
+    NSView *m_Grid;
+    NSLayoutConstraint *m_GridWidthConstraint;
+    int m_Columns;
+    int m_RowsPerColumn;
 }
 
 - (instancetype _Nonnull)initWithPopover:(NCCommandPopover *)_popover andTitle:(NSString *)_title
@@ -168,6 +196,21 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     const double max_title_width = [self maximumCommandTitleWidth];
     const double title_col_margin = 20.;
     const double title_col_width = std::max(max_title_width + title_col_margin, 160.);
+    const double hk_col_width = [@"3" sizeWithAttributes:@{NSFontAttributeName: m_LabelFont}].width + 2.;
+    const double img_col_width = 20.;
+    const double column_width = img_col_width + title_col_width + hk_col_width + 16.;
+
+    // 2.1.7: spread the items over several side-by-side columns on wide
+    // screens. The caller asks for a number of columns via 'columns' (default
+    // 1 keeps the classic single strip). Clamp by the screen width and by the
+    // number of items so we never create empty or off-screen columns.
+    const int requested = std::clamp(m_Parent.columns, 1, 3);
+    NSScreen *const screen = NSScreen.mainScreen;
+    const double avail = screen ? screen.visibleFrame.size.width - 80. : 1200.;
+    const int fits = std::max(1, static_cast<int>(std::floor(avail / column_width)));
+    const int by_items = std::max(1, static_cast<int>(std::min<size_t>(m_AllItems.size(), 3)));
+    m_Columns = std::max(1, std::min(requested, std::min(fits, by_items)));
+    [self recomputeRowsPerColumn];
 
     NCCommandPopoverContentView *v = [[NCCommandPopoverContentView alloc] initWithFrame:NSMakeRect(0., 0., 200., 200.)];
 
@@ -193,68 +236,140 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     m_LabelTextField.delegate = self;
     [v addSubview:m_LabelTextField];
 
-    m_ScrollView = [[NSScrollView alloc] initWithFrame:NSRect()];
-    m_ScrollView.borderType = NSNoBorder;
-    m_ScrollView.hasVerticalScroller = false;
-    m_ScrollView.hasHorizontalScroller = false;
-    m_ScrollView.verticalScrollElasticity = NSScrollElasticityNone;
-    m_ScrollView.horizontalScrollElasticity = NSScrollElasticityNone;
-    m_ScrollView.translatesAutoresizingMaskIntoConstraints = false;
-    m_ScrollView.drawsBackground = false;
-    m_ScrollView.contentInsets = NSEdgeInsets{.top = 0., .left = 0., .bottom = 0., .right = 0.};
+    // A plain container holds one scroll view per column. Each table view's tag
+    // is its column index, which is how the data source maps a row to a flat
+    // item. Columns are pinned with explicit constraints below (equal width and
+    // height, side by side) instead of relying on NSStackView's alignment.
+    m_Grid = [[NSView alloc] initWithFrame:NSRect()];
+    m_Grid.translatesAutoresizingMaskIntoConstraints = false;
+    [v addSubview:m_Grid];
 
-    m_TableView = [[NCCommandPopoverTableView alloc] initWithFrame:NSRect()];
-    m_TableView.autoresizingMask = NSViewNotSizable;
-    m_TableView.delegate = self;
-    m_TableView.dataSource = self;
-    m_TableView.headerView = nil;
-    m_TableView.allowsColumnReordering = false;
-    m_TableView.allowsColumnResizing = false;
-    m_TableView.allowsMultipleSelection = false;
-    m_TableView.allowsEmptySelection = true;
-    m_TableView.allowsColumnSelection = false;
-    m_TableView.allowsTypeSelect = false;
-    m_TableView.autosaveTableColumns = false;
-    m_TableView.intercellSpacing = NSMakeSize(0., 2);
-    m_TableView.style = NSTableViewStyleFullWidth;
-    m_TableView.usesAlternatingRowBackgroundColors = false;
-    m_TableView.backgroundColor = NSColor.clearColor;
-    m_TableView.rowSizeStyle = NSTableViewRowSizeStyleCustom;
-    m_TableView.rowHeight = m_RegularRowHeight;
+    m_TableViews.clear();
+    m_ScrollViews.clear();
+    for( int col = 0; col < m_Columns; ++col ) {
+        NSScrollView *sv = [[NSScrollView alloc] initWithFrame:NSRect()];
+        sv.borderType = NSNoBorder;
+        sv.hasVerticalScroller = false;
+        sv.hasHorizontalScroller = false;
+        sv.verticalScrollElasticity = NSScrollElasticityNone;
+        sv.horizontalScrollElasticity = NSScrollElasticityNone;
+        sv.translatesAutoresizingMaskIntoConstraints = false;
+        sv.drawsBackground = false;
+        sv.contentInsets = NSEdgeInsets{.top = 0., .left = 0., .bottom = 0., .right = 0.};
 
-    NSTableColumn *img_col = [[NSTableColumn alloc] initWithIdentifier:@"I"];
-    img_col.width = 20.;
-    [m_TableView addTableColumn:img_col];
+        NCCommandPopoverTableView *tv = [[NCCommandPopoverTableView alloc] initWithFrame:NSRect()];
+        tv.autoresizingMask = NSViewNotSizable;
+        tv.delegate = self;
+        tv.dataSource = self;
+        tv.tag = col;
+        tv.headerView = nil;
+        tv.allowsColumnReordering = false;
+        tv.allowsColumnResizing = false;
+        tv.allowsMultipleSelection = false;
+        tv.allowsEmptySelection = true;
+        tv.allowsColumnSelection = false;
+        tv.allowsTypeSelect = false;
+        tv.autosaveTableColumns = false;
+        tv.intercellSpacing = NSMakeSize(0., 2);
+        tv.style = NSTableViewStyleFullWidth;
+        tv.usesAlternatingRowBackgroundColors = false;
+        tv.backgroundColor = NSColor.clearColor;
+        tv.rowSizeStyle = NSTableViewRowSizeStyleCustom;
+        tv.rowHeight = m_RegularRowHeight;
 
-    NSTableColumn *label_col = [[NSTableColumn alloc] initWithIdentifier:@"L"];
-    label_col.width = title_col_width;
-    [m_TableView addTableColumn:label_col];
+        NSTableColumn *img_col = [[NSTableColumn alloc] initWithIdentifier:@"I"];
+        img_col.width = img_col_width;
+        [tv addTableColumn:img_col];
 
-    NSTableColumn *hk_col = [[NSTableColumn alloc] initWithIdentifier:@"K"];
-    hk_col.width = [@"3" sizeWithAttributes:@{NSFontAttributeName: m_LabelFont}].width + 2.;
-    [m_TableView addTableColumn:hk_col];
+        NSTableColumn *label_col = [[NSTableColumn alloc] initWithIdentifier:@"L"];
+        label_col.width = title_col_width;
+        [tv addTableColumn:label_col];
 
-    double total_columns_width = 0;
-    for( NSTableColumn *column in m_TableView.tableColumns ) {
-        total_columns_width += column.width;
+        NSTableColumn *hk_col = [[NSTableColumn alloc] initWithIdentifier:@"K"];
+        hk_col.width = hk_col_width;
+        [tv addTableColumn:hk_col];
+
+        sv.documentView = tv;
+        [m_Grid addSubview:sv];
+        m_TableViews.push_back(tv);
+        m_ScrollViews.push_back(sv);
+
+        if( col == 0 ) {
+            m_TableView = tv;
+            m_ScrollView = sv;
+        }
     }
 
-    m_ScrollView.documentView = m_TableView;
-    [v addSubview:m_ScrollView];
+    // Pin every column: equal width, full grid height, laid left-to-right with
+    // a 1pt gutter. This guarantees a clean aligned grid regardless of how
+    // tall each column's content is.
+    const double gutter = 1.;
+    for( size_t i = 0; i < m_ScrollViews.size(); ++i ) {
+        NSScrollView *sv = m_ScrollViews[i];
+        [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:sv
+                                                          attribute:NSLayoutAttributeTop
+                                                          relatedBy:NSLayoutRelationEqual
+                                                             toItem:m_Grid
+                                                          attribute:NSLayoutAttributeTop
+                                                         multiplier:1.
+                                                           constant:0.]];
+        [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:sv
+                                                          attribute:NSLayoutAttributeBottom
+                                                          relatedBy:NSLayoutRelationEqual
+                                                             toItem:m_Grid
+                                                          attribute:NSLayoutAttributeBottom
+                                                         multiplier:1.
+                                                           constant:0.]];
+        if( i == 0 ) {
+            [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:sv
+                                                              attribute:NSLayoutAttributeLeading
+                                                              relatedBy:NSLayoutRelationEqual
+                                                                 toItem:m_Grid
+                                                              attribute:NSLayoutAttributeLeading
+                                                             multiplier:1.
+                                                               constant:0.]];
+        }
+        else {
+            NSScrollView *prev = m_ScrollViews[i - 1];
+            [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:sv
+                                                              attribute:NSLayoutAttributeLeading
+                                                              relatedBy:NSLayoutRelationEqual
+                                                                 toItem:prev
+                                                              attribute:NSLayoutAttributeTrailing
+                                                             multiplier:1.
+                                                               constant:gutter]];
+            [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:sv
+                                                              attribute:NSLayoutAttributeWidth
+                                                              relatedBy:NSLayoutRelationEqual
+                                                                 toItem:prev
+                                                              attribute:NSLayoutAttributeWidth
+                                                             multiplier:1.
+                                                               constant:0.]];
+        }
+    }
+    if( !m_ScrollViews.empty() ) {
+        [m_Grid addConstraint:[NSLayoutConstraint constraintWithItem:m_ScrollViews.back()
+                                                          attribute:NSLayoutAttributeTrailing
+                                                          relatedBy:NSLayoutRelationEqual
+                                                             toItem:m_Grid
+                                                          attribute:NSLayoutAttributeTrailing
+                                                         multiplier:1.
+                                                           constant:0.]];
+    }
 
-    auto views = NSDictionaryOfVariableBindings(m_LabelTextField, m_SearchIcon, m_ScrollView);
+    auto views = NSDictionaryOfVariableBindings(m_LabelTextField, m_SearchIcon, m_Grid);
     [v addConstraints:[NSLayoutConstraint
                           constraintsWithVisualFormat:@"H:|-(6)-[m_SearchIcon(==16)]-(4)-[m_LabelTextField(>=40)]-(4)-|"
                                               options:0
                                               metrics:nil
                                                 views:views]];
 
-    [v addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-(==0)-[m_ScrollView]-(==0)-|"
+    [v addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-(==0)-[m_Grid]-(==0)-|"
                                                               options:0
                                                               metrics:nil
                                                                 views:views]];
     [v addConstraints:[NSLayoutConstraint
-                          constraintsWithVisualFormat:@"V:|-(6)-[m_LabelTextField]-(4)-[m_ScrollView(>=20)]-(4)-|"
+                          constraintsWithVisualFormat:@"V:|-(6)-[m_LabelTextField]-(4)-[m_Grid(>=20)]-(4)-|"
                                               options:0
                                               metrics:nil
                                                 views:views]];
@@ -273,15 +388,17 @@ static constexpr double g_ContentViewCornerRadius = 10.;
                                                  multiplier:1.
                                                    constant:16.]];
 
-    [v addConstraint:[NSLayoutConstraint constraintWithItem:m_ScrollView
-                                                  attribute:NSLayoutAttributeWidth
-                                                  relatedBy:NSLayoutRelationGreaterThanOrEqual
-                                                     toItem:nil
-                                                  attribute:NSLayoutAttributeNotAnAttribute
-                                                 multiplier:1.
-                                                   constant:total_columns_width + 16.]];
+    m_GridWidthConstraint = [NSLayoutConstraint constraintWithItem:m_Grid
+                                                         attribute:NSLayoutAttributeWidth
+                                                         relatedBy:NSLayoutRelationGreaterThanOrEqual
+                                                            toItem:nil
+                                                         attribute:NSLayoutAttributeNotAnAttribute
+                                                        multiplier:1.
+                                                          constant:m_Columns * column_width +
+                                                              (m_Columns - 1) * gutter];
+    [v addConstraint:m_GridWidthConstraint];
 
-    m_ScrollViewHeightConstraint = [NSLayoutConstraint constraintWithItem:m_ScrollView
+    m_ScrollViewHeightConstraint = [NSLayoutConstraint constraintWithItem:m_Grid
                                                                 attribute:NSLayoutAttributeHeight
                                                                 relatedBy:NSLayoutRelationGreaterThanOrEqual
                                                                    toItem:nil
@@ -298,15 +415,93 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (void)updateScrollViewHeighConstraint
 {
+    // With a multi-column grid the popover grows sideways, not downwards:
+    // each column shows at most `m_RowsPerColumn` rows (capped at 30). The
+    // height is the tallest column so every column stays fully visible.
     const auto &items = m_FilteredItems;
-    double height = 2.; // why???
     const size_t max_visible_rows = 30;
-    for( size_t idx = 0; idx < std::min(items.size(), max_visible_rows); ++idx ) {
-        height += items[idx].separatorItem ? m_SeparatorRowHeight : m_RegularRowHeight;
-        if( idx > 0 )
-            height += m_TableView.intercellSpacing.height;
+    double height = 2.;
+    for( int col = 0; col < m_Columns; ++col ) {
+        const size_t start = static_cast<size_t>(col) * m_RowsPerColumn;
+        double col_height = 2.;
+        const size_t visible = std::min<size_t>(m_RowsPerColumn, max_visible_rows);
+        for( size_t row = 0; row < visible; ++row ) {
+            const size_t idx = start + row;
+            if( idx >= items.size() )
+                break;
+            col_height += items[idx].separatorItem ? m_SeparatorRowHeight : m_RegularRowHeight;
+            if( row > 0 )
+                col_height += m_TableView.intercellSpacing.height;
+        }
+        height = std::max(height, col_height);
     }
     m_ScrollViewHeightConstraint.constant = height;
+}
+
+// Recompute how many rows each column holds. Called whenever the filtered set
+// changes (typing a filter) so columns rebalance instead of keeping stale rows.
+- (void)recomputeRowsPerColumn
+{
+    const size_t count = m_FilteredItems.size();
+    m_RowsPerColumn = static_cast<int>((count + m_Columns - 1) / m_Columns);
+    if( m_RowsPerColumn < 1 )
+        m_RowsPerColumn = 1;
+}
+
+// Column-major mapping: column c owns flat items [c*R, (c+1)*R).
+- (NSInteger)flatIndexInTableView:(NSTableView *)_table forRow:(NSInteger)_row
+{
+    return static_cast<NSInteger>(_table.tag) * m_RowsPerColumn + _row;
+}
+
+- (NCCommandPopoverItem *)itemInTableView:(NSTableView *)_table row:(NSInteger)_row
+{
+    return [self itemAtFlatIndex:[self flatIndexInTableView:_table forRow:_row]];
+}
+
+- (NCCommandPopoverItem *)itemAtFlatIndex:(NSInteger)_flat
+{
+    if( _flat < 0 || _flat >= static_cast<NSInteger>(m_FilteredItems.size()) )
+        return nil;
+    return m_FilteredItems[_flat];
+}
+
+- (void)activateItemAtFlatIndex:(NSInteger)_flat
+{
+    NCCommandPopoverItem *const item = [self itemAtFlatIndex:_flat];
+    if( item == nil )
+        return;
+    SEL action = item.action;
+    id target = item.target;
+
+    [m_Parent close]; // close before firing, matching the original behaviour
+
+    if( ![NSApplication.sharedApplication sendAction:action to:target from:item] )
+        NSBeep();
+}
+
+- (void)clearSelectionInOtherTableViews:(NSTableView *)_except
+{
+    for( NSTableView *tv : m_TableViews )
+        if( tv != _except )
+            [tv selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:false];
+}
+
+- (void)moveFocusFrom:(NSTableView *)_from byColumns:(int)_delta
+{
+    const int target_col = static_cast<int>(_from.tag) + _delta;
+    if( target_col < 0 || target_col >= m_Columns )
+        return;
+    NSTableView *const target = m_TableViews[target_col];
+    [self clearSelectionInOtherTableViews:target];
+    const NSInteger rows = [self numberOfRowsInTableView:target];
+    for( NSInteger row = 0; row < rows; ++row ) {
+        if( [self tableView:target shouldSelectRow:row] ) {
+            [target selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:false];
+            break;
+        }
+    }
+    [self.view.window makeFirstResponder:target];
 }
 
 - (void)viewDidAppear
@@ -317,18 +512,28 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     [self.view layout];
     m_Parent.contentSize = self.view.fittingSize;
 
-    // First try place the selection where the mouse cursor currently is to avoid flicker
-    // (mouse-tracking events are processed later and there's a visual delay between the appearance of the view and
-    // setting the selection via mouse-tracking)
+    // First try place the selection where the mouse cursor currently is to avoid flicker.
+    // With a grid, find which column the cursor is over and only highlight there.
     const NSPoint global_mouse_location = NSEvent.mouseLocation;
     const NSPoint window_mouse_location = [self.view.window convertPointFromScreen:global_mouse_location];
-    const NSPoint table_mouse_location = [m_TableView convertPoint:window_mouse_location fromView:nil];
-    if( [m_TableView mouse:table_mouse_location inRect:m_TableView.bounds] ) {
-        [m_TableView processMouseMoved:table_mouse_location];
+    for( NCCommandPopoverTableView *tv : m_TableViews ) {
+        const NSPoint table_mouse_location = [tv convertPoint:window_mouse_location fromView:nil];
+        if( [tv mouse:table_mouse_location inRect:tv.bounds] ) {
+            [self clearSelectionInOtherTableViews:tv];
+            [tv processMouseMoved:table_mouse_location];
+            break;
+        }
     }
 
-    // And only afterwards set to the first row if there's no selection
-    if( m_TableView.selectedRow == -1 ) {
+    // And only afterwards set to the first row if no column has a selection
+    bool any_selected = false;
+    for( NSTableView *tv : m_TableViews ) {
+        if( tv.selectedRow != -1 ) {
+            any_selected = true;
+            break;
+        }
+    }
+    if( !any_selected ) {
         [self selectFirstSelectableRow];
     }
 }
@@ -361,7 +566,12 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
-    return m_FilteredItems.size();
+    const NSInteger col = tableView.tag;
+    const NSInteger start = col * m_RowsPerColumn;
+    const NSInteger total = static_cast<NSInteger>(m_FilteredItems.size());
+    if( start >= total )
+        return 0;
+    return std::min<NSInteger>(m_RowsPerColumn, total - start);
 }
 
 - (NSString *)hotkeyLabelForItemAtIndex:(size_t)_index
@@ -451,11 +661,10 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (NSView *)tableView:(NSTableView *)_table viewForTableColumn:(NSTableColumn *)_column row:(NSInteger)_row
 {
-    const auto &items = m_FilteredItems;
-    if( _row < 0 || _row >= static_cast<long>(items.size()) ) {
+    NCCommandPopoverItem *item = [self itemInTableView:_table row:_row];
+    if( item == nil ) {
         return nil;
     }
-    NCCommandPopoverItem *item = items[_row];
     if( item.separatorItem ) {
         NSBox *box = [[NSBox alloc] initWithFrame:NSRect()];
         box.boxType = NSBoxSeparator;
@@ -562,7 +771,8 @@ static constexpr double g_ContentViewCornerRadius = 10.;
         }
 
         if( [_column.identifier isEqualToString:@"K"] && self.numericHotkeysEnabled ) {
-            NSString *hk = [self hotkeyLabelForItemAtIndex:_row];
+            const NSInteger flat = [self flatIndexInTableView:_table forRow:_row];
+            NSString *hk = [self hotkeyLabelForItemAtIndex:static_cast<size_t>(flat)];
             if( hk.length == 0 )
                 return nil;
             NSTextField *tf = [[NSTextField alloc] initWithFrame:NSRect()];
@@ -598,12 +808,8 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (nullable NSTableRowView *)tableView:(NSTableView *)_table rowViewForRow:(NSInteger)_row
 {
-    const auto &items = m_FilteredItems;
-    if( _row < 0 || _row >= static_cast<long>(items.size()) ) {
-        return nil;
-    }
-    NCCommandPopoverItem *item = items[_row];
-    if( !item.sectionHeader )
+    NCCommandPopoverItem *item = [self itemInTableView:_table row:_row];
+    if( item == nil || !item.sectionHeader )
         return nil;
 
     NSTextField *tf = [[NSTextField alloc] initWithFrame:NSRect()];
@@ -634,33 +840,22 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (void)tableView:(NSTableView *)_table didClickTableRow:(NSInteger)_row
 {
-    const auto &items = m_FilteredItems;
-    if( _row >= 0 || _row < static_cast<long>(items.size()) ) {
-        NCCommandPopoverItem *item = items[_row];
-        SEL action = item.action;
-        id target = item.target;
-
-        [m_Parent close]; // should we close BEFORE or AFTER triggering the action??
-
-        if( ![NSApplication.sharedApplication sendAction:action to:target from:item] ) {
-            NSBeep();
-        }
-    }
+    [self activateItemAtFlatIndex:[self flatIndexInTableView:_table forRow:_row]];
 }
 
 - (double)tableView:(NSTableView *)_table heightOfRow:(long)_row
 {
-    const auto &items = m_FilteredItems;
-    if( _row >= 0 && _row < static_cast<long>(items.size()) && items[_row].separatorItem )
+    NCCommandPopoverItem *item = [self itemInTableView:_table row:_row];
+    if( item != nil && item.separatorItem )
         return m_SeparatorRowHeight;
     return m_RegularRowHeight;
 }
 
 - (BOOL)tableView:(NSTableView *)_table shouldSelectRow:(NSInteger)_row
 {
-    const auto &items = m_FilteredItems;
-    if( _row >= 0 && _row < static_cast<long>(items.size()) )
-        return !(items[_row].separatorItem || items[_row].sectionHeader);
+    NCCommandPopoverItem *item = [self itemInTableView:_table row:_row];
+    if( item != nil )
+        return !(item.separatorItem || item.sectionHeader);
     return false;
 }
 
@@ -718,14 +913,35 @@ static constexpr double g_ContentViewCornerRadius = 10.;
     return false;
 }
 
+// Subsequence match: every character of _needle appears in _haystack in order
+// (case-insensitive). This is the classic command-palette fuzzy algorithm:
+// "gof" matches "Go To Folder", "ncm" matches "New Command Line Mode".
+static bool FuzzySubsequenceMatch(NSString *_haystack, NSString *_needle)
+{
+    if( _needle.length == 0 )
+        return true;
+    const NSUInteger needle_len = _needle.length;
+    NSUInteger n = 0;
+    for( NSUInteger i = 0; i < _haystack.length && n < needle_len; ++i ) {
+        const unichar h = [_haystack characterAtIndex:i];
+        const unichar c = [_needle characterAtIndex:n];
+        if( towlower(static_cast<wint_t>(h)) == towlower(static_cast<wint_t>(c)) )
+            ++n;
+    }
+    return n == needle_len;
+}
+
 - (void)updateFiltering
 {
     NSString *str = m_LabelTextField.stringValue ? m_LabelTextField.stringValue : @"";
-    auto validate = [str](NCCommandPopoverItem *_item) -> bool {
+    const bool fuzzy = m_Parent.fuzzyFiltering;
+    auto validate = [str, fuzzy](NCCommandPopoverItem *_item) -> bool {
         if( str.length == 0 )
             return true; // no filtering
         if( _item.separatorItem || _item.sectionHeader )
             return false;
+        if( fuzzy )
+            return FuzzySubsequenceMatch(_item.title, str);
         return [_item.title rangeOfString:str options:NSCaseInsensitiveSearch].location != NSNotFound;
     };
 
@@ -736,7 +952,9 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
     m_FilteredItems = new_filtered;
     [self setupHotKeysMapping];
-    [m_TableView reloadData];
+    [self recomputeRowsPerColumn];
+    for( NSTableView *tv : m_TableViews )
+        [tv reloadData];
     [self selectFirstSelectableRow];
 
     [self updateScrollViewHeighConstraint];
@@ -746,11 +964,12 @@ static constexpr double g_ContentViewCornerRadius = 10.;
 
 - (void)selectFirstSelectableRow
 {
-    const auto &items = m_FilteredItems;
-    for( size_t idx = 0; idx < items.size(); ++idx ) {
-        if( [self tableView:m_TableView shouldSelectRow:idx] ) {
-            [m_TableView selectRowIndexes:[NSIndexSet indexSetWithIndex:idx] byExtendingSelection:false];
-            break;
+    [self clearSelectionInOtherTableViews:m_TableView];
+    const NSInteger rows = [self numberOfRowsInTableView:m_TableView];
+    for( NSInteger row = 0; row < rows; ++row ) {
+        if( [self tableView:m_TableView shouldSelectRow:row] ) {
+            [m_TableView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:false];
+            return;
         }
     }
 }
@@ -814,13 +1033,15 @@ static constexpr NSTrackingAreaOptions g_TrackingOptions =
                 break;
             }
     }
+    else if( keycode == g_LeftArrowKeyCode || keycode == g_RightArrowKeyCode ) {
+        // In a grid, left/right move the keyboard focus between columns.
+        [ctrl moveFocusFrom:self byColumns:(keycode == g_RightArrowKeyCode ? 1 : -1)];
+    }
     else if( auto idx = [ctrl itemIndexFromKeyDown:_event] ) {
-        if( static_cast<long>(*idx) < self.numberOfRows ) {
-            [ctrl tableView:self didClickTableRow:*idx];
-        }
-        else {
-            NSBeep();
-        }
+        // itemIndexFromKeyDown returns a *flat* index into m_FilteredItems
+        // (the numeric hotkeys are assigned in flat order), so bypass the
+        // (column,row) mapping and activate it directly.
+        [ctrl activateItemAtFlatIndex:static_cast<NSInteger>(*idx)];
     }
     else if( [ctrl processKeyDown:_event] ) {
         /*nothing - already processed*/
@@ -843,13 +1064,18 @@ static constexpr NSTrackingAreaOptions g_TrackingOptions =
 
 - (void)processMouseMoved:(NSPoint)_local_coords
 {
+    NCCommandPopoverViewController *ctrl = static_cast<NCCommandPopoverViewController *>(self.delegate);
     const long row = [self rowAtPoint:_local_coords];
-    if( row == self.selectedRow )
-        return;
-    if( row >= 0 && row < self.numberOfRows && [self.delegate tableView:self shouldSelectRow:row] )
-        [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:false];
-    else
+    const bool over_selectable = row >= 0 && row < self.numberOfRows && [ctrl tableView:self shouldSelectRow:row];
+    if( over_selectable ) {
+        // Only one cell across the whole grid may be highlighted at a time.
+        [ctrl clearSelectionInOtherTableViews:self];
+        if( row != self.selectedRow )
+            [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:false];
+    }
+    else {
         [self selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:false];
+    }
 }
 
 - (void)mouseMoved:(NSEvent *)_event
@@ -991,14 +1217,19 @@ static constexpr NSTrackingAreaOptions g_TrackingOptions =
     NCCommandPopoverWindow *m_Window;
     NSSize m_ContentSize;
     __weak id<NCCommandPopoverDelegate> m_Delegate;
+    bool m_FuzzyFiltering;
+    int m_Columns;
 }
 
 @synthesize delegate = m_Delegate;
+@synthesize fuzzyFiltering = m_FuzzyFiltering;
+@synthesize columns = m_Columns;
 
 - (instancetype _Nonnull)initWithTitle:(NSString *_Nonnull)_title
 {
     self = [super init];
     if( self ) {
+        m_Columns = 1; // default: classic single-column list
         m_Controller = [[NCCommandPopoverViewController alloc] initWithPopover:self andTitle:_title];
     }
     return self;

@@ -35,8 +35,7 @@ void GoToFolder::Perform(PanelController *_target, id /*_sender*/) const
                                  c->PerformAsynchronous = true;
                                  c->InitiatedByUser = true;
                                  c->LoadingResultCallback = [=](const std::expected<void, Error> &_result) {
-                                     if( _result || !nc::IsCancellation(_result.error()) )
-                                         dispatch_to_main_queue([=] { [sheet tellLoadingResult:_result]; });
+                                     dispatch_to_main_queue([=] { [sheet tellLoadingResult:_result]; });
                                  };
                                  [_target GoToDirWithContext:c];
                              }];
@@ -75,12 +74,11 @@ void GoToDownloadsFolder::Perform(PanelController *_target, id /*_sender*/) cons
 void GoToApplicationsFolder::Perform(PanelController *_target, id /*_sender*/) const
 {
 
-    const uint64_t epoch = [_target beginNavigationEpoch];
-    auto task = [_target, epoch](const std::function<bool()> &_cancelled) {
+    auto task = [_target](const std::function<bool()> &_cancelled) {
         const std::expected<VFSListingPtr, Error> listing = vfs::native::FetchUnifiedApplicationsListing(
             nc::bootstrap::NativeVFSHostInstance(), _target.vfsFetchingFlags, _cancelled);
         if( listing ) {
-            dispatch_to_main_queue([listing, _target, epoch] { [_target loadListing:*listing navigationEpoch:epoch]; });
+            dispatch_to_main_queue([listing, _target] { [_target loadListing:*listing]; });
         }
     };
     [_target commitCancelableLoadingTask:std::move(task)];
@@ -88,12 +86,11 @@ void GoToApplicationsFolder::Perform(PanelController *_target, id /*_sender*/) c
 
 void GoToUtilitiesFolder::Perform(PanelController *_target, id /*_sender*/) const
 {
-    const uint64_t epoch = [_target beginNavigationEpoch];
-    auto task = [_target, epoch](const std::function<bool()> &_cancelled) {
+    auto task = [_target](const std::function<bool()> &_cancelled) {
         const std::expected<VFSListingPtr, Error> listing = vfs::native::FetchUnifiedUtilitiesListing(
             nc::bootstrap::NativeVFSHostInstance(), _target.vfsFetchingFlags, _cancelled);
         if( listing ) {
-            dispatch_to_main_queue([listing, _target, epoch] { [_target loadListing:*listing navigationEpoch:epoch]; });
+            dispatch_to_main_queue([listing, _target] { [_target loadListing:*listing]; });
         }
     };
     [_target commitCancelableLoadingTask:std::move(task)];
@@ -256,6 +253,8 @@ void GoIntoFolder::Perform(PanelController *_target, id /*_sender*/) const
 
     if( item.IsDir() ) {
         if( item.IsDotDot() ) {
+            // NB: ListingItem::Path() of a ".." entry is the CURRENT directory, so falling
+            // through would navigate straight back down and cancel the jump up.
             actions::GoToEnclosingFolder{}.Perform(_target, _target);
             return;
         }

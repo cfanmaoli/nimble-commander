@@ -154,12 +154,23 @@ static __weak NCMainWindowController *g_LastFocusedNCMainWindowController = nil;
 
 - (void)restoreStateWithCoder:(NSCoder *)coder
 {
-    const id encoded_state = [coder decodeObjectOfClass:NSString.class forKey:g_CocoaRestorationFilePanelsStateKey];
-    if( auto json = objc_cast<NSString>(encoded_state) ) {
-        nc::config::Document state;
-        rapidjson::ParseResult ok = state.Parse<rapidjson::kParseCommentsFlag>(json.UTF8String);
-        if( ok )
-            [m_PanelState decodeRestorableState:state];
+    // macOS window restoration replays the NSCoder snapshot from
+    // the previous session, which can be older than NC's own State.json (the
+    // snapshot is only refreshed on a clean quit). That made the panels come
+    // back to stale folders. Always prefer NC's persisted state; fall back to
+    // the NSCoder snapshot only when State.json has nothing usable.
+    const auto persisted = StateConfig().Get(g_JSONRestorationFilePanelsStateKey);
+    if( persisted.GetType() != rapidjson::kNullType ) {
+        [m_PanelState decodeRestorableState:persisted];
+    }
+    else {
+        const id encoded_state = [coder decodeObjectOfClass:NSString.class forKey:g_CocoaRestorationFilePanelsStateKey];
+        if( auto json = objc_cast<NSString>(encoded_state) ) {
+            nc::config::Document state;
+            rapidjson::ParseResult ok = state.Parse<rapidjson::kParseCommentsFlag>(json.UTF8String);
+            if( ok )
+                [m_PanelState decodeRestorableState:state];
+        }
     }
 
     [super restoreStateWithCoder:coder];

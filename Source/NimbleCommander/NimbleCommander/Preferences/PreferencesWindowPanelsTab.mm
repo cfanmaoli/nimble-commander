@@ -6,6 +6,7 @@
 #include <Config/Config.h>
 #include <NimbleCommander/Bootstrap/AppDelegate.h>
 #include <NimbleCommander/States/FilePanels/PanelViewLayoutSupport.h>
+#include <NimbleCommander/States/FilePanels/PanelViewPresentationSettings.h>
 #include <Panel/TagsStorage.h>
 #include <Panel/UI/TagsPresentation.h>
 #include <Utility/ByteCountFormatter.h>
@@ -23,6 +24,9 @@ using namespace nc::panel;
 static const auto g_LayoutColumnsDDType =
     @"com.magnumbytes.nc.pref.PreferencesWindowPanelsTabPrivateTableViewDataColumns";
 static const auto g_TagsDDType = @"com.magnumbytes.nc.pref.PreferencesWindowPanelsTabPrivateTableViewTagRows";
+
+// 2.1.27: shared with MainWindowFilePanelState's command-line hint switch.
+static const auto g_CommandLineVisibility = @"nc.commandLine.showHint";
 
 @interface PreferencesToNumberValueTransformer : NSValueTransformer
 @end
@@ -103,6 +107,14 @@ static const auto g_TagsDDType = @"com.magnumbytes.nc.pref.PreferencesWindowPane
 @property(nonatomic) IBOutlet NSPopUpButton *fileSizeFormatCombo;
 @property(nonatomic) IBOutlet NSPopUpButton *selectionSizeFormatCombo;
 
+// 2.1.27: the bottom command line lives in Panels -> Behaviour. It is a plain
+// NSUserDefaults switch, not a config value, so it needs its own action instead of
+// the ConfigBinder plumbing used by the rest of this page.
+@property(nonatomic) IBOutlet NSButton *commandLineVisibility;
+// 2.1.28: list-view polish switches
+@property(nonatomic) IBOutlet NSButton *smartDates;
+@property(nonatomic) IBOutlet NSButton *sizeBars;
+
 // layout bindings
 @property(nonatomic) IBOutlet NSTableView *layoutsTable;
 @property(nonatomic) bool anyLayoutSelected;
@@ -157,6 +169,9 @@ static const auto g_TagsDDType = @"com.magnumbytes.nc.pref.PreferencesWindowPane
 @synthesize tabParts;
 @synthesize fileSizeFormatCombo;
 @synthesize selectionSizeFormatCombo;
+@synthesize commandLineVisibility;
+@synthesize smartDates;
+@synthesize sizeBars;
 @synthesize layoutsTable;
 @synthesize anyLayoutSelected;
 @synthesize layoutTitle;
@@ -215,6 +230,16 @@ static const auto g_TagsDDType = @"com.magnumbytes.nc.pref.PreferencesWindowPane
 - (void)loadView
 {
     [super loadView];
+    // 2.1.27: a fresh install has no value stored - an absent key means "on", so the
+    // checkbox has to be seeded by hand instead of relying on a binding.
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    const BOOL hint_visible = [defaults objectForKey:g_CommandLineVisibility]
+                                  ? [defaults boolForKey:g_CommandLineVisibility]
+                                  : YES;
+    self.commandLineVisibility.state = hint_visible ? NSControlStateValueOn : NSControlStateValueOff;
+    self.smartDates.state = nc::panel::ListSmartDatesEnabled() ? NSControlStateValueOn : NSControlStateValueOff;
+    self.sizeBars.state = nc::panel::ListSizeBarsEnabled() ? NSControlStateValueOn : NSControlStateValueOff;
+
     [self.layoutsListColumnsTable registerForDraggedTypes:@[g_LayoutColumnsDDType]];
     [self.tagsTable registerForDraggedTypes:@[g_TagsDDType]];
 
@@ -225,6 +250,26 @@ static const auto g_TagsDDType = @"com.magnumbytes.nc.pref.PreferencesWindowPane
         it.title = ByteCountFormatter::Instance().ToNSString(magic_size, static_cast<ByteCountFormatter::Type>(it.tag));
 
     [self.view layoutSubtreeIfNeeded];
+}
+
+// 2.1.27: the file panel listens to NSUserDefaultsDidChangeNotification and refreshes
+// the placeholder right away, so the switch takes effect without a restart.
+- (IBAction)onCommandLineVisibilityToggled:(NSButton *)sender
+{
+    [NSUserDefaults.standardUserDefaults setBool:sender.state == NSControlStateValueOn
+                                          forKey:g_CommandLineVisibility];
+}
+
+- (IBAction)onSmartDatesToggled:(NSButton *)sender
+{
+    [NSUserDefaults.standardUserDefaults setBool:sender.state == NSControlStateValueOn
+                                          forKey:@"nc.list.smartDates"];
+}
+
+- (IBAction)onSizeBarsToggled:(NSButton *)sender
+{
+    [NSUserDefaults.standardUserDefaults setBool:sender.state == NSControlStateValueOn
+                                          forKey:@"nc.list.sizeBars"];
 }
 
 - (NSString *)identifier

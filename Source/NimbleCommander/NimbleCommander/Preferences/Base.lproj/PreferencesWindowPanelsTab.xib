@@ -34,6 +34,9 @@
                 <outlet property="layoutsTable" destination="7Vi-TZ-WWx" id="YbV-Es-D6w"/>
                 <outlet property="selectionSizeFormatCombo" destination="EaD-ec-z3N" id="fw3-Uo-Eda"/>
                 <outlet property="tabParts" destination="3" id="XDG-iV-bHL"/>
+                <outlet property="commandLineVisibility" destination="lCB-wd-2v7" id="lCO-ut-2vC"/>
+                <outlet property="smartDates" destination="lCB-sm-2w1" id="lCO-sm-2wc"/>
+                <outlet property="sizeBars" destination="lCB-sb-2w3" id="lCO-sb-2wd"/>
                 <outlet property="tagsAdditionalMenu" destination="WZK-mo-3jo" id="YCk-Jy-HJV"/>
                 <outlet property="tagsPlusMinus" destination="JBP-JY-hIC" id="C1f-Jd-sUj"/>
                 <outlet property="tagsTable" destination="1YK-eG-CYm" id="bj6-2Z-07L"/>
@@ -43,16 +46,16 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="1">
-            <rect key="frame" x="0.0" y="0.0" width="730" height="420"/>
+            <rect key="frame" x="0.0" y="0.0" width="730" height="486"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="3">
-                    <rect key="frame" x="0.0" y="0.0" width="730" height="372"/>
+                    <rect key="frame" x="0.0" y="0.0" width="730" height="438"/>
                     <font key="font" metaFont="system"/>
                     <tabViewItems>
                         <tabViewItem label="Behaviour" identifier="1" id="21">
                             <view key="view" id="22">
-                                <rect key="frame" x="0.0" y="0.0" width="730" height="372"/>
+                                <rect key="frame" x="0.0" y="0.0" width="730" height="438"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="gE9-bs-3HL">
@@ -296,6 +299,36 @@
                                             <action selector="onChooseOperationsConcurrency:" target="-2" id="x2g-fD-iXy"/>
                                         </connections>
                                     </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="lCB-wd-2v7">
+                                        <rect key="frame" x="292" y="10" width="112" height="16"/>
+                                        <buttonCell key="cell" type="check" title="显示底部命令行" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lCc-eL-2v8">
+                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="onCommandLineVisibilityToggled:" target="-2" id="lCa-ct-2v9"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="lCB-sm-2w1">
+                                        <rect key="frame" x="292" y="10" width="112" height="16"/>
+                                        <buttonCell key="cell" type="check" title="智能日期" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lCC-sm-2w2">
+                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="onSmartDatesToggled:" target="-2" id="lCA-sm-2w5"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="lCB-sb-2w3">
+                                        <rect key="frame" x="292" y="10" width="112" height="16"/>
+                                        <buttonCell key="cell" type="check" title="大小比例条" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lCC-sb-2w4">
+                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="onSizeBarsToggled:" target="-2" id="lCA-sb-2w6"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="6PT-MM-wRI" firstAttribute="leading" secondItem="IcM-Ld-HO1" secondAttribute="trailing" constant="8" symbolic="YES" id="0ds-mK-Ldf"/>
@@ -337,6 +370,12 @@
                                     <constraint firstItem="VCU-zZ-nw0" firstAttribute="leading" secondItem="760" secondAttribute="leading" id="shP-94-Gf1"/>
                                     <constraint firstItem="8Dv-Ox-hiC" firstAttribute="top" secondItem="gE9-bs-3HL" secondAttribute="bottom" constant="6" id="wra-QR-7tm"/>
                                     <constraint firstItem="8Dv-Ox-hiC" firstAttribute="leading" secondItem="ctP-zl-GEx" secondAttribute="trailing" constant="8" symbolic="YES" id="x6T-Ps-Qg8"/>
+                                    <constraint firstItem="lCB-wd-2v7" firstAttribute="top" secondItem="VCU-zZ-nw0" secondAttribute="bottom" constant="6" id="lCt-op-2vA"/>
+                                    <constraint firstItem="lCB-wd-2v7" firstAttribute="leading" secondItem="VCU-zZ-nw0" secondAttribute="leading" id="lCl-ed-2vB"/>
+                                    <constraint firstItem="lCB-sm-2w1" firstAttribute="top" secondItem="lCB-wd-2v7" secondAttribute="bottom" constant="6" id="lCt-sm-2w7"/>
+                                    <constraint firstItem="lCB-sm-2w1" firstAttribute="leading" secondItem="lCB-wd-2v7" secondAttribute="leading" id="lCl-sm-2w8"/>
+                                    <constraint firstItem="lCB-sb-2w3" firstAttribute="top" secondItem="lCB-sm-2w1" secondAttribute="bottom" constant="6" id="lCt-sb-2w9"/>
+                                    <constraint firstItem="lCB-sb-2w3" firstAttribute="leading" secondItem="lCB-sm-2w1" secondAttribute="leading" id="lCl-sb-2wa"/>
                                 </constraints>
                             </view>
                         </tabViewItem>

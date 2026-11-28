@@ -225,6 +225,52 @@ static NSString *Tiny(time_t _time)
     return static_cast<NSString *>(CFBridgingRelease(str));
 }
 
+static NSString *SmartFormat(time_t _time)
+{
+    // NSDateFormatter is thread-safe for formatting since 10.9, so the shared instances are fine -
+    // same assumption as the Orthodox formatter above.
+    static const auto relative_day = [] {
+        NSDateFormatter *const f = [NSDateFormatter new];
+        f.dateStyle = NSDateFormatterMediumStyle;
+        f.timeStyle = NSDateFormatterNoStyle;
+        f.doesRelativeDateFormatting = YES;
+        return f;
+    }();
+    static const auto clock = [] {
+        NSDateFormatter *const f = [NSDateFormatter new];
+        f.dateStyle = NSDateFormatterNoStyle;
+        f.timeStyle = NSDateFormatterShortStyle;
+        return f;
+    }();
+    static const auto weekday = [] {
+        NSDateFormatter *const f = [NSDateFormatter new];
+        f.dateFormat = [NSDateFormatter dateFormatFromTemplate:@"EEE"
+                                                      options:0
+                                                       locale:NSLocale.currentLocale];
+        return f;
+    }();
+
+    NSDate *const date = [NSDate dateWithTimeIntervalSince1970:static_cast<double>(_time)];
+    NSCalendar *const calendar = NSCalendar.currentCalendar;
+
+    if( [calendar isDateInToday:date] || [calendar isDateInYesterday:date] )
+        return [NSString stringWithFormat:@"%@ %@",
+                                          [relative_day stringFromDate:date],
+                                          [clock stringFromDate:date]];
+
+    const auto days = [calendar components:NSCalendarUnitDay
+                                 fromDate:[calendar startOfDayForDate:date]
+                                   toDate:[calendar startOfDayForDate:[NSDate date]]
+                                  options:0]
+                          .day;
+    if( days > 0 && days < 7 )
+        return [NSString stringWithFormat:@"%@ %@",
+                                          [weekday stringFromDate:date],
+                                          [clock stringFromDate:date]];
+
+    return Orthodox(_time);
+}
+
 NSString *AdaptiveDateFormatting::Format(Style _style, time_t _time)
 {
     switch( _style ) {
@@ -239,6 +285,11 @@ NSString *AdaptiveDateFormatting::Format(Style _style, time_t _time)
         default:
             return Orthodox(_time);
     }
+}
+
+NSString *AdaptiveDateFormatting::FormatSmart(time_t _time)
+{
+    return SmartFormat(_time);
 }
 
 AdaptiveDateFormatting::Style AdaptiveDateFormatting::SuitableStyleForWidth(int _width, NSFont *_font)

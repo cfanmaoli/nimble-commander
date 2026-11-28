@@ -10,6 +10,7 @@
 #include <Panel/PanelData.h>
 #include <Panel/Log.h>
 #include "PanelController.h"
+#include <NimbleCommander/Bootstrap/NativeVFSHostInstance.h>
 #include "Brief/PanelBriefView.h"
 #include "List/PanelListView.h"
 #include "Gallery/PanelGalleryView.h"
@@ -101,6 +102,21 @@ struct StateStorage {
         m_HeaderView.sortModeChangeCallback = [weak_self](data::SortMode _sm) {
             if( PanelView *const strong_self = weak_self )
                 [strong_self.controller changeSortingModeTo:_sm];
+        };
+        // lidw: editable path bar — navigate when the user types a path + Return.
+        m_HeaderView.pathJumpCallback = [weak_self](NSString *_path) {
+            if( PanelView *const strong_self = weak_self ) {
+                PanelController *const panel = strong_self.controller;
+                if( panel == nil )
+                    return;
+                const auto request = std::make_shared<DirectoryChangeRequest>();
+                request->RequestedDirectory = [panel expandPath:_path.UTF8String];
+                request->VFS = panel.isUniform ? panel.vfs
+                                               : nc::bootstrap::NativeVFSHostInstance().SharedPtr();
+                request->PerformAsynchronous = true;
+                request->InitiatedByUser = true;
+                [panel GoToDirWithContext:request];
+            }
         };
         [self addSubview:m_HeaderView];
 
@@ -875,19 +891,6 @@ struct StateStorage {
 {
     if( [m_ItemsView respondsToSelector:@selector(scrollToTopItemNamed:)] )
         [m_ItemsView scrollToTopItemNamed:_filename];
-}
-
-- (NSPoint)viewportScrollPosition
-{
-    if( [m_ItemsView respondsToSelector:@selector(viewportScrollPosition)] )
-        return [m_ItemsView viewportScrollPosition];
-    return NSMakePoint(NAN, NAN);
-}
-
-- (void)restoreViewportScrollPosition:(NSPoint)_position
-{
-    if( [m_ItemsView respondsToSelector:@selector(restoreViewportScrollPosition:)] )
-        [m_ItemsView restoreViewportScrollPosition:_position];
 }
 
 - (void)savePathState
